@@ -695,7 +695,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         }
     }
     if ($oversizedLogs.Count -gt 0) {
-        Add-Result -Level 'WARN' -Message 'work log compaction warnings detected'
+        Add-Result -Level 'FAIL' -Message 'work log compaction warnings detected'
     }
     else {
         Add-Result -Level 'PASS' -Message 'active work log sizes are within compaction thresholds'
@@ -1001,6 +1001,27 @@ else {
 }
 Test-ContainsLiteral -Path $projectAgentsFile -Pattern '.agent/workflows/routing.md' -SuccessMessage 'AGENTS.md references routing index (authority handoff present)' -FailureMessage 'AGENTS.md missing routing index reference (authority handoff absent)'
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'commands.md') -Pattern '.agent/workflows/routing.md' -SuccessMessage 'commands.md points to canonical routing index' -FailureMessage 'commands.md missing canonical routing index reference'
+
+# Document lifecycle bloat checks
+$globalLessonsMax = if ($env:GLOBAL_LESSONS_MAX) { [int]$env:GLOBAL_LESSONS_MAX } else { 20 }
+if (Test-Path -Path $currentStatePath -PathType Leaf) {
+    $lessonsCount = @([regex]::Matches($csContent, '(?m)^- \[Category:') | Measure-Object).Count
+    if ($lessonsCount -gt $globalLessonsMax) {
+        Add-Result -Level 'WARN' -Message "Global Lessons exceeds cap ($lessonsCount > $globalLessonsMax); run /retro to archive LOW-severity entries"
+    }
+    elseif ($lessonsCount -gt 0) {
+        Add-Result -Level 'PASS' -Message "Global Lessons count within cap ($lessonsCount/$globalLessonsMax)"
+    }
+}
+
+# Stale _raw-intake check
+$specsDir = Join-NormalPath $root 'docs/specs'
+if (Test-Path -Path $specsDir -PathType Container) {
+    $staleRawIntake = @(Get-ChildItem -Path $specsDir -Filter '_raw-intake*.md' -File -ErrorAction SilentlyContinue)
+    if ($staleRawIntake.Count -gt 0) {
+        Add-Result -Level 'WARN' -Message "stale _raw-intake files detected: $($staleRawIntake.Count) -- /ship should clean these up"
+    }
+}
 
 Write-Output ''
 Write-Output "Summary: pass=$($script:PassCount) warn=$($script:WarnCount) fail=$($script:FailCount) skip=$($script:SkipCount)"
