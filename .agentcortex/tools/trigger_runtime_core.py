@@ -734,11 +734,14 @@ def _build_summary(registry: dict[str, Any]) -> dict[str, Any]:
     }
     for entry in registry.get("entries", []):
         entry_id = entry.get("id", "")
-        summary[entry_id] = {
+        item: dict[str, Any] = {
             "load_policy": entry.get("load_policy", "on-match"),
             "cost_risk": entry.get("cost_risk", "medium"),
             "kind": entry.get("kind", "skill"),
         }
+        if "user_disableable" in entry:
+            item["user_disableable"] = entry["user_disableable"]
+        summary[entry_id] = item
     return summary
 
 
