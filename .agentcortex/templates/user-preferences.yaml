@@ -1,0 +1,23 @@
+# Agentic OS — User Skill Preferences
+# Copy this file to: .agentcortex/context/private/user-preferences.yaml
+# This file is gitignored and personal to your environment.
+#
+# Docs: AGENTS.md §Skill Safety & Precedence item 8
+# Bootstrap merge: .agent/workflows/bootstrap.md §3.6a
+
+skill_preferences:
+  # Skills to always include in Recommended Skills (on top of auto-detected).
+  # - Plain skill ID → respects skip-when rules from the bootstrap rule table.
+  # - { skill-id: { force: true } } → overrides skip-when for that skill only,
+  #   but still respects phase_scope boundaries (a skill cannot activate in a
+  #   phase it was never designed for).
+  pinned: []
+  #   - test-driven-development
+  #   - api-design: { force: true }
+
+  # Skills to exclude from Recommended Skills.
+  # Protected skills (verification-before-completion, auth-security, and any
+  # skill with trigger_priority: hard + block_if_missed: true) cannot be
+  # disabled — the disable is silently ignored with a warning.
+  disabled: []
+  #   - dispatching-parallel-agents

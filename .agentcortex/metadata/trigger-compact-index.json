@@ -7,102 +7,122 @@
     "bootstrap-recommended-skills": {
       "load_policy": "always",
       "cost_risk": "medium",
-      "kind": "workflow"
+      "kind": "workflow",
+      "user_disableable": false
     },
     "phase-entry-skill-loading": {
       "load_policy": "always",
       "cost_risk": "medium",
-      "kind": "policy"
+      "kind": "policy",
+      "user_disableable": false
     },
     "test-driven-development": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "verification-before-completion": {
       "load_policy": "phase-entry",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": false
     },
     "systematic-debugging": {
       "load_policy": "on-failure",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "red-team-adversarial": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "writing-plans": {
       "load_policy": "phase-entry",
       "cost_risk": "low",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "executing-plans": {
       "load_policy": "phase-entry",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "finishing-a-development-branch": {
       "load_policy": "on-match",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "api-design": {
       "load_policy": "on-match",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "database-design": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "frontend-patterns": {
       "load_policy": "on-match",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "auth-security": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": false
     },
     "doc-lookup": {
       "load_policy": "on-match",
       "cost_risk": "low",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "dispatching-parallel-agents": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "subagent-driven-development": {
       "load_policy": "on-match",
       "cost_risk": "high",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "requesting-code-review": {
       "load_policy": "on-match",
       "cost_risk": "low",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "receiving-code-review": {
       "load_policy": "on-match",
       "cost_risk": "low",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "using-git-worktrees": {
       "load_policy": "on-match",
       "cost_risk": "medium",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     },
     "production-readiness": {
       "load_policy": "phase-entry",
       "cost_risk": "low",
-      "kind": "skill"
+      "kind": "skill",
+      "user_disableable": true
     }
   },
   "entries": [

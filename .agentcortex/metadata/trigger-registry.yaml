@@ -11,6 +11,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [bootstrap]
     trigger_priority: hard
+    user_disableable: false
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: []
@@ -36,6 +37,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review, test, handoff, ship]
     trigger_priority: hard
+    user_disableable: false
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: []
@@ -67,6 +69,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, test]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["用 TDD", "test first", "先寫測試", "red green refactor"]
@@ -94,6 +97,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, test, ship]
     trigger_priority: hard
+    user_disableable: false
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: []
@@ -121,6 +125,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review, test, hotfix]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["debug", "除錯", "找 bug"]
@@ -148,6 +153,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [review, test]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [hotfix, feature, architecture-change]
       intent_patterns: ["red team", "adversarial test", "攻擊面分析", "紅隊測試"]
@@ -173,6 +179,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [plan]
     trigger_priority: advisory
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["幫我規劃", "write plan", "規劃怎麼做"]
@@ -198,6 +205,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["執行計畫", "execute the plan", "follow the plan"]
@@ -222,6 +230,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [ship, handoff]
     trigger_priority: advisory
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["finish branch", "merge 準備", "完成分支"]
@@ -247,6 +256,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review, test]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change, hotfix]
       intent_patterns: ["API 設計", "endpoint conventions", "REST design"]
@@ -274,6 +284,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review, test]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change, hotfix]
       intent_patterns: ["資料庫設計", "schema design", "migration safety"]
@@ -301,6 +312,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review, test]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["前端模式", "component patterns", "UI conventions"]
@@ -328,6 +340,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review, test]
     trigger_priority: hard
+    user_disableable: false
     detect_by:
       classification: [tiny-fix, quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["安全檢查", "auth check", "security review", "權限檢查"]
@@ -355,6 +368,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["查文件", "check docs", "查官方文檔", "read the docs", "看文件再做"]
@@ -382,6 +396,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement]
     trigger_priority: advisory
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["平行開發", "parallel agents", "dispatch subtasks"]
@@ -407,6 +422,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [implement]
     trigger_priority: advisory
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["subagent", "分派 agent", "multi-agent"]
@@ -432,6 +448,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [review, handoff]
     trigger_priority: advisory
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["請求 review", "request code review", "送 review", "要 review"]
@@ -458,6 +475,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [review]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["接收 review", "review feedback", "收到 review 意見"]
@@ -483,6 +501,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [bootstrap, implement]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["用 worktree", "git worktree", "worktree 隔離"]
@@ -509,6 +528,7 @@ entries:
     platforms: [claude, codex, antigravity]
     phase_scope: [review, ship]
     trigger_priority: contextual
+    user_disableable: true
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["observability check", "production readiness", "觀測性檢查"]

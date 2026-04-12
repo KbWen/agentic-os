@@ -142,6 +142,8 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 5. **Skill manual activation block**: Even when a user explicitly requests a skill, the bootstrap rule table's `Skip when` column governs. If the rule table says skip for the current classification, manual activation is blocked.
 
+6. **Pinned skill vs skip-when precedence**: Pinned skills from user preferences (`.agentcortex/context/private/user-preferences.yaml`) follow the same skip-when rules as manually activated skills UNLESS the pin entry includes `force: true`. Force-pinned skills override skip-when but still respect `phase_scope` boundaries — a skill cannot activate in a phase it was never designed for. This is the ONLY mechanism that can override skip-when; manual activation (rule 5) cannot. See bootstrap §3.6a.
+
 ---
 
 ## 5. Command Discovery Notes

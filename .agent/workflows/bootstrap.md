@@ -289,6 +289,29 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
 
    **Rule**: Do NOT limit to "0-2 skills". Recommend ALL skills whose conditions are met. A typical `feature` task should activate 4-8 skills.
    **Conflict Pass**: After choosing `Recommended Skills`, read `.agent/rules/skill_conflict_matrix.md` ONCE. If any recommended pair is marked `partial-conflict` or `conflict`, write the chosen precedence or scoping strategy to `## Conflict Resolution` in the Work Log. Later phases reuse that note instead of re-reading the matrix.
+
+### 3.6a. User Skill Preference Merge (Capability-by-Presence)
+
+> **Scope**: Non-`tiny-fix` only. Runs AFTER rule table + conflict pass, BEFORE writing `Recommended Skills` to Work Log.
+> **Config**: `.agent/config.yaml §user_preferences`
+
+1. Check if the file at `.agent/config.yaml §user_preferences.path` (default: `.agentcortex/context/private/user-preferences.yaml`) exists. If not, skip this subsection entirely. **Zero cost.**
+2. Parse the file as YAML. If malformed or empty: warn once (`"⚠️ User preferences file exists but is malformed. Skipping."`), skip. **NEVER block bootstrap.**
+3. **Validate skill IDs** against the bootstrap rule table (§3.6) or, when available, `.agentcortex/metadata/trigger-compact-index.json`. Warn on unknown IDs; ignore them.
+4. **For each `pinned` skill**:
+   a. If already in `auto_skills` → no-op (already recommended via auto-detection).
+   b. If its `Skip when` / classification column excludes the current classification AND entry does NOT have `force: true` → skip with note: `"Pinned skill [X] skipped: skip-when active for [classification]."`
+   c. If its `Skip when` excludes the current classification AND entry has `force: true` → add with provenance `(pin+forced)`. **Hard ceiling**: even with `force`, a skill CANNOT activate in a phase outside its `phase_scope` (from trigger-compact-index or rule table `Phases` column).
+   d. Otherwise → add with provenance `(pin)`.
+   e. For each newly added pinned skill, check `.agent/rules/skill_conflict_matrix.md` against all existing recommended skills. If `partial-conflict`: apply guidance and record in `## Conflict Resolution` with `[pinned by user preference]`. If `conflict`: warn user and ask which takes priority — do NOT silently resolve.
+5. **For each `disabled` skill**:
+   a. If skill has `trigger_priority: hard` AND `block_if_missed: true` in the trigger registry, OR is listed in `.agent/config.yaml §user_preferences.protected_skills` → ignore the disable, warn once: `"⚠️ Cannot disable protected skill [X]. Ignored."`
+   b. Otherwise → remove from recommended skills with provenance `(disabled by user-pref)`.
+6. **Token advisory**: If the final pinned set adds more than `high_cost_pin_advisory_threshold` skills with `cost_risk: high` (per compact index), emit: `"Note: [N] pinned high-cost skills may increase token usage."`
+7. Write the final merged set to `Recommended Skills` with provenance tags: `(auto)`, `(pin)`, `(pin+forced)`, `(disabled by user-pref)`, `(protected, disable ignored)`.
+
+**A skill in both `pinned` and `disabled`**: pin wins (explicit request > explicit removal). Warn: `"Skill [X] is both pinned and disabled. Pin takes precedence."`
+
 7. Context Read Receipt: MUST output:
    - `current_state.md` → [last modified date or key field you read]
    - Work Log → [status: existing|created|resumed]
