@@ -87,6 +87,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
         "triggered": {
             "writing-plans",
@@ -96,6 +97,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
     },
     "feature-api-auth-db": {
@@ -112,6 +114,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
         "triggered": {
             "writing-plans",
@@ -125,6 +128,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
     },
     "hotfix-debug-loop": {
@@ -162,6 +166,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
         "triggered": {
             "writing-plans",
@@ -178,6 +183,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "production-readiness",
         },
     },
     "post-review-feedback-loop": {
@@ -189,6 +195,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "systematic-debugging",
             "red-team-adversarial",
             "finishing-a-development-branch",
+            "production-readiness",
         },
         "triggered": {
             "receiving-code-review",
@@ -197,6 +204,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "verification-before-completion",
             "red-team-adversarial",
             "finishing-a-development-branch",
+            "production-readiness",
         },
     },
 }

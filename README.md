@@ -144,6 +144,16 @@ Built for teams where multiple AI sessions work on the same codebase:
 - **Ship Guard** — checks for SSoT conflicts before merging
 - **Session Identity** — every AI session writes its model name and timestamp
 
+### 🚀 Recommended: Start with /audit
+
+New to Agentic OS? Run `/audit` first — it's a **read-only** traversal that maps your existing codebase with zero risk:
+
+```
+/audit  →  /app-init  →  /spec-intake  →  pick a quick-win  →  full feature
+```
+
+See the [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) ([繁體中文](docs/LIFECYCLE_BENCHMARK_zh-TW.md)) for real token consumption data across 6 development scenarios.
+
 ### 📉 Token Efficiency
 
 Designed for cost-effective models (Gemini Flash, Haiku, etc.):
@@ -318,6 +328,8 @@ Agentic OS is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PH
 | [Codex Platform Guide](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) | Codex Web/App adaptation |
 | [Claude Platform Guide](.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md) | Claude Code integration |
 | [Nonlinear Scenarios](.agentcortex/docs/NONLINEAR_SCENARIOS.md) | Recovery from interrupted sessions |
+| [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) | 6 real scenarios with token costs |
+| [生命週期基準測試](docs/LIFECYCLE_BENCHMARK_zh-TW.md) | Token 消耗量測（繁體中文） |
 
 ---
 

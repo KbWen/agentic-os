@@ -508,11 +508,11 @@ entries:
     detail_ref: .agents/skills/production-readiness/SKILL.md
     platforms: [claude, codex, antigravity]
     phase_scope: [review, ship]
-    trigger_priority: soft
+    trigger_priority: contextual
     detect_by:
       classification: [feature, architecture-change]
-      intent_patterns: ["observability check", "production readiness", "error handling audit"]
-      scope_signals: [error handling, catch blocks, logging, crash reporting]
+      intent_patterns: ["observability check", "production readiness", "觀測性檢查"]
+      scope_signals: [error handling, logging, crash reporting, observability]
       failure_signals: []
       phase_conditions: [enter-review-or-ship]
     load_policy: phase-entry
@@ -524,4 +524,4 @@ entries:
       - ".agent/workflows/ship.md#Observability Readiness Check"
     block_if_missed: false
     fallback_behavior: >
-      Use the stable review/ship flow and rely on engineering_guardrails.md §5.2a for error observability checks.
+      Use stable kernel review/ship checks for error handling patterns.

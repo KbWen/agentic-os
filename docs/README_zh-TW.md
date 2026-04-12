@@ -19,12 +19,23 @@
 - **命名空間隔離**：下游專案可自由添加自定義 skill 和 workflow，框架用 `.agentcortex-manifest` 區分管理範圍，用戶指令永遠優先。
 - **17 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
 
+## 🚀 推薦：從 /audit 開始
+
+剛接觸 Agentic OS？先跑 `/audit` — **唯讀**遍歷你的 codebase，零風險：
+
+```
+/audit  →  /app-init  →  /spec-intake  →  挑一個 quick-win  →  完整 feature
+```
+
+詳見 [生命週期基準測試](LIFECYCLE_BENCHMARK_zh-TW.md)（[English](LIFECYCLE_BENCHMARK.md)）— 6 個真實場景的 token 消耗數據。
+
 ## 🔗 參考來源
 
 - Superpowers 專案（理念參考）：<https://github.com/obra/superpowers>
 - 專案導入範例：`.agentcortex/docs/PROJECT_EXAMPLES_zh-TW.md`
 - 遷移與整合指南：`.agentcortex/docs/guides/migration_zh-TW.md`
 - Token 治理指南：`.agentcortex/docs/guides/token-governance_zh-TW.md`
+- 生命週期基準測試：[LIFECYCLE_BENCHMARK_zh-TW.md](LIFECYCLE_BENCHMARK_zh-TW.md)
 
 ## 📦 目錄總覽
 
