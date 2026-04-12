@@ -109,4 +109,4 @@ ruff check .
 - [Non-Linear Scenarios (Model Switching, Session Crashes, Chaotic Workflows)](./NONLINEAR_SCENARIOS.md)
 - [Migration & Integration Guide (Legacy Project Takeover)](./guides/migration.md)
 - [Token Governance Guide](./guides/token-governance.md)
-- [Minimal Text Hardening Kit](./guides/minimal-text-hardening-kit.md)
+<!-- minimal-text-hardening-kit.md removed: content merged into check_text_integrity.py -->

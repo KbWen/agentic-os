@@ -158,4 +158,4 @@ When turn count exceeds 8, the existing rule says _suggest_ handoff. This enhanc
 
 - [Project Examples (Linear Workflows)](./PROJECT_EXAMPLES.md)
 - [Engineering Guardrails (Constitution)](../../.agent/rules/engineering_guardrails.md)
-- [Agent Model Guide (Model Selection)](./AGENT_MODEL_GUIDE.md)
+- [Agent Model Guide (Model Selection)](../../docs/AGENT_MODEL_GUIDE.md)
