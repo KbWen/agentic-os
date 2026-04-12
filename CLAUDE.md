@@ -10,7 +10,7 @@ All rules live in `AGENTS.md` and `.agent/`. This file is the Claude-specific lo
 1. **Read `AGENTS.md`** — this is the canonical governance document. Follow it exactly.
 2. **Assess task scope** from the user's message:
    - **tiny-fix** (< 3 files, no semantic change, typo/rename/config) → **skip to Step 5**.
-   - **quick-win** (1-2 modules, clear scope, no cross-module impact) → read SSoT (Step 3), **skip Step 4** (guardrails). Essential quick-win rules are in `bootstrap.md` §7.
+   - **quick-win** (1-2 modules, clear scope, no cross-module impact) → read SSoT (Step 3), **skip Step 4** (guardrails). Essential quick-win rules are in `.agent/workflows/bootstrap.md` §7.
    - **feature / architecture-change / hotfix / uncertain** → continue to Step 3.
 3. **Read `.agentcortex/context/current_state.md`** — Single Source of Truth (SSoT). *(Skip for tiny-fix.)*
 4. **Read `.agent/rules/engineering_guardrails.md`** — constitution for all engineering work. *(Skip for tiny-fix and quick-win.)*
@@ -35,7 +35,7 @@ Skills are defined in `.agents/skills/*/SKILL.md` (full instructions) and `.agen
 - **Phase entry**: Re-check Work Log `Recommended Skills` and apply cache policy per `.agent/config.yaml §skill_cache_policy`. Only on cache miss re-read `SKILL.md`.
 
 Skills never override governance or gates — they extend the active workflow phase.
-Full cache/conflict mechanics: see `AGENTS.md` §Skill Safety and §Shared Phase Contracts.
+Full cache/conflict mechanics: see `AGENTS.md` §Skill Safety & Precedence and §Shared Phase Contracts.
 
 ## Hard Rules (Claude-specific reminders)
 
@@ -43,6 +43,7 @@ All governance rules are in `AGENTS.md` and `engineering_guardrails.md`. Key rem
 
 - **Phase order is mandatory** — NEVER skip required phases, even if user asks. See `engineering_guardrails.md` §10.
 - **No Evidence = No Completion** — `tiny-fix`: diff + 1-line. `quick-win`+: test logs or terminal output.
+- **SSoT protection** — Only `/ship` writes to `.agentcortex/context/current_state.md` (via `guard_context_write.py`). Exception: `/retro` may append Global Lessons.
 - **Installation**: NEVER manually copy framework files. Use `installers/deploy_brain.sh` or `deploy_brain.ps1`.
 
 ## Validate
