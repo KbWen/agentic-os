@@ -51,7 +51,7 @@ If the spec source is a file path, READ it immediately. Do NOT ask the user to p
    - Step 2a (Decomposition): read relevant sections of `_raw-intake.md`
    - Step 3 (Feature Spec Generation): read ONLY the section of `_raw-intake.md` relevant to the selected feature
 
-4. **After decomposition is complete** (Feature Inventory saved to `_product-backlog.md` and at least one feature spec generated), `_raw-intake.md` MAY be deleted or archived. It has served its purpose — the structured specs are now the SSoT.
+4. **After decomposition is complete** (Feature Inventory saved to `_product-backlog.md` and at least one feature spec generated), `_raw-intake.md` MUST be deleted. It has served its purpose — the structured specs are now the SSoT. `/ship` MUST verify `_raw-intake.md` does not exist for the current intake; if it does, delete it before archival. Previously archived `_raw-intake-<date>.md` files MUST also be deleted by `/ship` once all features from that intake are Shipped or Cancelled.
 
 **Why this matters**:
 - Conversation context stays lean: only the Feature Inventory table (~200 tokens) needs to be in active conversation, not the full spec
@@ -367,5 +367,5 @@ Feature #3: fewer [NEEDS-CONFIRMATION] tags because AI has learned the project's
 4. **Backlog is living**: `_product-backlog.md` is never frozen. It is updated throughout the product lifecycle.
 5. **Conflict check**: Before writing a new spec, check `current_state.md` Spec Index for existing specs that overlap. If overlap found, output: `⚠️ Existing spec [file] may overlap. Extend, replace, or keep independent?`
 6. **`living` status**: `_product-backlog.md` uses `status: living` in frontmatter. This is a distinct status from `draft`/`frozen` — it signals a persistent tracking document that MUST NOT be frozen or treated as a spec artifact by §4.2 Spec Freezing rules. AI MUST NOT attempt to freeze or review `living`-status documents for freeze compliance.
-7. **`raw` status**: `_raw-intake.md` uses `status: raw` in frontmatter. This is a temporary artifact — unprocessed input that exists only until decomposition is complete. It is NOT a spec and MUST NOT appear in the Spec Index. Delete or archive after all relevant feature specs are generated.
+7. **`raw` status**: `_raw-intake.md` uses `status: raw` in frontmatter. This is a temporary artifact — unprocessed input that exists only until decomposition is complete. It is NOT a spec and MUST NOT appear in the Spec Index. MUST be deleted (not archived) after all relevant feature specs are generated. Any lingering `_raw-intake*.md` files are dead data and `/ship` MUST clean them up.
 8. **`cancelled` status**: Set by §8c Cancel action. A cancelled spec is permanently inert — it MUST NOT appear in the Spec Index, MUST NOT be read during bootstrap Spec Scope, and MUST NOT be frozen or unfrozen. It exists only as historical record.

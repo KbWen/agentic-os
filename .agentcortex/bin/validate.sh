@@ -784,7 +784,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     fi
   done
   if [[ "$worklog_warnings" -gt 0 ]]; then
-    record_result WARN "work log compaction warnings detected"
+    record_result FAIL "work log compaction warnings detected"
   else
     record_result PASS "active work log sizes are within compaction thresholds"
   fi
@@ -1158,6 +1158,30 @@ check_contains_literal \
   '.agent/workflows/routing.md' \
   "commands.md points to canonical routing index" \
   "commands.md missing canonical routing index reference"
+
+# Document lifecycle bloat checks
+GLOBAL_LESSONS_MAX="${GLOBAL_LESSONS_MAX:-20}"
+if [[ -f "$CURRENT_STATE" ]]; then
+  lessons_count="$(grep -c '^\- \[Category:' "$CURRENT_STATE" 2>/dev/null || true)"
+  if [[ "$lessons_count" -gt "$GLOBAL_LESSONS_MAX" ]]; then
+    record_result WARN "Global Lessons exceeds cap (${lessons_count} > ${GLOBAL_LESSONS_MAX}); run /retro to archive LOW-severity entries"
+  elif [[ "$lessons_count" -gt 0 ]]; then
+    record_result PASS "Global Lessons count within cap (${lessons_count}/${GLOBAL_LESSONS_MAX})"
+  fi
+fi
+
+# Stale _raw-intake check: if a backlog exists with all features Shipped/Cancelled
+# but _raw-intake*.md files still linger, that's dead data.
+if [[ -d "$ROOT/docs/specs" ]]; then
+  stale_raw_intake=0
+  for ri in "$ROOT"/docs/specs/_raw-intake*.md; do
+    [[ -f "$ri" ]] || continue
+    stale_raw_intake=$((stale_raw_intake + 1))
+  done
+  if [[ "$stale_raw_intake" -gt 0 ]]; then
+    record_result WARN "stale _raw-intake files detected: ${stale_raw_intake} — /ship should clean these up"
+  fi
+fi
 
 echo ""
 printf 'Summary: pass=%s warn=%s fail=%s skip=%s\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
