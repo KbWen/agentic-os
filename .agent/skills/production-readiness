@@ -1,0 +1,19 @@
+---
+name: production-readiness
+description: Pre-ship observability readiness — verify error reporting uses production-observable sinks, log strategy is documented, and rollback telemetry is defined. Prevents silent production failures.
+phases: ["review", "ship"]
+trigger: auto (feature, architecture-change)
+trigger_priority: soft
+load_policy: phase-entry
+cost_type: output
+cost_risk: low
+runtime_anchor: ["engineering_guardrails.md#5.2a", ".agent/workflows/review.md#Error Observability Compliance", ".agent/workflows/ship.md#Observability Readiness Check"]
+---
+
+# Production Readiness
+
+Full instructions: `.agents/skills/production-readiness/SKILL.md`.
+
+- **Trigger**: Auto — recommended for `feature` and `architecture-change` classifications
+- **Purpose**: Ensure shipped code can be observed in production; catch debug-only logging before it reaches users
+- **Token note**: Lightweight checklist skill; minimal token overhead

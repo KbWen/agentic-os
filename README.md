@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KbWen/agentic-os/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/validate.yml?branch=main&style=flat-square&label=CI" alt="CI Status"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MIT License"/></a>
   <img src="https://img.shields.io/badge/Claude_Code-Ready-8b5cf6?style=flat-square" alt="Claude Code"/>
   <img src="https://img.shields.io/badge/Antigravity-Compatible-3b82f6?style=flat-square" alt="Antigravity"/>

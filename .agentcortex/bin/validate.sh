@@ -217,9 +217,30 @@ else
   PYTHON_BIN=
 fi
 
+# Source-repo detection: the source repo has the canonical deploy script
+# but no .agentcortex-manifest (which is generated during deploy to downstream).
+# In source-repo mode, adapter-surface checks (.claude/commands/, .codex/, .antigravity/)
+# are skipped because these directories are created by deploy in downstream repos.
+IS_SOURCE_REPO=0
+if [[ -f "$CANONICAL_DEPLOY_SH" ]] && [[ ! -f "$ROOT/.agentcortex-manifest" ]]; then
+  IS_SOURCE_REPO=1
+fi
+
 check_file_group "required framework files present" "${required_files[@]}"
-check_file_group "claude adapter files present" "${claude_required_files[@]}"
-check_dir_group "required framework directories present" "${required_dirs[@]}"
+
+if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
+  record_result SKIP "claude adapter files -- source repo (created by deploy in downstream)"
+  # Adjust required_dirs to exclude .claude/commands in source repo
+  source_required_dirs=(
+    "$WORKFLOWS_DIR"
+    "$ROOT/.agents/skills"
+    "$ROOT/.agent/skills"
+  )
+  check_dir_group "required framework directories present" "${source_required_dirs[@]}"
+else
+  check_file_group "claude adapter files present" "${claude_required_files[@]}"
+  check_dir_group "required framework directories present" "${required_dirs[@]}"
+fi
 
 run_python_check \
   "text integrity check" \
@@ -288,36 +309,40 @@ else
   record_result PASS "skill metadata mirrors are consistent"
 fi
 
-check_file_group "legacy rule surfaces present" \
-  "$ROOT/.antigravity/rules.md" \
-  "$ROOT/.agent/rules/rules.md" \
-  "$CODEX_INSTALL"
+if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
+  record_result SKIP "legacy rule surfaces -- source repo (adapter surfaces created by deploy)"
+else
+  check_file_group "legacy rule surfaces present" \
+    "$ROOT/.antigravity/rules.md" \
+    "$ROOT/.agent/rules/rules.md" \
+    "$CODEX_INSTALL"
 
-check_contains_regex \
-  "$ROOT/.agent/rules/rules.md" \
-  '\.antigravity/rules\.md' \
-  "legacy rules redirect to canonical antigravity rules" \
-  "legacy rules missing canonical redirect"
-check_contains_literal \
-  "$ROOT/.agent/rules/rules.md" \
-  'legacy compatibility' \
-  "legacy rules include compatibility marker" \
-  "legacy rules missing compatibility marker"
-check_contains_literal \
-  "$ROOT/.antigravity/rules.md" \
-  'docker system prune -a' \
-  "antigravity rules include docker system prune guard" \
-  "antigravity rules missing docker system prune guard"
-check_contains_literal \
-  "$ROOT/.antigravity/rules.md" \
-  'chown -R' \
-  "antigravity rules include chown -R guard" \
-  "antigravity rules missing chown -R guard"
-check_contains_literal \
-  "$ROOT/.antigravity/rules.md" \
-  'rollback' \
-  "antigravity rules include rollback reminder" \
-  "antigravity rules missing rollback reminder"
+  check_contains_regex \
+    "$ROOT/.agent/rules/rules.md" \
+    '\.antigravity/rules\.md' \
+    "legacy rules redirect to canonical antigravity rules" \
+    "legacy rules missing canonical redirect"
+  check_contains_literal \
+    "$ROOT/.agent/rules/rules.md" \
+    'legacy compatibility' \
+    "legacy rules include compatibility marker" \
+    "legacy rules missing compatibility marker"
+  check_contains_literal \
+    "$ROOT/.antigravity/rules.md" \
+    'docker system prune -a' \
+    "antigravity rules include docker system prune guard" \
+    "antigravity rules missing docker system prune guard"
+  check_contains_literal \
+    "$ROOT/.antigravity/rules.md" \
+    'chown -R' \
+    "antigravity rules include chown -R guard" \
+    "antigravity rules missing chown -R guard"
+  check_contains_literal \
+    "$ROOT/.antigravity/rules.md" \
+    'rollback' \
+    "antigravity rules include rollback reminder" \
+    "antigravity rules missing rollback reminder"
+fi
 
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
@@ -721,7 +746,7 @@ fi
 if [[ -f "$ROOT/README.md" ]]; then
   check_contains_literal \
     "$ROOT/README.md" \
-    'Why Agentic OS?' \
+    'governance-first operating system for AI coding agents' \
     "README.md encoding looks healthy" \
     "README.md appears mojibaked or re-encoded"
 fi

@@ -13,7 +13,7 @@ origin:
   publisher: Agentic OS
   repository: https://github.com/KbWen/Agentic OS
   channel: first-party
-content_digest: sha256:f9cf18b6237cc4b8f5f8e374bd35cef4998a1a548a0a87b201f3459f2efd444e
+content_digest: sha256:8c37af2f8e9d8ac2cf421a7d803ca16d2f16a2ddbd5ef218eaf7a799c3b34071
 lifecycle:
   status: active
 depends: []

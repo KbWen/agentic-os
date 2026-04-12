@@ -1,4 +1,4 @@
-﻿# Claude Platform Guide
+# Claude Platform Guide
 
 ## Scope
 

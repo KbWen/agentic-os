@@ -152,6 +152,19 @@ This check is silent when confidence is high — no extra output needed above 90
 - Service/Provider layer errors MUST `return null` or a sealed error type. Unhandled exceptions that escape a Service or Provider boundary = **Gate FAIL**.
 - Every `catch` block MUST include at minimum a log statement. Silent `catch {}` with no logging = **Review Gate FAIL**.
 
+### 5.2a Error Observability (Production-Safety Critical)
+
+Error logging MUST use a **production-observable sink** — a logger that survives release builds and reaches operators in production.
+
+- ✅ Acceptable: framework logger (`Logger.error()`, `log.error()`), crash reporter (`errorReporter.capture()`), structured logging to stdout consumed by production infrastructure.
+- ❌ Prohibited as sole error path: `debugPrint()`, `print()`, `console.log()` in debug-only mode, or any API that is stripped / tree-shaken / no-op'd in release builds.
+
+**Rationale**: If an error is caught but logged only via a debug-only API, the catch block is functionally silent in production. Users experience failures while the team remains blind. This is the #1 cause of "beta testing is completely blind" incidents.
+
+**Gate check**: Review MUST verify each `catch` block uses the project's production logger. If the project has no production logging strategy defined, flag at `/review`: *"No production-observable error sink identified — resolve before ship."*
+
+**Scope**: This rule applies to application/service code. Test-only code and CLI dev tools are exempt.
+
 ### 5.3 Spec Drift Prevention & Test Quality
 
 **Spec Drift Prevention**

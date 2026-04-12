@@ -51,6 +51,19 @@ Before ship evaluation, check the active Work Log size. If it exceeds compaction
 - [ ] Active Work Log archived to `.agentcortex/context/archive/`
 - [ ] Spec-Test trace verified (feature / architecture-change only — see §Spec-Test Traceability below)
 - [ ] Domain Doc updated or skip justified (feature / architecture-change only — see §Knowledge Consolidation below)
+- [ ] Observability Readiness verified (feature / architecture-change only — see §Observability Readiness below)
+
+## Observability Readiness Check (feature / architecture-change only)
+
+**Scope**: This check applies ONLY to `feature` and `architecture-change` classifications. `tiny-fix`, `quick-win`, and `hotfix` are exempt.
+
+Before ship, verify the delivered code meets production observability requirements:
+
+1. **Error boundary defined**: all error-handling paths use a production-observable logger (per §5.2a). No debug-only logging as sole error path.
+2. **Log sink documented**: Work Log records where errors are reported (e.g., "Sentry via `Logger.error()`", "stdout → CloudWatch", or "Crashlytics via `FirebaseCrashlytics.recordError()`"). If the project has no production logging infrastructure yet, document that as a Known Risk.
+3. **Rollback telemetry**: rollback plan (per §12.5) includes how operators will know the rollback succeeded (e.g., error rate returns to baseline, health check passes).
+
+This is an advisory check — missing observability readiness produces a warning, not a hard fail. The warning MUST be recorded in the Work Log under `## Known Risk`.
 
 ## Spec-Test Traceability Check (feature / architecture-change only)
 

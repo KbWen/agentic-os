@@ -268,6 +268,7 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
    | `database-design` | implement, review, test | Creates tables, modifies schema, or writes migrations | feature, architecture-change, hotfix |
    | `frontend-patterns` | implement, review, test | Creates or modifies UI components, pages, client-side state | feature, architecture-change |
    | `auth-security` | implement, review, test | Touches login, password, token, session, role, permission | ALL |
+   | `production-readiness` | review, ship | Adds or modifies error handling, catch blocks, or logging | feature, architecture-change |
    | `doc-lookup` | implement, review | Task uses any framework/library in the project ADR tech stack | feature, architecture-change, hotfix, quick-win |
 
    **Phase-Triggered Skills (auto-activate at phase entry):**

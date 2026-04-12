@@ -9,12 +9,21 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     name: Framework Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Run validate.sh
         run: |
@@ -27,14 +36,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ShellCheck
-        run: sudo apt-get install -y shellcheck
-
       - name: Lint shell scripts
         run: |
-          shellcheck -x .agentcortex/bin/deploy.sh || true
-          shellcheck -x .agentcortex/bin/validate.sh || true
-          shellcheck -x installers/deploy_brain.sh || true
+          shopt -s globstar nullglob
+          scripts=()
+          for f in **/*.sh; do
+            [[ -f "$f" ]] || continue
+            scripts+=("$f")
+          done
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "No shell scripts found"
+            exit 0
+          fi
+          failed=0
+          for f in "${scripts[@]}"; do
+            echo "::group::$f"
+            if ! shellcheck -S warning -x "$f"; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
 
   markdown-links:
     name: Check Markdown Links
@@ -44,9 +66,9 @@ jobs:
 
       - name: Check internal links
         run: |
-          STATUS=0
+          status=0
           while IFS= read -r file; do
-            grep -oP '\[.*?\]\(\K[^)]+' "$file" 2>/dev/null | while read -r link; do
+            while IFS= read -r link; do
               # Skip external URLs, anchors, and mailto
               case "$link" in
                 http://*|https://*|mailto:*|\#*) continue ;;
@@ -58,9 +80,9 @@ jobs:
               dir="$(dirname "$file")"
               target="$dir/$path"
               if [ ! -e "$target" ]; then
-                echo "BROKEN LINK: $file -> $link"
-                STATUS=1
+                echo "::error file=$file::Broken link: $link"
+                status=1
               fi
-            done
+            done < <(grep -oP '\[.*?\]\(\K[^)]+' "$file" 2>/dev/null)
           done < <(find . -name '*.md' -not -path './.git/*')
-          exit $STATUS
+          exit $status

@@ -39,6 +39,19 @@ This ensures domain-specific review criteria (API conventions, frontend patterns
 - PR-visible evidence contract: active Work Logs remain local-only. In framework/upstream repos, refresh a tracked review mirror at `.agentcortex/context/review/<worklog-key>.md` before opening or updating a PR so `agentcortex-verify.yml` can inspect the current evidence. Downstream repos may leave this path absent unless they opt into PR-visible evidence checks.
 - Review mirror scope: `.agentcortex/context/review/<worklog-key>.md` may reflect an in-progress PR. CI validates legal phase progression up to the current checkpoint; `/ship` still enforces the full completion gate before SSoT updates.
 
+## Error Observability Compliance (§5.2a)
+
+For each `catch` / error-handling block in the changed files, verify:
+
+1. **Logging call exists** (syntax check — per §5.2)
+2. **Logger is production-observable** (semantic check — per §5.2a): the log call must NOT be a debug-only API (`debugPrint`, `print`, `console.log` in debug-only mode, or any tree-shaken / release-stripped API). It must use the project's production logger.
+3. **Error context is actionable**: the log message includes enough context to diagnose the issue (not just `"error occurred"` — include the error type, relevant identifiers, and operation that failed).
+
+If the project has no identifiable production logging strategy (no logger framework, no crash reporter integration), flag:
+> *"⚠️ No production-observable error sink identified in this project. Errors in catch blocks may be invisible in release builds. Resolve before `/ship`."*
+
+**Scope**: Application/service code only. Test files and CLI dev tools are exempt.
+
 ## Design Compliance Check (UI Tasks — Mandatory)
 
 > Ref: `engineering_guardrails.md` §4.4 — Design-First Rule
