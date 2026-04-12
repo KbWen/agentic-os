@@ -118,7 +118,8 @@ Global directives for all AI agents. Loaded automatically every turn
    - one `#### <phase>` block per phase already entered
    - each phase block must contain at least 2 `- Checklist:` bullets and 1 `- Constraint:` bullet. Compaction MUST preserve `## Skill Notes` verbatim.
 
-8. **Verification-Before-Completion 5-Gate Contract**: canonical contract is in `## Shared Phase Contracts — Verification Before Completion (5-Gate Sequence)` below. Apply it whenever the agent claims phase completion for any non-`tiny-fix` task.
+8. **User Skill Preferences (Capability-by-Presence)**: If `.agentcortex/context/private/user-preferences.yaml` exists, bootstrap merges its `pinned` and `disabled` lists into the recommended skill set AFTER auto-detection and conflict resolution. Protected skills (defined in `.agent/config.yaml §user_preferences.protected_skills` plus any skill with `trigger_priority: hard` AND `block_if_missed: true`) cannot be disabled by user preferences. Pinned skills respect `skip-when` rules by default; only entries with `force: true` can override `skip-when`, but never override `phase_scope` boundaries. See bootstrap §3.6a for the full merge algorithm. Template: `.agentcortex/templates/user-preferences.yaml`.
+9. **Verification-Before-Completion 5-Gate Contract**: canonical contract is in `## Shared Phase Contracts — Verification Before Completion (5-Gate Sequence)` below. Apply it whenever the agent claims phase completion for any non-`tiny-fix` task.
 
 ## Shared Phase Contracts
 

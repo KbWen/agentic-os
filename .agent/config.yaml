@@ -56,3 +56,24 @@ domain_doc:
   # Advisory lock timeout for Domain Doc L2 writes.
   # Same schema as worklog_lock: .agentcortex/context/domain/<domain>.lock.json
   lock_stale_timeout_minutes: 15
+
+# User Skill Preferences — per-user persistent skill pinning/disabling.
+# Capability-by-presence: if the preferences file does not exist, this
+# entire feature is inert. Zero cost.
+# See: AGENTS.md §Skill Safety & Precedence item 8.
+user_preferences:
+  # Path (relative to repo root) where the user's personal preferences
+  # file is read. This path MUST be gitignored.
+  path: .agentcortex/context/private/user-preferences.yaml
+
+  # Skills that CANNOT be disabled by user preferences.
+  # In addition to this explicit list, any skill with
+  # trigger_priority: hard AND block_if_missed: true in the
+  # trigger-registry is implicitly protected.
+  protected_skills:
+    - verification-before-completion
+    - auth-security
+
+  # When a user pins more than this many skills with cost_risk: high,
+  # bootstrap emits an advisory (not blocking) about token cost.
+  high_cost_pin_advisory_threshold: 2
