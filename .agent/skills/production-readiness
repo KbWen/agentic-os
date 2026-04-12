@@ -3,7 +3,7 @@ name: production-readiness
 description: Pre-ship observability readiness — verify error reporting uses production-observable sinks, log strategy is documented, and rollback telemetry is defined. Prevents silent production failures.
 phases: ["review", "ship"]
 trigger: auto (feature, architecture-change)
-trigger_priority: soft
+trigger_priority: contextual
 load_policy: phase-entry
 cost_type: output
 cost_risk: low

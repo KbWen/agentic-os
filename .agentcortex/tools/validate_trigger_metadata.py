@@ -214,7 +214,7 @@ def validate_resolver_parity(root: Path, registry: dict[str, Any], errors: list[
             "manual_skills": [],
             "scope_signals": ["token", "dependency"],
             "failure_signals": [],
-            "expected": {"red-team-adversarial", "requesting-code-review", "auth-security"},
+            "expected": {"red-team-adversarial", "requesting-code-review", "auth-security", "production-readiness"},
         },
         {
             "classification": "hotfix",

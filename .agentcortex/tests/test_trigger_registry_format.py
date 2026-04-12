@@ -46,7 +46,7 @@ class TriggerRegistryFormatTests(unittest.TestCase):
     def test_entry_count_matches_expected(self) -> None:
         """Guard against accidental entry loss during format migration."""
         data = load_data(REGISTRY_PATH)
-        self.assertEqual(len(data["entries"]), 19, "Expected 19 trigger entries")
+        self.assertEqual(len(data["entries"]), 20, "Expected 20 trigger entries")
 
     def test_detect_by_fields_are_lists(self) -> None:
         """detect_by sub-fields that should be lists MUST be lists."""

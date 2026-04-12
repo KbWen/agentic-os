@@ -109,11 +109,6 @@
     {
       "id": "bootstrap-recommended-skills",
       "kind": "workflow",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "bootstrap"
       ],
@@ -127,9 +122,6 @@
         "scope_signals": [
           "task classification frozen",
           "recommended skills emitted"
-        ],
-        "phase_conditions": [
-          "enter-bootstrap"
         ]
       },
       "load_policy": "always"
@@ -137,11 +129,6 @@
     {
       "id": "phase-entry-skill-loading",
       "kind": "policy",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "plan",
         "implement",
@@ -159,9 +146,6 @@
         ],
         "scope_signals": [
           "recommended skills present in work log"
-        ],
-        "phase_conditions": [
-          "enter-phase"
         ]
       },
       "load_policy": "always",
@@ -170,11 +154,6 @@
     {
       "id": "test-driven-development",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "test"
@@ -184,19 +163,10 @@
           "feature",
           "architecture-change"
         ],
-        "intent_patterns": [
-          "用 TDD",
-          "test first",
-          "先寫測試",
-          "red green refactor"
-        ],
         "scope_signals": [
           "testable logic",
           "core logic",
           "regression protection"
-        ],
-        "phase_conditions": [
-          "approved-plan-exists"
         ]
       },
       "load_policy": "on-match",
@@ -205,11 +175,6 @@
     {
       "id": "verification-before-completion",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "test",
@@ -221,9 +186,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "phase_conditions": [
-          "completion-claim"
         ]
       },
       "load_policy": "phase-entry",
@@ -232,11 +194,6 @@
     {
       "id": "systematic-debugging",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "review",
@@ -249,11 +206,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "debug",
-          "除錯",
-          "找 bug"
         ],
         "scope_signals": [
           "unexpected behavior",
@@ -272,11 +224,6 @@
     {
       "id": "red-team-adversarial",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "review",
         "test"
@@ -287,20 +234,11 @@
           "feature",
           "architecture-change"
         ],
-        "intent_patterns": [
-          "red team",
-          "adversarial test",
-          "攻擊面分析",
-          "紅隊測試"
-        ],
         "scope_signals": [
           "auth",
           "permission",
           "boundary",
           "dependency"
-        ],
-        "phase_conditions": [
-          "enter-review-or-test"
         ]
       },
       "load_policy": "on-match",
@@ -309,11 +247,6 @@
     {
       "id": "writing-plans",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "plan"
       ],
@@ -323,14 +256,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "幫我規劃",
-          "write plan",
-          "規劃怎麼做"
-        ],
-        "phase_conditions": [
-          "enter-plan"
         ]
       },
       "load_policy": "phase-entry",
@@ -339,11 +264,6 @@
     {
       "id": "executing-plans",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement"
       ],
@@ -353,15 +273,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "執行計畫",
-          "execute the plan",
-          "follow the plan"
-        ],
-        "phase_conditions": [
-          "approved-plan-exists",
-          "enter-implement"
         ]
       },
       "load_policy": "phase-entry",
@@ -370,11 +281,6 @@
     {
       "id": "finishing-a-development-branch",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "ship",
         "handoff"
@@ -386,17 +292,9 @@
           "architecture-change",
           "hotfix"
         ],
-        "intent_patterns": [
-          "finish branch",
-          "merge 準備",
-          "完成分支"
-        ],
         "scope_signals": [
           "branch work complete",
           "ready for closure"
-        ],
-        "phase_conditions": [
-          "enter-handoff-or-ship"
         ]
       },
       "load_policy": "on-match",
@@ -405,11 +303,6 @@
     {
       "id": "api-design",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "review",
@@ -420,11 +313,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "API 設計",
-          "endpoint conventions",
-          "REST design"
         ],
         "scope_signals": [
           "api endpoint",
@@ -439,11 +327,6 @@
     {
       "id": "database-design",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "plan",
         "implement",
@@ -455,11 +338,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "資料庫設計",
-          "schema design",
-          "migration safety"
         ],
         "scope_signals": [
           "migration",
@@ -474,11 +352,6 @@
     {
       "id": "frontend-patterns",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "review",
@@ -488,11 +361,6 @@
         "classification": [
           "feature",
           "architecture-change"
-        ],
-        "intent_patterns": [
-          "前端模式",
-          "component patterns",
-          "UI conventions"
         ],
         "scope_signals": [
           "ui component",
@@ -507,11 +375,6 @@
     {
       "id": "auth-security",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "plan",
         "implement",
@@ -525,12 +388,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "安全檢查",
-          "auth check",
-          "security review",
-          "權限檢查"
         ],
         "scope_signals": [
           "login",
@@ -547,11 +404,6 @@
     {
       "id": "doc-lookup",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement",
         "review"
@@ -562,13 +414,6 @@
           "feature",
           "architecture-change",
           "hotfix"
-        ],
-        "intent_patterns": [
-          "查文件",
-          "check docs",
-          "查官方文檔",
-          "read the docs",
-          "看文件再做"
         ],
         "scope_signals": [
           "framework API",
@@ -584,11 +429,6 @@
     {
       "id": "dispatching-parallel-agents",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement"
       ],
@@ -596,11 +436,6 @@
         "classification": [
           "feature",
           "architecture-change"
-        ],
-        "intent_patterns": [
-          "平行開發",
-          "parallel agents",
-          "dispatch subtasks"
         ],
         "scope_signals": [
           "3+ independent subtasks",
@@ -614,11 +449,6 @@
     {
       "id": "subagent-driven-development",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "implement"
       ],
@@ -626,11 +456,6 @@
         "classification": [
           "feature",
           "architecture-change"
-        ],
-        "intent_patterns": [
-          "subagent",
-          "分派 agent",
-          "multi-agent"
         ],
         "scope_signals": [
           "4+ files",
@@ -644,11 +469,6 @@
     {
       "id": "requesting-code-review",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "review",
         "handoff"
@@ -660,18 +480,9 @@
           "architecture-change",
           "hotfix"
         ],
-        "intent_patterns": [
-          "請求 review",
-          "request code review",
-          "送 review",
-          "要 review"
-        ],
         "scope_signals": [
           "changes ready for review",
           "handoff prepared"
-        ],
-        "phase_conditions": [
-          "enter-review-or-handoff"
         ]
       },
       "load_policy": "on-match",
@@ -680,11 +491,6 @@
     {
       "id": "receiving-code-review",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "review"
       ],
@@ -695,18 +501,10 @@
           "architecture-change",
           "hotfix"
         ],
-        "intent_patterns": [
-          "接收 review",
-          "review feedback",
-          "收到 review 意見"
-        ],
         "scope_signals": [
           "review comments",
           "inline feedback",
           "blocking feedback"
-        ],
-        "phase_conditions": [
-          "review-feedback-present"
         ]
       },
       "load_policy": "on-match",
@@ -715,11 +513,6 @@
     {
       "id": "using-git-worktrees",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "bootstrap",
         "implement"
@@ -728,11 +521,6 @@
         "classification": [
           "feature",
           "architecture-change"
-        ],
-        "intent_patterns": [
-          "用 worktree",
-          "git worktree",
-          "worktree 隔離"
         ],
         "scope_signals": [
           "parallel branch isolation",
@@ -746,11 +534,6 @@
     {
       "id": "production-readiness",
       "kind": "skill",
-      "platforms": [
-        "claude",
-        "codex",
-        "antigravity"
-      ],
       "phase_scope": [
         "review",
         "ship"
@@ -760,19 +543,11 @@
           "feature",
           "architecture-change"
         ],
-        "intent_patterns": [
-          "observability check",
-          "production readiness",
-          "error handling audit"
-        ],
         "scope_signals": [
           "error handling",
-          "catch blocks",
           "logging",
-          "crash reporting"
-        ],
-        "phase_conditions": [
-          "enter-review-or-ship"
+          "crash reporting",
+          "observability"
         ]
       },
       "load_policy": "phase-entry",

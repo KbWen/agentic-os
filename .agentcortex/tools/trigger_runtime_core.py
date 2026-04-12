@@ -705,7 +705,9 @@ def validate_skill_manifest_authority(
 def compact_detect_by(entry: dict[str, Any]) -> dict[str, Any]:
     detect_by = entry.get("detect_by", {})
     payload: dict[str, Any] = {}
-    for key in ("classification", "intent_patterns", "scope_signals", "failure_signals", "phase_conditions"):
+    # Compact index strips intent_patterns and phase_conditions
+    # (Intent Router reads full registry; phase_conditions are derivable from phase_scope).
+    for key in ("classification", "scope_signals", "failure_signals"):
         values = detect_by.get(key)
         if values:
             payload[key] = values
@@ -713,10 +715,9 @@ def compact_detect_by(entry: dict[str, Any]) -> dict[str, Any]:
 
 
 def compact_entry(entry: dict[str, Any], content_hash: str | None = None) -> dict[str, Any]:
-    payload = {
+    payload: dict[str, Any] = {
         "id": entry["id"],
         "kind": entry["kind"],
-        "platforms": entry["platforms"],
         "phase_scope": entry["phase_scope"],
         "detect_by": compact_detect_by(entry),
         "load_policy": entry["load_policy"],
@@ -964,7 +965,11 @@ def resolve_runtime_contract(
     if resolved_workflow and not (root / resolved_workflow).is_file():
         blockers.append(f"missing workflow file: {resolved_workflow}")
 
-    index, index_source = load_runtime_index(root, compact_index_rel=compact_index_rel, registry_rel=registry_rel)
+    # Always use the full registry for runtime resolution — the compact index
+    # is intentionally stripped (no intent_patterns / phase_conditions) for
+    # lightweight AI-side probing and must NOT be used for activation decisions.
+    index = load_registry(root, registry_rel)
+    index_source = "registry"
     worklog_text = ""
     if worklog_path:
         candidate = (root / worklog_path).resolve()

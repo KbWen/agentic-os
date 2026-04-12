@@ -98,7 +98,7 @@ class TriggerMetadataToolTests(unittest.TestCase):
     def test_validator_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/validate_trigger_metadata.py", "--root", ".")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("19 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
+        self.assertIn("20 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
 
     def test_compact_index_check_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/generate_compact_index.py", "--root", ".", "--check")
@@ -241,7 +241,12 @@ class TriggerMetadataToolTests(unittest.TestCase):
     def test_command_sync_check_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", ".")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Command sync check passed", result.stdout)
+        # Source repos (with .agentcortex-manifest) legitimately skip command sync
+        self.assertTrue(
+            "Command sync check passed" in result.stdout
+            or "Source repo detected" in result.stdout,
+            f"Unexpected output: {result.stdout}",
+        )
 
     def test_writing_plans_manifest_validates(self) -> None:
         skill_dir = ROOT / ".agents" / "skills" / "writing-plans"

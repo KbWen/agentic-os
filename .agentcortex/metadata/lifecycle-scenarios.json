@@ -43,7 +43,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -52,7 +53,8 @@
         "test-driven-development",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "notes": "Implementation repeats approximate Red-Green-Refactor loops; test repeats cover regression reruns."
     },
@@ -78,7 +80,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -91,7 +94,8 @@
         "doc-lookup",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "notes": "Models a heavier feature where auth and data concerns widen the review and test surface. doc-lookup activates because task touches framework APIs."
     },
@@ -149,7 +153,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -165,7 +170,8 @@
         "using-git-worktrees",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "notes": "Models the broadest lifecycle path with parallelization, platform coordination, and repeated review/test passes. doc-lookup activates because task touches framework APIs across all layers."
     },
@@ -187,7 +193,8 @@
         "verification-before-completion",
         "systematic-debugging",
         "red-team-adversarial",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "triggered_skills": [
         "receiving-code-review",
@@ -195,7 +202,8 @@
         "executing-plans",
         "verification-before-completion",
         "red-team-adversarial",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "production-readiness"
       ],
       "notes": "Models the cost of reviewer feedback cycles where review and implementation phases repeat before shipping."
     }
