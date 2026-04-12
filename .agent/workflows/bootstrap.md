@@ -238,6 +238,8 @@ Every non-`tiny-fix` workflow MUST maintain two header fields in the active Work
 
 This costs < 10 tokens per phase entry and eliminates phase-tracking hallucination.
 
+**Session Caching**: If the agent transitions between phases within the SAME conversation (not resuming from handoff), it MAY trust its in-memory phase state and skip re-reading the Work Log header. The file read is only mandatory when: (a) resuming a Work Log from a prior session, or (b) the agent is uncertain about the current phase. The `Current Phase` header MUST still be written on every phase entry regardless of caching.
+
 ## 3. Expected Output Format
 
 1. Classification (with justification)

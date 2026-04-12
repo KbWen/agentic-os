@@ -20,7 +20,7 @@ AI MUST self-enforce this phase order. Users may trigger transitions via slash c
 - `IMPLEMENTING` --(review pass)--> `REVIEWED`
 - `REVIEWED` --(test pass)--> `TESTED`
 - `TESTED` --(ship executed)--> `SHIPPED`
-- `IMPLEMENTING` --(evidence provided, quick-win/hotfix only)--> `SHIPPED`  [fast-path: skip REVIEWED/TESTED states when classification permits]
+- `IMPLEMENTING` --(evidence provided, quick-win only)--> `SHIPPED`  [fast-path: skip REVIEWED/TESTED states; quick-win only — hotfix MUST go through REVIEWED + TESTED]
 
 ## Spec Gate (Hard)
 
@@ -31,6 +31,14 @@ AI MUST self-enforce this phase order. Users may trigger transitions via slash c
 ## Read-Only Actions (No State Change)
 
 - Listing help, available commands, generating test skeletons, producing handoff summaries
+
+## Classification Escalation Rules
+
+These rules override the initial classification. AI MUST apply them during `/bootstrap` and re-check during `/implement` Mid-Execution Guard.
+
+- **Auth Escalation**: If a `quick-win` touches authentication, authorization, session management, or token handling → escalate to `hotfix` minimum. Hotfix requires REVIEWED + TESTED gates.
+- **Governance File Escalation**: If a `tiny-fix` modifies `.agent/rules/*`, `.agent/config.yaml`, or `AGENTS.md` → escalate to `quick-win` minimum.
+- **Scope Escalation**: If actual changes exceed classification threshold (e.g., `quick-win` touching >2 modules) → recommend rollback to `CLASSIFIED` and re-classify at higher tier.
 
 ## Hard Gates
 

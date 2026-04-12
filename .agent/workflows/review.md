@@ -9,6 +9,10 @@ Conduct strict review of current changes.
 
 **Phase Verification** (per bootstrap §2b): Read `Current Phase` from Work Log header. Verify transition to `review` is legal. If illegal, STOP. Otherwise update `Current Phase: review`. If a new commit was created since the last `Checkpoint SHA`, SHOULD refresh it.
 
+## Work Log Compaction Check
+
+Before review, check the active Work Log size. If it exceeds compaction thresholds (see `.agent/config.yaml` §worklog), compact per `/handoff` §6 BEFORE proceeding. This prevents bloated logs from inflating token costs during the review phase.
+
 ## Skill-Aware Review (Pre-Check)
 
 Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading) for all skills listing `/review` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's **"During /review:"** checklist items as additional review criteria. Explicitly state: "Reviewing with [skill-name] checklist applied."
