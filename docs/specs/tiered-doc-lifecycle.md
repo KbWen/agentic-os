@@ -112,6 +112,13 @@ This spec is the umbrella design for backlog items #1–#13. Individual items ca
 - **Independent quick-wins** (no dependency on #1): #2 (Global Lessons cap), #4 (Spec Index cap), #5 (validate WARN→FAIL), #6 (_raw-intake cleanup), #9 (dead reference)
 - **Depends on #1 config**: #3 (archive GC), #7 (L2 archival), #8 (backlog archive), #10 (active WL FAIL), #11 (shipped spec filtering), #12 (validate checks), #13 (LLM summarization)
 
+## Domain Decisions
+
+- [DECISION] Adopt 4-tier lifecycle (active/warm/cold/frozen-summary) for process artifacts, modeled after LSM-tree compaction patterns.
+- [DECISION] Pinned documents (governance files, living docs) are exempt from all lifecycle transitions.
+- [CONSTRAINT] All tier transitions must preserve git history — delete means working copy only.
+- [DECISION] GC sweep is event-driven (triggered by /ship), not cron-based — agents have no background process capability.
+
 ## File Relationship
 
 INDEPENDENT

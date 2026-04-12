@@ -1162,7 +1162,7 @@ check_contains_literal \
 # Document lifecycle bloat checks
 GLOBAL_LESSONS_MAX="${GLOBAL_LESSONS_MAX:-20}"
 if [[ -f "$CURRENT_STATE" ]]; then
-  lessons_count="$(grep -c '^\- \[Category:' "$CURRENT_STATE" 2>/dev/null || echo 0)"
+  lessons_count="$(grep -c '^\- \[Category:' "$CURRENT_STATE" 2>/dev/null || true)"
   if [[ "$lessons_count" -gt "$GLOBAL_LESSONS_MAX" ]]; then
     record_result WARN "Global Lessons exceeds cap (${lessons_count} > ${GLOBAL_LESSONS_MAX}); run /retro to archive LOW-severity entries"
   elif [[ "$lessons_count" -gt 0 ]]; then
