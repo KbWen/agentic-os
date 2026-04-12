@@ -185,10 +185,10 @@ IS_UPDATE=false
 
 if [ -f "$MANIFEST_FILE" ]; then
     IS_UPDATE=true
-    echo "Updating AgentCortex v${ACX_VERSION} (${SOURCE_COMMIT}) in $TARGET..."
+    echo "Updating Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) in $TARGET..."
     clean_acx_incoming
 else
-    echo "Installing AgentCortex v${ACX_VERSION} (${SOURCE_COMMIT}) to $TARGET..."
+    echo "Installing Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) to $TARGET..."
 fi
 
 # --- Migrate from legacy paths (v5.3 → v6) ---
@@ -207,11 +207,11 @@ migrate_if_exists() {
     fi
 }
 
-# Migration safety: only trigger if we find AgentCortex-specific markers.
+# Migration safety: only trigger if we find Agentic OS-specific markers.
 # A bare agentcortex/ dir is unambiguously ours. But docs/adr/ or docs/specs/
 # could belong to the downstream project. We only migrate docs/ subdirs if
 # there is ALSO an old agentcortex/ dir or a prior .agentcortex-manifest
-# (proving this repo had a previous AgentCortex install).
+# (proving this repo had a previous Agentic OS install).
 _acx_legacy_confirmed=false
 if [ -d "$TARGET/agentcortex" ] || [ -f "$TARGET/.agentcortex-manifest" ]; then
     _acx_legacy_confirmed=true
@@ -462,12 +462,12 @@ deploy_file "$REPO_ROOT/.github/PULL_REQUEST_TEMPLATE.md" ".github/PULL_REQUEST_
 # ============================================================
 
 GITIGNORE="$TARGET/.gitignore"
-DOWNSTREAM_IGNORE_START="# AgentCortex Template - Downstream Ignore Defaults"
+DOWNSTREAM_IGNORE_START="# Agentic OS Template - Downstream Ignore Defaults"
 LEGACY_IGNORE_START="# AI Brain OS - Agent System & Local Context"
 
 write_downstream_ignore_block() {
     cat <<'EOT'
-# AgentCortex Template - Downstream Ignore Defaults
+# Agentic OS Template - Downstream Ignore Defaults
 
 # Runtime State (work logs are session-local; private is never committed)
 .agentcortex/context/work/*.md
@@ -487,7 +487,7 @@ write_downstream_ignore_block() {
 .cursor/
 .antigravity/scratch/
 
-# End AgentCortex Template - Downstream Ignore Defaults
+# End Agentic OS Template - Downstream Ignore Defaults
 EOT
 }
 
@@ -563,9 +563,9 @@ strip_managed_ignore_blocks() {
         managed["tools/audit_ai_paths.sh"] = 1
     }
 
-    /^# AgentCortex Template - Downstream Ignore Defaults$/ { skip = 1; next }
+    /^# Agentic OS Template - Downstream Ignore Defaults$/ { skip = 1; next }
     /^# AI Brain OS - Agent System & Local Context$/ { skip = 1; next }
-    /^# End AgentCortex Template - Downstream Ignore Defaults$/ { skip = 0; next }
+    /^# End Agentic OS Template - Downstream Ignore Defaults$/ { skip = 0; next }
 
     skip {
         if ($0 == "" || ($0 in managed) || $0 ~ /^#/) { next }
@@ -588,7 +588,7 @@ TMP_NORMALIZED_GITIGNORE="$(mktemp)"
 if grep -Eq "^(${DOWNSTREAM_IGNORE_START}|${LEGACY_IGNORE_START})$" "$GITIGNORE"; then
     echo "Replacing managed downstream ignore defaults in .gitignore..."
 else
-    echo "Adding AgentCortex downstream ignore defaults to .gitignore..."
+    echo "Adding Agentic OS downstream ignore defaults to .gitignore..."
 fi
 
 strip_managed_ignore_blocks "$GITIGNORE" "$TMP_STRIPPED_GITIGNORE"
@@ -653,7 +653,7 @@ if [ -z "$MANIFEST_SOURCE_REPO" ]; then
 fi
 
 {
-    echo "# AgentCortex Deploy Manifest"
+    echo "# Agentic OS Deploy Manifest"
     echo "# DO NOT EDIT — regenerated on each deploy"
     echo "version: ${ACX_VERSION}"
     echo "source_commit: ${SOURCE_COMMIT}"
@@ -671,7 +671,7 @@ fi
 
 TOTAL_DEPLOYED="$(grep -c 'sha256:' "$DEPLOYED_FILES_TMP" 2>/dev/null || echo 0)"
 echo ""
-echo "AgentCortex v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
+echo "Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
 echo ""
 if $IS_UPDATE; then
     echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
@@ -689,7 +689,7 @@ echo "   .antigravity/rules.md  -> Google Antigravity"
 echo "   codex/rules/           -> Codex Web/App"
 echo "   CLAUDE.md              -> Claude (manual entry)"
 echo "   AGENTS.md              -> Cross-platform entry"
-echo "   .agentcortex/bin/      -> Canonical AgentCortex implementations"
+echo "   .agentcortex/bin/      -> Canonical Agentic OS implementations"
 echo ""
 echo "Git:"
 echo "   Framework files are git-tracked (available in worktrees and branches)."
@@ -701,5 +701,5 @@ echo "Next steps:"
 echo "   1. Stage framework files for git tracking:"
 echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .claude/ .codex/ codex/ .antigravity/ .github/"
 echo "   2. Tell AI: 'Please run /bootstrap' to start"
-echo "   3. AgentCortex reference docs are under .agentcortex/docs/"
+echo "   3. Agentic OS reference docs are under .agentcortex/docs/"
 echo ""

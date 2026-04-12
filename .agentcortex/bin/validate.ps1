@@ -587,9 +587,9 @@ Test-ContainsLiteral -Path $canonicalDeploySh -Pattern '.agentcortex/bin/' -Succ
 $deployBlock = New-Object System.Collections.Generic.List[string]
 $capturing = $false
 foreach ($line in Get-Content -Path $canonicalDeploySh) {
-    if ($line -eq '# AgentCortex Template - Downstream Ignore Defaults') { $capturing = $true }
+    if ($line -eq '# Agentic OS Template - Downstream Ignore Defaults') { $capturing = $true }
     if ($capturing) { $deployBlock.Add($line) }
-    if ($capturing -and $line -eq '# End AgentCortex Template - Downstream Ignore Defaults') { break }
+    if ($capturing -and $line -eq '# End Agentic OS Template - Downstream Ignore Defaults') { break }
 }
 if ($deployBlock.Count -eq 0) {
     Add-Result -Level 'FAIL' -Message 'deploy ignore block missing from deploy script'
@@ -597,7 +597,7 @@ if ($deployBlock.Count -eq 0) {
 else {
     $deployBlockErrors = 0
     foreach ($pattern in @(
-        '# AgentCortex Template - Downstream Ignore Defaults',
+        '# Agentic OS Template - Downstream Ignore Defaults',
         '.agentcortex/context/work/*.md',
         '.agentcortex/context/private/',
         '.agentcortex/context/.guard_receipt.json',
@@ -609,7 +609,7 @@ else {
         '.claude-chat/',
         '.cursor/',
         '.antigravity/scratch/',
-        '# End AgentCortex Template - Downstream Ignore Defaults'
+        '# End Agentic OS Template - Downstream Ignore Defaults'
     )) {
         if ($deployBlock -notcontains $pattern) {
             Write-Output "  deploy ignore block missing required pattern: $pattern"
@@ -655,7 +655,7 @@ $readmeEn = Join-NormalPath $root 'README.md'
 if (Test-Path -Path $readmeEn -PathType Leaf) {
     $params = @{
         Path = $readmeEn
-        Pattern = 'Why AgentCortex?'
+        Pattern = 'Why Agentic OS?'
         SuccessMessage = 'README.md encoding looks healthy'
         FailureMessage = 'README.md appears mojibaked or re-encoded'
     }
@@ -1005,8 +1005,8 @@ Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'commands.md') -Patter
 Write-Output ''
 Write-Output "Summary: pass=$($script:PassCount) warn=$($script:WarnCount) fail=$($script:FailCount) skip=$($script:SkipCount)"
 if ($script:FailCount -gt 0) {
-    Write-Output 'AgentCortex integrity check failed'
+    Write-Output 'Agentic OS integrity check failed'
     exit 1
 }
 
-Write-Output 'AgentCortex integrity check passed'
+Write-Output 'Agentic OS integrity check passed'

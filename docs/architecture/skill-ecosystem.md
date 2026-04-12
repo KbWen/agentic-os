@@ -7,12 +7,12 @@ last_updated: 2026-04-11
 
 # Skill Ecosystem — Layer 1 Synthesis
 
-> This is the current strategic direction for AgentCortex skill evolution.
+> This is the current strategic direction for Agentic OS skill evolution.
 > Decision history is in `docs/architecture/skill-ecosystem.log.md` (L2 — append-only).
 
 ## Current Direction
 
-AgentCortex should evolve from a repo that merely ships built-in skills into a **skill platform** that can safely absorb:
+Agentic OS should evolve from a repo that merely ships built-in skills into a **skill platform** that can safely absorb:
 
 - first-party skills maintained by the core project
 - third-party skills installed from external repositories or curated indexes
@@ -27,7 +27,7 @@ The skill-ecosystem direction is one half of a broader platform strategy.
 - `docs/architecture/skill-ecosystem.md` defines the **tooling/control plane**: what skills are, how they are resolved, what they can do, and how they are distributed safely.
 - `docs/architecture/product-construction.md` defines the **product authority/quality plane**: what the agent should build, how quality is described, and how delivery is verified across UI, API, security, and interactive product work.
 
-Both tracks are required if AgentCortex is meant to help agents build complete products rather than only invoke isolated tools correctly.
+Both tracks are required if Agentic OS is meant to help agents build complete products rather than only invoke isolated tools correctly.
 
 ## Strategic Principles
 

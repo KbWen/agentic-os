@@ -649,9 +649,9 @@ check_contains_literal \
   "deploy script missing canonical namespace deployment path"
 
 DEPLOY_IGNORE_BLOCK="$(awk '
-/^# AgentCortex Template - Downstream Ignore Defaults$/ { capture = 1 }
+/^# Agentic OS Template - Downstream Ignore Defaults$/ { capture = 1 }
 capture { print }
-/^# End AgentCortex Template - Downstream Ignore Defaults$/ {
+/^# End Agentic OS Template - Downstream Ignore Defaults$/ {
   if (capture) {
     exit
   }
@@ -663,7 +663,7 @@ if [[ -z "$DEPLOY_IGNORE_BLOCK" ]]; then
 else
   missing_patterns=0
   for pattern in \
-    '# AgentCortex Template - Downstream Ignore Defaults' \
+    '# Agentic OS Template - Downstream Ignore Defaults' \
     '.agentcortex/context/work/*.md' \
     '.agentcortex/context/private/' \
     '.agentcortex/context/.guard_receipt.json' \
@@ -675,7 +675,7 @@ else
     '.claude-chat/' \
     '.cursor/' \
     '.antigravity/scratch/' \
-    '# End AgentCortex Template - Downstream Ignore Defaults'; do
+    '# End Agentic OS Template - Downstream Ignore Defaults'; do
     if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -x -F -q -- "$pattern"; then
       printf '  deploy ignore block missing required pattern: %s\n' "$pattern"
       missing_patterns=$((missing_patterns + 1))
@@ -721,7 +721,7 @@ fi
 if [[ -f "$ROOT/README.md" ]]; then
   check_contains_literal \
     "$ROOT/README.md" \
-    'Why AgentCortex?' \
+    'Why Agentic OS?' \
     "README.md encoding looks healthy" \
     "README.md appears mojibaked or re-encoded"
 fi
@@ -1137,8 +1137,8 @@ check_contains_literal \
 echo ""
 printf 'Summary: pass=%s warn=%s fail=%s skip=%s\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
-  echo "AgentCortex integrity check failed"
+  echo "Agentic OS integrity check failed"
   exit 1
 fi
 
-echo "AgentCortex integrity check passed"
+echo "Agentic OS integrity check passed"

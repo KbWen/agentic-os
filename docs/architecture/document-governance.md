@@ -12,7 +12,7 @@ last_updated: 2026-03-29
 
 ## Current Design
 
-AgentCortex uses a **two-layer Domain Doc architecture** to separate "what to read" from "what to trace":
+Agentic OS uses a **two-layer Domain Doc architecture** to separate "what to read" from "what to trace":
 
 - **L1 Synthesis** (`docs/architecture/<domain>.md`): Current effective design principles. Hard cap: 150 lines (configurable via `.agent/config.yaml` `domain_doc.max_synthesis_lines`). This is what `/bootstrap` reads.
 - **L2 Decision Log** (`docs/architecture/<domain>.log.md`): Append-only chronological entry blocks. Never deleted, only appended. Agents read this only for traceability queries.

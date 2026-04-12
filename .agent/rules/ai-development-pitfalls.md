@@ -1,6 +1,6 @@
 # AI-Assisted Development Pitfalls v1.1
 
-> **Purpose**: A reference catalogue of common failure modes in AI-assisted development (Claude Code, Cursor, Copilot, Devin, etc.) — root causes, symptoms, and mitigations — for use by AgentCortex and its downstream projects.
+> **Purpose**: A reference catalogue of common failure modes in AI-assisted development (Claude Code, Cursor, Copilot, Devin, etc.) — root causes, symptoms, and mitigations — for use by Agentic OS and its downstream projects.
 >
 > **Last updated**: 2026-03-23
 > **Sources**: Hacker News, Reddit, IEEE Spectrum, developer blogs, CVE database, academic research
@@ -399,5 +399,5 @@ An attacker only needs to embed instructions anywhere the AI agent will read —
 
 ---
 
-*Last updated: 2026-03-23 | Source: AgentCortex Research Module*
+*Last updated: 2026-03-23 | Source: Agentic OS Research Module*
 *Version: v1.1 — English rewrite, names anonymised, Chinese summary added*

@@ -1,6 +1,6 @@
-# Contributing to AgentCortex
+# Contributing to Agentic OS
 
-Thank you for your interest in **AgentCortex**! This project is designed as an "Agentic-First" ecosystem. Whether you are a human developer or an AI Agent, please follow these guidelines to maintain project integrity and token efficiency.
+Thank you for your interest in **Agentic OS**! This project is designed as an "Agentic-First" ecosystem. Whether you are a human developer or an AI Agent, please follow these guidelines to maintain project integrity and token efficiency.
 
 ## 🤖 For AI Agents & Subagents
 

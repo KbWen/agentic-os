@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free YAML/JSON loader for AgentCortex trigger metadata.
+"""Dependency-free YAML/JSON loader for Agentic OS trigger metadata.
 
 Loading priority:
   1. PyYAML (yaml.safe_load) when installed — full YAML support.
@@ -50,7 +50,7 @@ def _parse_scalar(value: str) -> Any:
 
 
 def _parse_yaml_subset(text: str) -> dict[str, Any]:
-    """Parse the YAML subset used by AgentCortex metadata files.
+    """Parse the YAML subset used by Agentic OS metadata files.
 
     Strategy: two-pass approach.
       Pass 1: Collect (indent, raw_line) tuples, stripping comments/blanks.
@@ -258,7 +258,7 @@ def _parse_yaml_subset(text: str) -> dict[str, Any]:
 def load_data(path: Path) -> dict[str, Any]:
     """Load a YAML or JSON file with dependency-free fallback.
 
-    This is the SINGLE authoritative loader for all AgentCortex metadata.
+    This is the SINGLE authoritative loader for all Agentic OS metadata.
     All tools and tests should import and use this function.
     """
     text = path.read_text(encoding="utf-8")

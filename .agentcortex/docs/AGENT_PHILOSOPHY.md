@@ -2,7 +2,7 @@
 
 ## Non-Negotiable Principles
 
-These are the core tenets of AgentCortex. Every AI agent — regardless of model, platform, or session — must internalize these before doing any work. They are not guidelines; they are the foundation.
+These are the core tenets of Agentic OS. Every AI agent — regardless of model, platform, or session — must internalize these before doing any work. They are not guidelines; they are the foundation.
 
 ### P1. AI Drives, Human Assists
 
@@ -30,7 +30,7 @@ Every design decision must consider token cost. Context budget guards limit file
 
 ### P7. Cross-Model Compliance
 
-AgentCortex must work identically regardless of which AI model executes it — Claude, Gemini, GPT, Codex. All instructions are written in plain, model-agnostic language. No model-specific features are assumed. English is the canonical language for maximum cross-model compatibility.
+Agentic OS must work identically regardless of which AI model executes it — Claude, Gemini, GPT, Codex. All instructions are written in plain, model-agnostic language. No model-specific features are assumed. English is the canonical language for maximum cross-model compatibility.
 
 ### P8. Documentation Must Be Actionable
 

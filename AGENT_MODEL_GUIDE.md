@@ -1,4 +1,4 @@
-# AgentCortex v3.5.3 Model Selection & Decision Guide (Human-Only)
+# Agentic OS v3.5.3 Model Selection & Decision Guide (Human-Only)
 
 This guide is for **You (Human)**. It will not be loaded into the AI prompt. Its purpose is to save tokens and maximize development efficiency.
 

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide adds a minimal Claude-compatible entry while keeping AgentCortex governance canonical in:
+This guide adds a minimal Claude-compatible entry while keeping Agentic OS governance canonical in:
 
 - `AGENTS.md`
 - `.agent/rules/*.md`

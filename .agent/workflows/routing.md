@@ -136,7 +136,7 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 2. **Optional module ambiguity**: A phrase like "用 claude" requires clear delegation intent. Ambiguous phrasing (e.g., "can Claude do this?") does NOT trigger `/claude-cli`. Require explicit delegation request before routing to any optional module.
 
-3. **tiny-fix vs quick-win escalation**: Modifying `docs/specs/`, `docs/architecture/`, any file with `status: frozen`, `AGENTS.md`, `.agent/rules/*.md`, or `.agent/config.yaml` always escalates to quick-win minimum — even if fewer than 3 files are touched. (Authoritative rule in AGENTS.md §AgentCortex Runtime v5 rule 2.)
+3. **tiny-fix vs quick-win escalation**: Modifying `docs/specs/`, `docs/architecture/`, any file with `status: frozen`, `AGENTS.md`, `.agent/rules/*.md`, or `.agent/config.yaml` always escalates to quick-win minimum — even if fewer than 3 files are touched. (Authoritative rule in AGENTS.md §Agentic OS Runtime v5 rule 2.)
 
 4. **Skill vs workflow**: If a user's request matches both a skill phrase (§3) and a workflow route (§1), route to the workflow phase first and activate the skill within that phase. Skills do not replace phase routing.
 
@@ -146,7 +146,7 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ## 5. Command Discovery Notes
 
-All commands are dispatched per `AGENTS.md §AgentCortex Runtime v5` and execute canonical workflows from `.agent/workflows/<command>.md`. For the Claude platform, dispatcher stubs live in `.claude/commands/<command>.md`.
+All commands are dispatched per `AGENTS.md §Agentic OS Runtime v5` and execute canonical workflows from `.agent/workflows/<command>.md`. For the Claude platform, dispatcher stubs live in `.claude/commands/<command>.md`.
 
 > **Note**: `.agent/workflows/commands.md` is a compatibility alias. This routing index is the canonical source for command discovery.
 

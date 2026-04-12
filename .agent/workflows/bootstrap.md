@@ -61,7 +61,7 @@ If the task is classified as `feature` or `architecture-change`, check:
 ## 1. Initialization & Required Reading
 
 1. READ `.agentcortex/context/current_state.md` (SSoT).
-   - **Legacy Detection**: If `.agentcortex/context/current_state.md` is missing but `docs/context.md` or an `agent/` directory exists, AI MUST notify the user: "⚠️ Legacy AgentCortex structure detected. Recommend running the Migration Path from `.agentcortex/docs/guides/migration.md`."
+   - **Legacy Detection**: If `.agentcortex/context/current_state.md` is missing but `docs/context.md` or an `agent/` directory exists, AI MUST notify the user: "⚠️ Legacy Agentic OS structure detected. Recommend running the Migration Path from `.agentcortex/docs/guides/migration.md`."
    - **Cross-Branch Awareness**: Check "Branch List" for recently closed branches.
    - If current task overlaps with a recently merged branch's module, check the archive index for lightweight retrieval: prefer `.agentcortex/context/archive/INDEX.jsonl` (structured, deterministic query) if it exists; fall back to `.agentcortex/context/archive/INDEX.md` otherwise. Only open a specific archived log if its module/pattern entry matches your current task's target files. Do NOT scan all archive files.
    - If bootstrap must repair or refresh SSoT metadata (for example, stale Spec Index recovery), the write MUST go through `.agentcortex/tools/guard_context_write.py`.

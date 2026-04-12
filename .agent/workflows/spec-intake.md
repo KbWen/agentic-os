@@ -1,5 +1,5 @@
 ---
-description: Workflow for importing external specs (from other LLMs, humans, or documents) into the AgentCortex governance system.
+description: Workflow for importing external specs (from other LLMs, humans, or documents) into the Agentic OS governance system.
 ---
 # /spec-intake
 

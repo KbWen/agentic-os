@@ -1,6 +1,6 @@
-# AgentCortex Guardrails Audit & Testing Guide (Audit Playbook)
+# Agentic OS Guardrails Audit & Testing Guide (Audit Playbook)
 
-This guide allows users (or assigned agents like Gemini Flash) to verify if **AgentCortex** successfully implements guardrails through specific interaction scenarios.
+This guide allows users (or assigned agents like Gemini Flash) to verify if **Agentic OS** successfully implements guardrails through specific interaction scenarios.
 
 > **為什麼不寫成自動化 Shell Script？**
 > 「隱形助手 (.gitignore)」可以透過腳本驗證，但「越級執行防禦」與「模型升級建議」依賴於大型語言模型（LLM）對 Prompt 的上下文理解與拒絕回覆（Refusal）機制。這屬於 **Prompt/Behavioral Testing**，目前最可靠的驗證方式是透過聊天的「互動式腳本 (Interactive Playbook)」手動或讓 AI 代理執行。

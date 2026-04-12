@@ -247,12 +247,12 @@ When locating code, files, or definitions:
 
 ### 9.4 Namespace Isolation (Downstream Safety)
 
-AgentCortex deploys workflows and skills into downstream projects. Those projects may have their own custom commands, skills, or automation — including inside `.agent/` directories. The Intent Router must respect boundaries:
+Agentic OS deploys workflows and skills into downstream projects. Those projects may have their own custom commands, skills, or automation — including inside `.agent/` directories. The Intent Router must respect boundaries:
 
-1. **Framework-managed vs user-owned**: The distinction is NOT by directory. Files listed in `.agentcortex-manifest` are framework-managed. Everything else — even files inside `.agent/workflows/` or `.agent/skills/` — belongs to the project owner. Users are free to add their own workflows and skills alongside AgentCortex's.
-2. **Collision resolution**: If a user-created command name collides with an AgentCortex workflow (e.g., both have a `/deploy`), the **user's command takes priority**. AgentCortex workflows are infrastructure; user commands are application-level.
-3. **Natural language routing**: When AI receives natural language that could map to either an AgentCortex phase or a user-defined command, AI MUST check: "Is the user talking about the AgentCortex governance process, or about their project-specific action?" If ambiguous, ask.
-4. **Governance still applies**: User-defined workflows and skills are not exempt from AgentCortex governance. Phase order, gates, and evidence requirements still apply — but the user's custom logic drives the implementation, not AgentCortex's.
+1. **Framework-managed vs user-owned**: The distinction is NOT by directory. Files listed in `.agentcortex-manifest` are framework-managed. Everything else — even files inside `.agent/workflows/` or `.agent/skills/` — belongs to the project owner. Users are free to add their own workflows and skills alongside Agentic OS's.
+2. **Collision resolution**: If a user-created command name collides with an Agentic OS workflow (e.g., both have a `/deploy`), the **user's command takes priority**. Agentic OS workflows are infrastructure; user commands are application-level.
+3. **Natural language routing**: When AI receives natural language that could map to either an Agentic OS phase or a user-defined command, AI MUST check: "Is the user talking about the Agentic OS governance process, or about their project-specific action?" If ambiguous, ask.
+4. **Governance still applies**: User-defined workflows and skills are not exempt from Agentic OS governance. Phase order, gates, and evidence requirements still apply — but the user's custom logic drives the implementation, not Agentic OS's.
 
 ### 9.5 Core Principle
 >

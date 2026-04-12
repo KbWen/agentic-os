@@ -9,8 +9,8 @@ if [[ -f "$CANONICAL" ]]; then
   exec bash "$CANONICAL" "$@"
 fi
 
-# --- Bootstrap: canonical deploy not found (fresh clone with gitignored AgentCortex) ---
-echo "AgentCortex framework not found locally — bootstrapping from remote..."
+# --- Bootstrap: canonical deploy not found (fresh clone with gitignored Agentic OS) ---
+echo "Agentic OS framework not found locally — bootstrapping from remote..."
 
 ACX_SOURCE="${ACX_SOURCE:-}"
 ACX_CACHE="$SCRIPT_DIR/.agentcortex-src"
@@ -25,8 +25,8 @@ if [[ -z "$ACX_SOURCE" ]]; then
     echo "" >&2
     echo "Cannot bootstrap: no ACX_SOURCE configured and no source_repo in manifest." >&2
     echo "" >&2
-    echo "Fix: set ACX_SOURCE to the AgentCortex git URL, e.g.:" >&2
-    echo "  ACX_SOURCE=https://github.com/KbWen/AgentCortex.git ./deploy_brain.sh" >&2
+    echo "Fix: set ACX_SOURCE to the Agentic OS git URL, e.g.:" >&2
+    echo "  ACX_SOURCE=https://github.com/KbWen/Agentic OS.git ./deploy_brain.sh" >&2
     echo "" >&2
     exit 1
 fi
@@ -37,10 +37,10 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 
 if [[ -d "$ACX_CACHE/.git" ]]; then
-    echo "Updating cached AgentCortex source..."
+    echo "Updating cached Agentic OS source..."
     git -C "$ACX_CACHE" pull --quiet
 else
-    echo "Cloning AgentCortex from $ACX_SOURCE..."
+    echo "Cloning Agentic OS from $ACX_SOURCE..."
     git clone --quiet "$ACX_SOURCE" "$ACX_CACHE"
 fi
 

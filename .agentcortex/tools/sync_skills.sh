@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AgentCortex Skill Synchronization Script
+# Agentic OS Skill Synchronization Script
 # Purpose: Sync skill metadata from .agents/skills/ to .agent/skills/
 # This ensures cross-platform compatibility (handling Windows symlink issues)
 # while keeping metadata in sync.

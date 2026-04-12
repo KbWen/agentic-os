@@ -1,6 +1,6 @@
 # Project Examples (Node.js / Python)
 
-This document provides ready-to-copy "Real Project Integration" examples to help teams use the same AgentCortex process across Google Antigravity, Codex Web, and Codex App.
+This document provides ready-to-copy "Real Project Integration" examples to help teams use the same Agentic OS process across Google Antigravity, Codex Web, and Codex App.
 
 ## Example A: Node.js API Project
 

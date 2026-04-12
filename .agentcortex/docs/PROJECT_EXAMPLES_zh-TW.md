@@ -1,6 +1,6 @@
 # 導入範例（Node.js / Python）
 
-本文件提供可直接複製的「真實專案導入」範例，幫助團隊在 Google Antigravity、Codex Web、Codex App 使用同一套 AgentCortex 流程。
+本文件提供可直接複製的「真實專案導入」範例，幫助團隊在 Google Antigravity、Codex Web、Codex App 使用同一套 Agentic OS 流程。
 
 ## 範例 A：Node.js API 專案
 

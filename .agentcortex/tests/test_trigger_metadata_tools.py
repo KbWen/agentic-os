@@ -81,7 +81,7 @@ entry_ref: SKILL.md
 capabilities:
 {capability_lines}
 origin:
-  publisher: AgentCortex
+  publisher: Agentic OS
   channel: first-party
 content_digest: sha256:PLACEHOLDER
 lifecycle:

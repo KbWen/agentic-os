@@ -1,13 +1,13 @@
 ---
 name: codex-cli
-description: Run a task via Codex CLI while enforcing AgentCortex governance rules automatically.
+description: Run a task via Codex CLI while enforcing Agentic OS governance rules automatically.
 tasks:
   - codex-cli
 ---
 
 # /codex-cli
 
-Dispatch a task to OpenAI Codex CLI while ensuring AgentCortex governance compliance.
+Dispatch a task to OpenAI Codex CLI while ensuring Agentic OS governance compliance.
 
 > This workflow wraps `codex` CLI calls with automatic Work Log creation, classification, and evidence collection.
 
@@ -56,7 +56,7 @@ codex exec --full-auto -C <project-root> "<governance-wrapped prompt>"
 ### Governance-Wrapped Prompt Template
 
 ```text
-You are working in a project governed by AgentCortex.
+You are working in a project governed by Agentic OS.
 RULES:
 - Do NOT modify files outside the target list: [target files].
 - Do NOT refactor code that was not requested.
@@ -128,7 +128,7 @@ AI (internal):
   → AI determines constraints: must be backward-compatible (no locale = current behavior).
 
   Running: codex -a untrusted -s workspace-write "
-  AgentCortex rules: only modify utils/format.ts. No refactoring.
+  Agentic OS rules: only modify utils/format.ts. No refactoring.
   Task: Add optional locale parameter to formatDate function.
   Constraint: Default behavior unchanged when locale is not provided.
   "
@@ -169,6 +169,6 @@ Use `codex exec` when:
 
 ## 7. Guardrails Integration
 
-- All AgentCortex rules in `engineering_guardrails.md` apply to Codex-generated code.
+- All Agentic OS rules in `engineering_guardrails.md` apply to Codex-generated code.
 - Codex is treated as a **Junior Tool** — its output ALWAYS gets AI review before being accepted.
 - The AI is the governance layer; Codex is the execution layer.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify reviewable AgentCortex work logs and emit CI-friendly findings."""
+"""Verify reviewable Agentic OS work logs and emit CI-friendly findings."""
 
 from __future__ import annotations
 

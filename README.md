@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/AgentCortex-v5.4-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="AgentCortex v5.4"/>
+  <img src="https://img.shields.io/badge/Agentic OS-v1.0-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.0"/>
 </p>
 
-<h1 align="center">AgentCortex</h1>
+<h1 align="center">Agentic OS</h1>
 
 <p align="center">
   <strong>The governance-first operating system for AI coding agents.</strong><br/>
@@ -38,7 +38,7 @@ AI coding agents are powerful but undisciplined. Without structure, they:
 
 ## The Solution
 
-**AgentCortex** is a drop-in governance framework that makes any AI agent follow professional engineering workflows. Install it into your project, and your AI agents gain:
+**Agentic OS** is a drop-in governance framework that makes any AI agent follow professional engineering workflows. Install it into your project, and your AI agents gain:
 
 ```
    Intent          Gate           Workflow         Evidence        Ship
@@ -159,7 +159,7 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 ### 1. Install
 
 ```bash
-# Clone AgentCortex
+# Clone Agentic OS
 git clone https://github.com/KbWen/agentic-os.git
 
 # Deploy into your project
@@ -283,7 +283,7 @@ your-project/
 
 ## Philosophy
 
-AgentCortex is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PHILOSOPHY.md):
+Agentic OS is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PHILOSOPHY.md):
 
 | # | Principle | Meaning |
 |:---|:---|:---|
@@ -310,7 +310,7 @@ AgentCortex is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_P
 | [Project Examples](.agentcortex/docs/PROJECT_EXAMPLES.md) | Node.js & Python examples |
 | [Token Governance](.agentcortex/docs/guides/token-governance.md) | Token optimization strategies |
 | [Context Budget](.agentcortex/docs/guides/context-budget.md) | Context window management |
-| [Migration Guide](.agentcortex/docs/guides/migration.md) | Upgrade to v5.4+ |
+| [Migration Guide](.agentcortex/docs/guides/migration.md) | Upgrade to v1.0+ |
 | [Codex Platform Guide](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) | Codex Web/App adaptation |
 | [Claude Platform Guide](.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md) | Claude Code integration |
 | [Nonlinear Scenarios](.agentcortex/docs/NONLINEAR_SCENARIOS.md) | Recovery from interrupted sessions |

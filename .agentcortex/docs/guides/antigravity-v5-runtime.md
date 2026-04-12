@@ -1,4 +1,4 @@
-# AgentCortex Runtime v5
+# Agentic OS Runtime v5
 
 ## Antigravity Hard-Path Enforcement Overlay
 
@@ -8,7 +8,7 @@ Scope: **Antigravity environments** (token-generation agents where shell exit co
 
 ### Why v5 exists
 
-AgentCortex v3.5+ already enforces strong process gates via workflows:
+Agentic OS v3.5+ already enforces strong process gates via workflows:
 
 * `/bootstrap` reads SSoT + Work Log, locks classification, and only allows upward changes via rollback + re-entry
 * `/plan` is “NO CODING YET” and requires spec for feature/architecture-change
@@ -286,7 +286,7 @@ If “tiny-fix” touches logic or multiple files, escalate to `hotfix`.
 
 ## 7) Evidence discipline remains canonical
 
-AgentCortex already enforces “NO EVIDENCE = NO COMPLETION” at the AGENTS.md level and in shipping.
+Agentic OS already enforces “NO EVIDENCE = NO COMPLETION” at the AGENTS.md level and in shipping.
 Runtime v5 clarifies the minimum:
 
 * At least **one** test command OR verification output must be recorded (Work Log Evidence section).

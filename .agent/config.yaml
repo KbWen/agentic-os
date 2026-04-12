@@ -1,4 +1,4 @@
-# AgentCortex Framework Configuration
+# Agentic OS Framework Configuration
 # Central source of truth for governance constants.
 # Workflows reference these values instead of hardcoding inline defaults.
 

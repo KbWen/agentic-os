@@ -50,7 +50,7 @@ Global directives for all AI agents. Loaded automatically every turn
 - NO EVIDENCE = NO COMPLETION.
 - **Spec Intake Gate**: When external spec input is detected (user-provided spec, document, or raw material containing multiple features), AI MUST decompose into a Feature Inventory and obtain user selection BEFORE generating any individual feature spec. Skipping decomposition for multi-feature input = Gate FAIL. Single-feature input may proceed directly. Full workflow: `.agent/workflows/spec-intake.md`.
 
-## AgentCortex Runtime v5 (Antigravity Contract)
+## Agentic OS Runtime v1 (Antigravity Contract)
 
 1. **Intent-Driven Routing**: AI MUST map user intent to the correct workflow phase BEFORE any action — regardless of whether the user typed a slash command or natural language. Slash commands remain as optional shortcuts.
 

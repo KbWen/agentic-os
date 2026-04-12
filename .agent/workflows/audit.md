@@ -7,7 +7,7 @@ tasks:
 
 # /audit
 
-> Purpose: Map an existing legacy repository to establish baseline context before transitioning to AgentCortex workflows.
+> Purpose: Map an existing legacy repository to establish baseline context before transitioning to Agentic OS workflows.
 
 ## Environment Constraints
 

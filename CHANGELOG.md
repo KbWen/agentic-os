@@ -55,7 +55,7 @@
 ### 🧠 Design Philosophy & Governance Hardening
 
 - **10 Non-Negotiable Principles**: Rewrote `AGENT_PHILOSOPHY.md` (EN + zh-TW) from 33-line positioning doc into comprehensive P1-P10 principles document with Safety Mechanisms reference table.
-- **Namespace Isolation** (engineering_guardrails.md §9.4): New rule preventing AgentCortex from hijacking downstream custom commands. Uses `.agentcortex-manifest` (not directory paths) as the framework-vs-user boundary. User commands always take priority.
+- **Namespace Isolation** (engineering_guardrails.md §9.4): New rule preventing Agentic OS from hijacking downstream custom commands. Uses `.agentcortex-manifest` (not directory paths) as the framework-vs-user boundary. User commands always take priority.
 - **Decisions Injection Defense**: Bootstrap now surfaces inherited Work Log decisions to user for confirmation before treating them as binding.
 - **Sentinel Cross-Model Clarity**: AGENTS.md §11 rewritten from Claude-specific "prompt truncation" to model-agnostic "framework-wide runtime integrity marker".
 
@@ -101,7 +101,7 @@
 - **Gate Engine & Handshake**: Implemented a hard-path enforcement overlay for `plan`, `ship`, and `implement` workflows. High-risk tasks now require explicit `PROCEED-<STAGE>:<branch>` contextual handshakes to continue.
 - **Skill Safety Guardrails**: Established strict precedence (`AGENTS.md` > `workflows` > `skills`) to prevent Antigravity semantic skills from hijacking execution loops.
 - **Multi-Session Concurrency**: Added `Owner` and `Session` metadata requirements to Work Logs. `/bootstrap` now checks for concurrent edits to prevent collisions.
-- **Legacy Migration Safety**: Introduced the `/audit` workflow for read-only system mapping of non-AgentCortex repos.
+- **Legacy Migration Safety**: Introduced the `/audit` workflow for read-only system mapping of non-Agentic OS repos.
 - **SSoT Append-only History**: Changed `current_state.md` to use an append-only `## Ship History` for safer archival.
 - **Sentinel Token**: Injected `SENTINEL: ACX-READ-OK` to combat context truncation.
 

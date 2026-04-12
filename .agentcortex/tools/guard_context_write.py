@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guarded read/write operations for AgentCortex context files."""
+"""Guarded read/write operations for Agentic OS context files."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ LOCK_STALE_SECONDS = 900
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Safely snapshot or write AgentCortex context files.")
+    parser = argparse.ArgumentParser(description="Safely snapshot or write Agentic OS context files.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     snapshot = subparsers.add_parser("snapshot", help="Read a file and emit its sha256.")

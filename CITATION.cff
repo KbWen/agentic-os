@@ -3,8 +3,8 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Wen
     given-names: Kb
-title: "AgentCortex: Governance-First OS for AI Coding Agents"
-version: 5.4.0
+title: "Agentic OS: Governance-First OS for AI Coding Agents"
+version: 1.0.0
 date-released: 2026-04-12
 url: "https://github.com/KbWen/agentic-os"
 abstract: "A governance-first framework for AI coding agents. Structured workflows, delivery gates, engineering guardrails, and 17 professional skills for Claude Code, Cursor, Copilot, Antigravity, and Codex."

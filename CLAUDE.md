@@ -2,7 +2,7 @@
 
 **MANDATORY**: Read and follow `AGENTS.md` before any action. It contains the governance rules, delivery gates, and state model that apply to ALL work in this repository.
 
-This repository uses **AgentCortex** — a governance-first AI agent framework.
+This repository uses **Agentic OS** — a governance-first AI agent framework.
 All rules live in `AGENTS.md` and `.agent/`. This file is the Claude-specific loader only.
 
 ## Startup (REQUIRED — every conversation)
