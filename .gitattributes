@@ -1,0 +1,23 @@
+# Auto detect text files and normalize line endings
+* text=auto
+
+# Shell scripts must use LF
+*.sh text eol=lf
+
+# PowerShell scripts use CRLF
+*.ps1 text eol=crlf
+
+# CMD batch files use CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Markdown and YAML always text
+*.md text
+*.yaml text
+*.yml text
+
+# Keep binary files as-is
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary

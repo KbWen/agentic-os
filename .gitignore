@@ -1,0 +1,40 @@
+# Agentic OS Source Repo
+
+# Runtime state (work logs are session-local)
+.agentcortex/context/work/*.md
+!.agentcortex/context/work/.gitkeep.md
+.agentcortex/context/.guard_receipt.json
+.agentcortex/context/.guard_locks/
+.agentcortex/context/private/
+.agent/private/
+
+# Deploy artifacts
+.agentcortex-src/
+*.acx-incoming
+
+# Third-party AI tool local state
+.openrouter/
+.claude-chat/
+.cursor/
+.antigravity/scratch/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Node (if subcomponents added)
+node_modules/
