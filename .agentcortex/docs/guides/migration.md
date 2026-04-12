@@ -25,7 +25,7 @@ Instruct the AI to perform a migration scan:
 
 ```text
 Please run /bootstrap.
-We've just upgraded to vNext v3.5.2.
+We've just upgraded to Agentic OS v1.0.
 Please scan the project for existing documentation and perform the following:
 1. Identify scattered notes, specs, and ADRs; move them to correct directories and rename.
 2. Initialize .agentcortex/context/current_state.md.

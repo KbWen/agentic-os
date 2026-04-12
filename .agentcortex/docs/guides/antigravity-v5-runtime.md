@@ -1,14 +1,14 @@
-# Agentic OS Runtime v5
+# Agentic OS Runtime — Anti-Drift Engine
 
 ## Antigravity Hard-Path Enforcement Overlay
 
-Version: v5.0
-Date: 2026-03-04
+Version: v1.0
+Date: 2026-04-12
 Scope: **Antigravity environments** (token-generation agents where shell exit codes don’t halt execution)
 
 ### Why v5 exists
 
-Agentic OS v3.5+ already enforces strong process gates via workflows:
+Agentic OS already enforces strong process gates via workflows:
 
 * `/bootstrap` reads SSoT + Work Log, locks classification, and only allows upward changes via rollback + re-entry
 * `/plan` is “NO CODING YET” and requires spec for feature/architecture-change

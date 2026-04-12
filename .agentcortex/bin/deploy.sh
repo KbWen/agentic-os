@@ -23,7 +23,7 @@ done
 TARGET="${TARGET:-.}"
 
 MANIFEST_FILE="$TARGET/.agentcortex-manifest"
-ACX_VERSION="5.4.0"
+ACX_VERSION="1.0.0"
 
 # --- Counters ---
 COUNT_UPDATED=0
@@ -324,9 +324,9 @@ deploy_file "$REPO_ROOT/AGENTS.md" "AGENTS.md"
 deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
 
 # --- Deploy: wrapper scripts ---
-deploy_file "$REPO_ROOT/deploy_brain.sh" "deploy_brain.sh" "+x"
-deploy_file "$REPO_ROOT/deploy_brain.ps1" "deploy_brain.ps1"
-deploy_file "$REPO_ROOT/deploy_brain.cmd" "deploy_brain.cmd"
+deploy_file "$REPO_ROOT/installers/deploy_brain.sh" "deploy_brain.sh" "+x"
+deploy_file "$REPO_ROOT/installers/deploy_brain.ps1" "deploy_brain.ps1"
+deploy_file "$REPO_ROOT/installers/deploy_brain.cmd" "deploy_brain.cmd"
 
 # --- Deploy: platform rules (core) ---
 deploy_file "$REPO_ROOT/.antigravity/rules.md" ".antigravity/rules.md"
@@ -422,8 +422,9 @@ done
 
 # --- Deploy: reference docs to .agentcortex/docs/ (core) ---
 for f in \
-  "$REPO_ROOT"/README*.md \
-  "$REPO_ROOT"/AGENT_MODEL_GUIDE*.md \
+  "$REPO_ROOT"/README.md \
+  "$REPO_ROOT"/docs/README_zh-TW.md \
+  "$REPO_ROOT"/docs/AGENT_MODEL_GUIDE*.md \
   "$REPO_ROOT"/.agentcortex/docs/AGENT_PHILOSOPHY*.md \
   "$REPO_ROOT"/.agentcortex/docs/TESTING_PROTOCOL*.md \
   "$REPO_ROOT"/.agentcortex/docs/CODEX_PLATFORM_GUIDE*.md \

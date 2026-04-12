@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="README_zh-TW.md">繁體中文</a> &middot;
+  <a href="docs/README_zh-TW.md">繁體中文</a> &middot;
   <a href="CONTRIBUTING.md">Contributing</a> &middot;
   <a href="CHANGELOG.md">Changelog</a>
 </p>
@@ -163,7 +163,7 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 git clone https://github.com/KbWen/agentic-os.git
 
 # Deploy into your project
-./agentic-os/deploy_brain.sh /path/to/your-project
+./agentic-os/installers/deploy_brain.sh /path/to/your-project
 ```
 
 <details>
@@ -171,13 +171,13 @@ git clone https://github.com/KbWen/agentic-os.git
 
 ```powershell
 # PowerShell
-powershell -ExecutionPolicy Bypass -File .\deploy_brain.ps1 .
+powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .
 
 # CMD
-deploy_brain.cmd .
+installers\deploy_brain.cmd .
 ```
 
-Both wrappers call `deploy_brain.sh` under the hood — requires Git Bash or WSL.
+Both wrappers call `deploy_brain.sh` under the hood -- requires Git Bash or WSL.
 
 </details>
 
@@ -263,7 +263,10 @@ your-project/
 │   ├── adr/                     # Architecture Decision Records
 │   └── architecture/            # Domain architecture docs
 │
-└── deploy_brain.sh              # One-command installer
+└── installers/                  # Cross-platform deploy wrappers
+    ├── deploy_brain.sh          # Bash installer
+    ├── deploy_brain.ps1         # PowerShell installer
+    └── deploy_brain.cmd         # CMD installer
 ```
 
 ---
@@ -305,7 +308,7 @@ Agentic OS is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PH
 | Document | Description |
 |:---|:---|
 | [Agent Philosophy](.agentcortex/docs/AGENT_PHILOSOPHY.md) | 10 core principles |
-| [Model Selection Guide](AGENT_MODEL_GUIDE.md) | Flash vs. Pro guidance |
+| [Model Selection Guide](docs/AGENT_MODEL_GUIDE.md) | Flash vs. Pro guidance |
 | [Testing Protocol](.agentcortex/docs/TESTING_PROTOCOL.md) | Testing standards |
 | [Project Examples](.agentcortex/docs/PROJECT_EXAMPLES.md) | Node.js & Python examples |
 | [Token Governance](.agentcortex/docs/guides/token-governance.md) | Token optimization strategies |

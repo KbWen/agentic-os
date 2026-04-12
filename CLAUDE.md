@@ -63,7 +63,7 @@ Skills never override governance or gates — they extend the active workflow ph
 - **No Evidence = No Completion**: ALL classifications require evidence. `tiny-fix`: diff + 1-line verification. `quick-win`+: verifiable test logs or terminal output.
 - **SSoT protection**: `/ship` is the normal writer for `.agentcortex/context/current_state.md`, and all SSoT writes must go through `.agentcortex/tools/guard_context_write.py`. The only non-ship exception is `/retro` appending structured Global Lessons.
 - **Classification freeze**: task classification set during bootstrap cannot be silently downgraded. If scope grows, use rollback to `CLASSIFIED` and re-enter the required workflow at the higher tier.
-- **Installation**: NEVER manually copy framework files. Use `deploy_brain.sh` or `deploy_brain.ps1`. NEVER overwrite the target repo's existing README.md or .gitignore outside the managed block.
+- **Installation**: NEVER manually copy framework files. Use `installers/deploy_brain.sh` or `installers/deploy_brain.ps1`. NEVER overwrite the target repo's existing README.md or .gitignore outside the managed block.
 
 ## Validate
 

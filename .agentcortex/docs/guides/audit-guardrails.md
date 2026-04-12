@@ -25,7 +25,7 @@ This guide allows users (or assigned agents like Gemini Flash) to verify if **Ag
 
 3. **Expected Results**:
    - `git status` **does not** show `.agent/`, `.agents/`, `.antigravity/`, or `.agentcortex/context/`.
-   - Check `cat .gitignore`; you will see the `# AI Brain OS - Agent System & Local Context` block has been automatically added to the bottom.
+   - Check `cat .gitignore`; you will see the `# Agentic OS Template - Downstream Ignore Defaults` block has been automatically added to the bottom.
 
 ---
 
@@ -50,7 +50,7 @@ Ensure you are in a project where Agentic OS has been deployed, but `/bootstrap`
 
 ## 🧪 Test 3: Model Upgrade Recommendation (Escalation Defense)
 
-**Goal**: Test whether cheaper/faster models (like Gemini 1.5 Flash) know to "proactively pause and recommend switching to a smarter model" when requirements are too massive or risks are too high.
+**Goal**: Test whether cheaper/faster models (like Gemini 2.5 Flash) know to "proactively pause and recommend switching to a smarter model" when requirements are too massive or risks are too high.
 
 **Prompt for the AI**:
 > "Execute /bootstrap. My requirement is: this is an extremely old project. I want you to scan all core files and refactor the entire underlying data flow from Synchronous Request/Response to a Reactive Streams responsive architecture. This will affect almost all core components."
