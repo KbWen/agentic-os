@@ -98,6 +98,11 @@
       "load_policy": "on-match",
       "cost_risk": "medium",
       "kind": "skill"
+    },
+    "production-readiness": {
+      "load_policy": "phase-entry",
+      "cost_risk": "low",
+      "kind": "skill"
     }
   },
   "entries": [
@@ -737,6 +742,41 @@
       },
       "load_policy": "on-match",
       "content_hash": "ade1544e"
+    },
+    {
+      "id": "production-readiness",
+      "kind": "skill",
+      "platforms": [
+        "claude",
+        "codex",
+        "antigravity"
+      ],
+      "phase_scope": [
+        "review",
+        "ship"
+      ],
+      "detect_by": {
+        "classification": [
+          "feature",
+          "architecture-change"
+        ],
+        "intent_patterns": [
+          "observability check",
+          "production readiness",
+          "error handling audit"
+        ],
+        "scope_signals": [
+          "error handling",
+          "catch blocks",
+          "logging",
+          "crash reporting"
+        ],
+        "phase_conditions": [
+          "enter-review-or-ship"
+        ]
+      },
+      "load_policy": "phase-entry",
+      "content_hash": "39c08f81"
     }
   ]
 }

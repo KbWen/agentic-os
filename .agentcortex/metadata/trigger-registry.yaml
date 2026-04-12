@@ -500,3 +500,28 @@ entries:
     block_if_missed: false
     fallback_behavior: >
       Use the stable bootstrap or worktree-first workflow before changing branches.
+
+  - id: production-readiness
+    kind: skill
+    canonical_ref: .agent/skills/production-readiness
+    mirror_ref: .agents/skills/production-readiness/agents/openai.yaml
+    detail_ref: .agents/skills/production-readiness/SKILL.md
+    platforms: [claude, codex, antigravity]
+    phase_scope: [review, ship]
+    trigger_priority: soft
+    detect_by:
+      classification: [feature, architecture-change]
+      intent_patterns: ["observability check", "production readiness", "error handling audit"]
+      scope_signals: [error handling, catch blocks, logging, crash reporting]
+      failure_signals: []
+      phase_conditions: [enter-review-or-ship]
+    load_policy: phase-entry
+    cost_type: output
+    cost_risk: low
+    runtime_anchor:
+      - "engineering_guardrails.md#5.2a"
+      - ".agent/workflows/review.md#Error Observability Compliance"
+      - ".agent/workflows/ship.md#Observability Readiness Check"
+    block_if_missed: false
+    fallback_behavior: >
+      Use the stable review/ship flow and rely on engineering_guardrails.md §5.2a for error observability checks.

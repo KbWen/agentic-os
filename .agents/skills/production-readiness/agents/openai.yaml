@@ -1,0 +1,20 @@
+version: 1
+display_name: production-readiness
+short_description: Pre-ship observability readiness — verify error reporting uses production-observable sinks, log strategy is documented, and rollback telemetry is defined.
+icon_small: shield
+agentcortex:
+  summary_ref: .agent/skills/production-readiness
+  detail_ref: .agents/skills/production-readiness/SKILL.md
+  trigger_priority: soft
+  phase_scope: ["review", "ship"]
+  load_policy: phase-entry
+  cost_type: output
+  cost_risk: low
+  runtime_anchor: ["engineering_guardrails.md#5.2a", ".agent/workflows/review.md#Error Observability Compliance", ".agent/workflows/ship.md#Observability Readiness Check"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["observability check", "production readiness", "error handling audit"]
+    scope_signals: ["error handling", "catch blocks", "logging", "crash reporting"]
+    failure_signals: []
+    phase_conditions: ["enter-review-or-ship"]
+  fallback_behavior: Use the stable review/ship flow and rely on engineering_guardrails.md 5.2a for error observability checks.
