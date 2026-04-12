@@ -1,0 +1,19 @@
+# Agentic OS — Code Ownership
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: maintainer owns everything
+* @KbWen
+
+# Governance core — changes here affect all downstream repos
+AGENTS.md @KbWen
+CLAUDE.md @KbWen
+.agent/rules/ @KbWen
+.agent/workflows/ @KbWen
+.agent/config.yaml @KbWen
+
+# Deploy infrastructure — high blast radius
+.agentcortex/bin/ @KbWen
+installers/ @KbWen
+
+# CI/CD
+.github/ @KbWen
