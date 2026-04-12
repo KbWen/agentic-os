@@ -1,23 +1,23 @@
 # Agentic OS v1.0 (Runtime v1.0 Anti-Drift Edition)
 
-[English Version](README.md)
+[English Version](../README.md)
 
 > **從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。**
 
 ## 🎯 專案定位
 
-**Agentic OS** 是一個專為頂尖開發者（使用 Gemini 3.1 Pro/3 Flash, Claude Opus 4.6, 或 GPT-4o）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
+**Agentic OS** 是一個專為頂尖開發者（使用 Gemini 2.5 Pro / 2.5 Flash, Claude Opus 4.6, 或 GPT-4.1）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
 
 我們對齊並優化了 Google Antigravity / Codex Web / Codex App 的使用情境：
 
 - **Self-Managed**：AI 自行分類任務並套用對應的治理閘門。
-- **Runtime v5 Anti-Drift**：具備強制防跳步驟的 `Gate Engine` 與 `Handshake` 交握機制，封鎖幻覺越權。
+- **Anti-Drift Engine**：具備強制防跳步驟的 `Gate Engine` 與 `Handshake` 交握機制，封鎖幻覺越權。
 - **Concurrency & Migration Safe**：內建衝突感知的 optimistic multi-session 保護、多人協作 Metadata 防撞車，以及舊專案無痛導入的 `/audit` 工作流。
 - **Token Optimized**：針對不同風險等級自動調整治理強度，`tiny-fix` 走 fast-path 以節省成本。
 - **Command-first**：用標準化指令觸發 Agent 能力，確保行為一致性。
-- **10 不可違反原則**：[設計哲學](.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md)定義 P1-P10 核心信條 — AI 主導、不跳步驟、憲法高於任務、無證據不完成、跨模型合規。
+- **10 不可違反原則**：[設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md)定義 P1-P10 核心信條 — AI 主導、不跳步驟、憲法高於任務、無證據不完成、跨模型合規。
 - **命名空間隔離**：下游專案可自由添加自定義 skill 和 workflow，框架用 `.agentcortex-manifest` 區分管理範圍，用戶指令永遠優先。
-- **16 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
+- **17 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
 
 ## 🔗 參考來源
 
@@ -67,11 +67,10 @@
 ## 🛡️ 規則檔與安全邊界
 
 - `.antigravity/rules.md`：Antigravity 優先讀取的規則總表。
-- `.agent/rules/rules.md`：舊版相容副本，內容同步。
 - `codex/rules/default.rules`：Codex 規則擴充入口。
 - `AGENTS.md`：跨平台長期指令，引用 `engineering_guardrails.md`。
 
-### Runtime v5 執行守門員 (Anti-Drift Engine)
+### 執行守門員 (Anti-Drift Engine)
 
 這套機制防止 AI 繞過授權與工作流程，確保每一次操作都具備證據與手動確認。
 
@@ -107,7 +106,7 @@ flowchart LR
 ### 1) 部署到專案
 
 ```bash
-./deploy_brain.sh /path/to/your-project
+./installers/deploy_brain.sh /path/to/your-project
 ```
 
 > [!TIP]
@@ -198,13 +197,13 @@ flowchart LR
 完整平台建議請見 `.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md`。
 
 ---
-詳細變更請見 [CHANGELOG.md](./CHANGELOG.md)
+詳細變更請見 [CHANGELOG.md](../CHANGELOG.md)
 
 ## Windows（無 bash）部署補充
 
-若你的 Windows 環境沒有 `bash`，可使用專案根目錄的 wrapper：
+若你的 Windows 環境沒有 `bash`，可使用 `installers/` 目錄的 wrapper：
 
-- PowerShell：`powershell -ExecutionPolicy Bypass -File .\deploy_brain.ps1 .`
-- CMD：`deploy_brain.cmd .`
+- PowerShell：`powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .`
+- CMD：`installers\deploy_brain.cmd .`
 
 這兩個 wrapper 會轉呼叫 `deploy_brain.sh`，因此仍需要安裝 Git Bash 或 WSL。

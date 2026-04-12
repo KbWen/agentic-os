@@ -157,4 +157,4 @@
 
 - [導入範例（線性流程）](./PROJECT_EXAMPLES_zh-TW.md)
 - [工程護欄（憲法）](../../.agent/rules/engineering_guardrails.md)
-- [模型選擇指南](../AGENT_MODEL_GUIDE_zh-TW.md)
+- [模型選擇指南](./AGENT_MODEL_GUIDE_zh-TW.md)

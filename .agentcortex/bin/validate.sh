@@ -11,9 +11,9 @@ WORKFLOWS_DIR="$ROOT/.agent/workflows"
 CLAUDE_COMMANDS_DIR="$ROOT/.claude/commands"
 CODEX_INSTALL="$ROOT/.codex/INSTALL.md"
 CODEX_RULES="$ROOT/.codex/rules/default.rules"
-ROOT_DEPLOY_SH="$ROOT/deploy_brain.sh"
-ROOT_DEPLOY_PS1="$ROOT/deploy_brain.ps1"
-ROOT_DEPLOY_CMD="$ROOT/deploy_brain.cmd"
+ROOT_DEPLOY_SH="$ROOT/installers/deploy_brain.sh"
+ROOT_DEPLOY_PS1="$ROOT/installers/deploy_brain.ps1"
+ROOT_DEPLOY_CMD="$ROOT/installers/deploy_brain.cmd"
 CANONICAL_DEPLOY_SH="$ROOT/.agentcortex/bin/deploy.sh"
 CANONICAL_DEPLOY_PS1="$ROOT/.agentcortex/bin/deploy.ps1"
 CANONICAL_VALIDATE_SH="$ROOT/.agentcortex/bin/validate.sh"
@@ -704,9 +704,9 @@ else
   fi
 fi
 
-if [[ -f "$ROOT/README_zh-TW.md" ]]; then
+if [[ -f "$ROOT/docs/README_zh-TW.md" ]]; then
   check_contains_literal \
-    "$ROOT/README_zh-TW.md" \
+    "$ROOT/docs/README_zh-TW.md" \
     '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' \
     "README_zh-TW.md encoding looks healthy" \
     "README_zh-TW.md appears mojibaked or re-encoded"
