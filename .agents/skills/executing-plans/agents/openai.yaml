@@ -1,0 +1,20 @@
+version: 1
+display_name: executing-plans
+short_description: Execute and report step-by-step according to the established plan, ensuring evidence for each step and maintaining rollback capability.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/executing-plans
+  detail_ref: .agents/skills/executing-plans/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement"]
+  load_policy: phase-entry
+  cost_type: execution
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Skill Loading at Phase Entry", ".agent/workflows/implement.md#executing-plans"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["執行計畫", "execute the plan", "follow the plan"]
+    scope_signals: []
+    failure_signals: []
+    phase_conditions: ["approved-plan-exists", "enter-implement"]
+  fallback_behavior: Use the stable /implement workflow and record deviations in the Work Log.

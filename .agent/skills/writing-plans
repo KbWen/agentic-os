@@ -1,0 +1,19 @@
+---
+name: writing-plans
+description: Plan before implementing — output a task plan that is verifiable, revertible, and executable in stages. Auto-activate during /plan phase.
+phases: ["plan"]
+trigger: auto (during /plan phase)
+trigger_priority: advisory
+load_policy: phase-entry
+cost_type: output
+cost_risk: low
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/plan.md"]
+---
+
+# Writing Plans
+
+Full instructions: `.agents/skills/writing-plans/SKILL.md`.
+
+- **Trigger**: Auto — during /plan phase
+- **Runtime anchor**: bootstrap recommends it and `/plan` uses it as the lightweight planning discipline
+- **Token note**: The skill itself is cheap; the cost is mostly in how detailed the generated plan becomes

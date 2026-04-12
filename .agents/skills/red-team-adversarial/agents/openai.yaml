@@ -1,0 +1,20 @@
+version: 1
+display_name: red-team-adversarial
+short_description: Adversarial security testing with Lite, Full, and Beast modes.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/red-team-adversarial
+  detail_ref: .agents/skills/red-team-adversarial/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["review", "test"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: high
+  runtime_anchor: [".agent/workflows/review.md#Red Team Scan", ".agent/workflows/test.md#Step 4"]
+  detect_by:
+    classification: ["hotfix", "feature", "architecture-change"]
+    intent_patterns: ["red team", "adversarial test", "攻擊面分析", "紅隊測試"]
+    scope_signals: ["auth", "permission", "boundary", "dependency"]
+    failure_signals: []
+    phase_conditions: ["enter-review-or-test"]
+  fallback_behavior: Use stable kernel review/test behavior and manual security review.

@@ -1,0 +1,20 @@
+version: 1
+display_name: test-driven-development
+short_description: Advance logic changes with a test-first approach (Red→Green→Refactor), ensuring behavior is verifiable and regression-proof.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/test-driven-development
+  detail_ref: .agents/skills/test-driven-development/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement", "test"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: high
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 3"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["用 TDD", "test first", "先寫測試", "red green refactor"]
+    scope_signals: ["testable logic", "core logic", "regression protection"]
+    failure_signals: []
+    phase_conditions: ["approved-plan-exists"]
+  fallback_behavior: Use stable kernel behavior and allow manual skill activation.

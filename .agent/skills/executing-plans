@@ -1,0 +1,19 @@
+---
+name: executing-plans
+description: Execute approved plans step-by-step with evidence per step and rollback capability. Auto-activate during /implement phase when a plan exists.
+phases: ["implement"]
+trigger: auto (when plan is approved and state >= IMPLEMENTABLE)
+trigger_priority: contextual
+load_policy: phase-entry
+cost_type: execution
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Skill Loading at Phase Entry", ".agent/workflows/implement.md#executing-plans"]
+---
+
+# Executing Plans
+
+Full instructions: `.agents/skills/executing-plans/SKILL.md`.
+
+- **Trigger**: Auto — during /implement when an approved plan exists
+- **Runtime anchor**: `/implement` loads this once the task is already in the implementation state
+- **Token note**: Cost comes from per-step evidence and deviation tracking, not from the summary metadata itself

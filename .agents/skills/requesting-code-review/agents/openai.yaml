@@ -1,0 +1,20 @@
+version: 1
+display_name: requesting-code-review
+short_description: Skill for requesting code review workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/requesting-code-review
+  detail_ref: .agents/skills/requesting-code-review/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["review", "handoff"]
+  load_policy: on-match
+  cost_type: output
+  cost_risk: low
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/handoff.md"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["請求 review", "request code review", "送 review", "要 review"]
+    scope_signals: ["changes ready for review", "handoff prepared"]
+    failure_signals: []
+    phase_conditions: ["enter-review-or-handoff"]
+  fallback_behavior: Use the stable review and handoff flow to prepare reviewer-facing context.

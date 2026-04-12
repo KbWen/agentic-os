@@ -1,0 +1,20 @@
+version: 1
+display_name: writing-plans
+short_description: Plan before implementing — output a task plan that is verifiable, revertible, and executable in stages. Auto-activate during /plan phase.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/writing-plans
+  detail_ref: .agents/skills/writing-plans/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["plan"]
+  load_policy: phase-entry
+  cost_type: output
+  cost_risk: low
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/plan.md"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["幫我規劃", "write plan", "規劃怎麼做"]
+    scope_signals: []
+    failure_signals: []
+    phase_conditions: ["enter-plan"]
+  fallback_behavior: Use the stable /plan workflow format.

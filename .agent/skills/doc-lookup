@@ -1,0 +1,20 @@
+---
+name: doc-lookup
+description: Forces AI to WebFetch/WebSearch official framework documentation before implementing. Prevents hallucinated APIs and outdated patterns. Auto-activates when task uses any framework in the project ADR tech stack.
+phases: [implement, review]
+trigger: auto (when task uses any framework/library listed in the project ADR tech stack)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: mixed
+cost_risk: low
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+---
+
+# Doc Lookup
+
+Full instructions: `.agents/skills/doc-lookup/SKILL.md`.
+
+- **Trigger**: Auto — when task touches any framework/library in the project ADR tech stack (all non-tiny-fix classifications)
+- **Hard rule**: MUST WebFetch/WebSearch official docs before using framework APIs. No guessing from training data.
+- **Runtime anchor**: bootstrap recommends it, then `/implement` and `/review` enforce doc verification
+- **Token note**: Read cost is low; variable fetch cost depends on how many framework APIs are used. Net token savings from avoiding hallucination-driven debug cycles.

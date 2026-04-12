@@ -1,0 +1,19 @@
+---
+name: dispatching-parallel-agents
+description: Evaluate when to split work across parallel subagents. Auto-consider when task has 3+ independent subtasks, or when multiple files/modules can be worked on simultaneously without coupling.
+phases: [implement]
+trigger: auto (when task is decomposable into independent units)
+trigger_priority: advisory
+load_policy: on-match
+cost_type: execution
+cost_risk: high
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides"]
+---
+
+# Dispatching Parallel Agents
+
+Full instructions: `.agents/skills/dispatching-parallel-agents/SKILL.md`.
+
+- **Trigger**: Auto — consider when you see 3+ independent subtasks
+- **Runtime anchor**: bootstrap recommends it, then `/implement` applies subtask contract rules before any dispatch
+- **Token note**: Read cost is low; real cost comes from duplicated context across subagents and merge/integration evidence

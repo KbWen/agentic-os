@@ -1,0 +1,20 @@
+version: 1
+display_name: systematic-debugging
+short_description: Skill for systematic debugging workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/systematic-debugging
+  detail_ref: .agents/skills/systematic-debugging/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement", "review", "test", "hotfix"]
+  load_policy: on-failure
+  cost_type: execution
+  cost_risk: high
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/hotfix.md#1", ".agent/workflows/implement.md#systematic-debugging", ".agent/workflows/test.md#Step 3"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["debug", "除錯", "找 bug"]
+    scope_signals: ["unexpected behavior", "bug", "flaky"]
+    failure_signals: ["test-failure", "unexpected-behavior", "repeated-patch-failure"]
+    phase_conditions: []
+  fallback_behavior: Use stable kernel bug-fix flow and escalate uncertainty.

@@ -1,0 +1,20 @@
+version: 1
+display_name: subagent-driven-development
+short_description: Decompose tasks through sub-agent collaboration, defining interface contracts, synchronization nodes, and integrated acceptance.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/subagent-driven-development
+  detail_ref: .agents/skills/subagent-driven-development/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["implement"]
+  load_policy: on-match
+  cost_type: execution
+  cost_risk: high
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["subagent", "分派 agent", "multi-agent"]
+    scope_signals: ["4+ files", "cross-module scope", "interface contracts needed"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use the stable /implement flow and avoid subagents unless contracts are clear.

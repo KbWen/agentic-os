@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "description": "Shadow lifecycle scenarios for testing trigger coverage and projected token overhead across realistic workflow paths.",
+  "scenarios": [
+    {
+      "id": "quick-win-single-module",
+      "title": "Quick-win single module change",
+      "classification": "quick-win",
+      "phases": ["bootstrap", "plan", "implement", "ship"],
+      "optional_coverage": ["review", "test"],
+      "probe_strategy": "platform-only",
+      "phase_repeats": {},
+      "candidate_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "systematic-debugging",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Required gates per AGENTS.md hard rules: bootstrap → plan → implement → evidence → ship. Review/test are optional coverage, NOT required phases."
+    },
+    {
+      "id": "feature-core-logic-tdd",
+      "title": "Feature core logic with TDD loop",
+      "classification": "feature",
+      "phases": ["bootstrap", "plan", "implement", "review", "test", "handoff", "ship"],
+      "probe_strategy": "slice+platform",
+      "phase_repeats": {
+        "implement": 3,
+        "test": 2
+      },
+      "candidate_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "test-driven-development",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "test-driven-development",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Implementation repeats approximate Red-Green-Refactor loops; test repeats cover regression reruns."
+    },
+    {
+      "id": "feature-api-auth-db",
+      "title": "Feature touching API, auth, and database",
+      "classification": "feature",
+      "phases": ["bootstrap", "plan", "implement", "review", "test", "handoff", "ship"],
+      "probe_strategy": "slice+platform",
+      "phase_repeats": {
+        "implement": 2,
+        "test": 2
+      },
+      "candidate_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "test-driven-development",
+        "api-design",
+        "database-design",
+        "auth-security",
+        "doc-lookup",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "test-driven-development",
+        "api-design",
+        "database-design",
+        "auth-security",
+        "doc-lookup",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Models a heavier feature where auth and data concerns widen the review and test surface. doc-lookup activates because task touches framework APIs."
+    },
+    {
+      "id": "hotfix-debug-loop",
+      "title": "Hotfix with debugging loop",
+      "classification": "hotfix",
+      "phases": ["bootstrap", "implement", "review", "test", "ship"],
+      "probe_strategy": "slice+platform",
+      "phase_repeats": {
+        "implement": 2,
+        "test": 2
+      },
+      "candidate_skills": [
+        "executing-plans",
+        "verification-before-completion",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "executing-plans",
+        "verification-before-completion",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Models a bug-fix path where repeated observe-hypothesize-verify loops inflate implement and test passes."
+    },
+    {
+      "id": "architecture-multi-agent",
+      "title": "Architecture change with worktrees and multi-agent coordination",
+      "classification": "architecture-change",
+      "phases": ["bootstrap", "plan", "implement", "review", "test", "handoff", "ship"],
+      "probe_strategy": "slice+platform",
+      "phase_repeats": {
+        "implement": 2,
+        "review": 2,
+        "test": 2
+      },
+      "candidate_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "api-design",
+        "database-design",
+        "frontend-patterns",
+        "auth-security",
+        "doc-lookup",
+        "dispatching-parallel-agents",
+        "subagent-driven-development",
+        "using-git-worktrees",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "writing-plans",
+        "executing-plans",
+        "verification-before-completion",
+        "api-design",
+        "database-design",
+        "frontend-patterns",
+        "auth-security",
+        "doc-lookup",
+        "dispatching-parallel-agents",
+        "subagent-driven-development",
+        "using-git-worktrees",
+        "red-team-adversarial",
+        "requesting-code-review",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Models the broadest lifecycle path with parallelization, platform coordination, and repeated review/test passes. doc-lookup activates because task touches framework APIs across all layers."
+    },
+    {
+      "id": "post-review-feedback-loop",
+      "title": "Post-review feedback loop",
+      "classification": "feature",
+      "phases": ["review", "implement", "review", "test", "handoff", "ship"],
+      "probe_strategy": "platform-only",
+      "phase_repeats": {
+        "review": 2,
+        "implement": 2,
+        "test": 2
+      },
+      "candidate_skills": [
+        "receiving-code-review",
+        "requesting-code-review",
+        "executing-plans",
+        "verification-before-completion",
+        "systematic-debugging",
+        "red-team-adversarial",
+        "finishing-a-development-branch"
+      ],
+      "triggered_skills": [
+        "receiving-code-review",
+        "requesting-code-review",
+        "executing-plans",
+        "verification-before-completion",
+        "red-team-adversarial",
+        "finishing-a-development-branch"
+      ],
+      "notes": "Models the cost of reviewer feedback cycles where review and implementation phases repeat before shipping."
+    }
+  ]
+}

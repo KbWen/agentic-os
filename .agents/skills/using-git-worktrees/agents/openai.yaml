@@ -1,0 +1,20 @@
+version: 1
+display_name: using-git-worktrees
+short_description: Skill for using git worktrees workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/using-git-worktrees
+  detail_ref: .agents/skills/using-git-worktrees/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["bootstrap", "implement"]
+  load_policy: on-match
+  cost_type: execution
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/worktree-first.md", ".agent/workflows/implement.md#Skill Execution Overrides"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["用 worktree", "git worktree", "worktree 隔離"]
+    scope_signals: ["parallel branch isolation", "separate branch workspace", "avoid branch switching"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use the stable bootstrap or worktree-first workflow before changing branches.

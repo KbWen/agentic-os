@@ -1,0 +1,20 @@
+version: 1
+display_name: finishing-a-development-branch
+short_description: Skill for finishing a development branch workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/finishing-a-development-branch
+  detail_ref: .agents/skills/finishing-a-development-branch/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["ship", "handoff"]
+  load_policy: on-match
+  cost_type: output
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/ship.md#finishing-a-development-branch"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["finish branch", "merge 準備", "完成分支"]
+    scope_signals: ["branch work complete", "ready for closure"]
+    failure_signals: []
+    phase_conditions: ["enter-handoff-or-ship"]
+  fallback_behavior: Use the stable handoff/ship flow and choose a closure option explicitly.

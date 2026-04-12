@@ -1,0 +1,21 @@
+---
+name: red-team-adversarial
+description: Adversarial security and resilience analysis — auto-triggered during /review and /test based on task classification (hotfix=Lite, feature=Full, architecture-change=Full+Beast Mode). Complements OWASP security scan.
+phases: ["review", "test"]
+trigger: auto (classification-based)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: mixed
+cost_risk: high
+runtime_anchor: [".agent/workflows/review.md#Red Team Scan", ".agent/workflows/test.md#Step 4"]
+---
+
+# Red Team / Adversarial Testing
+
+Auto-triggered adversarial analysis skill. Full instructions: `.agents/skills/red-team-adversarial/SKILL.md`.
+
+## Quick Reference
+
+- **Trigger**: Auto — reads classification from Work Log. Skips tiny-fix/quick-win.
+- **Runtime anchor**: `/review` and `/test` decide whether to load the heavy adversarial skill body
+- **Token note**: Output cost is usually larger than read cost because findings can expand across review, test, and ship

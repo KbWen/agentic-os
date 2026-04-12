@@ -1,0 +1,20 @@
+version: 1
+display_name: verification-before-completion
+short_description: Skill for verification before completion workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/verification-before-completion
+  detail_ref: .agents/skills/verification-before-completion/SKILL.md
+  trigger_priority: hard
+  phase_scope: ["implement", "test", "ship"]
+  load_policy: phase-entry
+  cost_type: output
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Verification Before Completion (5-Gate Sequence)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 4b", ".agent/workflows/ship.md#Skill-Aware Ship Checks"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: []
+    scope_signals: []
+    failure_signals: []
+    phase_conditions: ["completion-claim"]
+  fallback_behavior: Load stable kernel workflow and require evidence gates.

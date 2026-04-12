@@ -1,0 +1,19 @@
+---
+name: api-design
+description: REST/GraphQL endpoint conventions, error format, pagination, input validation. Ensures consistent API design across the project per ADR decisions.
+phases: [implement, review, test]
+trigger: auto (when task involves creating, modifying, or deprecating API endpoints)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: mixed
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+---
+
+# API Design
+
+Full instructions: `.agents/skills/api-design/SKILL.md`.
+
+- **Trigger**: Auto — when task touches API endpoints (feature/architecture-change/hotfix)
+- **Runtime anchor**: bootstrap recommends it, then `/implement`, `/review`, and `/test` apply API-specific rules only when endpoint work is in scope
+- **Token note**: Read cost is low; cost rises from endpoint checklists, response-shape review, and extra API test cases

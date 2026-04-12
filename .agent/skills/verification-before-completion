@@ -1,0 +1,19 @@
+---
+name: verification-before-completion
+description: No evidence = no completion. Auto-enforce before marking any task as done — verify tests pass, outputs match expectations, and evidence is recorded in Work Log.
+phases: ["implement", "test", "ship"]
+trigger: auto (before any task completion claim)
+trigger_priority: hard
+load_policy: phase-entry
+cost_type: output
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Verification Before Completion (5-Gate Sequence)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 4b", ".agent/workflows/ship.md#Skill-Aware Ship Checks"]
+---
+
+# Verification Before Completion
+
+Full instructions: `.agents/skills/verification-before-completion/SKILL.md`.
+
+- **Trigger**: Auto — before claiming any task or phase is "done"
+- **Runtime anchor**: phase-entry workflows keep this loaded whenever implementation, test, or ship can end
+- **Token note**: The skill is cheap to read; most cost comes from the evidence it intentionally requires

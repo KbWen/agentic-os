@@ -1,0 +1,19 @@
+---
+name: subagent-driven-development
+description: Decompose complex tasks via subagent collaboration — define interface contracts, sync points, and acceptance criteria. Auto-consider for feature/architecture-change tasks with 4+ files or cross-module scope.
+phases: [implement]
+trigger: auto (for complex tasks with cross-module scope)
+trigger_priority: advisory
+load_policy: on-match
+cost_type: execution
+cost_risk: high
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides"]
+---
+
+# Subagent-Driven Development
+
+Full instructions: `.agents/skills/subagent-driven-development/SKILL.md`.
+
+- **Trigger**: Auto — consider for tasks touching 4+ files or crossing module boundaries
+- **Runtime anchor**: bootstrap recommends it, then `/implement` requires interface contracts and sync checkpoints before subagent work starts
+- **Token note**: Read cost is low; real cost comes from context fan-out, handoff summaries, and integration checkpoints

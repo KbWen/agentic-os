@@ -1,0 +1,19 @@
+---
+name: using-git-worktrees
+description: Use Git worktrees for parallel branch work safely. Auto-activate when /bootstrap detects need for isolated branch work, or when user requests working on multiple branches simultaneously.
+phases: [bootstrap, implement]
+trigger: auto (when parallel branch isolation is needed)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: execution
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/worktree-first.md", ".agent/workflows/implement.md#Skill Execution Overrides"]
+---
+
+# Using Git Worktrees
+
+Full instructions: `.agents/skills/using-git-worktrees/SKILL.md`.
+
+- **Trigger**: Auto — when needing to work on a separate branch without stashing/switching
+- **Runtime anchor**: bootstrap recommends it when branch isolation is needed, then implementation follows worktree safety rules
+- **Token note**: Read cost is low; execution cost comes from extra setup and branch/worktree coordination rather than the skill text itself

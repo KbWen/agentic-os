@@ -1,0 +1,20 @@
+version: 1
+display_name: frontend-patterns
+short_description: Component structure, state management, data fetching patterns.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/frontend-patterns
+  detail_ref: .agents/skills/frontend-patterns/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement", "review", "test"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["前端模式", "component patterns", "UI conventions"]
+    scope_signals: ["ui component", "page", "client state", "form handling"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use stable kernel workflow rules for frontend state, component, and UI test coverage.

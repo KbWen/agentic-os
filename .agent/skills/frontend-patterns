@@ -1,0 +1,19 @@
+---
+name: frontend-patterns
+description: Component structure, state management, data fetching, error handling for UI. Ensures consistent frontend patterns per ADR framework choice.
+phases: [implement, review, test]
+trigger: auto (when task involves creating or modifying UI components, pages, or client-side state)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: mixed
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+---
+
+# Frontend Patterns
+
+Full instructions: `.agents/skills/frontend-patterns/SKILL.md`.
+
+- **Trigger**: Auto — when task touches UI components or pages (feature/architecture-change)
+- **Runtime anchor**: bootstrap recommends it, then `/implement`, `/review`, and `/test` enforce UI state and component-shape checks
+- **Token note**: Read cost is low; cost rises from four-state UI coverage, review checklist depth, and extra component tests

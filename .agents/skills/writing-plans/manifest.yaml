@@ -1,0 +1,28 @@
+id: writing-plans
+name: writing-plans
+version: 1.0.0
+description: Plan before implementing — output a task plan that is verifiable, revertible, and executable in stages. Auto-activate during /plan phase.
+engine_range: ">=5.4 <6.0"
+api_range: "v1"
+entry_ref: SKILL.md
+capabilities:
+  - read_repo
+  - read_docs
+  - write_docs
+origin:
+  publisher: AgentCortex
+  repository: https://github.com/KbWen/AgentCortex
+  channel: first-party
+content_digest: sha256:f9cf18b6237cc4b8f5f8e374bd35cef4998a1a548a0a87b201f3459f2efd444e
+lifecycle:
+  status: active
+depends: []
+optional_companions:
+  - verification-before-completion
+provides:
+  - task-plan
+  - verification-plan
+  - rollback-plan
+trust_tier_hint: official
+docs_ref: ../../../docs/specs/skill-manifest-package-contract.md
+homepage: https://github.com/KbWen/AgentCortex

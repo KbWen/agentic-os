@@ -1,0 +1,20 @@
+version: 1
+display_name: receiving-code-review
+short_description: Effectively receive reviewer feedback, categorize blocking and suggestive items, and avoid losing focus due to back-and-forth.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/receiving-code-review
+  detail_ref: .agents/skills/receiving-code-review/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["review"]
+  load_policy: on-match
+  cost_type: output
+  cost_risk: low
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["接收 review", "review feedback", "收到 review 意見"]
+    scope_signals: ["review comments", "inline feedback", "blocking feedback"]
+    failure_signals: []
+    phase_conditions: ["review-feedback-present"]
+  fallback_behavior: Use the stable review flow and process blocking comments before advisory suggestions.

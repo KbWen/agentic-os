@@ -1,0 +1,20 @@
+version: 1
+display_name: auth-security
+short_description: Auth flow, token management, RBAC, session security.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/auth-security
+  detail_ref: .agents/skills/auth-security/SKILL.md
+  trigger_priority: hard
+  phase_scope: ["plan", "implement", "review", "test"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: high
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+  detect_by:
+    classification: ["tiny-fix", "quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["安全檢查", "auth check", "security review", "權限檢查"]
+    scope_signals: ["login", "password", "token", "session", "role", "permission"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use stable kernel security guardrails and auth-related workflow checks.

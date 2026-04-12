@@ -1,0 +1,19 @@
+---
+name: systematic-debugging
+description: 4-phase root cause analysis (Observe→Hypothesize→Verify→Fix). Auto-activate whenever a bug or unexpected behavior is encountered during any phase. Also activate during hotfix research.
+phases: ["implement", "review", "test", "hotfix"]
+trigger: auto (on bug/error encounter)
+trigger_priority: contextual
+load_policy: on-failure
+cost_type: execution
+cost_risk: high
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/hotfix.md#1", ".agent/workflows/implement.md#systematic-debugging", ".agent/workflows/test.md#Step 3"]
+---
+
+# Systematic Debugging
+
+Full instructions: `.agents/skills/systematic-debugging/SKILL.md`.
+
+- **Trigger**: Auto — whenever encountering unexpected behavior, test failures, or runtime errors
+- **Runtime anchor**: existing workflows only load the detailed skill once a failure or bug signal appears
+- **Token note**: Read cost is small; execution cost spikes when hypothesis and verification loops repeat

@@ -1,0 +1,19 @@
+---
+name: receiving-code-review
+description: Process reviewer feedback systematically — categorize into blocking vs suggestive, address blocking items first, avoid scope creep from suggestions. Auto-activate when review comments are received.
+phases: [review]
+trigger: auto (when PR review comments are received)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: output
+cost_risk: low
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+---
+
+# Receiving Code Review
+
+Full instructions: `.agents/skills/receiving-code-review/SKILL.md`.
+
+- **Trigger**: Auto — when review feedback arrives (PR comments, inline suggestions)
+- **Runtime anchor**: review phase activates it only after external feedback is present; it does not replace the normal review gate
+- **Token note**: Read cost is low; output cost comes from categorization, response planning, and proof of addressed feedback

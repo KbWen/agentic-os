@@ -1,0 +1,58 @@
+# AgentCortex Framework Configuration
+# Central source of truth for governance constants.
+# Workflows reference these values instead of hardcoding inline defaults.
+
+worklog:
+  # Compaction triggers — when a Work Log exceeds either threshold,
+  # compact per /handoff §6 before proceeding with the current phase.
+  max_lines: 300
+  max_kb: 12
+  # During compaction, keep the N most recent delta entries
+  # (plus Session Info, latest Resume, latest Risks).
+  keep_recent_entries: 5
+
+# Skill Notes cache policy — single source of truth.
+# Phase workflows reference this section instead of restating rules inline.
+# See: docs/specs/governance-hardening-batch.md §Workstream 4.
+skill_cache_policy:
+  # A Skill Notes block for a given phase is considered VALID (cache hit)
+  # when ALL of the following are true:
+  #   1. The phase heading exists (e.g., #### implement)
+  #   2. At least this many "Checklist:" bullets are present
+  min_checklist_items: 2
+  #   3. At least one "Constraint:" line is present
+  require_constraint: true
+  #   4. The note body (after stripping labels/whitespace) meets this minimum
+  min_body_chars: 50
+  # When trigger-compact-index.json exists AND the skill block carries
+  # a Content Hash / cached_hash, compare hashes FIRST.
+  # If the compact index is absent or the hash field is absent,
+  # fall back to the structural validity checks above.
+  prefer_hash_when_available: true
+
+# Advisory Work Log locking — prevents accidental concurrent edits.
+# See: docs/specs/governance-hardening-batch.md §Workstream 6.
+worklog_lock:
+  # Lock file: .agentcortex/context/work/<worklog-key>.lock.json
+  # Schema: { "owner", "session", "branch", "phase", "updated_at", "stale_timeout_minutes" }
+  stale_timeout_minutes: 60
+  # Behavior:
+  #   - bootstrap and phase entry WARN when a non-stale lock belongs to another session.
+  #   - Solo workflow remains smooth (lock is auto-created/updated, never blocks).
+  #   - validate can detect obviously stale or conflicting lock states.
+  enabled: true
+
+# Domain Doc governance — two-layer Architecture (Synthesis L1 + Decision Log L2).
+# Ref: docs/specs/doc-lifecycle-governance.md AC-6, AC-17, AC-19
+domain_doc:
+  # Maximum lines for a Domain Doc Layer 1 (Synthesis) file.
+  # Exceeding this cap should trigger /govern-docs --restructure.
+  max_synthesis_lines: 150
+
+  # When a single L2 section accumulates this many entries,
+  # /ship outputs an advisory to run /govern-docs --restructure <domain>.
+  restructure_threshold: 5
+
+  # Advisory lock timeout for Domain Doc L2 writes.
+  # Same schema as worklog_lock: .agentcortex/context/domain/<domain>.lock.json
+  lock_stale_timeout_minutes: 15

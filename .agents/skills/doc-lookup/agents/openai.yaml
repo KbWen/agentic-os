@@ -1,0 +1,20 @@
+version: 1
+display_name: doc-lookup
+short_description: Forces WebFetch/WebSearch of official framework docs before implementing. Prevents hallucinated APIs.
+icon_small: book
+agentcortex:
+  summary_ref: .agent/skills/doc-lookup
+  detail_ref: .agents/skills/doc-lookup/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement", "review"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: low
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["查文件", "check docs", "查官方文檔", "read the docs", "看文件再做"]
+    scope_signals: ["framework API", "library usage", "config option", "CLI command", "version-sensitive pattern"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use training knowledge with explicit caveat that API details may be outdated. Recommend user verify critical API usage manually.

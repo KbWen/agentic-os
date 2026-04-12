@@ -1,0 +1,19 @@
+---
+name: auth-security
+description: Auth flow, token management, RBAC, session security. Extends security_guardrails.md with APP-specific auth patterns. MANDATORY for any auth-related change.
+phases: [plan, implement, review, test]
+trigger: auto (when task touches login, registration, password, token, session, role, permission, or access control)
+trigger_priority: hard
+load_policy: on-match
+cost_type: mixed
+cost_risk: high
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+---
+
+# Auth & Security
+
+Full instructions: `.agents/skills/auth-security/SKILL.md`.
+
+- **Trigger**: Auto — ANY task touching auth/permissions/user-data (all classifications)
+- **Runtime anchor**: bootstrap recommends it, then `/implement`, `/review`, and `/test` enforce auth-specific security checks on top of baseline guardrails
+- **Token note**: Read cost is low; the expensive part is expanded security review, auth edge-case testing, and stronger evidence expectations

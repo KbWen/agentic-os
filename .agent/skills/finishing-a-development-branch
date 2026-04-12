@@ -1,0 +1,19 @@
+---
+name: finishing-a-development-branch
+description: Final verification before branch closure — choose between merge, squash-merge, rebase, or close-without-merge. Auto-activate during /ship or when PR is ready.
+phases: ["ship", "handoff"]
+trigger: auto (when branch work is complete and ready for closure)
+trigger_priority: advisory
+load_policy: on-match
+cost_type: output
+cost_risk: medium
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/ship.md#finishing-a-development-branch"]
+---
+
+# Finishing a Development Branch
+
+Full instructions: `.agents/skills/finishing-a-development-branch/SKILL.md`.
+
+- **Trigger**: Auto — when /ship or PR creation is reached
+- **Runtime anchor**: bootstrap can recommend it, but it becomes active only near handoff or ship
+- **Token note**: Output expansion is usually bigger than read cost because closure decisions require explicit evidence

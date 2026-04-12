@@ -1,0 +1,19 @@
+---
+name: requesting-code-review
+description: Prepare and submit code review requests at the right time — self-review first, write clear PR descriptions, identify risk areas for reviewers. Auto-activate during /review or /handoff when changes are ready for external eyes.
+phases: [review, handoff]
+trigger: auto (when changes are ready for review submission)
+trigger_priority: advisory
+load_policy: on-match
+cost_type: output
+cost_risk: low
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/handoff.md"]
+---
+
+# Requesting Code Review
+
+Full instructions: `.agents/skills/requesting-code-review/SKILL.md`.
+
+- **Trigger**: Auto — when preparing to submit changes for review
+- **Runtime anchor**: bootstrap recommends it, then `/review` or `/handoff` use it when work is ready for external eyes
+- **Token note**: Read cost is low; output cost comes from PR summaries, risk framing, and reviewer guidance

@@ -1,0 +1,19 @@
+---
+name: database-design
+description: Schema conventions, migration rules, index strategy, query patterns. Ensures safe and consistent database changes per ADR decisions.
+phases: [plan, implement, review, test]
+trigger: auto (when task involves creating tables, modifying schema, or writing migrations)
+trigger_priority: contextual
+load_policy: on-match
+cost_type: mixed
+cost_risk: high
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+---
+
+# Database Design
+
+Full instructions: `.agents/skills/database-design/SKILL.md`.
+
+- **Trigger**: Auto — when task touches DB schema or data access (feature/architecture-change/hotfix)
+- **Runtime anchor**: bootstrap recommends it, then `/implement`, `/review`, and `/test` enforce migration and schema safety checks
+- **Token note**: Read cost is low; the expensive part is migration verification, rollback checks, and database-focused test evidence

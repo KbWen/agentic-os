@@ -1,0 +1,20 @@
+version: 1
+display_name: api-design
+short_description: REST/GraphQL endpoint conventions, error format, pagination, validation.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/api-design
+  detail_ref: .agents/skills/api-design/SKILL.md
+  trigger_priority: contextual
+  phase_scope: ["implement", "review", "test"]
+  load_policy: on-match
+  cost_type: mixed
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)", ".agent/workflows/test.md#Step 3"]
+  detect_by:
+    classification: ["feature", "architecture-change", "hotfix"]
+    intent_patterns: ["API 設計", "endpoint conventions", "REST design"]
+    scope_signals: ["api endpoint", "route", "controller", "request validation"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use stable kernel workflow rules for API-related implementation, review, and tests.

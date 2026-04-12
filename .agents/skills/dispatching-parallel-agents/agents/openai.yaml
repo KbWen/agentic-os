@@ -1,0 +1,20 @@
+version: 1
+display_name: dispatching-parallel-agents
+short_description: Skill for dispatching parallel agents workflows.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/dispatching-parallel-agents
+  detail_ref: .agents/skills/dispatching-parallel-agents/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["implement"]
+  load_policy: on-match
+  cost_type: execution
+  cost_risk: high
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/implement.md#Skill Execution Overrides"]
+  detect_by:
+    classification: ["feature", "architecture-change"]
+    intent_patterns: ["平行開發", "parallel agents", "dispatch subtasks"]
+    scope_signals: ["3+ independent subtasks", "low coupling", "parallelizable modules"]
+    failure_signals: []
+    phase_conditions: []
+  fallback_behavior: Use the stable /implement flow and keep work sequential if decomposition is unclear.
