@@ -244,7 +244,7 @@ fi
 
 run_python_check \
   "text integrity check" \
-  WARN \
+  FAIL \
   "$TEXT_INTEGRITY_CHECK_PY" \
   --root "$ROOT" \
   --baseline "$TEXT_INTEGRITY_BASELINE"
@@ -277,7 +277,7 @@ else
   record_result SKIP "metadata checks -- no trigger registry found"
 fi
 
-run_python_check "command sync check" WARN "$COMMAND_SYNC_CHECK" --root "$ROOT"
+run_python_check "command sync check" FAIL "$COMMAND_SYNC_CHECK" --root "$ROOT"
 
 if [[ -f "$ROOT/tools/audit_ai_paths.sh" ]]; then
   record_result FAIL "legacy audit helper should move under .agentcortex/tools/: $ROOT/tools/audit_ai_paths.sh"
