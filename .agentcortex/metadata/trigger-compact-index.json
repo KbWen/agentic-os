@@ -118,6 +118,12 @@
       "kind": "skill",
       "user_disableable": true
     },
+    "karpathy-principles": {
+      "load_policy": "phase-entry",
+      "cost_risk": "low",
+      "kind": "skill",
+      "user_disableable": true
+    },
     "production-readiness": {
       "load_policy": "phase-entry",
       "cost_risk": "low",
@@ -550,6 +556,25 @@
       },
       "load_policy": "on-match",
       "content_hash": "ade1544e"
+    },
+    {
+      "id": "karpathy-principles",
+      "kind": "skill",
+      "phase_scope": [
+        "plan",
+        "implement",
+        "review"
+      ],
+      "detect_by": {
+        "classification": [
+          "quick-win",
+          "feature",
+          "architecture-change",
+          "hotfix"
+        ]
+      },
+      "load_policy": "phase-entry",
+      "content_hash": "7e65dd99"
     },
     {
       "id": "production-readiness",

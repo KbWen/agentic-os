@@ -1,0 +1,19 @@
+---
+name: karpathy-principles
+description: Behavioral guidelines to reduce common LLM coding mistakes — Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution. Derived from Andrej Karpathy's observations on LLM coding pitfalls.
+phases: [plan, implement, review]
+trigger: auto (all non-trivial coding tasks — behavioral baseline, not domain-specific)
+trigger_priority: advisory
+load_policy: phase-entry
+cost_type: read
+cost_risk: low
+runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/plan.md#Skill-Aware Planning (Auto-Enforced)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+---
+
+# Karpathy Coding Principles
+
+Full instructions: `.agents/skills/karpathy-principles/SKILL.md`.
+
+- **Trigger**: Auto — all non-trivial coding tasks (quick-win/feature/architecture-change/hotfix)
+- **Runtime anchor**: bootstrap recommends it, then `/plan`, `/implement`, `/review` apply behavioral checks
+- **Token note**: Very low cost (~400 tokens); value is in behavioral discipline, not procedural overhead

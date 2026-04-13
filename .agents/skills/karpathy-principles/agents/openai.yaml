@@ -1,0 +1,20 @@
+version: 1
+display_name: karpathy-principles
+short_description: Behavioral guidelines — Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution.
+icon_small: wrench
+agentcortex:
+  summary_ref: .agent/skills/karpathy-principles
+  detail_ref: .agents/skills/karpathy-principles/SKILL.md
+  trigger_priority: advisory
+  phase_scope: ["plan", "implement", "review"]
+  load_policy: phase-entry
+  cost_type: read
+  cost_risk: low
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/bootstrap.md#3.6", ".agent/workflows/plan.md#Skill-Aware Planning (Auto-Enforced)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"]
+  detect_by:
+    classification: ["quick-win", "feature", "architecture-change", "hotfix"]
+    intent_patterns: ["Karpathy 原則", "karpathy principles", "coding discipline", "簡潔原則"]
+    scope_signals: []
+    failure_signals: []
+    phase_conditions: ["enter-plan", "enter-implement", "enter-review"]
+  fallback_behavior: Use stable kernel workflow rules and engineering guardrails for code quality.
