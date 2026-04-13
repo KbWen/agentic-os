@@ -1,13 +1,13 @@
+@AGENTS.md
+
 # Claude Integration Entry
 
-**MANDATORY**: Read and follow `AGENTS.md` before any action. It contains the governance rules, delivery gates, and state model that apply to ALL work in this repository.
-
 This repository uses **Agentic OS** — a governance-first AI agent framework.
-All rules live in `AGENTS.md` and `.agent/`. This file is the Claude-specific loader only.
+`AGENTS.md` is auto-injected above (via `@import`). All governance rules, delivery gates, and state model are already in context. This file adds Claude-specific loading directives only.
 
 ## Startup (REQUIRED — every conversation)
 
-1. **Read `AGENTS.md`** — this is the canonical governance document. Follow it exactly.
+1. **`AGENTS.md` is loaded** — governance rules are in context. Follow them exactly.
 2. **Assess task scope** from the user's message:
    - **tiny-fix** (< 3 files, no semantic change, typo/rename/config) → **skip to Step 5**.
    - **quick-win** (1-2 modules, clear scope, no cross-module impact) → read SSoT (Step 3), **skip Step 4** (guardrails). Essential quick-win rules are in `.agent/workflows/bootstrap.md` §7.
