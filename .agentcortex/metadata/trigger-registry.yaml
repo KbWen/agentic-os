@@ -520,6 +520,34 @@ entries:
     fallback_behavior: >
       Use the stable bootstrap or worktree-first workflow before changing branches.
 
+  - id: karpathy-principles
+    kind: skill
+    canonical_ref: .agent/skills/karpathy-principles
+    mirror_ref: .agents/skills/karpathy-principles/agents/openai.yaml
+    detail_ref: .agents/skills/karpathy-principles/SKILL.md
+    platforms: [claude, codex, antigravity]
+    phase_scope: [plan, implement, review]
+    trigger_priority: advisory
+    user_disableable: true
+    detect_by:
+      classification: [quick-win, feature, architecture-change, hotfix]
+      intent_patterns: ["Karpathy 原則", "karpathy principles", "coding discipline", "簡潔原則"]
+      scope_signals: []
+      failure_signals: []
+      phase_conditions: [enter-plan, enter-implement, enter-review]
+    load_policy: phase-entry
+    cost_type: read
+    cost_risk: low
+    runtime_anchor:
+      - "AGENTS.md#Skill Activation Triggers"
+      - ".agent/workflows/bootstrap.md#3.6"
+      - ".agent/workflows/plan.md#Skill-Aware Planning (Auto-Enforced)"
+      - ".agent/workflows/implement.md#Skill Execution Overrides"
+      - ".agent/workflows/review.md#Skill-Aware Review (Pre-Check)"
+    block_if_missed: false
+    fallback_behavior: >
+      Use stable kernel workflow rules and engineering guardrails for code quality.
+
   - id: production-readiness
     kind: skill
     canonical_ref: .agent/skills/production-readiness

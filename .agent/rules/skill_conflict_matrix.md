@@ -15,3 +15,6 @@ Bootstrap reads this matrix once when it writes `Recommended Skills`.
 | test-driven-development | executing-plans | compatible | TDD micro-cycles fit naturally inside stepwise plan execution. |
 | dispatching-parallel-agents | test-driven-development | partial-conflict | Prefer TDD on the critical path; parallel dispatch is limited to isolated subproblems or verification tasks. |
 | dispatching-parallel-agents | systematic-debugging | partial-conflict | Parallel work can collect observations, but the hypothesis -> verify loop stays sequential in one owner session. |
+| karpathy-principles | writing-plans | compatible | Karpathy "Think Before Coding" reinforces plan assumption-surfacing. Both active during /plan with no overlap. |
+| karpathy-principles | verification-before-completion | compatible | Karpathy "Goal-Driven Execution" complements 5-Gate Sequence. Karpathy provides behavioral prompts; verification provides procedural gates. |
+| karpathy-principles | executing-plans | compatible | Karpathy "Surgical Changes" reinforces stepwise execution discipline. No conflict. |

@@ -258,6 +258,7 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
    | `verification-before-completion` | implement, test, ship | Any phase completion claim | tiny-fix |
    | `systematic-debugging` | implement, review, test | Bug, error, or unexpected behavior encountered | Never |
    | `red-team-adversarial` | review, test | /review: hotfix→Lite, feature→Full, arch→Full+Beast | tiny-fix, quick-win |
+   | `karpathy-principles` | plan, implement, review | All non-trivial coding tasks (behavioral baseline) | tiny-fix |
 
    **Scope-Detected Skills (activate when task touches that domain):**
 
