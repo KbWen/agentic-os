@@ -21,6 +21,17 @@ If you are an AI assisting in this repository:
 
 ## 🔧 Local Development
 
+### Prerequisites
+
+| Dependency | Required? | Notes |
+|:---|:---|:---|
+| **Git** | Required | Version control |
+| **Bash** | Required | Included with [Git for Windows](https://gitforwindows.org/) |
+| **Python 3.9+** | Recommended | Enables full validation; not needed for governance-only usage |
+
+> **No Python?** Validation still runs — Python-dependent checks report `WARN` instead of `FAIL`.
+> Use `--no-python` (bash) or `-NoPython` (PowerShell) to suppress warnings.
+
 ### Setup
 
 ```bash
@@ -38,15 +49,22 @@ bash .agentcortex/bin/validate.sh
 
 # Windows PowerShell
 powershell -ExecutionPolicy Bypass -File .agentcortex/bin/validate.ps1
+
+# Without Python (skip Python-dependent checks)
+bash .agentcortex/bin/validate.sh --no-python
 ```
 
-Both scripts must report `fail=0` before submitting a PR.
+Both scripts must report `fail=0` before submitting a PR. Python-dependent `warn` results are acceptable for text-only contributions.
 
 ### Testing a Deploy
 
 To test deployment to a scratch project:
 
 ```bash
+# Preview first (no files written)
+./installers/deploy_brain.sh --dry-run /path/to/test-project
+
+# Deploy
 ./installers/deploy_brain.sh /path/to/test-project
 ```
 

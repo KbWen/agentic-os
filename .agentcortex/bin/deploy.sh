@@ -11,19 +11,33 @@ case "$_raw_cp_flag" in
 esac
 ACX_SOURCE="${ACX_SOURCE:-}"
 TARGET=""
+DRY_RUN=false
 
 # --- Argument parsing ---
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --source) ACX_SOURCE="$2"; shift 2 ;;
         --source=*) ACX_SOURCE="${1#--source=}"; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         *) TARGET="$1"; shift ;;
     esac
 done
 TARGET="${TARGET:-.}"
+TARGET="${TARGET%/}"
 
 MANIFEST_FILE="$TARGET/.agentcortex-manifest"
 ACX_VERSION="1.0.0"
+
+# --- Self-deploy guard ---
+TARGET_ABS="$(cd "$TARGET" 2>/dev/null && pwd || echo "$TARGET")"
+REPO_ABS="$(cd "$REPO_ROOT" 2>/dev/null && pwd)"
+if [ "$TARGET_ABS" = "$REPO_ABS" ]; then
+    echo "" >&2
+    echo "ERROR: Target is the Agentic OS source repo itself." >&2
+    echo "Deploy INTO your project, not into the framework source." >&2
+    echo "Usage: $0 /path/to/your-project" >&2
+    exit 1
+fi
 
 # --- Counters ---
 COUNT_UPDATED=0
@@ -64,8 +78,12 @@ get_tier() {
         deploy_brain.sh|deploy_brain.ps1|deploy_brain.cmd) echo "wrapper" ;;
 
         # scaffold — created once, user expected to modify
+        .gitattributes) echo "scaffold" ;;
         .agentcortex/context/current_state.md) echo "scaffold" ;;
         .agentcortex/adr/*) echo "scaffold" ;;
+        .agentcortex/templates/*) echo "scaffold" ;;
+        .github/ISSUE_TEMPLATE/*) echo "scaffold" ;;
+        .github/PULL_REQUEST_TEMPLATE.md) echo "scaffold" ;;
 
         # core — everything else is framework, always overwrite
         *) echo "core" ;;
@@ -299,6 +317,63 @@ if $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
     echo ""
 fi
 
+# --- Pre-deploy write permission check ---
+if [ ! -d "$TARGET" ]; then
+    mkdir -p "$TARGET" 2>/dev/null || true
+fi
+if [ -e "$TARGET" ] && [ ! -d "$TARGET" ]; then
+    echo "" >&2
+    echo "ERROR: Target path exists but is not a directory: $TARGET" >&2
+    echo "Fix: provide a directory path, not a file." >&2
+    exit 1
+fi
+if [ ! -w "$TARGET" ]; then
+    echo "" >&2
+    echo "ERROR: Target directory is not writable: $TARGET" >&2
+    echo "Fix: check permissions or run with appropriate privileges." >&2
+    exit 1
+fi
+
+# --- Dry-run mode: preview only ---
+if $DRY_RUN; then
+    echo ""
+    echo "[DRY RUN] Would deploy Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) to $TARGET"
+    echo ""
+    echo "Directories that would be created:"
+    for d in \
+        ".agent/rules" ".agent/workflows" ".agent/skills" \
+        ".antigravity" ".agents/skills" ".claude/commands" \
+        ".codex" "codex/rules" ".github/ISSUE_TEMPLATE" \
+        ".agentcortex/bin" ".agentcortex/metadata" ".agentcortex/tools" \
+        ".agentcortex/docs/guides" ".agentcortex/context/work" \
+        ".agentcortex/context/review" ".agentcortex/context/archive" \
+        ".agentcortex/templates" ".agentcortex/adr" ".agentcortex/specs" \
+        "docs/specs" "docs/adr"; do
+        [ -d "$TARGET/$d" ] || echo "  [NEW DIR] $d"
+    done
+    echo ""
+    echo "Files that would be deployed (core tier = always overwrite, scaffold = skip if modified):"
+    _dry_count=0
+    for f in "$REPO_ROOT"/AGENTS.md "$REPO_ROOT"/CLAUDE.md \
+             "$REPO_ROOT"/.agent/rules/*.md "$REPO_ROOT"/.agent/config.yaml \
+             "$REPO_ROOT"/.agent/workflows/*.md "$REPO_ROOT"/.agentcortex/bin/*.sh \
+             "$REPO_ROOT"/.agentcortex/bin/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.py \
+             "$REPO_ROOT"/.agentcortex/tools/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.sh; do
+        [ -f "$f" ] || continue
+        _dry_count=$((_dry_count + 1))
+        _bname="$(basename "$f")"
+        if [ -f "$TARGET/$_bname" ] || [ -f "$TARGET/.agent/rules/$_bname" ]; then
+            echo "  [UPDATE] $_bname"
+        else
+            echo "  [NEW]    $_bname"
+        fi
+    done
+    echo ""
+    echo "Total: ~${_dry_count}+ files would be deployed."
+    echo "Run without --dry-run to apply."
+    exit 0
+fi
+
 # --- Create directory structure ---
 mkdir -p "$TARGET/.agent/rules"
 mkdir -p "$TARGET/.agent/workflows"
@@ -316,6 +391,7 @@ mkdir -p "$TARGET/.agentcortex/docs/guides"
 mkdir -p "$TARGET/.agentcortex/context/work"
 mkdir -p "$TARGET/.agentcortex/context/review"
 mkdir -p "$TARGET/.agentcortex/context/archive"
+mkdir -p "$TARGET/.agentcortex/templates"
 mkdir -p "$TARGET/.agentcortex/adr"
 mkdir -p "$TARGET/.agentcortex/specs"
 mkdir -p "$TARGET/docs/specs"
@@ -324,6 +400,9 @@ mkdir -p "$TARGET/docs/adr"
 # --- Deploy: root governance files (core) ---
 deploy_file "$REPO_ROOT/AGENTS.md" "AGENTS.md"
 deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
+
+# --- Deploy: .gitattributes (scaffold — user may extend) ---
+deploy_file "$REPO_ROOT/.gitattributes" ".gitattributes"
 
 # --- Deploy: wrapper scripts ---
 deploy_file "$REPO_ROOT/installers/deploy_brain.sh" "deploy_brain.sh" "+x"
@@ -382,6 +461,19 @@ fi
 touch "$TARGET/.agent/skills/.gitkeep"
 touch "$TARGET/.agents/skills/.gitkeep"
 
+# Ensure directories survive git clone (git doesn't track empty dirs).
+# Deploy .gitkeep.md from source if available; fall back to a plain touch.
+for _keep_pair in \
+    ".agentcortex/context/work/.gitkeep.md" \
+    "docs/specs/.gitkeep.md" \
+    "docs/adr/.gitkeep.md"; do
+    if [ -f "$REPO_ROOT/$_keep_pair" ]; then
+        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair"
+    else
+        touch "$TARGET/$_keep_pair"
+    fi
+done
+
 # --- Deploy: .agentcortex/bin (core) ---
 for f in deploy.sh deploy.ps1 validate.sh validate.ps1; do
     [ -f "$REPO_ROOT/.agentcortex/bin/$f" ] || continue
@@ -414,7 +506,19 @@ for bname in "${runtime_tools[@]}"; do
 done
 
 # --- Deploy: .agentcortex/context/current_state.md (scaffold) ---
-deploy_file "$REPO_ROOT/.agentcortex/context/current_state.md" ".agentcortex/context/current_state.md"
+# Use the downstream template (generic placeholders) instead of the
+# framework's own SSoT which contains Agentic OS project-specific content.
+if [ -f "$REPO_ROOT/.agentcortex/templates/current_state.md" ]; then
+    deploy_file "$REPO_ROOT/.agentcortex/templates/current_state.md" ".agentcortex/context/current_state.md"
+else
+    deploy_file "$REPO_ROOT/.agentcortex/context/current_state.md" ".agentcortex/context/current_state.md"
+fi
+
+# --- Deploy: .agentcortex/templates (scaffold) ---
+for f in "$REPO_ROOT"/.agentcortex/templates/*; do
+    [ -f "$f" ] || continue
+    deploy_file "$f" ".agentcortex/templates/$(basename "$f")"
+done
 
 # --- Deploy: .agentcortex/adr (scaffold) ---
 for f in "$REPO_ROOT"/.agentcortex/adr/*.md; do
@@ -474,7 +578,7 @@ write_downstream_ignore_block() {
 
 # Runtime State (work logs are session-local; private is never committed)
 .agentcortex/context/work/*.md
-!.agentcortex/context/work/.gitkeep
+!.agentcortex/context/work/.gitkeep.md
 .agentcortex/context/.guard_receipt.json
 .agentcortex/context/.guard_locks/
 .agentcortex/context/private/
@@ -502,7 +606,7 @@ strip_managed_ignore_blocks() {
     BEGIN {
         # Current managed entries
         managed[".agentcortex/context/work/*.md"] = 1
-        managed["!.agentcortex/context/work/.gitkeep"] = 1
+        managed["!.agentcortex/context/work/.gitkeep.md"] = 1
         managed[".agentcortex/context/.guard_receipt.json"] = 1
         managed[".agentcortex/context/.guard_locks/"] = 1
         managed[".agentcortex/context/private/"] = 1
@@ -527,11 +631,12 @@ strip_managed_ignore_blocks() {
         managed["tools/validate.sh"] = 1
         managed["tools/validate.ps1"] = 1
         managed["tools/validate.cmd"] = 1
-        managed[".github/ISSUE_TEMPLATE/agent_issue.md"] = 1
+        managed[".github/ISSUE_TEMPLATE/bug_report.md"] = 1
+        managed[".github/ISSUE_TEMPLATE/feature_request.md"] = 1
         managed[".github/PULL_REQUEST_TEMPLATE.md"] = 1
         managed["docs/adr/"] = 1
         managed["docs/context/work/*.md"] = 1
-        managed["!docs/context/work/.gitkeep"] = 1
+        managed["!docs/context/work/.gitkeep.md"] = 1
         managed["docs/context/private/"] = 1
         managed["docs/context/"] = 1
         managed["docs/context/current_state.md"] = 1
@@ -666,7 +771,8 @@ fi
     fi
     echo "---"
     sort -k2 "$DEPLOYED_FILES_TMP"
-} > "$MANIFEST_FILE"
+} > "$MANIFEST_FILE.tmp"
+mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
 
 # ============================================================
 # Summary
@@ -701,9 +807,12 @@ echo "   PR review mirrors under .agentcortex/context/review/ are optional; upst
 echo "   .agentcortex-manifest tracks deployed files — commit this to your repo."
 echo ""
 echo "Next steps:"
-echo "   1. Stage framework files for git tracking:"
-echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/"
+echo "   1. Validate the installation (optional — Python is NOT required):"
+echo "      .agentcortex/bin/validate.sh              # full validation (uses Python if available)"
+echo "      .agentcortex/bin/validate.sh --no-python  # lightweight, text-only checks"
+echo "   2. Stage framework files for git tracking:"
+echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/"
 echo "      # Also add if present: .claude/ .github/"
-echo "   2. Tell AI: 'Please run /bootstrap' to start"
-echo "   3. Agentic OS reference docs are under .agentcortex/docs/"
+echo "   3. Tell AI: 'Please run /bootstrap' to start"
+echo "   4. Agentic OS reference docs are under .agentcortex/docs/"
 echo ""

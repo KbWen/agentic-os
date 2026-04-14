@@ -1,3 +1,7 @@
+param(
+    [switch]$NoPython
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -124,7 +128,11 @@ function Invoke-PythonCheck {
         return
     }
     if (-not $script:PythonCommand) {
-        Add-Result -Level $MissingPythonLevel -Message "$Label -- python unavailable"
+        if ($NoPython) {
+            Add-Result -Level 'SKIP' -Message "$Label -- python checks disabled (--NoPython)"
+        } else {
+            Add-Result -Level 'WARN' -Message "$Label -- python unavailable (install Python 3.9+ for full validation)"
+        }
         return
     }
 
@@ -158,9 +166,13 @@ $script:PassCount = 0
 $script:WarnCount = 0
 $script:FailCount = 0
 $script:SkipCount = 0
-$script:PythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
-if (-not $script:PythonCommand) {
-    $script:PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+if ($NoPython) {
+    $script:PythonCommand = $null
+} else {
+    $script:PythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
+    if (-not $script:PythonCommand) {
+        $script:PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    }
 }
 
 $scriptDir = Normalize-PathString ($PSScriptRoot)
@@ -342,6 +354,7 @@ if (Test-Path -Path $triggerRegistry -PathType Leaf) {
     }
     else {
         Add-Result -Level 'FAIL' -Message 'metadata runtime incomplete -- missing trigger-compact-index.json'
+        Write-Host '  fix: re-run deploy to restore metadata, or regenerate with .agentcortex/tools/generate_compact_index.py'
     }
 
     if (Test-Path -Path $triggerMetadataValidator -PathType Leaf) {
@@ -350,24 +363,26 @@ if (Test-Path -Path $triggerRegistry -PathType Leaf) {
         }
         else {
             Add-Result -Level 'FAIL' -Message 'metadata deep validation unavailable -- lifecycle scenarios missing'
+            Write-Host '  fix: re-run deploy to restore .agentcortex/metadata/lifecycle-scenarios.json'
         }
     }
     else {
-        Add-Result -Level 'SKIP' -Message 'metadata deep checks -- CI-only validator not deployed'
+        Add-Result -Level 'SKIP' -Message 'metadata deep checks -- CI-only validator not deployed (safe to ignore downstream)'
     }
 
     if (Test-Path -Path $triggerCompactIndexGenerator -PathType Leaf) {
         Invoke-PythonCheck -Label 'compact index freshness' -MissingPythonLevel 'FAIL' -ScriptPath $triggerCompactIndexGenerator -Arguments @('--root', $root, '--check')
     }
     else {
-        Add-Result -Level 'SKIP' -Message 'compact index freshness -- CI-only generator not deployed'
+        Add-Result -Level 'SKIP' -Message 'compact index freshness -- CI-only generator not deployed (safe to ignore downstream)'
     }
 }
 elseif (Test-Path -Path $triggerCompactIndex -PathType Leaf) {
     Add-Result -Level 'FAIL' -Message 'metadata runtime incomplete -- compact index present without trigger registry'
+    Write-Host '  fix: re-run deploy to restore .agentcortex/metadata/trigger-registry.yaml'
 }
 else {
-    Add-Result -Level 'SKIP' -Message 'metadata checks -- no trigger registry found'
+    Add-Result -Level 'SKIP' -Message 'metadata checks -- no trigger registry found (safe to ignore if not using skill metadata)'
 }
 
 Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'FAIL' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)
@@ -689,8 +704,8 @@ else {
             $deployBlockErrors++
         }
     }
-    if (-not ($deployBlock | Where-Object { $_ -eq '!.agentcortex/context/work/.gitkeep' })) {
-        Write-Output '  deploy ignore block missing .gitkeep negation pattern'
+    if (-not ($deployBlock | Where-Object { $_ -eq '!.agentcortex/context/work/.gitkeep.md' })) {
+        Write-Output '  deploy ignore block missing .gitkeep.md negation pattern'
         $deployBlockErrors++
     }
     foreach ($forbidden in @(
@@ -714,25 +729,26 @@ else {
     }
 }
 
-$readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
-if (Test-Path -Path $readmeZhTw -PathType Leaf) {
-    Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+if ($isSourceRepo) {
+    $readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
+    if (Test-Path -Path $readmeZhTw -PathType Leaf) {
+        Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+    }
+    $readmeEn = Join-NormalPath $root 'README.md'
+    if (Test-Path -Path $readmeEn -PathType Leaf) {
+        $params = @{
+            Path = $readmeEn
+            Pattern = 'governance-first operating system for AI coding agents'
+            SuccessMessage = 'README.md encoding looks healthy'
+            FailureMessage = 'README.md appears mojibaked or re-encoded'
+        }
+        Test-ContainsLiteral @params
+    }
 }
 
 $testingProtocolZhTw = Join-NormalPath $root '.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md'
 if (Test-Path -Path $testingProtocolZhTw -PathType Leaf) {
     Test-ContainsRegex -Path $testingProtocolZhTw -Pattern '\u6E2C\u8A66\u6559\u6230\u5B88\u5247' -SuccessMessage 'TESTING_PROTOCOL_zh-TW.md encoding looks healthy' -FailureMessage 'TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded'
-}
-
-$readmeEn = Join-NormalPath $root 'README.md'
-if (Test-Path -Path $readmeEn -PathType Leaf) {
-    $params = @{
-        Path = $readmeEn
-        Pattern = 'governance-first operating system for AI coding agents'
-        SuccessMessage = 'README.md encoding looks healthy'
-        FailureMessage = 'README.md appears mojibaked or re-encoded'
-    }
-    Test-ContainsLiteral @params
 }
 
 $auditGuardrailsEn = Join-NormalPath $root '.agentcortex/docs/guides/audit-guardrails.md'

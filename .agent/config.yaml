@@ -13,7 +13,7 @@ worklog:
 
 # Skill Notes cache policy — single source of truth.
 # Phase workflows reference this section instead of restating rules inline.
-# See: docs/specs/governance-hardening-batch.md §Workstream 4.
+# Contract: AGENTS.md §Skill Safety & Precedence, §Shared Phase Contracts.
 skill_cache_policy:
   # A Skill Notes block for a given phase is considered VALID (cache hit)
   # when ALL of the following are true:
@@ -31,7 +31,7 @@ skill_cache_policy:
   prefer_hash_when_available: true
 
 # Advisory Work Log locking — prevents accidental concurrent edits.
-# See: docs/specs/governance-hardening-batch.md §Workstream 6.
+# Contract: AGENTS.md §Multi-Person Collaboration.
 worklog_lock:
   # Lock file: .agentcortex/context/work/<worklog-key>.lock.json
   # Schema: { "owner", "session", "branch", "phase", "updated_at", "stale_timeout_minutes" }
@@ -43,7 +43,7 @@ worklog_lock:
   enabled: true
 
 # Domain Doc governance — two-layer Architecture (Synthesis L1 + Decision Log L2).
-# Ref: docs/specs/doc-lifecycle-governance.md AC-6, AC-17, AC-19
+# Contract: AGENTS.md §Document Lifecycle Governance.
 domain_doc:
   # Maximum lines for a Domain Doc Layer 1 (Synthesis) file.
   # Exceeding this cap should trigger /govern-docs --restructure.

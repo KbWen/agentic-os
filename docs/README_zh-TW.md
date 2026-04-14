@@ -116,7 +116,16 @@ flowchart LR
 
 ### 1) 部署到專案
 
-**先決條件**：Git、Python 3、Bash（Git for Windows 已內建）。
+**先決條件**：
+
+| 依賴 | 必要？ | 用途 |
+|:---|:---|:---|
+| **Git** | 必要 | 版本控制與部署 |
+| **Bash** | 必要 | 執行部署與驗證腳本（[Git for Windows](https://gitforwindows.org/) 已內建） |
+| **Python 3.9+** | 推薦 | 啟用完整驗證（metadata、編碼、命令同步檢查） |
+
+> **沒有 Python？** 框架可以正常部署與使用。驗證會以降級模式執行 — Python 相關檢查報告 `WARN` 而非 `FAIL`。
+> 使用 `--no-python` 抑制警告：`bash .agentcortex/bin/validate.sh --no-python`
 
 ```bash
 ./installers/deploy_brain.sh /path/to/your-project

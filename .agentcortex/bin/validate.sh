@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# --- CLI flags ---
+ACX_NO_PYTHON=0
+for _arg in "$@"; do
+  case "$_arg" in
+    --no-python) ACX_NO_PYTHON=1 ;;
+  esac
+done
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PLATFORM_DOC="$ROOT/.agentcortex/docs/CODEX_PLATFORM_GUIDE.md"
 CLAUDE_PLATFORM_DOC="$ROOT/.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md"
@@ -146,7 +154,11 @@ run_python_check() {
   fi
 
   if [[ -z "${PYTHON_BIN:-}" ]]; then
-    record_result "$missing_python_level" "$label -- python unavailable"
+    if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+      record_result SKIP "$label -- python checks disabled (--no-python)"
+    else
+      record_result WARN "$label -- python unavailable (install Python 3.9+ for full validation)"
+    fi
     return 0
   fi
 
@@ -224,7 +236,9 @@ required_dirs=(
   "$ROOT/.agent/skills"
 )
 
-if command -v python3 >/dev/null 2>&1; then
+if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+  PYTHON_BIN=
+elif command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN=python3
 elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN=python
@@ -260,6 +274,7 @@ if [[ -f "$TRIGGER_REGISTRY" ]]; then
     record_result PASS "metadata runtime artifacts present"
   else
     record_result FAIL "metadata runtime incomplete -- missing trigger-compact-index.json"
+    echo "  fix: re-run deploy to restore metadata, or regenerate with .agentcortex/tools/generate_compact_index.py"
   fi
 
   if [[ -f "$TRIGGER_METADATA_VALIDATOR" ]]; then
@@ -267,20 +282,22 @@ if [[ -f "$TRIGGER_REGISTRY" ]]; then
       run_python_check "metadata deep validation" FAIL "$TRIGGER_METADATA_VALIDATOR" --root "$ROOT"
     else
       record_result FAIL "metadata deep validation unavailable -- lifecycle scenarios missing"
+      echo "  fix: re-run deploy to restore .agentcortex/metadata/lifecycle-scenarios.json"
     fi
   else
-    record_result SKIP "metadata deep checks -- CI-only validator not deployed"
+    record_result SKIP "metadata deep checks -- CI-only validator not deployed (safe to ignore downstream)"
   fi
 
   if [[ -f "$TRIGGER_COMPACT_INDEX_GENERATOR" ]]; then
     run_python_check "compact index freshness" FAIL "$TRIGGER_COMPACT_INDEX_GENERATOR" --root "$ROOT" --check
   else
-    record_result SKIP "compact index freshness -- CI-only generator not deployed"
+    record_result SKIP "compact index freshness -- CI-only generator not deployed (safe to ignore downstream)"
   fi
 elif [[ -f "$TRIGGER_COMPACT_INDEX" ]]; then
   record_result FAIL "metadata runtime incomplete -- compact index present without trigger registry"
+  echo "  fix: re-run deploy to restore .agentcortex/metadata/trigger-registry.yaml"
 else
-  record_result SKIP "metadata checks -- no trigger registry found"
+  record_result SKIP "metadata checks -- no trigger registry found (safe to ignore if not using skill metadata)"
 fi
 
 run_python_check "command sync check" FAIL "$COMMAND_SYNC_CHECK" --root "$ROOT"
@@ -631,9 +648,8 @@ for review in "$ROOT"/docs/reviews/*.md; do
         routing_action_errors=$((routing_action_errors + 1))
       fi
     done
-    mapfile -t routing_targets < <(sed -n 's/^[[:space:]]*target_doc:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$review")
-    mapfile -t routing_statuses < <(sed -n 's/^[[:space:]]*status:[[:space:]]*\([a-z]*\).*$/\1/p' "$review")
-    for target in "${routing_targets[@]}"; do
+    while IFS= read -r target; do
+      [[ -z "$target" ]] && continue
       if [[ ! "$target" =~ ^docs/(architecture|specs)/.+\.md$ ]]; then
         printf '  routing_actions target_doc must point to docs/architecture/*.md or docs/specs/*.md: %s (%s)\n' "$review" "$target"
         routing_action_errors=$((routing_action_errors + 1))
@@ -641,8 +657,9 @@ for review in "$ROOT"/docs/reviews/*.md; do
         printf '  routing_actions target_doc does not exist yet: %s (%s)\n' "$review" "$target"
         routing_action_warnings=$((routing_action_warnings + 1))
       fi
-    done
-    for status in "${routing_statuses[@]}"; do
+    done < <(sed -n 's/^[[:space:]]*target_doc:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$review")
+    while IFS= read -r status; do
+      [[ -z "$status" ]] && continue
       case "$status" in
         pending|merged|rejected) ;;
         *)
@@ -650,7 +667,7 @@ for review in "$ROOT"/docs/reviews/*.md; do
           routing_action_errors=$((routing_action_errors + 1))
           ;;
       esac
-    done
+    done < <(sed -n 's/^[[:space:]]*status:[[:space:]]*\([a-z]*\).*$/\1/p' "$review")
   fi
 done
 if [[ "$routing_action_errors" -gt 0 ]]; then
@@ -712,8 +729,8 @@ else
       missing_patterns=$((missing_patterns + 1))
     fi
   done
-  if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -F -q '.agentcortex/context/work/.gitkeep'; then
-    printf '  deploy ignore block missing .gitkeep negation pattern\n'
+  if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -F -q '.agentcortex/context/work/.gitkeep.md'; then
+    printf '  deploy ignore block missing .gitkeep.md negation pattern\n'
     missing_patterns=$((missing_patterns + 1))
   fi
   for forbidden_downstream_pattern in \
@@ -735,12 +752,21 @@ else
   fi
 fi
 
-if [[ -f "$ROOT/docs/README_zh-TW.md" ]]; then
-  check_contains_literal \
-    "$ROOT/docs/README_zh-TW.md" \
-    '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' \
-    "README_zh-TW.md encoding looks healthy" \
-    "README_zh-TW.md appears mojibaked or re-encoded"
+if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
+  if [[ -f "$ROOT/docs/README_zh-TW.md" ]]; then
+    check_contains_literal \
+      "$ROOT/docs/README_zh-TW.md" \
+      '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' \
+      "README_zh-TW.md encoding looks healthy" \
+      "README_zh-TW.md appears mojibaked or re-encoded"
+  fi
+  if [[ -f "$ROOT/README.md" ]]; then
+    check_contains_literal \
+      "$ROOT/README.md" \
+      'governance-first operating system for AI coding agents' \
+      "README.md encoding looks healthy" \
+      "README.md appears mojibaked or re-encoded"
+  fi
 fi
 if [[ -f "$ROOT/.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md" ]]; then
   check_contains_literal \
@@ -748,13 +774,6 @@ if [[ -f "$ROOT/.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md" ]]; then
     '測試教戰守則' \
     "TESTING_PROTOCOL_zh-TW.md encoding looks healthy" \
     "TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded"
-fi
-if [[ -f "$ROOT/README.md" ]]; then
-  check_contains_literal \
-    "$ROOT/README.md" \
-    'governance-first operating system for AI coding agents' \
-    "README.md encoding looks healthy" \
-    "README.md appears mojibaked or re-encoded"
 fi
 if [[ -f "$ROOT/.agentcortex/docs/guides/audit-guardrails.md" ]]; then
   check_contains_literal \

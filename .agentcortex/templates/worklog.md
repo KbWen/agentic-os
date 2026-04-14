@@ -13,13 +13,15 @@ usage: Used by /bootstrap workflow when creating a new Work Log at .agentcortex/
 | Branch | `<raw-branch-name>` |
 | Classification | `<tiny-fix \| quick-win \| hotfix \| feature \| architecture-change>` |
 | Classified by | `<model-name or human>` |
-| Frozen | `<yes \| no>` |
+| Frozen | `true` |
 | Created Date | `<YYYY-MM-DD>` |
 | Owner | `<session-id or username>` |
-| Guardrails Mode | `<standard \| strict>` |
+| Guardrails Mode | `<Full \| Quick \| Lite>` |
 | Current Phase | `<bootstrap \| plan \| implement \| review \| test \| handoff \| ship>` |
 | Checkpoint SHA | `<git-sha or none>` |
 | Recommended Skills | `<comma-separated skill IDs or none>` |
+| Primary Domain Snapshot | `<domain \| none>` |
+| SSoT Sequence | `<N>` |
 
 ---
 
@@ -27,10 +29,9 @@ usage: Used by /bootstrap workflow when creating a new Work Log at .agentcortex/
 
 > Written by /bootstrap. Update on each new session.
 
-- **Model**: `<claude-sonnet-4-x | gemini-x | gpt-x>`
-- **Session ID**: `<unique-id>`
-- **Platform**: `<claude-code | codex | api>`
-- **Started**: `<YYYY-MM-DD HH:MM UTC>`
+- Agent: `<model-name>`
+- Session: `<YYYY-MM-DD HH:MM UTC>`
+- Platform: `<claude-code | codex | antigravity | api>`
 
 ---
 

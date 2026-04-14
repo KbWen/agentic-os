@@ -11,6 +11,10 @@
 *.cmd text eol=crlf
 *.bat text eol=crlf
 
+# Python and JSON must use LF (prevents CRLF hash mismatches in manifest)
+*.py text eol=lf
+*.json text eol=lf
+
 # Markdown and YAML always text
 *.md text
 *.yaml text
