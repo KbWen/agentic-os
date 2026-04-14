@@ -354,11 +354,22 @@ if $DRY_RUN; then
     echo ""
     echo "Files that would be deployed (core tier = always overwrite, scaffold = skip if modified):"
     _dry_count=0
+    # Enumerate only the files that are actually deployed (mirrors real deploy logic).
+    # Runtime Python tools are a whitelist — NOT all *.py in tools/.
+    _runtime_tools="guard_context_write.py check_command_sync.py check_text_integrity.py check_text_integrity.ps1 text_integrity_baseline.txt sync_skills.sh"
     for f in "$REPO_ROOT"/AGENTS.md "$REPO_ROOT"/CLAUDE.md \
+             "$REPO_ROOT"/.gitattributes \
+             "$REPO_ROOT"/installers/deploy_brain.sh "$REPO_ROOT"/installers/deploy_brain.ps1 "$REPO_ROOT"/installers/deploy_brain.cmd \
+             "$REPO_ROOT"/.antigravity/rules.md "$REPO_ROOT"/codex/rules/default.rules \
              "$REPO_ROOT"/.agent/rules/*.md "$REPO_ROOT"/.agent/config.yaml \
-             "$REPO_ROOT"/.agent/workflows/*.md "$REPO_ROOT"/.agentcortex/bin/*.sh \
-             "$REPO_ROOT"/.agentcortex/bin/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.py \
-             "$REPO_ROOT"/.agentcortex/tools/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.sh; do
+             "$REPO_ROOT"/.agent/workflows/*.md \
+             "$REPO_ROOT"/.agentcortex/bin/deploy.sh "$REPO_ROOT"/.agentcortex/bin/deploy.ps1 \
+             "$REPO_ROOT"/.agentcortex/bin/validate.sh "$REPO_ROOT"/.agentcortex/bin/validate.ps1 \
+             "$REPO_ROOT"/.agentcortex/metadata/trigger-registry.yaml "$REPO_ROOT"/.agentcortex/metadata/trigger-compact-index.json \
+             "$REPO_ROOT"/.agentcortex/templates/* \
+             "$REPO_ROOT"/.agentcortex/adr/*.md \
+             "$REPO_ROOT"/.codex/INSTALL.md \
+             "$REPO_ROOT"/.github/ISSUE_TEMPLATE/*.md "$REPO_ROOT"/.github/PULL_REQUEST_TEMPLATE.md; do
         [ -f "$f" ] || continue
         _dry_count=$((_dry_count + 1))
         _bname="$(basename "$f")"
@@ -368,8 +379,39 @@ if $DRY_RUN; then
             echo "  [NEW]    $_bname"
         fi
     done
+    # Runtime tools (whitelist only — not all *.py)
+    for _bname in $_runtime_tools; do
+        f="$REPO_ROOT/.agentcortex/tools/$_bname"
+        [ -f "$f" ] || continue
+        _dry_count=$((_dry_count + 1))
+        if [ -f "$TARGET/.agentcortex/tools/$_bname" ]; then
+            echo "  [UPDATE] $_bname"
+        else
+            echo "  [NEW]    $_bname"
+        fi
+    done
+    # Skills (summarise counts instead of listing every file)
+    _skill_count=0
+    for skill_dir in "$REPO_ROOT/.agents/skills"/*/; do
+        [ -d "$skill_dir" ] || continue
+        while IFS= read -r -d '' sf; do _skill_count=$((_skill_count + 1)); done \
+            < <(find "$skill_dir" -type f -print0)
+    done
+    for sf in "$REPO_ROOT"/.agent/skills/*; do [ -f "$sf" ] && _skill_count=$((_skill_count + 1)); done
+    [ "$_skill_count" -gt 0 ] && echo "  [NEW]    ... $_skill_count skill files (.agent/skills/, .agents/skills/)"
+    # Docs (summarise)
+    _doc_count=0
+    for df in "$REPO_ROOT"/.agentcortex/docs/*.md "$REPO_ROOT"/.agentcortex/docs/guides/*.md \
+              "$REPO_ROOT"/README.md "$REPO_ROOT"/docs/README_zh-TW.md; do
+        [ -f "$df" ] && _doc_count=$((_doc_count + 1))
+    done
+    [ "$_doc_count" -gt 0 ] && echo "  [NEW]    ... $_doc_count reference docs (.agentcortex/docs/)"
+    # Claude commands
+    _cmd_count=0
+    for cf in "$REPO_ROOT"/.claude/commands/*; do [ -f "$cf" ] && _cmd_count=$((_cmd_count + 1)); done
+    [ "$_cmd_count" -gt 0 ] && echo "  [NEW]    ... $_cmd_count Claude slash command adapters (.claude/commands/)"
     echo ""
-    echo "Total: ~${_dry_count}+ files would be deployed."
+    echo "Total: ~$((_dry_count + _skill_count + _doc_count + _cmd_count)) files would be deployed."
     echo "Run without --dry-run to apply."
     exit 0
 fi
@@ -450,11 +492,13 @@ if [ -d "$REPO_ROOT/.agents/skills" ]; then
             echo "  [MIGRATE] removed flat file .agents/skills/$skill_name (now a directory)"
         fi
         mkdir -p "$TARGET/.agents/skills/$skill_name"
-        for skill_file in "$skill_dir"*; do
-            [ -f "$skill_file" ] || continue
-            local_name="$(basename "$skill_file")"
-            deploy_file "$skill_file" ".agents/skills/$skill_name/$local_name"
-        done
+        # Deploy all files recursively, preserving subdir structure (e.g. agents/openai.yaml)
+        while IFS= read -r -d '' skill_file; do
+            rel_to_skill="${skill_file#$skill_dir}"
+            parent_dir="$(dirname ".agents/skills/$skill_name/$rel_to_skill")"
+            mkdir -p "$TARGET/$parent_dir"
+            deploy_file "$skill_file" ".agents/skills/$skill_name/$rel_to_skill"
+        done < <(find "$skill_dir" -type f -print0)
     done
 fi
 
