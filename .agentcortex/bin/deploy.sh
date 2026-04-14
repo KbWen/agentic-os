@@ -70,6 +70,9 @@ get_tier() {
         .gitattributes) echo "scaffold" ;;
         .agentcortex/context/current_state.md) echo "scaffold" ;;
         .agentcortex/adr/*) echo "scaffold" ;;
+        .agentcortex/templates/*) echo "scaffold" ;;
+        .github/ISSUE_TEMPLATE/*) echo "scaffold" ;;
+        .github/PULL_REQUEST_TEMPLATE.md) echo "scaffold" ;;
 
         # core — everything else is framework, always overwrite
         *) echo "core" ;;
@@ -306,6 +309,12 @@ fi
 # --- Pre-deploy write permission check ---
 if [ ! -d "$TARGET" ]; then
     mkdir -p "$TARGET" 2>/dev/null || true
+fi
+if [ -e "$TARGET" ] && [ ! -d "$TARGET" ]; then
+    echo "" >&2
+    echo "ERROR: Target path exists but is not a directory: $TARGET" >&2
+    echo "Fix: provide a directory path, not a file." >&2
+    exit 1
 fi
 if [ ! -w "$TARGET" ]; then
     echo "" >&2
@@ -611,7 +620,8 @@ strip_managed_ignore_blocks() {
         managed["tools/validate.sh"] = 1
         managed["tools/validate.ps1"] = 1
         managed["tools/validate.cmd"] = 1
-        managed[".github/ISSUE_TEMPLATE/agent_issue.md"] = 1
+        managed[".github/ISSUE_TEMPLATE/bug_report.md"] = 1
+        managed[".github/ISSUE_TEMPLATE/feature_request.md"] = 1
         managed[".github/PULL_REQUEST_TEMPLATE.md"] = 1
         managed["docs/adr/"] = 1
         managed["docs/context/work/*.md"] = 1
