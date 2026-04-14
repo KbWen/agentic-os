@@ -27,12 +27,13 @@ if [[ -z "$ACX_SOURCE" ]]; then
     echo "" >&2
     echo "Fix: set ACX_SOURCE to the Agentic OS git URL, e.g.:" >&2
     echo "  ACX_SOURCE=https://github.com/KbWen/agentic-os.git ./deploy_brain.sh" >&2
+    echo "  Or clone the Agentic OS repo locally and run installers/deploy_brain.sh directly." >&2
     echo "" >&2
     exit 1
 fi
 
 if ! command -v git >/dev/null 2>&1; then
-    echo "git is required for bootstrap fetch." >&2
+    echo "git is required for bootstrap fetch. Install Git from https://git-scm.com/downloads" >&2
     exit 1
 fi
 
@@ -47,6 +48,7 @@ fi
 CACHED_CANONICAL="$ACX_CACHE/.agentcortex/bin/deploy.sh"
 if [[ ! -f "$CACHED_CANONICAL" ]]; then
     echo "Cached source does not contain .agentcortex/bin/deploy.sh — aborting." >&2
+    echo "Try: rm -rf .agentcortex-src && re-run this script to force a fresh clone." >&2
     exit 1
 fi
 
