@@ -15,15 +15,18 @@ concurrency:
 
 jobs:
   validate:
-    name: Framework Validation
+    name: Framework Validation (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
 
       - name: Run validate.sh
         run: |
@@ -86,3 +89,42 @@ jobs:
             done < <(grep -oP '\[.*?\]\(\K[^)]+' "$file" 2>/dev/null)
           done < <(find . -name '*.md' -not -path './.git/*')
           exit $status
+
+  validate-windows:
+    name: Framework Validation (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run validate.ps1
+        shell: pwsh
+        run: |
+          .agentcortex/bin/validate.ps1
+
+  deploy-smoke-test:
+    name: Deploy Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Create test project and deploy
+        run: |
+          mkdir -p /tmp/test-project
+          cd /tmp/test-project
+          git init
+          bash "$GITHUB_WORKSPACE/installers/deploy_brain.sh" .
+
+      - name: Validate downstream project
+        run: |
+          cd /tmp/test-project
+          bash .agentcortex/bin/validate.sh
