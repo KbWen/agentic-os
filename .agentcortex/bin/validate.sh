@@ -726,8 +726,8 @@ else
       missing_patterns=$((missing_patterns + 1))
     fi
   done
-  if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -F -q '.agentcortex/context/work/.gitkeep'; then
-    printf '  deploy ignore block missing .gitkeep negation pattern\n'
+  if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -F -q '.agentcortex/context/work/.gitkeep.md'; then
+    printf '  deploy ignore block missing .gitkeep.md negation pattern\n'
     missing_patterns=$((missing_patterns + 1))
   fi
   for forbidden_downstream_pattern in \

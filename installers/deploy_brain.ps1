@@ -44,7 +44,18 @@ $canonical = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir,
 
 $bashLauncher = Resolve-BashLauncher
 if (-not $bashLauncher) {
-    Write-Error 'bash is not installed. Install Git Bash or WSL, then rerun deploy_brain.ps1.'
+    Write-Host ''
+    Write-Host '[ERROR] Bash is required for deployment.' -ForegroundColor Red
+    Write-Host ''
+    Write-Host 'Agentic OS deploy uses a bash script under the hood.'
+    Write-Host 'Install one of the following to get bash on Windows:'
+    Write-Host ''
+    Write-Host '  1. Git for Windows (recommended): https://gitforwindows.org/'
+    Write-Host '     Includes Git Bash which provides bash automatically.'
+    Write-Host ''
+    Write-Host '  2. WSL (Windows Subsystem for Linux): wsl --install'
+    Write-Host ''
+    Write-Host 'After installing, rerun this script.'
     exit 1
 }
 

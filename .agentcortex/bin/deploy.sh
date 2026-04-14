@@ -383,6 +383,15 @@ fi
 touch "$TARGET/.agent/skills/.gitkeep"
 touch "$TARGET/.agents/skills/.gitkeep"
 
+# Ensure work/ directory survives git clone (git doesn't track empty dirs).
+# Deploy the source .gitkeep.md if available; fall back to a plain .gitkeep.
+if [ -f "$REPO_ROOT/.agentcortex/context/work/.gitkeep.md" ]; then
+    cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/.agentcortex/context/work/.gitkeep.md" \
+        "$TARGET/.agentcortex/context/work/.gitkeep.md"
+else
+    touch "$TARGET/.agentcortex/context/work/.gitkeep.md"
+fi
+
 # --- Deploy: .agentcortex/bin (core) ---
 for f in deploy.sh deploy.ps1 validate.sh validate.ps1; do
     [ -f "$REPO_ROOT/.agentcortex/bin/$f" ] || continue
@@ -487,7 +496,7 @@ write_downstream_ignore_block() {
 
 # Runtime State (work logs are session-local; private is never committed)
 .agentcortex/context/work/*.md
-!.agentcortex/context/work/.gitkeep
+!.agentcortex/context/work/.gitkeep.md
 .agentcortex/context/.guard_receipt.json
 .agentcortex/context/.guard_locks/
 .agentcortex/context/private/
@@ -515,7 +524,7 @@ strip_managed_ignore_blocks() {
     BEGIN {
         # Current managed entries
         managed[".agentcortex/context/work/*.md"] = 1
-        managed["!.agentcortex/context/work/.gitkeep"] = 1
+        managed["!.agentcortex/context/work/.gitkeep.md"] = 1
         managed[".agentcortex/context/.guard_receipt.json"] = 1
         managed[".agentcortex/context/.guard_locks/"] = 1
         managed[".agentcortex/context/private/"] = 1
@@ -544,7 +553,7 @@ strip_managed_ignore_blocks() {
         managed[".github/PULL_REQUEST_TEMPLATE.md"] = 1
         managed["docs/adr/"] = 1
         managed["docs/context/work/*.md"] = 1
-        managed["!docs/context/work/.gitkeep"] = 1
+        managed["!docs/context/work/.gitkeep.md"] = 1
         managed["docs/context/private/"] = 1
         managed["docs/context/"] = 1
         managed["docs/context/current_state.md"] = 1

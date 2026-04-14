@@ -701,8 +701,8 @@ else {
             $deployBlockErrors++
         }
     }
-    if (-not ($deployBlock | Where-Object { $_ -eq '!.agentcortex/context/work/.gitkeep' })) {
-        Write-Output '  deploy ignore block missing .gitkeep negation pattern'
+    if (-not ($deployBlock | Where-Object { $_ -eq '!.agentcortex/context/work/.gitkeep.md' })) {
+        Write-Output '  deploy ignore block missing .gitkeep.md negation pattern'
         $deployBlockErrors++
     }
     foreach ($forbidden in @(
