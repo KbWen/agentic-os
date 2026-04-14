@@ -28,6 +28,17 @@ TARGET="${TARGET%/}"
 MANIFEST_FILE="$TARGET/.agentcortex-manifest"
 ACX_VERSION="1.0.0"
 
+# --- Self-deploy guard ---
+TARGET_ABS="$(cd "$TARGET" 2>/dev/null && pwd || echo "$TARGET")"
+REPO_ABS="$(cd "$REPO_ROOT" 2>/dev/null && pwd)"
+if [ "$TARGET_ABS" = "$REPO_ABS" ]; then
+    echo "" >&2
+    echo "ERROR: Target is the Agentic OS source repo itself." >&2
+    echo "Deploy INTO your project, not into the framework source." >&2
+    echo "Usage: $0 /path/to/your-project" >&2
+    exit 1
+fi
+
 # --- Counters ---
 COUNT_UPDATED=0
 COUNT_SKIPPED=0
@@ -760,7 +771,8 @@ fi
     fi
     echo "---"
     sort -k2 "$DEPLOYED_FILES_TMP"
-} > "$MANIFEST_FILE"
+} > "$MANIFEST_FILE.tmp"
+mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
 
 # ============================================================
 # Summary
@@ -799,7 +811,7 @@ echo "   1. Validate the installation (optional — Python is NOT required):"
 echo "      .agentcortex/bin/validate.sh              # full validation (uses Python if available)"
 echo "      .agentcortex/bin/validate.sh --no-python  # lightweight, text-only checks"
 echo "   2. Stage framework files for git tracking:"
-echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/"
+echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/"
 echo "      # Also add if present: .claude/ .github/"
 echo "   3. Tell AI: 'Please run /bootstrap' to start"
 echo "   4. Agentic OS reference docs are under .agentcortex/docs/"
