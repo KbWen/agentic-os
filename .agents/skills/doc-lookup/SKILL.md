@@ -115,6 +115,32 @@ During /review:
 - [ ] All `// TODO: verify against official docs` caveat comments from /implement are resolved
 - [ ] Pinned version in dependency manifest matches the doc version that was consulted
 
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "I'm confident about this API" | Confidence is not evidence. Training data contains outdated patterns that look correct but break against current versions. Verify. |
+| "Fetching docs wastes tokens" | Hallucinating an API wastes more. One fetch prevents hours of debugging a wrong function signature. |
+| "The docs won't have what I need" | If the docs don't cover it, that's valuable information — the pattern may not be officially recommended. |
+| "I'll just mention it might be outdated" | A disclaimer doesn't help. Either verify and cite, or clearly flag it as unverified. Hedging is the worst option. |
+| "This is a simple task, no need to check" | Simple tasks with wrong patterns become templates. The user copies your deprecated handler into ten components before discovering the modern approach. |
+
+## Conflict Detection Template
+
+When docs conflict with existing project code, surface the discrepancy — don't silently pick one:
+
+```
+CONFLICT DETECTED:
+The existing codebase uses [old pattern],
+but [framework version] docs recommend [new pattern].
+(Source: [doc URL])
+
+Options:
+A) Use the modern pattern — consistent with current docs
+B) Match existing code — consistent with codebase
+→ Which approach do you prefer?
+```
+
 ## Anti-Patterns
 
 - **"I know this API"**: Assuming training data is correct without verification. Framework APIs change between versions — always check.
@@ -122,8 +148,10 @@ During /review:
 - **Ignoring version**: Checking docs for v5 when the project uses v4. Always match the project's pinned version.
 - **Hallucinating parameters**: Inventing function parameters or config keys that don't exist. If you can't find it in the docs, it probably doesn't exist.
 - **One-and-done**: Checking docs once at the start and never again. Re-check when you encounter unexpected behavior.
+- **Silent conflict resolution**: Choosing between docs and existing code without telling the user.
 
 ## References
 
+- Source enrichment: [addyosmani/agent-skills — source-driven-development](https://github.com/addyosmani/agent-skills) (MIT)
 - Project ADR: `docs/adr/ADR-002-project-architecture.md` § Tech Stack
 - Engineering guardrails: `.agent/rules/engineering_guardrails.md`

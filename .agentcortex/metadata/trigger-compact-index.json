@@ -450,7 +450,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "1eaa7879"
+      "content_hash": "da759b65"
     },
     {
       "id": "dispatching-parallel-agents",
@@ -534,7 +534,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "92fac37d"
+      "content_hash": "c0330735"
     },
     {
       "id": "using-git-worktrees",
@@ -574,7 +574,7 @@
         ]
       },
       "load_policy": "phase-entry",
-      "content_hash": "7e65dd99"
+      "content_hash": "177dacdf"
     },
     {
       "id": "production-readiness",
