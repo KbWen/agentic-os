@@ -415,7 +415,13 @@ for bname in "${runtime_tools[@]}"; do
 done
 
 # --- Deploy: .agentcortex/context/current_state.md (scaffold) ---
-deploy_file "$REPO_ROOT/.agentcortex/context/current_state.md" ".agentcortex/context/current_state.md"
+# Use the downstream template (generic placeholders) instead of the
+# framework's own SSoT which contains Agentic OS project-specific content.
+if [ -f "$REPO_ROOT/.agentcortex/templates/current_state.md" ]; then
+    deploy_file "$REPO_ROOT/.agentcortex/templates/current_state.md" ".agentcortex/context/current_state.md"
+else
+    deploy_file "$REPO_ROOT/.agentcortex/context/current_state.md" ".agentcortex/context/current_state.md"
+fi
 
 # --- Deploy: .agentcortex/templates (scaffold) ---
 for f in "$REPO_ROOT"/.agentcortex/templates/*; do
