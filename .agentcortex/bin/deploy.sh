@@ -38,9 +38,11 @@ compute_sha256() {
         sha256sum "$file" | cut -d' ' -f1
     elif command -v shasum >/dev/null 2>&1; then
         shasum -a 256 "$file" | cut -d' ' -f1
-    else
-        # fallback: use openssl if available
+    elif command -v openssl >/dev/null 2>&1; then
         openssl dgst -sha256 "$file" | awk '{print $NF}'
+    else
+        echo "ERROR: No SHA-256 tool found (need sha256sum, shasum, or openssl)." >&2
+        exit 1
     fi
 }
 

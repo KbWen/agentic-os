@@ -13,15 +13,22 @@ function Normalize-PathString {
 }
 
 function Resolve-BashLauncher {
+    $candidates = @()
     $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
-    if ($bashCmd) { return $bashCmd.Source }
+    if ($bashCmd) { $candidates += $bashCmd.Source }
 
-    foreach ($candidate in @(
+    $candidates += @(
         'C:\Program Files\Git\bin\bash.exe',
         'C:\Program Files\Git\usr\bin\bash.exe',
         'C:\Program Files (x86)\Git\bin\bash.exe'
-    )) {
-        if (Test-Path -Path $candidate -PathType Leaf) {
+    )
+
+    foreach ($candidate in $candidates) {
+        if (-not (Test-Path -Path $candidate -PathType Leaf)) {
+            continue
+        }
+        & $candidate --version *> $null
+        if ($LASTEXITCODE -eq 0) {
             return $candidate
         }
     }
