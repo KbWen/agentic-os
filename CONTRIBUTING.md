@@ -19,6 +19,37 @@ If you are an AI assisting in this repository:
 3. **PR Standards**: Every Pull Request should include a clear "Problem/Solution" summary and verification evidence.
 4. **Language**: All internal documentation, rules, and commit messages must be in **English** for maximum cross-model compatibility.
 
+## 🔧 Local Development
+
+### Setup
+
+```bash
+git clone https://github.com/KbWen/agentic-os.git
+cd agentic-os
+```
+
+### Validate
+
+Run the framework integrity check after any changes:
+
+```bash
+# Linux / macOS / Git Bash
+bash .agentcortex/bin/validate.sh
+
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File .agentcortex/bin/validate.ps1
+```
+
+Both scripts must report `fail=0` before submitting a PR.
+
+### Testing a Deploy
+
+To test deployment to a scratch project:
+
+```bash
+./installers/deploy_brain.sh /path/to/test-project
+```
+
 ## 🛠️ Development Workflow
 
 1. **Initialize**: Use `/bootstrap` to set up your task context and freeze classification.
