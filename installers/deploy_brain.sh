@@ -26,7 +26,7 @@ if [[ -z "$ACX_SOURCE" ]]; then
     echo "Cannot bootstrap: no ACX_SOURCE configured and no source_repo in manifest." >&2
     echo "" >&2
     echo "Fix: set ACX_SOURCE to the Agentic OS git URL, e.g.:" >&2
-    echo "  ACX_SOURCE=https://github.com/KbWen/Agentic OS.git ./deploy_brain.sh" >&2
+    echo "  ACX_SOURCE=https://github.com/KbWen/agentic-os.git ./deploy_brain.sh" >&2
     echo "  Or clone the Agentic OS repo locally and run installers/deploy_brain.sh directly." >&2
     echo "" >&2
     exit 1
