@@ -15,18 +15,31 @@ concurrency:
 
 jobs:
   validate:
-    name: Framework Validation (Python ${{ matrix.python-version }})
+    name: Framework Validation
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12'
+
+      - name: Run validate.sh
+        run: |
+          chmod +x .agentcortex/bin/validate.sh
+          .agentcortex/bin/validate.sh
+
+  validate-python39:
+    name: Framework Validation (Python 3.9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
 
       - name: Run validate.sh
         run: |
