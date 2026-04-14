@@ -11,10 +11,25 @@ WORKFLOWS_DIR="$ROOT/.agent/workflows"
 CLAUDE_COMMANDS_DIR="$ROOT/.claude/commands"
 CODEX_INSTALL="$ROOT/.codex/INSTALL.md"
 CODEX_RULES="$ROOT/.codex/rules/default.rules"
-ROOT_DEPLOY_SH="$ROOT/installers/deploy_brain.sh"
-ROOT_DEPLOY_PS1="$ROOT/installers/deploy_brain.ps1"
-ROOT_DEPLOY_CMD="$ROOT/installers/deploy_brain.cmd"
 CANONICAL_DEPLOY_SH="$ROOT/.agentcortex/bin/deploy.sh"
+
+# Source-repo detection (must run before required_files array is built).
+# Source repo has canonical deploy but no .agentcortex-manifest.
+# Downstream repos receive deploy_brain.* at root (not under installers/).
+IS_SOURCE_REPO=0
+if [[ -f "$CANONICAL_DEPLOY_SH" ]] && [[ ! -f "$ROOT/.agentcortex-manifest" ]]; then
+  IS_SOURCE_REPO=1
+fi
+
+if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
+  ROOT_DEPLOY_SH="$ROOT/installers/deploy_brain.sh"
+  ROOT_DEPLOY_PS1="$ROOT/installers/deploy_brain.ps1"
+  ROOT_DEPLOY_CMD="$ROOT/installers/deploy_brain.cmd"
+else
+  ROOT_DEPLOY_SH="$ROOT/deploy_brain.sh"
+  ROOT_DEPLOY_PS1="$ROOT/deploy_brain.ps1"
+  ROOT_DEPLOY_CMD="$ROOT/deploy_brain.cmd"
+fi
 CANONICAL_DEPLOY_PS1="$ROOT/.agentcortex/bin/deploy.ps1"
 CANONICAL_VALIDATE_SH="$ROOT/.agentcortex/bin/validate.sh"
 CANONICAL_VALIDATE_PS1="$ROOT/.agentcortex/bin/validate.ps1"
@@ -215,23 +230,6 @@ elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN=python
 else
   PYTHON_BIN=
-fi
-
-# Source-repo detection: the source repo has the canonical deploy script
-# but no .agentcortex-manifest (which is generated during deploy to downstream).
-# In source-repo mode, adapter-surface checks (.claude/commands/, .codex/, .antigravity/)
-# are skipped because these directories are created by deploy in downstream repos.
-IS_SOURCE_REPO=0
-if [[ -f "$CANONICAL_DEPLOY_SH" ]] && [[ ! -f "$ROOT/.agentcortex-manifest" ]]; then
-  IS_SOURCE_REPO=1
-fi
-
-# Downstream repos receive deploy_brain.* at the repo root (not under installers/).
-# Redefine wrapper paths so required_files validation matches the actual layout.
-if [[ "$IS_SOURCE_REPO" -eq 0 ]]; then
-  ROOT_DEPLOY_SH="$ROOT/deploy_brain.sh"
-  ROOT_DEPLOY_PS1="$ROOT/deploy_brain.ps1"
-  ROOT_DEPLOY_CMD="$ROOT/deploy_brain.cmd"
 fi
 
 check_file_group "required framework files present" "${required_files[@]}"
