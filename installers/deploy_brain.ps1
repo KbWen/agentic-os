@@ -1,6 +1,8 @@
 param(
     [string]$Target = '.',
-    [string]$Source = ''
+    [string]$Source = '',
+    [switch]$DryRun,
+    [switch]$NoPython
 )
 
 Set-StrictMode -Version Latest
@@ -61,8 +63,9 @@ if (-not $bashLauncher) {
 
 # Build argument list
 $bashArgs = @()
+if ($DryRun) { $bashArgs += '--dry-run' }
 if ($Source) { $bashArgs += '--source'; $bashArgs += $Source }
-$bashArgs += $Target
+$bashArgs += "$Target"
 
 if (Test-Path -Path $canonical -PathType Leaf) {
     # Normal path: canonical deploy exists locally
