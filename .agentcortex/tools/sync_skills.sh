@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Agentic OS Skill Synchronization Script
 # Purpose: Sync skill metadata from .agents/skills/ to .agent/skills/
