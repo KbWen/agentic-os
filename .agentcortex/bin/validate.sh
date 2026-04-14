@@ -749,12 +749,21 @@ else
   fi
 fi
 
-if [[ -f "$ROOT/docs/README_zh-TW.md" ]]; then
-  check_contains_literal \
-    "$ROOT/docs/README_zh-TW.md" \
-    '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' \
-    "README_zh-TW.md encoding looks healthy" \
-    "README_zh-TW.md appears mojibaked or re-encoded"
+if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
+  if [[ -f "$ROOT/docs/README_zh-TW.md" ]]; then
+    check_contains_literal \
+      "$ROOT/docs/README_zh-TW.md" \
+      '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' \
+      "README_zh-TW.md encoding looks healthy" \
+      "README_zh-TW.md appears mojibaked or re-encoded"
+  fi
+  if [[ -f "$ROOT/README.md" ]]; then
+    check_contains_literal \
+      "$ROOT/README.md" \
+      'governance-first operating system for AI coding agents' \
+      "README.md encoding looks healthy" \
+      "README.md appears mojibaked or re-encoded"
+  fi
 fi
 if [[ -f "$ROOT/.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md" ]]; then
   check_contains_literal \
@@ -762,13 +771,6 @@ if [[ -f "$ROOT/.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md" ]]; then
     '測試教戰守則' \
     "TESTING_PROTOCOL_zh-TW.md encoding looks healthy" \
     "TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded"
-fi
-if [[ -f "$ROOT/README.md" ]]; then
-  check_contains_literal \
-    "$ROOT/README.md" \
-    'governance-first operating system for AI coding agents' \
-    "README.md encoding looks healthy" \
-    "README.md appears mojibaked or re-encoded"
 fi
 if [[ -f "$ROOT/.agentcortex/docs/guides/audit-guardrails.md" ]]; then
   check_contains_literal \

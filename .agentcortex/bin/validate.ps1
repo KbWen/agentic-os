@@ -726,25 +726,26 @@ else {
     }
 }
 
-$readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
-if (Test-Path -Path $readmeZhTw -PathType Leaf) {
-    Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+if ($isSourceRepo) {
+    $readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
+    if (Test-Path -Path $readmeZhTw -PathType Leaf) {
+        Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+    }
+    $readmeEn = Join-NormalPath $root 'README.md'
+    if (Test-Path -Path $readmeEn -PathType Leaf) {
+        $params = @{
+            Path = $readmeEn
+            Pattern = 'governance-first operating system for AI coding agents'
+            SuccessMessage = 'README.md encoding looks healthy'
+            FailureMessage = 'README.md appears mojibaked or re-encoded'
+        }
+        Test-ContainsLiteral @params
+    }
 }
 
 $testingProtocolZhTw = Join-NormalPath $root '.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md'
 if (Test-Path -Path $testingProtocolZhTw -PathType Leaf) {
     Test-ContainsRegex -Path $testingProtocolZhTw -Pattern '\u6E2C\u8A66\u6559\u6230\u5B88\u5247' -SuccessMessage 'TESTING_PROTOCOL_zh-TW.md encoding looks healthy' -FailureMessage 'TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded'
-}
-
-$readmeEn = Join-NormalPath $root 'README.md'
-if (Test-Path -Path $readmeEn -PathType Leaf) {
-    $params = @{
-        Path = $readmeEn
-        Pattern = 'governance-first operating system for AI coding agents'
-        SuccessMessage = 'README.md encoding looks healthy'
-        FailureMessage = 'README.md appears mojibaked or re-encoded'
-    }
-    Test-ContainsLiteral @params
 }
 
 $auditGuardrailsEn = Join-NormalPath $root '.agentcortex/docs/guides/audit-guardrails.md'
