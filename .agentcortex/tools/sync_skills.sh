@@ -5,10 +5,10 @@
 # This ensures cross-platform compatibility (handling Windows symlink issues)
 # while keeping metadata in sync.
 
-set -e
+set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SRC_DIR="$REPO_ROOT/.agents/skills"
 DEST_DIR="$REPO_ROOT/.agent/skills"
 

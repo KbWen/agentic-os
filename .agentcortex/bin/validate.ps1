@@ -354,6 +354,7 @@ if (Test-Path -Path $triggerRegistry -PathType Leaf) {
     }
     else {
         Add-Result -Level 'FAIL' -Message 'metadata runtime incomplete -- missing trigger-compact-index.json'
+        Write-Host '  fix: re-run deploy to restore metadata, or regenerate with .agentcortex/tools/generate_compact_index.py'
     }
 
     if (Test-Path -Path $triggerMetadataValidator -PathType Leaf) {
@@ -362,24 +363,26 @@ if (Test-Path -Path $triggerRegistry -PathType Leaf) {
         }
         else {
             Add-Result -Level 'FAIL' -Message 'metadata deep validation unavailable -- lifecycle scenarios missing'
+            Write-Host '  fix: re-run deploy to restore .agentcortex/metadata/lifecycle-scenarios.json'
         }
     }
     else {
-        Add-Result -Level 'SKIP' -Message 'metadata deep checks -- CI-only validator not deployed'
+        Add-Result -Level 'SKIP' -Message 'metadata deep checks -- CI-only validator not deployed (safe to ignore downstream)'
     }
 
     if (Test-Path -Path $triggerCompactIndexGenerator -PathType Leaf) {
         Invoke-PythonCheck -Label 'compact index freshness' -MissingPythonLevel 'FAIL' -ScriptPath $triggerCompactIndexGenerator -Arguments @('--root', $root, '--check')
     }
     else {
-        Add-Result -Level 'SKIP' -Message 'compact index freshness -- CI-only generator not deployed'
+        Add-Result -Level 'SKIP' -Message 'compact index freshness -- CI-only generator not deployed (safe to ignore downstream)'
     }
 }
 elseif (Test-Path -Path $triggerCompactIndex -PathType Leaf) {
     Add-Result -Level 'FAIL' -Message 'metadata runtime incomplete -- compact index present without trigger registry'
+    Write-Host '  fix: re-run deploy to restore .agentcortex/metadata/trigger-registry.yaml'
 }
 else {
-    Add-Result -Level 'SKIP' -Message 'metadata checks -- no trigger registry found'
+    Add-Result -Level 'SKIP' -Message 'metadata checks -- no trigger registry found (safe to ignore if not using skill metadata)'
 }
 
 Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'FAIL' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)

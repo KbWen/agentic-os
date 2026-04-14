@@ -21,15 +21,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+_FALLBACK_SKIP_DIRS = frozenset({
+    'node_modules', '__pycache__', '.agentcortex-src',
+    'venv', '.venv', 'dist', 'build', '.tox',
+    '.mypy_cache', '.pytest_cache', '.ruff_cache',
+})
+
+
 def _fallback_candidate_files(root: pathlib.Path) -> list[pathlib.Path]:
     """Find candidate files without git when git is unavailable."""
-    extensions = {'.md', '.yaml', '.yml', '.json'}
     paths: list[pathlib.Path] = []
-    for ext in extensions:
+    for ext in TEXT_SUFFIXES:
         for p in root.rglob(f'*{ext}'):
-            # Skip hidden dirs and common non-project dirs
             parts = p.relative_to(root).parts
-            if any(part.startswith('.git') or part == 'node_modules' for part in parts):
+            if any(part.startswith('.git') or part in _FALLBACK_SKIP_DIRS for part in parts):
                 continue
             paths.append(p)
     return sorted(set(paths))

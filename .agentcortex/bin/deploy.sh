@@ -11,12 +11,14 @@ case "$_raw_cp_flag" in
 esac
 ACX_SOURCE="${ACX_SOURCE:-}"
 TARGET=""
+DRY_RUN=false
 
 # --- Argument parsing ---
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --source) ACX_SOURCE="$2"; shift 2 ;;
         --source=*) ACX_SOURCE="${1#--source=}"; shift ;;
+        --dry-run) DRY_RUN=true; shift ;;
         *) TARGET="$1"; shift ;;
     esac
 done
@@ -297,6 +299,57 @@ if $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
 
     echo "  Migration complete."
     echo ""
+fi
+
+# --- Pre-deploy write permission check ---
+if [ ! -d "$TARGET" ]; then
+    mkdir -p "$TARGET" 2>/dev/null || true
+fi
+if [ ! -w "$TARGET" ]; then
+    echo "" >&2
+    echo "ERROR: Target directory is not writable: $TARGET" >&2
+    echo "Fix: check permissions or run with appropriate privileges." >&2
+    exit 1
+fi
+
+# --- Dry-run mode: preview only ---
+if $DRY_RUN; then
+    echo ""
+    echo "[DRY RUN] Would deploy Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) to $TARGET"
+    echo ""
+    echo "Directories that would be created:"
+    for d in \
+        ".agent/rules" ".agent/workflows" ".agent/skills" \
+        ".antigravity" ".agents/skills" ".claude/commands" \
+        ".codex" "codex/rules" ".github/ISSUE_TEMPLATE" \
+        ".agentcortex/bin" ".agentcortex/metadata" ".agentcortex/tools" \
+        ".agentcortex/docs/guides" ".agentcortex/context/work" \
+        ".agentcortex/context/review" ".agentcortex/context/archive" \
+        ".agentcortex/templates" ".agentcortex/adr" ".agentcortex/specs" \
+        "docs/specs" "docs/adr"; do
+        [ -d "$TARGET/$d" ] || echo "  [NEW DIR] $d"
+    done
+    echo ""
+    echo "Files that would be deployed (core tier = always overwrite, scaffold = skip if modified):"
+    _dry_count=0
+    for f in "$REPO_ROOT"/AGENTS.md "$REPO_ROOT"/CLAUDE.md \
+             "$REPO_ROOT"/.agent/rules/*.md "$REPO_ROOT"/.agent/config.yaml \
+             "$REPO_ROOT"/.agent/workflows/*.md "$REPO_ROOT"/.agentcortex/bin/*.sh \
+             "$REPO_ROOT"/.agentcortex/bin/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.py \
+             "$REPO_ROOT"/.agentcortex/tools/*.ps1 "$REPO_ROOT"/.agentcortex/tools/*.sh; do
+        [ -f "$f" ] || continue
+        _dry_count=$((_dry_count + 1))
+        _bname="$(basename "$f")"
+        if [ -f "$TARGET/$_bname" ] || [ -f "$TARGET/.agent/rules/$_bname" ]; then
+            echo "  [UPDATE] $_bname"
+        else
+            echo "  [NEW]    $_bname"
+        fi
+    done
+    echo ""
+    echo "Total: ~${_dry_count}+ files would be deployed."
+    echo "Run without --dry-run to apply."
+    exit 0
 fi
 
 # --- Create directory structure ---
@@ -727,9 +780,12 @@ echo "   PR review mirrors under .agentcortex/context/review/ are optional; upst
 echo "   .agentcortex-manifest tracks deployed files — commit this to your repo."
 echo ""
 echo "Next steps:"
-echo "   1. Stage framework files for git tracking:"
+echo "   1. Validate the installation (optional — Python is NOT required):"
+echo "      .agentcortex/bin/validate.sh              # full validation (uses Python if available)"
+echo "      .agentcortex/bin/validate.sh --no-python  # lightweight, text-only checks"
+echo "   2. Stage framework files for git tracking:"
 echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/"
 echo "      # Also add if present: .claude/ .github/"
-echo "   2. Tell AI: 'Please run /bootstrap' to start"
-echo "   3. Agentic OS reference docs are under .agentcortex/docs/"
+echo "   3. Tell AI: 'Please run /bootstrap' to start"
+echo "   4. Agentic OS reference docs are under .agentcortex/docs/"
 echo ""
