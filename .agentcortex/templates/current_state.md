@@ -1,5 +1,8 @@
 # Project Current State (vNext)
 
+> This is the **Single Source of Truth (SSoT)** — global project state that auto-updates
+> via `/ship`. You don't edit this manually; placeholders fill in as you complete work.
+
 - **Project Intent**: [Describe your project in one line]
 - **Core Guardrails**:
   - Correctness first: No claim of completion without evidence.

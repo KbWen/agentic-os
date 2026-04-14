@@ -63,5 +63,5 @@ if (-not $bashLauncher) {
     exit 1
 }
 
-& $bashLauncher $bashScript $Target
+& $bashLauncher $bashScript "$Target"
 exit $LASTEXITCODE
