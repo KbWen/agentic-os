@@ -66,6 +66,7 @@ get_tier() {
         deploy_brain.sh|deploy_brain.ps1|deploy_brain.cmd) echo "wrapper" ;;
 
         # scaffold — created once, user expected to modify
+        .gitattributes) echo "scaffold" ;;
         .agentcortex/context/current_state.md) echo "scaffold" ;;
         .agentcortex/adr/*) echo "scaffold" ;;
 
@@ -378,6 +379,9 @@ mkdir -p "$TARGET/docs/adr"
 # --- Deploy: root governance files (core) ---
 deploy_file "$REPO_ROOT/AGENTS.md" "AGENTS.md"
 deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
+
+# --- Deploy: .gitattributes (scaffold — user may extend) ---
+deploy_file "$REPO_ROOT/.gitattributes" ".gitattributes"
 
 # --- Deploy: wrapper scripts ---
 deploy_file "$REPO_ROOT/installers/deploy_brain.sh" "deploy_brain.sh" "+x"
