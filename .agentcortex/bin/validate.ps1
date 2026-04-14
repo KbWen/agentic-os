@@ -265,7 +265,7 @@ Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
 Test-FileGroup -Label 'claude adapter files present' -Paths $claudeRequiredFiles
 Test-DirGroup -Label 'required framework directories present' -Paths $requiredDirs
 
-Invoke-PythonCheck -Label 'text integrity check' -MissingPythonLevel 'WARN' -ScriptPath $textIntegrityCheckPy -Arguments @('--root', $root, '--baseline', $textIntegrityBaseline)
+Invoke-PythonCheck -Label 'text integrity check' -MissingPythonLevel 'FAIL' -ScriptPath $textIntegrityCheckPy -Arguments @('--root', $root, '--baseline', $textIntegrityBaseline)
 
 if (Test-Path -Path $triggerRegistry -PathType Leaf) {
     if (Test-Path -Path $triggerCompactIndex -PathType Leaf) {
@@ -301,7 +301,7 @@ else {
     Add-Result -Level 'SKIP' -Message 'metadata checks -- no trigger registry found'
 }
 
-Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'WARN' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)
+Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'FAIL' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)
 
 $legacyAuditHelper = Join-NormalPath $root 'tools/audit_ai_paths.sh'
 if (Test-Path -Path $legacyAuditHelper -PathType Leaf) {
