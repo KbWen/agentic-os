@@ -116,6 +116,8 @@ flowchart LR
 
 ### 1) 部署到專案
 
+**先決條件**：Git、Python 3、Bash（Git for Windows 已內建）。
+
 ```bash
 ./installers/deploy_brain.sh /path/to/your-project
 ```
@@ -217,4 +219,4 @@ flowchart LR
 - PowerShell：`powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .`
 - CMD：`installers\deploy_brain.cmd .`
 
-這兩個 wrapper 會轉呼叫 `deploy_brain.sh`，因此仍需要安裝 Git Bash 或 WSL。
+這兩個 wrapper 會轉呼叫 `deploy_brain.sh`，因此仍需要安裝 [Git for Windows](https://gitforwindows.org/)（已內含 Git Bash）或 WSL。
