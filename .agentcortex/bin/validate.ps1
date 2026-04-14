@@ -261,9 +261,78 @@ $requiredDirs = @(
     (Join-NormalPath $root '.agent/skills')
 )
 
-Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
-Test-FileGroup -Label 'claude adapter files present' -Paths $claudeRequiredFiles
-Test-DirGroup -Label 'required framework directories present' -Paths $requiredDirs
+# Source-repo detection: the source repo has the canonical deploy script
+# but no .agentcortex-manifest (which is generated during deploy to downstream).
+# In source-repo mode, adapter-surface checks are skipped because those
+# directories are created by deploy in downstream repos.
+$isSourceRepo = (Test-Path -Path $canonicalDeploySh -PathType Leaf) -and
+                (-not (Test-Path -Path (Join-NormalPath $root '.agentcortex-manifest') -PathType Leaf))
+
+# Downstream repos receive deploy_brain.* at the repo root (not under installers/).
+# Redefine wrapper paths so required_files validation matches the actual layout.
+if (-not $isSourceRepo) {
+    $rootDeploySh  = Join-NormalPath $root 'deploy_brain.sh'
+    $rootDeployPs1 = Join-NormalPath $root 'deploy_brain.ps1'
+    $rootDeployCmd = Join-NormalPath $root 'deploy_brain.cmd'
+    # Rebuild requiredFiles with updated paths
+    $requiredFiles = @(
+        (Join-NormalPath $workflowsDir 'hotfix.md'),
+        (Join-NormalPath $workflowsDir 'worktree-first.md'),
+        (Join-NormalPath $workflowsDir 'new-feature.md'),
+        (Join-NormalPath $workflowsDir 'medium-feature.md'),
+        (Join-NormalPath $workflowsDir 'small-fix.md'),
+        (Join-NormalPath $workflowsDir 'govern-docs.md'),
+        (Join-NormalPath $workflowsDir 'handoff.md'),
+        (Join-NormalPath $workflowsDir 'bootstrap.md'),
+        (Join-NormalPath $workflowsDir 'plan.md'),
+        (Join-NormalPath $workflowsDir 'implement.md'),
+        (Join-NormalPath $workflowsDir 'review.md'),
+        (Join-NormalPath $workflowsDir 'help.md'),
+        (Join-NormalPath $workflowsDir 'test-skeleton.md'),
+        (Join-NormalPath $workflowsDir 'commands.md'),
+        (Join-NormalPath $workflowsDir 'routing.md'),
+        (Join-NormalPath $workflowsDir 'test.md'),
+        (Join-NormalPath $workflowsDir 'ship.md'),
+        (Join-NormalPath $workflowsDir 'decide.md'),
+        (Join-NormalPath $workflowsDir 'test-classify.md'),
+        (Join-NormalPath $workflowsDir 'spec-intake.md'),
+        (Join-NormalPath $workflowsDir 'claude-cli.md'),
+        $skillConflictMatrix,
+        $agentConfigYaml,
+        $platformDoc,
+        $claudePlatformDoc,
+        $examplesDoc,
+        $projectAgentsFile,
+        $projectClaudeFile,
+        $rootDeploySh,
+        $rootDeployPs1,
+        $rootDeployCmd,
+        $canonicalDeploySh,
+        $canonicalDeployPs1,
+        $canonicalValidateSh,
+        $canonicalValidatePs1,
+        $commandSyncCheck,
+        $textIntegrityCheckPy,
+        $textIntegrityCheckPs1,
+        $textIntegrityBaseline
+    )
+}
+
+if ($isSourceRepo) {
+    Add-Result -Level 'SKIP' -Message 'claude adapter files -- source repo (created by deploy in downstream)'
+    Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
+    $sourceDirs = @(
+        $workflowsDir,
+        (Join-NormalPath $root '.agents/skills'),
+        (Join-NormalPath $root '.agent/skills')
+    )
+    Test-DirGroup -Label 'required framework directories present' -Paths $sourceDirs
+}
+else {
+    Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
+    Test-FileGroup -Label 'claude adapter files present' -Paths $claudeRequiredFiles
+    Test-DirGroup -Label 'required framework directories present' -Paths $requiredDirs
+}
 
 Invoke-PythonCheck -Label 'text integrity check' -MissingPythonLevel 'FAIL' -ScriptPath $textIntegrityCheckPy -Arguments @('--root', $root, '--baseline', $textIntegrityBaseline)
 
@@ -335,16 +404,20 @@ else {
     Add-Result -Level 'PASS' -Message 'skill metadata mirrors are consistent'
 }
 
-Test-FileGroup -Label 'legacy rule surfaces present' -Paths @(
-    (Join-NormalPath $root '.antigravity/rules.md'),
-    (Join-NormalPath $root '.agent/rules/rules.md'),
-    $codexInstall
-)
-Test-ContainsRegex -Path (Join-NormalPath $root '.agent/rules/rules.md') -Pattern '\.antigravity/rules\.md' -SuccessMessage 'legacy rules redirect to canonical antigravity rules' -FailureMessage 'legacy rules missing canonical redirect'
-Test-ContainsLiteral -Path (Join-NormalPath $root '.agent/rules/rules.md') -Pattern 'legacy compatibility' -SuccessMessage 'legacy rules include compatibility marker' -FailureMessage 'legacy rules missing compatibility marker'
-Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'docker system prune -a' -SuccessMessage 'antigravity rules include docker system prune guard' -FailureMessage 'antigravity rules missing docker system prune guard'
-Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'chown -R' -SuccessMessage 'antigravity rules include chown -R guard' -FailureMessage 'antigravity rules missing chown -R guard'
-Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'rollback' -SuccessMessage 'antigravity rules include rollback reminder' -FailureMessage 'antigravity rules missing rollback reminder'
+if (-not $isSourceRepo) {
+    Test-FileGroup -Label 'legacy rule surfaces present' -Paths @(
+        (Join-NormalPath $root '.antigravity/rules.md'),
+        (Join-NormalPath $root '.agent/rules/rules.md'),
+        $codexInstall
+    )
+    Test-ContainsRegex -Path (Join-NormalPath $root '.agent/rules/rules.md') -Pattern '\.antigravity/rules\.md' -SuccessMessage 'legacy rules redirect to canonical antigravity rules' -FailureMessage 'legacy rules missing canonical redirect'
+    Test-ContainsLiteral -Path (Join-NormalPath $root '.agent/rules/rules.md') -Pattern 'legacy compatibility' -SuccessMessage 'legacy rules include compatibility marker' -FailureMessage 'legacy rules missing compatibility marker'
+    Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'docker system prune -a' -SuccessMessage 'antigravity rules include docker system prune guard' -FailureMessage 'antigravity rules missing docker system prune guard'
+    Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'chown -R' -SuccessMessage 'antigravity rules include chown -R guard' -FailureMessage 'antigravity rules missing chown -R guard'
+    Test-ContainsLiteral -Path (Join-NormalPath $root '.antigravity/rules.md') -Pattern 'rollback' -SuccessMessage 'antigravity rules include rollback reminder' -FailureMessage 'antigravity rules missing rollback reminder'
+} else {
+    Add-Result -Level 'SKIP' -Message 'legacy rule surfaces -- source repo (adapter surfaces created by deploy)'
+}
 
 $activeCodexRules = Join-NormalPath $root 'codex/rules/default.rules'
 if (-not (Test-Path -Path $activeCodexRules -PathType Leaf)) { $activeCodexRules = $codexRules }
@@ -641,7 +714,7 @@ else {
     }
 }
 
-$readmeZhTw = Join-NormalPath $root 'README_zh-TW.md'
+$readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
 if (Test-Path -Path $readmeZhTw -PathType Leaf) {
     Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
 }
@@ -655,7 +728,7 @@ $readmeEn = Join-NormalPath $root 'README.md'
 if (Test-Path -Path $readmeEn -PathType Leaf) {
     $params = @{
         Path = $readmeEn
-        Pattern = 'Why Agentic OS?'
+        Pattern = 'governance-first operating system for AI coding agents'
         SuccessMessage = 'README.md encoding looks healthy'
         FailureMessage = 'README.md appears mojibaked or re-encoded'
     }
@@ -684,7 +757,7 @@ $activeWorklogWarnThreshold = if ($env:ACTIVE_WORKLOG_WARN_THRESHOLD) { [int]$en
 $legacyGateEvidenceCutoff = if ($env:WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF) { $env:WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF } else { '2026-03-25' }
 $worklogDir = Join-NormalPath $root '.agentcortex/context/work'
 if (Test-Path -Path $worklogDir -PathType Container) {
-    $worklogs = @(Get-ChildItem -Path $worklogDir -Filter *.md -File -ErrorAction SilentlyContinue)
+    $worklogs = @(Get-ChildItem -Path $worklogDir -Filter *.md -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike '.*' })
     $oversizedLogs = @()
     foreach ($wl in $worklogs) {
         $lineCount = @(Get-Content -Path $wl.FullName).Count
@@ -706,6 +779,26 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     }
     else {
         Add-Result -Level 'PASS' -Message 'active work log count is within hygiene threshold'
+    }
+    # Work Log integrity marker check — detect truncated writes from interrupted sessions
+    $worklogTruncated = 0
+    foreach ($wl in $worklogs) {
+        $wlContent = Get-Content -Path $wl.FullName -Raw -ErrorAction SilentlyContinue
+        if (-not $wlContent) { continue }
+        # A well-formed work log must have at least a Branch header and one ## section.
+        # Accept both the current "- Branch:" header and any legacy bolded variant.
+        $hasBranchHeader = $wlContent -match '(?m)^- (\*\*Branch\*\*|Branch):'
+        $hasSectionHeader = $wlContent -match '(?m)^## '
+        if (-not $hasBranchHeader -or -not $hasSectionHeader) {
+            Write-Output "  possibly truncated work log: $($wl.Name)"
+            $worklogTruncated++
+        }
+    }
+    if ($worklogTruncated -gt 0) {
+        Add-Result -Level 'WARN' -Message "possibly truncated work logs detected: $worklogTruncated"
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'active work logs pass structural integrity check'
     }
     # Work Log evidence chain check (per AGENTS.md Work Log Contract)
     $phaseFieldMissing = 0
@@ -922,7 +1015,7 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         $specDir = Join-NormalPath $root $specGlob
         if (Test-Path -Path $specDir -PathType Container) {
             $diskSpecFiles += @(Get-ChildItem -Path $specDir -Filter '*.md' -ErrorAction SilentlyContinue |
-                Where-Object { $_.Name -notmatch '^_' } |
+                Where-Object { $_.Name -notmatch '^[_.]' } |
                 ForEach-Object {
                     $relPath = $_.FullName.Replace($root + [System.IO.Path]::DirectorySeparatorChar, '').Replace('\', '/')
                     $fileContent = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue

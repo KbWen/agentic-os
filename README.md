@@ -169,6 +169,8 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 
 ### 1. Install
 
+**Prerequisites**: Git, Python 3, and Bash (included with Git for Windows).
+
 ```bash
 # Clone Agentic OS
 git clone https://github.com/KbWen/agentic-os.git
@@ -188,7 +190,7 @@ powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .
 installers\deploy_brain.cmd .
 ```
 
-Both wrappers call `deploy_brain.sh` under the hood -- requires Git Bash or WSL.
+Both wrappers call `deploy_brain.sh` under the hood — requires [Git for Windows](https://gitforwindows.org/) (includes Git Bash) or WSL.
 
 </details>
 
