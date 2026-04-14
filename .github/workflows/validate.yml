@@ -143,3 +143,21 @@ jobs:
         run: |
           cd /tmp/test-project
           bash .agentcortex/bin/validate.sh
+
+  deploy-no-python:
+    name: Deploy Smoke Test (No Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create test project and deploy without Python
+        run: |
+          mkdir -p /tmp/test-no-python
+          cd /tmp/test-no-python
+          git init
+          bash "$GITHUB_WORKSPACE/.agentcortex/bin/deploy.sh" .
+
+      - name: Validate downstream project without Python
+        run: |
+          cd /tmp/test-no-python
+          bash .agentcortex/bin/validate.sh --no-python

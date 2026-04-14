@@ -1,3 +1,7 @@
+param(
+    [switch]$NoPython
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -124,7 +128,11 @@ function Invoke-PythonCheck {
         return
     }
     if (-not $script:PythonCommand) {
-        Add-Result -Level $MissingPythonLevel -Message "$Label -- python unavailable"
+        if ($NoPython) {
+            Add-Result -Level 'SKIP' -Message "$Label -- python checks disabled (--NoPython)"
+        } else {
+            Add-Result -Level 'WARN' -Message "$Label -- python unavailable (install Python 3.9+ for full validation)"
+        }
         return
     }
 
@@ -158,9 +166,13 @@ $script:PassCount = 0
 $script:WarnCount = 0
 $script:FailCount = 0
 $script:SkipCount = 0
-$script:PythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
-if (-not $script:PythonCommand) {
-    $script:PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+if ($NoPython) {
+    $script:PythonCommand = $null
+} else {
+    $script:PythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
+    if (-not $script:PythonCommand) {
+        $script:PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    }
 }
 
 $scriptDir = Normalize-PathString ($PSScriptRoot)

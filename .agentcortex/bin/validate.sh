@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# --- CLI flags ---
+ACX_NO_PYTHON=0
+for _arg in "$@"; do
+  case "$_arg" in
+    --no-python) ACX_NO_PYTHON=1 ;;
+  esac
+done
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PLATFORM_DOC="$ROOT/.agentcortex/docs/CODEX_PLATFORM_GUIDE.md"
 CLAUDE_PLATFORM_DOC="$ROOT/.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md"
@@ -146,7 +154,11 @@ run_python_check() {
   fi
 
   if [[ -z "${PYTHON_BIN:-}" ]]; then
-    record_result "$missing_python_level" "$label -- python unavailable"
+    if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+      record_result SKIP "$label -- python checks disabled (--no-python)"
+    else
+      record_result WARN "$label -- python unavailable (install Python 3.9+ for full validation)"
+    fi
     return 0
   fi
 
@@ -224,7 +236,9 @@ required_dirs=(
   "$ROOT/.agent/skills"
 )
 
-if command -v python3 >/dev/null 2>&1; then
+if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+  PYTHON_BIN=
+elif command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN=python3
 elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN=python

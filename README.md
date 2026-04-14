@@ -169,7 +169,18 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 
 ### 1. Install
 
-**Prerequisites**: Git, Python 3, and Bash (included with Git for Windows).
+**Prerequisites**:
+
+| Dependency | Required? | Purpose |
+|:---|:---|:---|
+| **Git** | Required | Clone and deploy the framework |
+| **Bash** | Required | Run deploy & validate scripts (included with [Git for Windows](https://gitforwindows.org/)) |
+| **Python 3.9+** | Recommended | Enables full validation (metadata, encoding, command sync checks) |
+| **SHA-256 tool** | Required for deploy | `sha256sum`, `shasum`, or `openssl` (pre-installed on most systems) |
+
+> **No Python?** The framework deploys and works without Python. Validation runs in
+> degraded mode — Python-dependent checks report `WARN` instead of `FAIL`.
+> Pass `--no-python` to suppress warnings: `bash .agentcortex/bin/validate.sh --no-python`
 
 ```bash
 # Clone Agentic OS
@@ -191,6 +202,17 @@ installers\deploy_brain.cmd .
 ```
 
 Both wrappers call `deploy_brain.sh` under the hood — requires [Git for Windows](https://gitforwindows.org/) (includes Git Bash) or WSL.
+
+</details>
+
+<details>
+<summary><b>Text-only usage (no scripts)</b></summary>
+
+If you only want the governance templates (Markdown files) without running any tooling:
+
+1. Copy the `.agent/`, `.agents/`, and `AGENTS.md` files into your project
+2. Optionally copy `.agentcortex/context/` and `.agentcortex/templates/` for state management
+3. No Python, Bash, or other tools are needed — all governance is plain Markdown
 
 </details>
 
