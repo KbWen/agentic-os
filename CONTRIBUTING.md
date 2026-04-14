@@ -61,6 +61,10 @@ Both scripts must report `fail=0` before submitting a PR. Python-dependent `warn
 To test deployment to a scratch project:
 
 ```bash
+# Preview first (no files written)
+./installers/deploy_brain.sh --dry-run /path/to/test-project
+
+# Deploy
 ./installers/deploy_brain.sh /path/to/test-project
 ```
 

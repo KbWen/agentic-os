@@ -1,6 +1,6 @@
 # Project Current State (vNext)
 
-- **Project Intent**: <!-- Replace with your project's one-line description -->
+- **Project Intent**: [Describe your project in one line]
 - **Core Guardrails**:
   - Correctness first: No claim of completion without evidence.
   - Small & reversible: Prioritize small, reversible changes; avoid unauthorized refactoring.
@@ -11,7 +11,7 @@
   - Task Isolation: `.agentcortex/context/work/<worklog-key>.md`
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
-- **Last Updated**: <!-- Updated by /ship -->
+- **Last Updated**: (updated by /ship)
 - **Update Sequence**: 0
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)

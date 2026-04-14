@@ -186,6 +186,9 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 # Clone Agentic OS
 git clone https://github.com/KbWen/agentic-os.git
 
+# Preview what will be deployed (no changes made)
+./agentic-os/installers/deploy_brain.sh --dry-run /path/to/your-project
+
 # Deploy into your project
 ./agentic-os/installers/deploy_brain.sh /path/to/your-project
 ```

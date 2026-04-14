@@ -23,6 +23,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 TARGET="${TARGET:-.}"
+TARGET="${TARGET%/}"
 
 MANIFEST_FILE="$TARGET/.agentcortex-manifest"
 ACX_VERSION="1.0.0"
