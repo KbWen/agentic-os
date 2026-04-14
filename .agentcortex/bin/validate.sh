@@ -226,6 +226,14 @@ if [[ -f "$CANONICAL_DEPLOY_SH" ]] && [[ ! -f "$ROOT/.agentcortex-manifest" ]]; 
   IS_SOURCE_REPO=1
 fi
 
+# Downstream repos receive deploy_brain.* at the repo root (not under installers/).
+# Redefine wrapper paths so required_files validation matches the actual layout.
+if [[ "$IS_SOURCE_REPO" -eq 0 ]]; then
+  ROOT_DEPLOY_SH="$ROOT/deploy_brain.sh"
+  ROOT_DEPLOY_PS1="$ROOT/deploy_brain.ps1"
+  ROOT_DEPLOY_CMD="$ROOT/deploy_brain.cmd"
+fi
+
 check_file_group "required framework files present" "${required_files[@]}"
 
 if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
