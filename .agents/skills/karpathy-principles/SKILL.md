@@ -91,15 +91,43 @@ During /review:
 - [ ] Orphaned imports/variables from THIS change are cleaned up
 - [ ] Pre-existing dead code mentioned but not deleted
 
+## Code Simplification Checklist
+
+When reviewing or refactoring, apply Chesterton's Fence — understand WHY before removing:
+
+- [ ] Deep nesting (>3 levels) → extract to named functions
+- [ ] Long functions (>50 lines) → split by responsibility
+- [ ] Poor naming → rename to reveal intent
+- [ ] Speculative abstractions → remove if only one caller exists
+- [ ] Duplicate logic → extract only if 3+ occurrences (not 2)
+
+**Simplification rules:**
+- Preserve behavior exactly — simplification is NOT a feature change
+- Fewer lines is not always simpler — a 1-line nested ternary is worse than a 5-line if/else
+- Separate simplification commits from feature commits — never mix
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "It works, that's good enough" | Working code that's unreadable or architecturally wrong creates debt that compounds. |
+| "We'll clean it up later" | Later never comes. The current phase is the quality gate — use it. |
+| "I'm confident about this approach" | Confidence is not evidence. State your assumptions explicitly or verify against docs. |
+| "This abstraction might be useful later" | Don't preserve speculative abstractions. If there's only one caller, inline it. |
+| "I'll just quickly improve this unrelated code too" | Unscoped changes create noisy diffs and obscure the actual intent. Touch only what you must. |
+| "The tests pass, so it's good" | Tests are necessary but not sufficient. They don't catch architecture problems, security issues, or readability. |
+
 ## Anti-Patterns
 
 - **Silent assumption**: Picking one interpretation without surfacing alternatives
 - **Speculative flexibility**: Adding config/abstraction layers "for the future"
 - **Drive-by cleanup**: "Improving" adjacent code that wasn't part of the request
 - **Vague completion**: Claiming "done" without verifiable success criteria
+- **Rationalizing shortcuts**: Using plausible-sounding excuses to skip verification steps
 
 ## References
 
 - Source: [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) (MIT)
+- Simplification enrichment: [addyosmani/agent-skills — code-simplification](https://github.com/addyosmani/agent-skills) (MIT)
 - Complements: `writing-plans` (Think Before Coding), `verification-before-completion` (Goal-Driven Execution)
 - Guardrails: `.agent/rules/engineering_guardrails.md` §7 Scope Discipline

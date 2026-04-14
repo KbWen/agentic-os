@@ -29,6 +29,9 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 11 | Shipped specs accumulation — status-driven filtering | F-10 (P2) | — | quick-win | Pending | #1 |
 | 12 | validate.sh: add archive size + Global Lessons count checks | F-02,F-01 | — | quick-win | Pending | #2, #3 |
 | 13 | Warm→Cold LLM summarization pass in /ship | Design | — | feature | Pending | #1, #3 |
+| 14 | External Skill Research & Integration (Phase A: 3 core skills) | Gap Analysis | docs/specs/skill-research-integration.md | feature | Pending | — |
+| 15 | Anti-Rationalization Pattern (framework-wide enhancement) | Gap Analysis | docs/specs/skill-research-integration.md §4C | quick-win | Pending | #14 |
+| 16 | Skill Validation Pipeline (meta-governance) | Gap Analysis | docs/specs/skill-research-integration.md §4D | feature | Pending | #14 |
 
 ## Status Key
 
