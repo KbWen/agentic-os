@@ -21,6 +21,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _fallback_candidate_files(root: pathlib.Path) -> list[pathlib.Path]:
+    """Find candidate files without git when git is unavailable."""
+    extensions = {'.md', '.yaml', '.yml', '.json'}
+    paths: list[pathlib.Path] = []
+    for ext in extensions:
+        for p in root.rglob(f'*{ext}'):
+            # Skip hidden dirs and common non-project dirs
+            parts = p.relative_to(root).parts
+            if any(part.startswith('.git') or part == 'node_modules' for part in parts):
+                continue
+            paths.append(p)
+    return sorted(set(paths))
+
+
 def candidate_files(root: pathlib.Path) -> list[pathlib.Path]:
     commands = (
         ['git', 'ls-files', '-z'],
@@ -29,7 +43,11 @@ def candidate_files(root: pathlib.Path) -> list[pathlib.Path]:
     seen: set[str] = set()
     paths: list[pathlib.Path] = []
     for command in commands:
-        output = subprocess.check_output(command, cwd=root)
+        try:
+            output = subprocess.check_output(command, cwd=root, stderr=subprocess.DEVNULL)
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            print(f"Warning: git command failed ({exc}), falling back to filesystem scan.", file=sys.stderr)
+            return _fallback_candidate_files(root)
         for item in output.split(b'\0'):
             if not item:
                 continue

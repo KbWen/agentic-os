@@ -350,7 +350,7 @@ def rerun_evidence(root: Path, entry: EvidenceEntry) -> tuple[str, bool]:
     if not command_is_safe(command):
         return f"UNVERIFIED: unsafe command syntax in `{command}`.", False
     try:
-        argv = shlex.split(command, posix=True)
+        argv = shlex.split(command, posix=(sys.platform != 'win32'))
     except ValueError as exc:
         return f"UNVERIFIED: could not parse command `{command}` ({exc}).", False
     if not argv or not command_is_allowlisted(argv):
