@@ -383,14 +383,18 @@ fi
 touch "$TARGET/.agent/skills/.gitkeep"
 touch "$TARGET/.agents/skills/.gitkeep"
 
-# Ensure work/ directory survives git clone (git doesn't track empty dirs).
-# Deploy the source .gitkeep.md if available; fall back to a plain .gitkeep.
-if [ -f "$REPO_ROOT/.agentcortex/context/work/.gitkeep.md" ]; then
-    cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/.agentcortex/context/work/.gitkeep.md" \
-        "$TARGET/.agentcortex/context/work/.gitkeep.md"
-else
-    touch "$TARGET/.agentcortex/context/work/.gitkeep.md"
-fi
+# Ensure directories survive git clone (git doesn't track empty dirs).
+# Deploy .gitkeep.md from source if available; fall back to a plain touch.
+for _keep_pair in \
+    ".agentcortex/context/work/.gitkeep.md" \
+    "docs/specs/.gitkeep.md" \
+    "docs/adr/.gitkeep.md"; do
+    if [ -f "$REPO_ROOT/$_keep_pair" ]; then
+        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair"
+    else
+        touch "$TARGET/$_keep_pair"
+    fi
+done
 
 # --- Deploy: .agentcortex/bin (core) ---
 for f in deploy.sh deploy.ps1 validate.sh validate.ps1; do
