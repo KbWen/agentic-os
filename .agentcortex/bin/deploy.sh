@@ -316,6 +316,7 @@ mkdir -p "$TARGET/.agentcortex/docs/guides"
 mkdir -p "$TARGET/.agentcortex/context/work"
 mkdir -p "$TARGET/.agentcortex/context/review"
 mkdir -p "$TARGET/.agentcortex/context/archive"
+mkdir -p "$TARGET/.agentcortex/templates"
 mkdir -p "$TARGET/.agentcortex/adr"
 mkdir -p "$TARGET/.agentcortex/specs"
 mkdir -p "$TARGET/docs/specs"
@@ -415,6 +416,12 @@ done
 
 # --- Deploy: .agentcortex/context/current_state.md (scaffold) ---
 deploy_file "$REPO_ROOT/.agentcortex/context/current_state.md" ".agentcortex/context/current_state.md"
+
+# --- Deploy: .agentcortex/templates (scaffold) ---
+for f in "$REPO_ROOT"/.agentcortex/templates/*; do
+    [ -f "$f" ] || continue
+    deploy_file "$f" ".agentcortex/templates/$(basename "$f")"
+done
 
 # --- Deploy: .agentcortex/adr (scaffold) ---
 for f in "$REPO_ROOT"/.agentcortex/adr/*.md; do
