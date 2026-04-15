@@ -29,21 +29,19 @@ Read-only logic. DOES NOT change state. Hard completion gate for non-`tiny-fix` 
 
 ## 3. Required Output Blocks
 
-- **Layer 1 (Handoff TL;DR, <= 10 lines)**:
-  - Goal
-  - Current State
-  - Next Action
-  - Blocker (or `none`)
-  - Owner
-  - Last Verified Command
-- **Layer 2 (Traceability)**:
-  - Done
-  - In Progress
-  - Blockers
-  - Next
-  - Risks
-  - References
-- **Resume Block**: MUST also write the following to the Work Log file:
+Apply `AGENTS.md §Phase Output Compression → /handoff`.
+
+**Chat response is Layer 1 ONLY (≤ 10 lines). Layer 2 and the Resume Block are written to the Work Log file — do NOT emit them in chat.**
+
+- **Layer 1 (Handoff TL;DR, chat output, ≤ 10 lines)**:
+  - Goal — 1 line
+  - Current State — 1 line
+  - Next Action — 1 line
+  - Blocker — 1 line or `none`
+  - Owner — name / agent id
+  - Last Verified Command — 1 line
+- **Layer 2 (Traceability, Work Log only — NOT chat)**: Done, In Progress, Blockers, Next, Risks, References. Append to Work Log `## Phase Summary` and related sections. If the user asks for the full traceability, expand.
+- **Resume Block**: MUST be written to the Work Log file:
 
 ```markdown
 ## Resume

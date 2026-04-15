@@ -15,13 +15,15 @@
         "executing-plans",
         "verification-before-completion",
         "systematic-debugging",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "writing-plans",
         "executing-plans",
         "verification-before-completion",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "karpathy-principles"
       ],
       "notes": "Required gates per AGENTS.md hard rules: bootstrap → plan → implement → evidence → ship. Review/test are optional coverage, NOT required phases."
     },
@@ -44,7 +46,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -54,7 +57,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "notes": "Implementation repeats approximate Red-Green-Refactor loops; test repeats cover regression reruns."
     },
@@ -81,7 +85,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -95,7 +100,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "notes": "Models a heavier feature where auth and data concerns widen the review and test surface. doc-lookup activates because task touches framework APIs."
     },
@@ -115,7 +121,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "executing-plans",
@@ -123,7 +130,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "requesting-code-review",
-        "finishing-a-development-branch"
+        "finishing-a-development-branch",
+        "karpathy-principles"
       ],
       "notes": "Models a bug-fix path where repeated observe-hypothesize-verify loops inflate implement and test passes."
     },
@@ -154,7 +162,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "writing-plans",
@@ -171,7 +180,8 @@
         "red-team-adversarial",
         "requesting-code-review",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "notes": "Models the broadest lifecycle path with parallelization, platform coordination, and repeated review/test passes. doc-lookup activates because task touches framework APIs across all layers."
     },
@@ -194,7 +204,8 @@
         "systematic-debugging",
         "red-team-adversarial",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "triggered_skills": [
         "receiving-code-review",
@@ -203,7 +214,8 @@
         "verification-before-completion",
         "red-team-adversarial",
         "finishing-a-development-branch",
-        "production-readiness"
+        "production-readiness",
+        "karpathy-principles"
       ],
       "notes": "Models the cost of reviewer feedback cycles where review and implementation phases repeat before shipping."
     }

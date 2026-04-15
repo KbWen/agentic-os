@@ -175,20 +175,23 @@ AI MUST verify its own review before outputting:
 
 ## Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md`.
+Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /review`.
 
-- **Burden of Proof table** (mandatory — see above)
-- Issues found (with severity)
-- Security findings (per §5 format above)
-- Red Team findings (if triggered — per Red Team Report format)
-- External References verdict (verified / missing / stale)
-- Fix suggestions
-- Ready to commit? (Yes/No — blocked if: any AC is `✗ UNPROVEN` without `[NEEDS_HUMAN]` tag, OR unresolved CRITICAL/HIGH security findings, OR CRITICAL Red Team findings)
+**Chat response leads with the Burden of Proof table. Everything else is terse.**
 
-Compression rule:
-- Do not reprint the full task description, plan, or AC prose if it already exists in the Work Log.
-- Prefer delta-only references such as changed AC verdicts, newly discovered risks, or missing evidence since `/implement`.
-- If no issues are found, state that directly and keep residual-risk commentary to one short block.
+Required chat content (in this order):
+1. **Burden of Proof table** (mandatory — see §Burden of Proof Protocol). Table only; no prose preamble.
+2. **Issues** — 1 line per issue: `<severity>: <file:line> — <1-line>`. If none: `Issues: none`.
+3. **Security** — 1 line. If none: `Security: clean`. Findings detail goes to Work Log.
+4. **Red Team** — 1 line (only if triggered). Findings detail goes to Work Log.
+5. **External Refs** — `verified | missing | stale` with count.
+6. **Verdict** — `Ready to commit: yes | no`. If `no`, 1-line reason.
+
+Compression rules:
+- Do not reprint the full task description, plan, or AC prose — they are in the Work Log.
+- Do NOT include "Fix suggestions" in chat unless the user asks. Write them to Work Log `## Review Feedback` instead.
+- Delta-only: state what changed since `/implement`, not what the whole branch does.
+- If zero issues: one line (`Issues: none`) is sufficient. No "residual risk commentary" paragraph.
 
 ## Domain Decisions Tag Validation (AC-10, feature / architecture-change)
 

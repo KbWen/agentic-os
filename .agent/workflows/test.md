@@ -110,11 +110,22 @@ No evidence = no completion. This is non-negotiable.
 
 ## Output Compression Rule
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md`.
+Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /test`.
 
-- Report test commands, pass/fail counts, AC coverage deltas, and unresolved risks only.
-- Do not reprint the full test skeleton or full AC list unless coverage changed or a failure requires it.
-- If adversarial testing ran, summarize new adversarial evidence rather than replaying the standard test narrative.
+**Chat response is the compact block below. NO full test log pasted in chat — the log lives in the Work Log `## Evidence` section.**
+
+```
+Commands: <comma list>
+Result: <passed>/<total> passed, <failed> failed
+AC coverage: <AC-N covered | delta since /implement>
+Adversarial: <pass | findings recorded in Work Log | n/a>
+Unresolved: <1-line or "none">
+```
+
+- Do not reprint the full test skeleton or the AC list — they are in the Work Log.
+- Do not paste the full pytest/junit output in chat. Summarize counts; persist the full output in the Work Log.
+- If a test fails, 1 line per failure: `<test_id>: <1-line cause>`. Full traceback goes to Work Log.
+- If the user asks for the full log or traceback, expand. Default is terse.
 
 ## Phase Summary Update
 

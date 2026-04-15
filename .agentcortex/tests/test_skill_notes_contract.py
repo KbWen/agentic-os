@@ -123,10 +123,17 @@ class SkillNotesContractTests(unittest.TestCase):
         conditional. Phase workflows reference AGENTS.md instead of repeating the prose."""
         # AGENTS.md retains the detailed conditional text in §Shared Phase Contracts
         agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        # Capability-by-presence: metadata is checked first, with an explicit
+        # fallback clause so missing metadata files MUST NOT block skill loading.
         self.assertIn(
-            "if the repo also has `.agentcortex/metadata/trigger-compact-index.json`",
-            agents_text.casefold(),
-            "AGENTS.md: compact-index check should be conditional, not universal",
+            "`.agentcortex/metadata/trigger-compact-index.json`",
+            agents_text,
+            "AGENTS.md: Phase-Entry Skill Loading must reference the compact-index metadata path",
+        )
+        self.assertIn(
+            "If neither metadata file exists",
+            agents_text,
+            "AGENTS.md: Phase-Entry Skill Loading must carry the capability-by-presence fallback",
         )
         # AGENTS.md §Shared Phase Contracts has the canonical config.yaml reference
         self.assertIn(

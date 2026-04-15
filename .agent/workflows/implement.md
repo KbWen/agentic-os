@@ -143,12 +143,21 @@ After implementation is complete and evidence is recorded, append one line to `#
 
 ## Post-Execution Report
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md`.
+Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /implement`.
 
-- Summary of actual changes
-- Potential side-effects
-- Suggested verification/test commands
-- **Scope Divergence Check**: Compare actual modified files against planned target files. If extra files were touched, flag: "⚠️ Scope divergence: planned [N] files, touched [M] files. Extra: [list]. Confirm these are intentional? (yes/revert)"
+**Chat response is the compact block below. Do NOT re-narrate what each file changed — the diff is the evidence. Do NOT paste code that was just written.**
+
+```
+Files: <list of files touched> (planned: <N>, actual: <M>)
+Tests: <command> → <pass/fail>
+Checkpoint: <SHA or "(uncommitted)">
+Side-effects: <1-line or "none">
+```
+
+- **Scope Divergence Check**: If actual files ≠ planned files, add: `"⚠️ Scope divergence: planned [N], touched [M]. Extra: [list]. Intentional? (yes/revert)"`
+- Potential side-effects: 1 line max. Details go to Work Log `## Known Risk`.
+- Suggested verification commands: list them, do NOT run them here unless user asked.
+- If the user wants the per-file explanation, they will ask. Default is terse.
 
 ## Security Quick-Scan (Auto — No User Action Required)
 

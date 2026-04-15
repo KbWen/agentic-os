@@ -9,7 +9,7 @@ Conduct autonomous exploratory research. AI investigates the codebase, external 
 
 1. **Investigate first, report after**: Read code, check git history, search for patterns, test hypotheses. Spend the effort upfront so the report is grounded in evidence, not speculation.
 
-2. **Structure findings** using this format:
+2. **Structure findings** using this format. Keep each bullet ≤ 1 line in chat. If a finding needs longer justification, write the detail to the Work Log `## Research Findings` section and reference it by section name — do NOT inline a paragraph in chat.
    - **Facts** (verified knowns): Things confirmed by reading code or running commands. Cite `file:line` references.
    - **Unknowns**: Things that need further investigation or require human input to resolve.
    - **Assumptions**: Things you believe to be true but haven't verified. Mark confidence level (High / Medium / Low).

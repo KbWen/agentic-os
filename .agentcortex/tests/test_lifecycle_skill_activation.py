@@ -69,12 +69,14 @@ EXPECTED_SCENARIO_SKILLS = {
             "verification-before-completion",
             "systematic-debugging",
             "finishing-a-development-branch",
+            "karpathy-principles",
         },
         "triggered": {
             "writing-plans",
             "executing-plans",
             "verification-before-completion",
             "finishing-a-development-branch",
+            "karpathy-principles",
         },
     },
     "feature-core-logic-tdd": {
@@ -88,6 +90,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
         "triggered": {
             "writing-plans",
@@ -98,6 +101,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
     },
     "feature-api-auth-db": {
@@ -115,6 +119,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
         "triggered": {
             "writing-plans",
@@ -129,6 +134,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
     },
     "hotfix-debug-loop": {
@@ -139,6 +145,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "karpathy-principles",
         },
         "triggered": {
             "executing-plans",
@@ -147,6 +154,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "requesting-code-review",
             "finishing-a-development-branch",
+            "karpathy-principles",
         },
     },
     "architecture-multi-agent": {
@@ -167,6 +175,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
         "triggered": {
             "writing-plans",
@@ -184,6 +193,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "requesting-code-review",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
     },
     "post-review-feedback-loop": {
@@ -196,6 +206,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
         "triggered": {
             "receiving-code-review",
@@ -205,6 +216,7 @@ EXPECTED_SCENARIO_SKILLS = {
             "red-team-adversarial",
             "finishing-a-development-branch",
             "production-readiness",
+            "karpathy-principles",
         },
     },
 }

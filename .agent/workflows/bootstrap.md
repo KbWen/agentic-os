@@ -242,12 +242,24 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
 
 ## 3. Expected Output Format
 
-1. Classification (with justification)
-2. Goal
-3. Paths
-4. Constraints & AC
-5. Non-goals
-6. Recommended Skills: Use the deterministic rule table below to select skills. Write ALL matched skills (with one-line reason) to Work Log. **Skip for `tiny-fix`.** No file reads required at this stage — skill metadata is already in context. This embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry / compact-index metadata on top later, but bootstrap does not depend on those files.
+> **Compact block, not a dashboard.** Apply `AGENTS.md §Phase Output Compression → /bootstrap`. The chat response is a summary pointer; the full record lives in the Work Log file. Do NOT reprint `Constraints`, `AC`, `Non-goals`, `Known Risk`, or `Read Plan` detail in chat — write them to the Work Log and reference by section name.
+
+Chat response template (≤ 10 lines for quick-win, ≤ 15 for feature/architecture):
+
+```
+Classification: <tier> — <1-line why>
+Goal: <1-line>
+Paths: <comma list or "(see Work Log §Task Description)">
+Skills: <comma list> (Ref: Work Log §Recommended Skills)
+Read: SSoT(<date>) · WorkLog(<new|resumed>) · Guardrails(<Full|Quick|Lite>)
+Next: <slash-command>
+```
+
+Everything below — Classification justification, Recommended Skills rule table, skill conflict pass, user preference merge, Context Read Receipt, Read Plan, Next Step options — is written to the Work Log sections. It is the AI's working notes, NOT the chat response. If the user needs detail, they will ask.
+
+### 3.6 Recommended Skills Rule Table
+
+Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. No file reads required at this stage — skill metadata is already in context. This embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry / compact-index metadata on top later, but bootstrap does not depend on those files.
 
    **Mandatory Skills (always activate when condition met):**
 
@@ -313,22 +325,21 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
 
 **A skill in both `pinned` and `disabled`**: pin wins (explicit request > explicit removal). Warn: `"Skill [X] is both pinned and disabled. Pin takes precedence."`
 
-7. Context Read Receipt: MUST output:
-   - `current_state.md` → [last modified date or key field you read]
-   - Work Log → [status: existing|created|resumed]
-   - Spec Scope → [list of determined-relevant spec files, or "none"]
-8. Read Plan (per `.agentcortex/docs/guides/context-budget.md`):
-   - Classification: [tier]
-   - Guardrails Mode: [Full|Quick|Lite] — determines which sections of `engineering_guardrails.md` apply
-   - Files to read: [list with sections]
-   - Files explicitly skipped: [list with reason]
-   - Estimated governance reads: [N files]
-9. Next Step Recommendation (based on classification):
-   - `tiny-fix`: → Proceed directly with inline plan.
-   - `quick-win`: → `/plan`
-   - `feature`: → `/brainstorm` or `/spec` (spec required before `/plan`)
-   - `architecture-change`: → `/brainstorm` → `/spec` (ADR + spec required before `/plan`)
-   - `hotfix`: → `/research` (systematic debugging)
+### 3.7 Work Log Content (written to the Work Log file, NOT emitted in chat)
+
+These items are the AI's working notes. They live in the Work Log sections listed in `AGENTS.md §Work Log Contract` and are NOT repeated in the chat response. Chat only shows the compact block in §3.
+
+- **Context Read Receipt** (→ Work Log `## Session Info` or `## Task Description`):
+  - `current_state.md` → [last modified date or key field read]
+  - Work Log → [status: existing|created|resumed]
+  - Spec Scope → [list of determined-relevant spec files, or "none"]
+- **Read Plan** (→ Work Log `## Task Description` or header): Classification, Guardrails Mode (Full|Quick|Lite), Files to read (with sections), Files explicitly skipped (with reason), Estimated governance reads.
+- **Next Step Recommendation** — the chat block's `Next:` field uses this map:
+  - `tiny-fix` → proceed directly with inline plan
+  - `quick-win` → `/plan`
+  - `feature` → `/brainstorm` or `/spec` (spec required before `/plan`)
+  - `architecture-change` → `/brainstorm` → `/spec` (ADR + spec required before `/plan`)
+  - `hotfix` → `/research` (systematic debugging)
 
 ## 4. Hard Checkpoints
 

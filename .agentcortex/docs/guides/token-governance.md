@@ -93,3 +93,49 @@ Compaction procedure:
 2. Move older entries to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md`.
 3. Add a pointer line in the active log: `Compacted: <date>, archive: <path>`.
 4. Never compact away the evidence required by `/ship` gate.
+
+## 8. Output Brevity (AI Response Token Discipline)
+
+Input-token optimization (reading strategy, context caching, file slimming) is undermined if AI *output* stays verbose. Output tokens cost the same as input tokens and compound every turn. This section is the canonical rule for AI response style; `AGENTS.md §Core Directives → Response Brevity` is its 1-line enforcement pointer.
+
+### Official Grounding
+
+- **Claude Code Best Practices** — [code.claude.com/docs/en/best-practices](https://code.claude.com/docs/en/best-practices):
+  > *"Keep it concise. For each line, ask: 'Would removing this cause Claude to make mistakes?' If not, cut it. Bloated CLAUDE.md files cause Claude to ignore your actual instructions!"*
+- **Anthropic Prompting Best Practices** — [platform.claude.com prompting-best-practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices):
+  > *"More direct and grounded: Provides fact-based progress reports rather than self-celebratory updates. Less verbose: May skip detailed summaries for tool calls, jumping directly to the next action. Respond directly without preamble. Do not start with phrases like 'Here is...', 'Based on...', etc."*
+
+### DO
+
+- **Default to terse.** When unsure between short and thorough, pick short.
+- **Lead with the answer.** The first line answers the user's question or states the outcome; reasoning comes after only if asked.
+- **Compress structure.** Single sentence > bullet list > table > multi-section dashboard. Use the lightest structure that fits.
+- **Trust the diff.** For code/doc edits, the diff itself is evidence — do not re-narrate what every hunk changed.
+- **Reference, don't re-quote.** Point to Work Log Evidence, file:line, or a URL instead of pasting content again.
+- **End when done.** A short response that ends after answering is correct, not lazy.
+
+### DON'T
+
+- ❌ **Preamble**: *"I'll now proceed to..."*, *"Let me check..."*, *"Based on the analysis..."*, *"Here is the requested..."*.
+- ❌ **Postamble self-summary**: *"I've now completed..."*, *"To summarize what I did..."*, *"In conclusion, the changes are..."*.
+- ❌ **Decorative framing**: emoji dividers, horizontal rules, section headers when the whole response is 3 lines.
+- ❌ **Multi-section dashboards** for simple results: a "Summary / Details / Next Steps" template when a sentence would do.
+- ❌ **Re-explaining the task** back to the user before answering.
+- ❌ **Unprompted recommendations** tacked on ("You might also want to consider...") unless directly risk-relevant.
+
+### When Verbosity IS Appropriate
+
+- **User explicitly asks** for a detailed report, audit, review, or explanation.
+- **Governance-required artifacts**: gate blocks, plan artifacts (target files + AC), ship evidence, handoff summaries. These have a prescribed minimum content by workflow — meet it, don't exceed it.
+- **Risk escalation**: when about to take a destructive or high-blast-radius action, explicitly list the blast radius and ask for confirmation. Brevity yields to safety.
+- **Correction of a prior mistake**: when the AI was wrong earlier, it's acceptable to spend extra lines naming the error and the correction so the user can verify.
+
+### Enforcement
+
+- Self-check before emitting any response longer than ~10 lines: "Did the user ask for this level of detail, or am I padding?"
+- Phase reports (bootstrap / plan / implement / review / ship) MUST still contain the governance-prescribed content, but trim every decorative surface not in that prescription.
+- If a user feedback memory exists (e.g., `feedback_response_brevity.md`), it outranks default behavior — honor the specific preference recorded there.
+
+### Rationale (Why this matters enough to be a rule)
+
+Every verbose response is an input-token tax on the *next* turn (the conversation history replays), plus the output-token cost of the current turn. A 500-token padded response over 10 turns = 5,000 output tokens + 5,000×N cumulative input as history replays. Tightening response style is the single highest-leverage optimization after input-file slimming — and unlike file slimming, it applies to every session of every task forever.

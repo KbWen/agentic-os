@@ -77,18 +77,14 @@ Restructure threshold is configurable via `.agent/config.yaml` `domain_doc.restr
 
 ### Output Summary
 
+Apply `AGENTS.md §Phase Output Compression`. Chat response is the compact block below; the full diff preview (shown pre-apply per Execution Steps §5) is not repeated in the post-apply summary.
+
 ```
-/govern-docs --restructure <domain> complete
-
-## Changes Applied
-- L1: docs/architecture/<domain>.md — rewritten (N lines, was M lines)
-- L2: docs/architecture/<domain>.log.md — N entries marked [superseded], M entries still active
-
-## Restructure Summary
-[1-2 sentence summary of what design state was captured in L1]
-
-## Next Step
-Domain doc is current. L2 continues to accumulate new entries from /ship.
+Restructure: <domain>
+L1: <path> — <M> → <N> lines
+L2: <path> — <X> superseded, <Y> active
+Summary: <1-line — what design state L1 now captures>
+Next: /ship continues to append new L2 entries
 ```
 
 ---
