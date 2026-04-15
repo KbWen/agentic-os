@@ -42,7 +42,9 @@ $scriptDir = $PSScriptRoot
 if (-not $scriptDir) { $scriptDir = Split-Path -Parent $PSCommandPath }
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 $scriptDir = Normalize-PathString $scriptDir
-$canonical = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir, '.agentcortex', 'bin', 'deploy.sh'))
+# When deployed to installers/, the project root is one level up.
+$projectRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir, '..'))
+$canonical = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($projectRoot, '.agentcortex', 'bin', 'deploy.sh'))
 
 $bashLauncher = Resolve-BashLauncher
 if (-not $bashLauncher) {

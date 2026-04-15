@@ -1,11 +1,12 @@
 @echo off
 setlocal
 
+:: When deployed to installers\, canonical deploy is one level up.
 :: Try canonical deploy via PowerShell first
-if exist "%~dp0.agentcortex\bin\deploy.ps1" goto run_canonical_ps1
+if exist "%~dp0..\agentcortex\bin\deploy.ps1" goto run_canonical_ps1
 
 :: Try canonical deploy via bash
-if exist "%~dp0.agentcortex\bin\deploy.sh" goto run_canonical_bash
+if exist "%~dp0..\agentcortex\bin\deploy.sh" goto run_canonical_bash
 
 :: Bootstrap: canonical not found, use wrapper with fetch logic
 if exist "%~dp0deploy_brain.sh" goto run_bootstrap_bash
@@ -15,13 +16,13 @@ echo [ERROR] Canonical deploy implementation not found and cannot bootstrap.
 exit /b 1
 
 :run_canonical_ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0.agentcortex\bin\deploy.ps1" %*
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\agentcortex\bin\deploy.ps1" %*
 exit /b %errorlevel%
 
 :run_canonical_bash
 where bash >nul 2>nul
 if errorlevel 1 goto no_bash
-bash "%~dp0.agentcortex\bin\deploy.sh" %*
+bash "%~dp0..\agentcortex\bin\deploy.sh" %*
 exit /b %errorlevel%
 
 :run_bootstrap_bash

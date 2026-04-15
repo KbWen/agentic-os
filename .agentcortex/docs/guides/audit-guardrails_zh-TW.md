@@ -19,7 +19,7 @@ This guide allows users (or assigned agents like Gemini Flash) to verify if **Ag
    ```bash
    mkdir -p test-ai-brain && cd test-ai-brain
    git init
-   bash ../deploy_brain.sh ./ --force
+   bash ../installers/deploy_brain.sh ./ --force
    git status
    ```
 

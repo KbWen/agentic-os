@@ -75,7 +75,7 @@ get_tier() {
     local rel_path="$1"
     case "$rel_path" in
         # wrapper — user may customize these delegation scripts
-        deploy_brain.sh|deploy_brain.ps1|deploy_brain.cmd) echo "wrapper" ;;
+        installers/deploy_brain.sh|installers/deploy_brain.ps1|installers/deploy_brain.cmd) echo "wrapper" ;;
 
         # scaffold — created once, user expected to modify
         .gitattributes) echo "scaffold" ;;
@@ -446,10 +446,11 @@ deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
 # --- Deploy: .gitattributes (scaffold — user may extend) ---
 deploy_file "$REPO_ROOT/.gitattributes" ".gitattributes"
 
-# --- Deploy: wrapper scripts ---
-deploy_file "$REPO_ROOT/installers/deploy_brain.sh" "deploy_brain.sh" "+x"
-deploy_file "$REPO_ROOT/installers/deploy_brain.ps1" "deploy_brain.ps1"
-deploy_file "$REPO_ROOT/installers/deploy_brain.cmd" "deploy_brain.cmd"
+# --- Deploy: wrapper scripts (into installers/ — not root) ---
+mkdir -p "$TARGET/installers"
+deploy_file "$REPO_ROOT/installers/deploy_brain.sh" "installers/deploy_brain.sh" "+x"
+deploy_file "$REPO_ROOT/installers/deploy_brain.ps1" "installers/deploy_brain.ps1"
+deploy_file "$REPO_ROOT/installers/deploy_brain.cmd" "installers/deploy_brain.cmd"
 
 # --- Deploy: platform rules (core) ---
 deploy_file "$REPO_ROOT/.antigravity/rules.md" ".antigravity/rules.md"
@@ -855,7 +856,7 @@ echo "   1. Validate the installation (optional — Python is NOT required):"
 echo "      .agentcortex/bin/validate.sh              # full validation (uses Python if available)"
 echo "      .agentcortex/bin/validate.sh --no-python  # lightweight, text-only checks"
 echo "   2. Stage framework files for git tracking:"
-echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/"
+echo "      git add .agentcortex-manifest AGENTS.md CLAUDE.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/ installers/"
 echo "      # Also add if present: .claude/ .github/"
 echo "   3. Tell AI: 'Please run /bootstrap' to start"
 echo "   4. Agentic OS reference docs are under .agentcortex/docs/"

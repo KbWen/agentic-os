@@ -97,7 +97,7 @@ If the task is classified as `feature` or `architecture-change`, check:
 <!-- SCOPE: Steps 3-6 are conditional — skip steps whose preconditions are not met -->
 3. IF `.agentcortex/context/private/` exists, SCAN for local-only instructions (e.g., private Git workflows, environment-specific configs). These files are gitignored and contain context that should NOT be committed.
 4. **Migration/Integration Scenario** *(skip if not a migration task)*:
-   - Follow `docs/guides/migration.md`. Actively scan and suggest file reorganization.
+   - Follow `.agentcortex/docs/guides/migration.md`. Actively scan and suggest file reorganization.
    - MUST output migration plan and await user `OK` before ANY move/rename.
 5. **Active Backlog Detection**:
    - Check if `docs/specs/_product-backlog.md` exists.
