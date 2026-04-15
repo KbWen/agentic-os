@@ -2,7 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CANONICAL="$SCRIPT_DIR/.agentcortex/bin/deploy.sh"
+# When deployed to installers/, the project root is one level up.
+# When invoked directly from the source repo, this also resolves correctly.
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CANONICAL="$PROJECT_ROOT/.agentcortex/bin/deploy.sh"
 
 # If canonical deploy exists locally, use it (normal path)
 if [[ -f "$CANONICAL" ]]; then
@@ -13,8 +16,8 @@ fi
 echo "Agentic OS framework not found locally — bootstrapping from remote..."
 
 ACX_SOURCE="${ACX_SOURCE:-}"
-ACX_CACHE="$SCRIPT_DIR/.agentcortex-src"
-MANIFEST="$SCRIPT_DIR/.agentcortex-manifest"
+ACX_CACHE="$PROJECT_ROOT/.agentcortex-src"
+MANIFEST="$PROJECT_ROOT/.agentcortex-manifest"
 
 # Try to read source_repo from manifest
 if [[ -z "$ACX_SOURCE" && -f "$MANIFEST" ]]; then

@@ -14,7 +14,7 @@ This document provides ready-to-copy "Real Project Integration" examples to help
 1. Deploy Template:
 
 ```bash
-./deploy_brain.sh .
+./installers/deploy_brain.sh .
 ./.agentcortex/bin/validate.sh
 ```
 
@@ -62,7 +62,7 @@ npm run lint
 1. Deploy Template:
 
 ```bash
-./deploy_brain.sh .
+./installers/deploy_brain.sh .
 ./.agentcortex/bin/validate.sh
 ```
 

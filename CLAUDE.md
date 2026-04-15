@@ -44,7 +44,7 @@ All governance rules are in `AGENTS.md` and `engineering_guardrails.md`. Key rem
 - **Phase order is mandatory** — NEVER skip required phases, even if user asks. See `engineering_guardrails.md` §10.
 - **No Evidence = No Completion** — `tiny-fix`: diff + 1-line. `quick-win`+: test logs or terminal output.
 - **SSoT protection** — Only `/ship` writes to `.agentcortex/context/current_state.md` (via `guard_context_write.py`). Exception: `/retro` may append Global Lessons.
-- **Installation**: NEVER manually copy framework files. Use `installers/deploy_brain.sh` or `deploy_brain.ps1`.
+- **Installation**: NEVER manually copy framework files. Use `installers/deploy_brain.sh` or `installers/deploy_brain.ps1`.
 
 ## Validate
 

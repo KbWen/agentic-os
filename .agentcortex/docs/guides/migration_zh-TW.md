@@ -11,7 +11,7 @@
 ### 步驟 1：代碼更新
 
 ```bash
-./deploy_brain.sh /path/to/project-a
+./installers/deploy_brain.sh /path/to/project-a
 ```
 
 > [!NOTE]
@@ -60,7 +60,7 @@ AI 會自動執行：
 ### 步驟 1：環境部署
 
 ```bash
-./deploy_brain.sh /path/to/project-b
+./installers/deploy_brain.sh /path/to/project-b
 ```
 
 ### 步驟 2：原始素材進氣 + 自動歸檔

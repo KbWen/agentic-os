@@ -23,21 +23,15 @@ CANONICAL_DEPLOY_SH="$ROOT/.agentcortex/bin/deploy.sh"
 
 # Source-repo detection (must run before required_files array is built).
 # Source repo has canonical deploy but no .agentcortex-manifest.
-# Downstream repos receive deploy_brain.* at root (not under installers/).
+# Both source and downstream repos keep deploy_brain.* under installers/.
 IS_SOURCE_REPO=0
 if [[ -f "$CANONICAL_DEPLOY_SH" ]] && [[ ! -f "$ROOT/.agentcortex-manifest" ]]; then
   IS_SOURCE_REPO=1
 fi
 
-if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
-  ROOT_DEPLOY_SH="$ROOT/installers/deploy_brain.sh"
-  ROOT_DEPLOY_PS1="$ROOT/installers/deploy_brain.ps1"
-  ROOT_DEPLOY_CMD="$ROOT/installers/deploy_brain.cmd"
-else
-  ROOT_DEPLOY_SH="$ROOT/deploy_brain.sh"
-  ROOT_DEPLOY_PS1="$ROOT/deploy_brain.ps1"
-  ROOT_DEPLOY_CMD="$ROOT/deploy_brain.cmd"
-fi
+ROOT_DEPLOY_SH="$ROOT/installers/deploy_brain.sh"
+ROOT_DEPLOY_PS1="$ROOT/installers/deploy_brain.ps1"
+ROOT_DEPLOY_CMD="$ROOT/installers/deploy_brain.cmd"
 CANONICAL_DEPLOY_PS1="$ROOT/.agentcortex/bin/deploy.ps1"
 CANONICAL_VALIDATE_SH="$ROOT/.agentcortex/bin/validate.sh"
 CANONICAL_VALIDATE_PS1="$ROOT/.agentcortex/bin/validate.ps1"
@@ -401,7 +395,7 @@ check_contains_literal \
   "deploy_brain.ps1 missing canonical deploy reference"
 check_contains_literal \
   "$ROOT_DEPLOY_CMD" \
-  '.agentcortex\bin\deploy' \
+  'agentcortex\bin\deploy' \
   "deploy_brain.cmd references canonical deploy entrypoint" \
   "deploy_brain.cmd missing canonical deploy reference"
 

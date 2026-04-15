@@ -280,55 +280,8 @@ $requiredDirs = @(
 $isSourceRepo = (Test-Path -Path $canonicalDeploySh -PathType Leaf) -and
                 (-not (Test-Path -Path (Join-NormalPath $root '.agentcortex-manifest') -PathType Leaf))
 
-# Downstream repos receive deploy_brain.* at the repo root (not under installers/).
-# Redefine wrapper paths so required_files validation matches the actual layout.
-if (-not $isSourceRepo) {
-    $rootDeploySh  = Join-NormalPath $root 'deploy_brain.sh'
-    $rootDeployPs1 = Join-NormalPath $root 'deploy_brain.ps1'
-    $rootDeployCmd = Join-NormalPath $root 'deploy_brain.cmd'
-    # Rebuild requiredFiles with updated paths
-    $requiredFiles = @(
-        (Join-NormalPath $workflowsDir 'hotfix.md'),
-        (Join-NormalPath $workflowsDir 'worktree-first.md'),
-        (Join-NormalPath $workflowsDir 'new-feature.md'),
-        (Join-NormalPath $workflowsDir 'medium-feature.md'),
-        (Join-NormalPath $workflowsDir 'small-fix.md'),
-        (Join-NormalPath $workflowsDir 'govern-docs.md'),
-        (Join-NormalPath $workflowsDir 'handoff.md'),
-        (Join-NormalPath $workflowsDir 'bootstrap.md'),
-        (Join-NormalPath $workflowsDir 'plan.md'),
-        (Join-NormalPath $workflowsDir 'implement.md'),
-        (Join-NormalPath $workflowsDir 'review.md'),
-        (Join-NormalPath $workflowsDir 'help.md'),
-        (Join-NormalPath $workflowsDir 'test-skeleton.md'),
-        (Join-NormalPath $workflowsDir 'commands.md'),
-        (Join-NormalPath $workflowsDir 'routing.md'),
-        (Join-NormalPath $workflowsDir 'test.md'),
-        (Join-NormalPath $workflowsDir 'ship.md'),
-        (Join-NormalPath $workflowsDir 'decide.md'),
-        (Join-NormalPath $workflowsDir 'test-classify.md'),
-        (Join-NormalPath $workflowsDir 'spec-intake.md'),
-        (Join-NormalPath $workflowsDir 'claude-cli.md'),
-        $skillConflictMatrix,
-        $agentConfigYaml,
-        $platformDoc,
-        $claudePlatformDoc,
-        $examplesDoc,
-        $projectAgentsFile,
-        $projectClaudeFile,
-        $rootDeploySh,
-        $rootDeployPs1,
-        $rootDeployCmd,
-        $canonicalDeploySh,
-        $canonicalDeployPs1,
-        $canonicalValidateSh,
-        $canonicalValidatePs1,
-        $commandSyncCheck,
-        $textIntegrityCheckPy,
-        $textIntegrityCheckPs1,
-        $textIntegrityBaseline
-    )
-}
+# Both source and downstream repos keep deploy_brain.* under installers/.
+# No path redefinition needed — $rootDeploySh/Ps1/Cmd already point to installers/.
 
 if ($isSourceRepo) {
     Add-Result -Level 'SKIP' -Message 'claude adapter files -- source repo (created by deploy in downstream)'

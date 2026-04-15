@@ -14,7 +14,7 @@
 1. 部署模板
 
 ```bash
-./deploy_brain.sh .
+./installers/deploy_brain.sh .
 ./.agentcortex/bin/validate.sh
 ```
 
@@ -62,7 +62,7 @@ npm run lint
 1. 部署模板
 
 ```bash
-./deploy_brain.sh .
+./installers/deploy_brain.sh .
 ./.agentcortex/bin/validate.sh
 ```
 

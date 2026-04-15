@@ -11,7 +11,7 @@ The core goal of upgrading to vNext: **"Transition from process-driven to state-
 ### Step 1: Code Update
 
 ```bash
-./deploy_brain.sh /path/to/project-a
+./installers/deploy_brain.sh /path/to/project-a
 ```
 
 > [!NOTE]
@@ -60,7 +60,7 @@ Focus: **"Catch-up; the AI organizes, no manual preprocessing needed."**
 ### Step 1: Environment Deployment
 
 ```bash
-./deploy_brain.sh /path/to/project-b
+./installers/deploy_brain.sh /path/to/project-b
 ```
 
 ### Step 2: Raw Material Processing & Archiving
