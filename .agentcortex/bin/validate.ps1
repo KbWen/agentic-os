@@ -395,7 +395,7 @@ Test-ContainsLiteral -Path $activeCodexRules -Pattern 'chown -R' -SuccessMessage
 
 Test-ContainsLiteral -Path $rootDeploySh -Pattern '.agentcortex/bin/deploy.sh' -SuccessMessage 'deploy_brain.sh references canonical deploy script' -FailureMessage 'deploy_brain.sh missing canonical deploy reference'
 Test-ContainsLiteral -Path $rootDeployPs1 -Pattern "'.agentcortex', 'bin', 'deploy.sh'" -SuccessMessage 'deploy_brain.ps1 references canonical deploy script' -FailureMessage 'deploy_brain.ps1 missing canonical deploy reference'
-Test-ContainsLiteral -Path $rootDeployCmd -Pattern '.agentcortex\bin\deploy' -SuccessMessage 'deploy_brain.cmd references canonical deploy entrypoint' -FailureMessage 'deploy_brain.cmd missing canonical deploy reference'
+Test-ContainsLiteral -Path $rootDeployCmd -Pattern 'agentcortex\bin\deploy' -SuccessMessage 'deploy_brain.cmd references canonical deploy entrypoint' -FailureMessage 'deploy_brain.cmd missing canonical deploy reference'
 
 $worklogContractFiles = @(
     (Join-NormalPath $root 'AGENTS.md'),
