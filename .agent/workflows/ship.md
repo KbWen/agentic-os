@@ -109,17 +109,25 @@ If ANY condition fails, MUST reject `/ship` and output missing list.
 
 ## Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md`.
+Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /ship`.
 
-- Commit message (Conventional Commits)
-- Change summary (bullet points)
-- Test results (Evidence)
-- Doc sync status (Did `current_state.md` update?)
-- Known risks and rollback strategy
+**Chat response is the compact block below. Do NOT replay full implementation, review, or test narratives — they are in the Work Log. Do NOT paste the full commit message body when the title line is enough.**
 
-Compression rule:
-- summarize final deltas and evidence references only
-- do not replay full implementation/review/test narratives that are already stored in the Work Log
+```
+Commit: <conventional-commits title>  (Ref: <SHA>)
+Changes: <1-line delta summary>
+Evidence: Ref: Work Log §Evidence
+SSoT: updated | skipped (reason)
+Risk: <1-line or "none">
+Archive: <path> | <pending>
+```
+
+Compression rules:
+- One line per field. No decorative headers when the whole block is < 10 lines.
+- Evidence goes by reference (`Ref: Work Log §Evidence`), never re-pasted in chat.
+- Rollback strategy: 1 line. Full rollback plan lives in Work Log `## Known Risk`.
+- Known risks: the **unresolved** count and 1-line summary. Resolved risks do not appear in chat.
+- If the user asks for the full commit body, change summary, or test output, expand. Default is terse.
 
 ## Phase Summary Update
 

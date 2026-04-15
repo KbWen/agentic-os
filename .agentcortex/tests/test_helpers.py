@@ -18,8 +18,14 @@ def sanitize_deployed_ssot(target: Path) -> None:
             adr_lines += [f"  - {adr_dir}/{f.name}\n" for f in sorted(d.glob("ADR-*.md"))]
     replacement = r'\1\n' + ''.join(adr_lines) if adr_lines else r'\1 none\n'
     content = re.sub(r'(\*\*ADR Index\*\*:)\n(?:\s+-\s+\S.*\.md\n)*', replacement, content)
-    # Replace Active Backlog value with none
-    content = re.sub(r'(\*\*Active Backlog\*\*:)\s*`[^`]+`', r'\1 none', content)
+    # Replace Active Backlog value with none. Support both:
+    #   - backtick-wrapped file paths (post-bootstrap state)
+    #   - the `(none yet)` placeholder used in the initial template
+    content = re.sub(
+        r'(\*\*Active Backlog\*\*:)\s*(?:`[^`]+`|\(none yet\))',
+        r'\1 none',
+        content,
+    )
     # Remove Spec Index file entries (keep header and instruction lines).
     # Support both older backtick-wrapped entries and current plain bullet entries.
     content = re.sub(

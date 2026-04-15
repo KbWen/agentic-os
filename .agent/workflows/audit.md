@@ -25,15 +25,19 @@ tasks:
 
 ## Expected Output Format
 
-After scanning the repository, output the following structured report:
+Apply `AGENTS.md §Phase Output Compression`. Chat response is the compact block below; full multi-section detail (system_map breakdown, per-module dependency graph, full file inventory) is written to an audit report file at `docs/reviews/<date>-audit.md` and referenced by path.
 
-1. **`existing_files`**: High-level summary of the file structure.
-2. **`system_map`**: Core modules and their dependencies.
-3. **`entry_points`**: How the application starts or is built.
-4. **`test_coverage`**: Status of existing tests.
-5. **`missing_docs`**: Critical documentation gaps that should be addressed first.
-6. **`recommended_next`**: The suggested next step (typically `/spec` or `/plan` to begin formalizing an area of the codebase).
-7. **`routing_actions`** (AC-29): For each significant finding that constitutes a design decision, constraint, or architectural gap, output a structured routing action block (MANDATORY — omit only if no actionable findings exist):
+```
+Files: <count> files across <N> top-level dirs
+System: <primary stack + key modules, 1 line>
+Entry: <entry-point command or "(see audit report)">
+Tests: <coverage summary, 1 line>
+Missing docs: <top 3 gaps>
+Next: <slash-command recommendation>
+Report: docs/reviews/<date>-audit.md
+```
+
+1. **`routing_actions`** (AC-29): For each significant finding that constitutes a design decision, constraint, or architectural gap, output a structured routing action block to the audit report file (MANDATORY — omit only if no actionable findings exist). In chat, report only `routing_actions: <N> pending` — do NOT paste the full blocks unless the user asks.
    ```yaml
    routing_actions:
      - finding: "<1-line summary of the finding>"

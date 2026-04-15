@@ -21,6 +21,8 @@ Global directives for all AI agents. Loaded automatically every turn
 - **Learning Propagation Rule**: Only repeatable process mistakes MUST be recorded as reusable lessons and included in handoff; minor one-off mistakes stay local, and behavior-boundary changes MUST escalate to Spec/ADR.
 - **Read-Once Discipline**: Read `AGENTS.md` and `engineering_guardrails.md` (when required) once at the start of the session. Do NOT re-read them in subsequent turns — the content persists in conversation history. **Safety Valve**: If the agent detects genuine uncertainty about a specific governance rule, a targeted re-read of at most ONE `##`-level section of the relevant file is permitted and does not count as a Token Leak violation. Do NOT re-read the full file under this exception.
 - **Context Pruning**: If user interaction has exceeded 8+ turns on the same task, MUST proactively suggest: "We're at [N] turns. To save tokens, I recommend running a handoff and continuing in a new conversation. Proceed? (yes/no)". Do NOT wait for the user to notice. Self-initiate this suggestion.
+- **Response Brevity**: Default to short, information-dense output. No preamble ("Here's what I'll do..."), no postamble self-summary ("I've now completed..."), no decorative tables or multi-section dashboards when a sentence suffices. Expand ONLY when the user explicitly asks for detail, or when producing a gate block / plan artifact / ship evidence that governance requires. Grounded in [Claude Code Best Practices](https://code.claude.com/docs/en/best-practices) ("Keep it concise... Bloated files cause Claude to ignore your actual instructions") and [Anthropic Prompting Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) ("Respond directly without preamble"). Full rule and examples: `.agentcortex/docs/guides/token-governance.md §8 Output Brevity`.
+- **Response Budget (Hard Cap)**: Chat responses ≤ 8 lines of prose + essential structured blocks (gate YAML, compact-block template, burden-of-proof table, commit hash — these do NOT count toward the prose cap, but must themselves be terse). Claude Code's default system prompt uses `≤4 lines unless necessary`; this 8-line budget is 2× that baseline to accommodate governance receipts, and is the hard ceiling — not a soft target. Structured phase outputs (`/bootstrap`, `/plan`, `/implement`, `/review`, `/test`, `/handoff`, `/ship`, `/retro`, `/audit`, `/govern-docs`) are all subject to this budget. Required fields listed in workflow "Expected Output Format" sections are a **ceiling, not a floor** — skip any field that does not change the next-phase decision. If a field's value is `none`, `n/a`, or identical to the previous phase, omit it.
 
 ## vNext State Model
 
@@ -145,11 +147,20 @@ Each phase adds local scope after these 5 gates (see individual workflow files f
 
 ### Phase Output Compression
 
-When moving through `/plan`, `/implement`, `/review`, `/test`, and `/ship`, phase outputs MUST stay compact and delta-oriented:
+When moving through `/bootstrap`, `/plan`, `/implement`, `/review`, `/test`, `/handoff`, and `/ship`, phase chat outputs MUST stay compact and delta-oriented. The chat response is a summary of what landed in the Work Log file — NOT a re-emission of everything the Work Log already captures.
 
-- No redundant "awaiting confirmation" after gate pass when user explicitly requested the phase.
-- Reuse prior evidence by reference (`Ref: Work Log Evidence`), not re-narration.
-- Each phase outputs only its delta: `/plan` → gate + plan; `/review` → burden-of-proof table + delta since implement; `/test` → commands + pass/fail + coverage delta; `/ship` → final deltas + evidence refs + remaining constraints.
+- No redundant "awaiting confirmation" after gate pass when the user explicitly requested the phase.
+- Reuse prior evidence by reference (`Ref: Work Log Evidence`, `Ref: Work Log §<section>`), not re-narration.
+- The Work Log file is the persistent record. Do NOT duplicate its contents in the chat response. A 1-line pointer + key decisions is sufficient.
+- Each phase outputs only its delta in chat:
+  - `/bootstrap` → Classification (+1-line why), Goal, Skills (comma list), Context Read Receipt (1 line), Next Step. Full Constraints, AC, Non-goals, Risks, and the Read Plan live in the Work Log file, NOT in the chat response.
+  - `/plan` → gate + plan (compact block: Target Files · Steps · Risk+Rollback · AC Coverage · Mode). No section headers when the block is < 15 lines.
+  - `/implement` → files changed (list), tests run (1 line), checkpoint SHA. No code re-narration.
+  - `/review` → burden-of-proof table + delta since implement. No re-printing the task description.
+  - `/test` → commands + pass/fail + coverage delta. No re-printing the test skeleton.
+  - `/handoff` → pointer to archived Work Log + 3-line Resume block.
+  - `/ship` → final deltas + evidence refs + remaining constraints. No multi-paragraph prose.
+- **Workflow Expected Output Format is the ceiling, not the floor.** When a workflow file prescribes an output template, that template is the MAXIMUM chat output, not a required minimum. Skip any listed field that does not change the next-phase decision — if a field's value is `none`, `n/a`, or unchanged since the previous phase, omit it. Do NOT add extra decorative sections, bonus explanations, or "summary of what I just did" blocks on top of the template. Governed by the `Response Budget (Hard Cap)` in `## Core Directives` — chat prose ≤ 8 lines + essential structured blocks.
 
 ## Multi-Session Concurrency (Antigravity)
 

@@ -32,9 +32,9 @@ class LifecycleContractTests(unittest.TestCase):
     def test_phase_output_compression_contract_is_canonical(self) -> None:
         """AGENTS.md should define the shared compression contract used by phase workflows."""
         self.assertIn("### Phase Output Compression", self.agents_text)
-        self.assertIn("`/plan` should output the gate block plus the plan itself", self.agents_text)
-        self.assertIn("`/review` should lead with the burden-of-proof table", self.agents_text)
-        self.assertIn("`/test` should report commands, pass/fail counts, coverage deltas", self.agents_text)
+        self.assertIn("`/plan` \u2192 gate + plan", self.agents_text)
+        self.assertIn("`/review` \u2192 burden-of-proof table", self.agents_text)
+        self.assertIn("`/test` \u2192 commands + pass/fail + coverage delta", self.agents_text)
 
     def test_plan_workflow_does_not_require_extra_wait_after_explicit_request(self) -> None:
         """Plan should proceed directly when the user explicitly asked for planning."""

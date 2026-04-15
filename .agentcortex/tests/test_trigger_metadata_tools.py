@@ -98,7 +98,7 @@ class TriggerMetadataToolTests(unittest.TestCase):
     def test_validator_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/validate_trigger_metadata.py", "--root", ".")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("20 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
+        self.assertIn("21 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
 
     def test_compact_index_check_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/generate_compact_index.py", "--root", ".", "--check")

@@ -99,15 +99,28 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 
 ## Expected Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md`.
+Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /plan`.
 
-1. Target Files
-2. Execution Steps (2-10 min granularity)
-   - Steps MUST be **Functionally Atomic** (a single logical unit of change, e.g., "Implement Data Schema").
-   - Each step MUST have a 1-line verification method (e.g., test command, logic check, or grep).
-3. Risks & Rollback Strategy
-4. Acceptance Criteria Coverage
-5. Non-goals
+**Chat response is the compact block below. NO section headers when the whole plan is < 15 lines. NO re-narration of the spec or task description.**
+
+```
+Target Files: <comma list>
+Steps:
+  1. <action> — verify: <1-line method>
+  2. <action> — verify: <1-line method>
+  ...
+Risk+Rollback: <1-line risk> / <1-line rollback>
+AC Coverage: AC-1→step-N, AC-2→step-M, ...
+Non-goals: <comma list or "none">
+Mode: Normal | Fast Lane
+```
+
+Rules:
+- Each step MUST be **Functionally Atomic** — one logical unit of change (e.g., "Implement Data Schema"), NOT a 2-paragraph explanation.
+- Each step MUST have a 1-line verification method (test command, grep, or logic check). No 3-bullet sub-checklists per step.
+- List ONLY files being modified (prevent scope creep).
+- Detail that belongs in the Work Log (cited spec sections, rejected alternatives, design doc links) goes to `## Risks` and `## External References` sections of the Work Log — NOT the chat block. Reference by `Ref: Work Log §<section>`.
+- If the user asks for more detail, expand. Default is terse.
 
 ## Quality Gates (ALL MUST PASS)
 
