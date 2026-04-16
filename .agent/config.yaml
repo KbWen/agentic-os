@@ -78,6 +78,7 @@ user_preferences:
   # bootstrap emits an advisory (not blocking) about token cost.
   high_cost_pin_advisory_threshold: 2
 
+
 # Document lifecycle caps — prevents unbounded SSoT bloat.
 # See: docs/specs/tiered-doc-lifecycle.md
 document_lifecycle:

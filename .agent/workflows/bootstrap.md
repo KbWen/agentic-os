@@ -65,9 +65,12 @@ If the task is classified as `feature` or `architecture-change`, check:
    - **Cross-Branch Awareness**: Check "Branch List" for recently closed branches.
    - If current task overlaps with a recently merged branch's module, check the archive index for lightweight retrieval: prefer `.agentcortex/context/archive/INDEX.jsonl` (structured, deterministic query) if it exists; fall back to `.agentcortex/context/archive/INDEX.md` otherwise. Only open a specific archived log if its module/pattern entry matches your current task's target files. Do NOT scan all archive files.
    - If bootstrap must repair or refresh SSoT metadata (for example, stale Spec Index recovery), the write MUST go through `.agentcortex/tools/guard_context_write.py`.
+   - **Staleness Check**: After reading SSoT, check `Last Verified` field. If today's date minus `Last Verified` > 14 days, output advisory: `"⚠️ SSoT last verified <N> days ago. Consider running /govern-docs to refresh."` Do NOT block — advisory only.
+   - **Last Verified Update**: After successfully reading SSoT, update the `Last Verified` field to today's ISO date via `guard_context_write.py` (or direct write if Python unavailable).
+   - **ADR Auto-Discovery** (capability-by-presence): If `docs/adr/` exists AND classification is `feature` or `architecture-change`, scan filenames only (no body reads). If any ADR files are found, output advisory: `"📋 Found [N] ADR(s) in docs/adr/. Review relevant ones before planning."` Advisory only — does not block.
 2. READ/CREATE `.agentcortex/context/work/<worklog-key>.md` (Work Log).
    - **Work Log Resolution**: Resolve a filesystem-safe `<worklog-key>` from the current branch before any path check. Store the raw git branch string in `Branch:`.
-   - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`.
+   - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`. When recovering from an archived log, write this entry to the new Work Log's `## Drift Log`: `"Recovered: prior log archived at .agentcortex/context/archive/work/<prior-key>.md (session: <date>)"`. This ensures the next session knows prior work existed.
    - **Bootstrap Branch Check**: If the Work Log already exists:
      - Check metadata (`Owner`, `Branch`, `Session`). If it matches your current session → RESUME safely. (Read `## Resume` if present, output "Resuming").
      - If metadata differs (another agent/user owns it) → **WARN the user AND require confirmation before proceeding** ("⚠️ Concurrent session detected. Proceed?").
@@ -253,13 +256,14 @@ Paths: <comma list or "(see Work Log §Task Description)">
 Skills: <comma list> (Ref: Work Log §Recommended Skills)
 Read: SSoT(<date>) · WorkLog(<new|resumed>) · Guardrails(<Full|Quick|Lite>)
 Next: <slash-command>
+⚡ ACX
 ```
 
 Everything below — Classification justification, Recommended Skills rule table, skill conflict pass, user preference merge, Context Read Receipt, Read Plan, Next Step options — is written to the Work Log sections. It is the AI's working notes, NOT the chat response. If the user needs detail, they will ask.
 
 ### 3.6 Recommended Skills Rule Table
 
-Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. No file reads required at this stage — skill metadata is already in context. This embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry / compact-index metadata on top later, but bootstrap does not depend on those files.
+Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage. Repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals.
 
    **Mandatory Skills (always activate when condition met):**
 
@@ -363,8 +367,8 @@ This is advisory — it warns but does not hard-block. The user may proceed afte
 
 ## 6. Antigravity Hard Stop (Runtime v5)
 
-- After outputting the bootstrap report, STOP IMMEDIATELY.
-- Do NOT proceed to `/plan`, `/implement`, or any code changes in the same turn.
-- Next step MUST be planning (or direct execution if `tiny-fix` via §0 fast-path).
-- Output: "Bootstrap complete. What would you like to do next? (e.g., proceed to plan)"
+- After outputting the bootstrap report, check whether the user explicitly requested a downstream phase in the same message.
+  - **Yes** (e.g., "bootstrap then plan", "start this and plan it"): proceed to that phase per AGENTS.md §6 — do NOT add an extra confirmation turn. The bootstrap report was already output, so the user has visibility into classification.
+  - **No** (user only said "start this task" or invoked `/bootstrap` alone): STOP. Output: "Bootstrap complete. What would you like to do next? (e.g., proceed to plan)"
 - **Tiny-fix fast-path**: If §0 pre-classified as tiny-fix, skip this stop entirely — proceed directly to inline plan + execute.
+- Regardless of flow-through, NO code changes are allowed inside bootstrap itself. Code belongs in `/implement`.

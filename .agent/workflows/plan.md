@@ -113,6 +113,7 @@ Risk+Rollback: <1-line risk> / <1-line rollback>
 AC Coverage: AC-1→step-N, AC-2→step-M, ...
 Non-goals: <comma list or "none">
 Mode: Normal | Fast Lane
+⚡ ACX
 ```
 
 Rules:

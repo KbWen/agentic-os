@@ -44,6 +44,26 @@ missing: []
 
 Before ship evaluation, check the active Work Log size. If it exceeds compaction thresholds (see `.agent/config.yaml` §worklog), compact per `/handoff` §6 BEFORE proceeding. Ship with a bloated log risks archiving an unnecessarily large file.
 
+## Pre-flight Advisory Checks
+
+Run these BEFORE evaluating Ship Checklist. Both are ADVISORY — warn, do not hard-block.
+
+### Rollback Plan Check (feature / architecture-change only)
+
+Skip for `quick-win`, `hotfix`, `tiny-fix`. For `feature` and `architecture-change`: scan Work Log `## Known Risk` for any line containing "rollback" or "revert". If none found, output:
+`"⚠️ No rollback plan found in ## Known Risk. Add at least one line describing rollback/revert strategy before shipping."`
+Record the warning in `## Known Risk` if the section is otherwise empty.
+
+### Gate Receipt Audit (/ship only)
+
+Scan Work Log `## Gate Evidence` for receipts from required prior phases:
+- `feature` / `architecture-change`: bootstrap, plan, implement, review receipts required
+- `quick-win`: bootstrap, plan receipts required
+- `hotfix`: bootstrap receipt required
+
+For each missing receipt output: `"⚠️ Missing gate receipt for: [phase]. Run that phase or provide evidence before shipping."`
+User may acknowledge and proceed. Missing receipts do NOT auto-fail the gate.
+
 ## Ship Checklist (mandatory — skip = ship fail)
 
 - [ ] Evidence recorded in Work Log
@@ -120,6 +140,7 @@ Evidence: Ref: Work Log §Evidence
 SSoT: updated | skipped (reason)
 Risk: <1-line or "none">
 Archive: <path> | <pending>
+⚡ ACX
 ```
 
 Compression rules:

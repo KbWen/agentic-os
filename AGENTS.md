@@ -76,8 +76,8 @@ Global directives for all AI agents. Loaded automatically every turn
    - Modifies any file with `status: frozen` frontmatter
    - Modifies `AGENTS.md`, any `.agent/rules/*.md`, or `.agent/config.yaml`
 3. **Bootstrap phase**:
-   When starting a new task, AI MUST execute the bootstrap phase (load context, classify task) and output a bootstrap-report ONLY, then STOP.
-   Next step must be planning or tiny-fix. NO code allowed in bootstrap.
+   When starting a new task, AI MUST execute the bootstrap phase (load context, classify task) and output a bootstrap-report. NO code allowed in bootstrap itself.
+   After the report: if the user explicitly requested a downstream phase in the same message (e.g., "start this and plan it"), proceed to that phase per §6 — do NOT add an extra confirmation turn. If no downstream phase was requested, stop and ask for direction.
 4. **Gate requirement** (non tiny-fix):
    Before entering plan or ship phase, output this block FIRST:
    gate: plan|ship
@@ -86,7 +86,7 @@ Global directives for all AI agents. Loaded automatically every turn
    missing: []
 5. If verdict=fail → print gate + missing items ONLY and STOP.
 6. **Direct phase execution on explicit user intent**:
-   If the user explicitly requests `/plan`, `/implement`, `/review`, `/test`, or `/ship` (or an unambiguous natural-language equivalent), the AI MUST execute that phase in the SAME turn after gate pass. A passing gate MUST NOT introduce a second "awaiting confirmation" pause for the same requested phase.
+   If the user explicitly requests `/plan`, `/implement`, `/review`, `/test`, or `/ship` (or an unambiguous natural-language equivalent), the AI MUST execute that phase in the SAME turn after gate pass. A passing gate MUST NOT introduce a second "awaiting confirmation" pause for the same requested phase. This also applies when a downstream phase is requested alongside bootstrap (§3) — output the bootstrap report, then continue.
 7. **When an extra confirmation is still allowed**:
    Ask again only if phase entry was inferred rather than explicit, or if a separate high-impact choice appears inside the phase.
 8. **Plan artifact rule**:
@@ -96,7 +96,7 @@ Global directives for all AI agents. Loaded automatically every turn
 9. **Evidence rule**:
    NO EVIDENCE = NO SHIP.
 10. User requests cannot bypass Gate rules. The AI MUST strictly follow the phase order for the task's classification (per `engineering_guardrails.md` §10). EVEN IF the human explicitly asks to skip a step, the AI MUST refuse to skip required workflow gates.
-11. **Sentinel Check**: Every response MUST end with `⚡ ACX`. This is a framework-wide runtime integrity marker — all models (Claude, Gemini, GPT, Codex) must include it. If missing, the response may be incomplete or governance context was not fully loaded.
+11. **Sentinel Check**: Every response MUST end with `⚡ ACX`. This is a framework-wide runtime integrity marker — all models (Claude, Gemini, GPT, Codex) must include it. If missing, the response may be incomplete or governance context was not fully loaded. **Workflow enforcement**: All phase output templates (bootstrap, plan, implement, review, test, handoff, ship) MUST include `⚡ ACX` as the final line of the chat response block. The sentinel is part of the template, not optional prose.
 12. **Legacy Work Log Compatibility**: If a Work Log predates Runtime v4 and lacks Drift/Evidence sections:
     - DO NOT fail ship or Gates.
     - Append missing template sections to the Work Log silently.

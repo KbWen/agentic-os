@@ -134,6 +134,10 @@ When a skill is loaded, it **changes how you implement** — not just what you s
 
 - **Classification Escalation**: If actual changes exceed the current classification threshold (e.g., `quick-win` touching >2 modules or adding new directories), AI MUST pause and remind: "⚠️ Scope has grown beyond `[current-tier]`. Recommend rollback to `CLASSIFIED`, upgrade to `[higher-tier]`, and re-enter the required workflow gates. Escalate? (yes/no)"
 
+## Scope Breach Detection
+
+After all code changes are complete, run `git diff --name-only` (or equivalent) and compare the result against the `Target Files` list from the Work Log `/plan` output. If any modified file is NOT in that list, record it in the `Extra:` field of the Scope Divergence line in the Post-Execution Report. This check is advisory — the agent warns, user decides whether to revert or accept.
+
 ## Phase Summary Update
 
 After implementation is complete and evidence is recorded, append one line to `## Phase Summary` in the Work Log:
@@ -152,6 +156,7 @@ Files: <list of files touched> (planned: <N>, actual: <M>)
 Tests: <command> → <pass/fail>
 Checkpoint: <SHA or "(uncommitted)">
 Side-effects: <1-line or "none">
+⚡ ACX
 ```
 
 - **Scope Divergence Check**: If actual files ≠ planned files, add: `"⚠️ Scope divergence: planned [N], touched [M]. Extra: [list]. Intentional? (yes/revert)"`
