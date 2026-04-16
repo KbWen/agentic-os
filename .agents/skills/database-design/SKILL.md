@@ -78,6 +78,14 @@ During /review:
 - [ ] Backward compatibility: old code can still function until deployed together
 - [ ] Sensitive data columns identified (for encryption/hashing per security guardrails)
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Apply`
+- `Checklist`
+
+Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss only.
+
 ## Anti-Patterns
 
 - **Schema via ORM only**: Relying on ORM auto-sync without migration files. No rollback, no history, no review.

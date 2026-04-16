@@ -114,6 +114,20 @@ def compute_scoped_tokens(text: str) -> tuple[int, bool]:
     return max(1, scoped_tokens), False
 
 
+def compute_skill_scoped_tokens(detail_path: Path) -> tuple[int, int, bool]:
+    """Return ``(full_tokens, scoped_tokens, is_fallback)`` for a SKILL.md.
+
+    Uses the same ``## Heading-Scoped Read Note`` convention as workflows.
+    Skills without the note return ``scoped == full`` with ``fallback=False``.
+    """
+    if not detail_path.is_file():
+        return 0, 0, False
+    text = detail_path.read_text(encoding="utf-8")
+    full_tok = estimate_tokens_text(text)
+    scoped_tok, fallback = compute_scoped_tokens(text)
+    return full_tok, scoped_tok, fallback
+
+
 # ---------------------------------------------------------------------------
 # Core analysis
 # ---------------------------------------------------------------------------
@@ -156,6 +170,13 @@ def analyze(root: Path) -> dict[str, Any]:
         else:
             wf_scope_cache[phase] = (0, 0, False)
 
+    # Pre-compute skill scope data (full vs heading-scoped).
+    skill_scope_cache: dict[str, tuple[int, int, bool]] = {}
+    for sid, entry in skill_entries.items():
+        detail_path = root / entry["detail_ref"]
+        full, scoped, fallback = compute_skill_scoped_tokens(detail_path)
+        skill_scope_cache[sid] = (full, scoped, fallback)
+
     # Pre-compute compact-index entries for fast lookup.
     compact_entries = {e["id"]: e for e in compact_index["entries"]}
 
@@ -193,8 +214,11 @@ def analyze(root: Path) -> dict[str, Any]:
 
         # --- Execution detail (first-load + continuation) ---
         detail_first_load_tokens = 0
+        detail_first_load_scoped_tokens = 0
         continuation_tokens = 0
+        continuation_scoped_tokens = 0
         detail_load_counts: dict[str, int] = {}
+        skill_scope_fallbacks: list[str] = []
 
         for skill_id in triggered_skills:
             if skill_id not in skill_entries:
@@ -208,11 +232,25 @@ def analyze(root: Path) -> dict[str, Any]:
             detail_load_counts[skill_id] = load_count
 
             detail_first_load_tokens += detail_tok
+
+            # Scoped first-load (uses heading-scoped read note if present).
+            full, scoped, fallback = skill_scope_cache.get(
+                skill_id, (detail_tok, detail_tok, False)
+            )
+            detail_first_load_scoped_tokens += scoped
+            if fallback:
+                skill_scope_fallbacks.append(skill_id)
+
             if load_count > 1:
                 cont_cost = max(1, int(detail_tok * CONTINUATION_FRACTION))
+                cont_scoped = max(1, int(scoped * CONTINUATION_FRACTION))
                 continuation_tokens += (load_count - 1) * cont_cost
+                continuation_scoped_tokens += (load_count - 1) * cont_scoped
 
         execution_detail_tokens = detail_first_load_tokens + continuation_tokens
+        execution_detail_scoped_tokens = (
+            detail_first_load_scoped_tokens + continuation_scoped_tokens
+        )
 
         # --- Totals ---
         current_total_tokens = (
@@ -226,12 +264,23 @@ def analyze(root: Path) -> dict[str, Any]:
                     json.dumps(compact_entries[s])
                 )
 
+        # Projected without skill scoping (workflow-scope + compact-index only).
         projected_total = (
             workflow_scoped_tokens
             + compact_slice_tokens
             + execution_detail_tokens
         )
         delta = current_total_tokens - projected_total
+
+        # Projected WITH skill heading-scope (workflow + compact + skill scope).
+        projected_total_with_skill_scope = (
+            workflow_scoped_tokens
+            + compact_slice_tokens
+            + execution_detail_scoped_tokens
+        )
+        delta_with_skill_scope = (
+            current_total_tokens - projected_total_with_skill_scope
+        )
 
         results.append(
             {
@@ -240,8 +289,12 @@ def analyze(root: Path) -> dict[str, Any]:
                 "current_total_tokens": current_total_tokens,
                 "current_probe_tokens": current_probe_tokens,
                 "execution_detail_tokens": execution_detail_tokens,
+                "execution_detail_scoped_tokens": execution_detail_scoped_tokens,
                 "detail_first_load_tokens": detail_first_load_tokens,
+                "detail_first_load_scoped_tokens": detail_first_load_scoped_tokens,
                 "continuation_tokens": continuation_tokens,
+                "continuation_scoped_tokens": continuation_scoped_tokens,
+                "skill_scope_fallbacks": skill_scope_fallbacks,
                 "workflow_tokens": workflow_tokens,
                 "workflow_scoped_tokens": workflow_scoped_tokens,
                 "workflow_scope_fallbacks": workflow_scope_fallbacks,
@@ -251,12 +304,16 @@ def analyze(root: Path) -> dict[str, Any]:
                     "codex": {
                         "projected_total_tokens": projected_total,
                         "delta_vs_current_tokens": delta,
+                        "projected_with_skill_scope": projected_total_with_skill_scope,
+                        "delta_with_skill_scope": delta_with_skill_scope,
                         "compact_slice_tokens": compact_slice_tokens,
                         "probe_strategy": "compact-index",
                     },
                     "claude": {
                         "projected_total_tokens": projected_total,
                         "delta_vs_current_tokens": delta,
+                        "projected_with_skill_scope": projected_total_with_skill_scope,
+                        "delta_with_skill_scope": delta_with_skill_scope,
                         "compact_slice_tokens": compact_slice_tokens,
                         "probe_strategy": "compact-index",
                     },
@@ -294,11 +351,15 @@ def main() -> None:
             codex = result["platforms"]["codex"]
             print(f"\n--- {result['id']} ({result['classification']}) ---")
             print(f"  Current total : {result['current_total_tokens']:>8,}")
-            print(f"  Projected     : {codex['projected_total_tokens']:>8,}")
-            print(f"  Savings       : {codex['delta_vs_current_tokens']:>8,}")
+            print(f"  Projected     : {codex['projected_total_tokens']:>8,}  (wf-scope + compact-index)")
+            print(f"  + Skill scope : {codex['projected_with_skill_scope']:>8,}  (+ skill heading-scope)")
+            print(f"  Savings (wf)  : {codex['delta_vs_current_tokens']:>8,}")
+            print(f"  Savings (all) : {codex['delta_with_skill_scope']:>8,}")
             print(f"  Workflow      : {result['workflow_tokens']:>8,}  (scoped: {result['workflow_scoped_tokens']:,})")
             print(f"  Probe         : {result['current_probe_tokens']:>8,}  (compact: {codex['compact_slice_tokens']:,})")
-            print(f"  Exec detail   : {result['execution_detail_tokens']:>8,}  (first: {result['detail_first_load_tokens']:,}, cont: {result['continuation_tokens']:,})")
+            print(f"  Exec detail   : {result['execution_detail_tokens']:>8,}  (scoped: {result['execution_detail_scoped_tokens']:,})")
+            print(f"    first-load  : {result['detail_first_load_tokens']:>8,}  (scoped: {result['detail_first_load_scoped_tokens']:,})")
+            print(f"    continuation: {result['continuation_tokens']:>8,}  (scoped: {result['continuation_scoped_tokens']:,})")
 
 
 if __name__ == "__main__":

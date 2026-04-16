@@ -115,6 +115,15 @@ During /test:
 - [ ] Test: rate limit triggers after N failures
 - [ ] Test: password change invalidates old tokens
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Apply`
+- `Relationship to Security Guardrails`
+- `Checklist`
+
+Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss only.
+
 ## Anti-Patterns
 
 - **JWT in localStorage**: Vulnerable to XSS. Use httpOnly cookies or in-memory only.

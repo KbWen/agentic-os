@@ -82,6 +82,14 @@ During /review:
 - [ ] Route guards for authenticated pages
 - [ ] Loading indicators for async operations
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Apply`
+- `Checklist`
+
+Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss only.
+
 ## Anti-Patterns
 
 - **God component**: Component with 300+ lines doing everything. Split into smaller components.
