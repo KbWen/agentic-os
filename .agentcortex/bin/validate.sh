@@ -414,6 +414,11 @@ worklog_contract_files=(
 )
 worklog_contract_errors=0
 for f in "${worklog_contract_files[@]}"; do
+  if [[ ! -f "$f" ]]; then
+    printf '  worklog contract file not found: %s\n' "$f"
+    worklog_contract_errors=$((worklog_contract_errors + 1))
+    continue
+  fi
   if ! grep -F -q -- '<worklog-key>' "$f"; then
     printf '  worklog contract missing normalized key reference: %s\n' "$f"
     worklog_contract_errors=$((worklog_contract_errors + 1))
@@ -440,6 +445,11 @@ archive_contract_files=(
 )
 archive_contract_errors=0
 for f in "${archive_contract_files[@]}"; do
+  if [[ ! -f "$f" ]]; then
+    printf '  archive contract file not found: %s\n' "$f"
+    archive_contract_errors=$((archive_contract_errors + 1))
+    continue
+  fi
   if ! grep -F -q -- '<worklog-key>-<YYYYMMDD>' "$f"; then
     printf '  archive contract missing normalized key reference: %s\n' "$f"
     archive_contract_errors=$((archive_contract_errors + 1))
@@ -470,6 +480,11 @@ phase_skill_files=(
 )
 phase_skill_errors=0
 for f in "${phase_skill_files[@]}"; do
+  if [[ ! -f "$f" ]]; then
+    printf '  phase skill file not found: %s\n' "$f"
+    phase_skill_errors=$((phase_skill_errors + 1))
+    continue
+  fi
   if ! grep -F -q -- 'Recommended Skills' "$f"; then
     printf '  missing Recommended Skills phase hook: %s\n' "$f"
     phase_skill_errors=$((phase_skill_errors + 1))
