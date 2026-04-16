@@ -412,6 +412,11 @@ $worklogContractFiles = @(
 )
 $worklogContractErrors = 0
 foreach ($file in $worklogContractFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  worklog contract file not found: $file"
+        $worklogContractErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('<worklog-key>')) {
         Write-Output "  worklog contract missing normalized key reference: $file"
@@ -440,6 +445,11 @@ $archiveContractFiles = @(
 )
 $archiveContractErrors = 0
 foreach ($file in $archiveContractFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  archive contract file not found: $file"
+        $archiveContractErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('<worklog-key>-<YYYYMMDD>')) {
         Write-Output "  archive contract missing normalized key reference: $file"
@@ -468,6 +478,11 @@ $phaseSkillFiles = @(
 )
 $phaseSkillErrors = 0
 foreach ($file in $phaseSkillFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  phase skill file not found: $file"
+        $phaseSkillErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('Recommended Skills')) {
         Write-Output "  missing Recommended Skills phase hook: $file"
