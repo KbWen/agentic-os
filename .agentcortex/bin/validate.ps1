@@ -412,6 +412,11 @@ $worklogContractFiles = @(
 )
 $worklogContractErrors = 0
 foreach ($file in $worklogContractFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  worklog contract file not found: $file"
+        $worklogContractErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('<worklog-key>')) {
         Write-Output "  worklog contract missing normalized key reference: $file"
@@ -440,6 +445,11 @@ $archiveContractFiles = @(
 )
 $archiveContractErrors = 0
 foreach ($file in $archiveContractFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  archive contract file not found: $file"
+        $archiveContractErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('<worklog-key>-<YYYYMMDD>')) {
         Write-Output "  archive contract missing normalized key reference: $file"
@@ -468,6 +478,11 @@ $phaseSkillFiles = @(
 )
 $phaseSkillErrors = 0
 foreach ($file in $phaseSkillFiles) {
+    if (-not (Test-Path -Path $file -PathType Leaf)) {
+        Write-Output "  phase skill file not found: $file"
+        $phaseSkillErrors++
+        continue
+    }
     $content = Get-Content -Raw -Encoding utf8 -Path $file
     if (-not $content.Contains('Recommended Skills')) {
         Write-Output "  missing Recommended Skills phase hook: $file"
@@ -803,7 +818,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             } else {
                 $gateEvidenceMissing++
             }
-        } elseif ($content -notmatch '(?m)^- Gate:.*Verdict:') {
+        } elseif ($content -notmatch '(?mi)^(`?- )?gate:.*verdict:') {
             if ($isLegacyGateEvidenceLog) {
                 $legacyGateEvidenceMissing++
             } else {
@@ -811,7 +826,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
         } else {
             # Parse gate receipts and verify phase progression
-            $gates = @([regex]::Matches($content, '(?m)^- Gate:\s*(\w+)\s*\|') | ForEach-Object { $_.Groups[1].Value })
+            $gates = @([regex]::Matches($content, '(?mi)^(`?- )?gate:\s*(\w+)\s*\|') | ForEach-Object { $_.Groups[2].Value })
             if ($gates.Count -ge 2) {
                 for ($i = 1; $i -lt $gates.Count; $i++) {
                     $prev = $gates[$i - 1]
