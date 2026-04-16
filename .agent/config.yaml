@@ -78,13 +78,6 @@ user_preferences:
   # bootstrap emits an advisory (not blocking) about token cost.
   high_cost_pin_advisory_threshold: 2
 
-# Skill injection protection — opt-in whitelist for auto-loaded skills.
-# Capability-by-presence: when enabled is false (default), zero cost and no behavior change.
-# Contract: bootstrap.md §3.6 Skill Whitelist Check.
-skill_whitelist:
-  enabled: false          # opt-in — when true, only whitelisted skills auto-load
-  approved_skills: []     # list of skill IDs (e.g., ["writing-plans", "executing-plans"])
-  warn_on_unknown: true   # warn (not block) if non-whitelisted skill is recommended
 
 # Document lifecycle caps — prevents unbounded SSoT bloat.
 # See: docs/specs/tiered-doc-lifecycle.md

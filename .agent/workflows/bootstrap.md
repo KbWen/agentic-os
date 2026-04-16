@@ -307,8 +307,6 @@ Write the result to Work Log `## Recommended Skills` (provenance tags as per §3
    **Rule**: Do NOT limit to "0-2 skills". Recommend ALL skills whose conditions are met. A typical `feature` task should activate 4-8 skills.
    **Conflict Pass**: After choosing `Recommended Skills`, read `.agent/rules/skill_conflict_matrix.md` ONCE. If any recommended pair is marked `partial-conflict` or `conflict`, write the chosen precedence or scoping strategy to `## Conflict Resolution` in the Work Log. Later phases reuse that note instead of re-reading the matrix.
 
-   **Skill Whitelist Check** (capability-by-presence): If `.agent/config.yaml §skill_whitelist.enabled` is `true`, filter recommended skills against `approved_skills`. Non-whitelisted skills trigger a warning: `"⚠️ Non-whitelisted skill: [name]. Auto-load blocked. Add to config.yaml §skill_whitelist.approved_skills to enable."` If `enabled` is `false` (default), skip this check entirely.
-
 ### 3.6a. User Skill Preference Merge (Capability-by-Presence)
 
 > **Scope**: Non-`tiny-fix` only. Runs AFTER rule table + conflict pass, BEFORE writing `Recommended Skills` to Work Log.

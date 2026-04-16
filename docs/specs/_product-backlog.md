@@ -41,7 +41,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 23 | Evidence section terse format (current gate block is already structured; tighten §Evidence prose) | Expert review: audit trail opacity | — | quick-win | Pending | — |
 | 24 | Scope breach detection in /implement (actual files vs plan) | Expert review: silent scope creep | — | quick-win | Shipped | — |
 | 25 | Ship-phase gate receipt audit (verify prior phases have receipts, /ship only) | Expert review: Work Log tampering risk | — | quick-win | Shipped | — |
-| 26 | Skill whitelist / injection protection for auto-loaded skills | Expert review: prompt injection via skill files | — | quick-win | Shipped | — |
+| 26 | ~~Skill whitelist~~ — Reverted: auto-load is intentional for extensibility; code review is the real gate | Expert review: prompt injection via skill files | — | — | Cancelled | — |
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Shipped | — |
 | 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
 
