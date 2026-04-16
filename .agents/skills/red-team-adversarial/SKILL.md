@@ -130,6 +130,15 @@ Output: Use the Beast Mode Analysis format below.
 - [what happens if dependency X fails? if network drops?]
 ```
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `Ironclad Rules`
+- `When to Use (Auto-Trigger Matrix)`
+- `Modes`
+
+Load `Output Formats`, `Blocking Rules`, `Work Log Integration`, `Red Team Findings`, and `Common Mistakes` on full read or cache miss only.
+
 ## Blocking Rules (Different from Security Guardrails)
 
 Red Team findings use a graduated blocking model:

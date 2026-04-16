@@ -141,6 +141,15 @@ B) Match existing code — consistent with codebase
 → Which approach do you prefer?
 ```
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Apply`
+- `Fetch Protocol`
+- `Checklist`
+
+Load `Conventions`, `Doc URL Registry`, `Common Rationalizations`, `Conflict Detection Template`, `Anti-Patterns`, and `References` on full read or cache miss only.
+
 ## Anti-Patterns
 
 - **"I know this API"**: Assuming training data is correct without verification. Framework APIs change between versions — always check.

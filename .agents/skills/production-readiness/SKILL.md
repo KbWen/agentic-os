@@ -47,6 +47,14 @@ The rollback plan (per engineering_guardrails.md §12.5) must answer:
 - **How will operators know the rollback is needed?** (alert, dashboard, manual check)
 - **How will operators know the rollback succeeded?** (error rate drops, health check passes)
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Use`
+- `Observability Checklist`
+
+Load `What This Skill Does NOT Cover`, `Anti-Patterns`, and `Interaction with Other Skills` on full read or cache miss only.
+
 ## What This Skill Does NOT Cover
 
 - **Tool selection**: Sentry vs Crashlytics vs Datadog — team/project decides.

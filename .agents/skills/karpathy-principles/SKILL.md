@@ -106,6 +106,15 @@ When reviewing or refactoring, apply Chesterton's Fence — understand WHY befor
 - Fewer lines is not always simpler — a 1-line nested ternary is worse than a 5-line if/else
 - Separate simplification commits from feature commits — never mix
 
+## Heading-Scoped Read Note
+
+For phase-entry loading, read only:
+- `When to Apply`
+- `Checklist`
+- `Code Simplification Checklist`
+
+Load numbered principle sections (`## 1`–`## 4`), `Common Rationalizations`, `Anti-Patterns`, and `References` on full read or cache miss only.
+
 ## Common Rationalizations
 
 | Rationalization | Reality |

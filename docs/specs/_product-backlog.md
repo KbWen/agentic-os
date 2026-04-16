@@ -44,6 +44,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 26 | ~~Skill whitelist~~ — Reverted: auto-load is intentional for extensibility; code review is the real gate | Expert review: prompt injection via skill files | — | — | Cancelled | — |
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Shipped | — |
 | 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
+| 29 | SKILL.md heading-scope optimization (phase-entry loads only essential sections) | Upstream H73: ~30% skill token savings | — | quick-win | Shipped | — |
 
 ## Status Key
 

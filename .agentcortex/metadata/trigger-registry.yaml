@@ -61,6 +61,13 @@ entries:
       Use the stable phase-entry workflow checks, prefer Work Log Skill Notes
       when present, and fall back to full SKILL.md files only on cache miss.
 
+  # ── Heading-scope metadata ──
+  # Skills with detail_ref_headings support phase-entry scoped reads.
+  # On phase entry, the AI loads ONLY the listed headings from SKILL.md
+  # instead of the full file. Full read occurs on cache miss only.
+  # Skills without detail_ref_headings (<3KB) are loaded in full — the
+  # overhead is too small to justify scoping.
+
   - id: test-driven-development
     kind: skill
     canonical_ref: .agent/skills/test-driven-development
@@ -150,6 +157,8 @@ entries:
     canonical_ref: .agent/skills/red-team-adversarial
     mirror_ref: .agents/skills/red-team-adversarial/agents/openai.yaml
     detail_ref: .agents/skills/red-team-adversarial/SKILL.md
+    detail_ref_headings:
+      default: ["## Ironclad Rules", "## When to Use (Auto-Trigger Matrix)", "## Modes"]
     platforms: [claude, codex, antigravity]
     phase_scope: [review, test]
     trigger_priority: contextual
@@ -253,6 +262,9 @@ entries:
     canonical_ref: .agent/skills/api-design
     mirror_ref: .agents/skills/api-design/agents/openai.yaml
     detail_ref: .agents/skills/api-design/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Checklist"]
+      implement: ["## When to Apply", "## Conventions", "## Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review, test]
     trigger_priority: contextual
@@ -281,6 +293,9 @@ entries:
     canonical_ref: .agent/skills/database-design
     mirror_ref: .agents/skills/database-design/agents/openai.yaml
     detail_ref: .agents/skills/database-design/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Checklist"]
+      implement: ["## When to Apply", "## Conventions", "## Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review, test]
     trigger_priority: contextual
@@ -309,6 +324,9 @@ entries:
     canonical_ref: .agent/skills/frontend-patterns
     mirror_ref: .agents/skills/frontend-patterns/agents/openai.yaml
     detail_ref: .agents/skills/frontend-patterns/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Checklist"]
+      implement: ["## When to Apply", "## Conventions", "## Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review, test]
     trigger_priority: contextual
@@ -337,6 +355,9 @@ entries:
     canonical_ref: .agent/skills/auth-security
     mirror_ref: .agents/skills/auth-security/agents/openai.yaml
     detail_ref: .agents/skills/auth-security/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Relationship to Security Guardrails", "## Checklist"]
+      implement: ["## When to Apply", "## Conventions", "## Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review, test]
     trigger_priority: hard
@@ -365,6 +386,8 @@ entries:
     canonical_ref: .agent/skills/doc-lookup
     mirror_ref: .agents/skills/doc-lookup/agents/openai.yaml
     detail_ref: .agents/skills/doc-lookup/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Fetch Protocol", "## Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [implement, review]
     trigger_priority: contextual
@@ -525,6 +548,8 @@ entries:
     canonical_ref: .agent/skills/karpathy-principles
     mirror_ref: .agents/skills/karpathy-principles/agents/openai.yaml
     detail_ref: .agents/skills/karpathy-principles/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Apply", "## Checklist", "## Code Simplification Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [plan, implement, review]
     trigger_priority: advisory
@@ -553,6 +578,8 @@ entries:
     canonical_ref: .agent/skills/production-readiness
     mirror_ref: .agents/skills/production-readiness/agents/openai.yaml
     detail_ref: .agents/skills/production-readiness/SKILL.md
+    detail_ref_headings:
+      default: ["## When to Use", "## Observability Checklist"]
     platforms: [claude, codex, antigravity]
     phase_scope: [review, ship]
     trigger_priority: contextual
