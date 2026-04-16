@@ -67,6 +67,7 @@ If the task is classified as `feature` or `architecture-change`, check:
    - If bootstrap must repair or refresh SSoT metadata (for example, stale Spec Index recovery), the write MUST go through `.agentcortex/tools/guard_context_write.py`.
    - **Staleness Check**: After reading SSoT, check `Last Verified` field. If today's date minus `Last Verified` > 14 days, output advisory: `"⚠️ SSoT last verified <N> days ago. Consider running /govern-docs to refresh."` Do NOT block — advisory only.
    - **Last Verified Update**: After successfully reading SSoT, update the `Last Verified` field to today's ISO date via `guard_context_write.py` (or direct write if Python unavailable).
+   - **ADR Auto-Discovery** (capability-by-presence): If `docs/adr/` exists AND classification is `feature` or `architecture-change`, scan filenames only (no body reads). If any ADR files are found, output advisory: `"📋 Found [N] ADR(s) in docs/adr/. Review relevant ones before planning."` Advisory only — does not block.
 2. READ/CREATE `.agentcortex/context/work/<worklog-key>.md` (Work Log).
    - **Work Log Resolution**: Resolve a filesystem-safe `<worklog-key>` from the current branch before any path check. Store the raw git branch string in `Branch:`.
    - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`. When recovering from an archived log, write this entry to the new Work Log's `## Drift Log`: `"Recovered: prior log archived at .agentcortex/context/archive/work/<prior-key>.md (session: <date>)"`. This ensures the next session knows prior work existed.
@@ -305,6 +306,8 @@ Write the result to Work Log `## Recommended Skills` (provenance tags as per §3
 
    **Rule**: Do NOT limit to "0-2 skills". Recommend ALL skills whose conditions are met. A typical `feature` task should activate 4-8 skills.
    **Conflict Pass**: After choosing `Recommended Skills`, read `.agent/rules/skill_conflict_matrix.md` ONCE. If any recommended pair is marked `partial-conflict` or `conflict`, write the chosen precedence or scoping strategy to `## Conflict Resolution` in the Work Log. Later phases reuse that note instead of re-reading the matrix.
+
+   **Skill Whitelist Check** (capability-by-presence): If `.agent/config.yaml §skill_whitelist.enabled` is `true`, filter recommended skills against `approved_skills`. Non-whitelisted skills trigger a warning: `"⚠️ Non-whitelisted skill: [name]. Auto-load blocked. Add to config.yaml §skill_whitelist.approved_skills to enable."` If `enabled` is `false` (default), skip this check entirely.
 
 ### 3.6a. User Skill Preference Merge (Capability-by-Presence)
 
