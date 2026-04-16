@@ -1,6 +1,6 @@
 # Lifecycle Benchmark & Token Consumption Report
 
-> **Generated**: 2026-04-12 | **Framework**: Agentic OS v1.0 | **Test suite**: 170 passed / 178 total
+> **Generated**: 2026-04-12 | **Framework**: Agentic OS v1.1 | **Test suite**: 170 passed / 178 total
 
 This report documents real lifecycle scenario test results with token consumption measurements.
 It helps teams evaluate Agentic OS governance overhead before adoption.

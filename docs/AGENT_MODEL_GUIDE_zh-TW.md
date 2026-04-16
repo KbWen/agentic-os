@@ -1,40 +1,48 @@
-# Agentic OS v1.0 模型選擇與決策指南 (人類專用)
+# Agentic OS v1.1 — 模型選擇指南
 
-這份指南是給「您 (人類)」參考的，不會被 AI 載入 Prompt，旨在節省 Token 並極大化開發效率。
+> 人類參考用 — 此檔案不會被載入 AI context。
 
-## 核心原則：Fast-First (快模型優先)
+## 原則：依任務分類選模型
 
-**預設請使用 Gemini 2.5 Flash 等快速模型。** 只有在快模型無法解決問題時，才主動切換至 Pro / Advanced 模型。
+Agentic OS 會對每個任務分類。用分類結果來選模型：
 
----
+| 分類 | 建議模型層級 | 原因 |
+|---|---|---|
+| **tiny-fix** | Fast | 改 typo、調 config — 不需推理 |
+| **quick-win** | Fast 先試 → 不行再 Pro | 範圍明確，Fast 能處理多數情況 |
+| **hotfix** | Pro | Debug 需要深度推理 + 上下文理解 |
+| **feature** | /plan 用 Pro、/implement 可混用、/review 用 Pro | 混合 — 規劃和審查需要判斷力 |
+| **architecture-change** | 全程 Pro | 跨模組推理、安全性考量 |
 
-## 使用快模型 (日常 80%)
+## Fast 模型（預設選擇）
 
-**特點：極速、低成本、大 Context。**
-*(例如：Gemini 2.5 Flash, Claude Haiku 4.5, GPT-4.1 mini)*
+*Claude Haiku 4.5、Gemini 3.1 Flash、GPT-5.4-mini*
 
-- **代碼搬運**：將舊專案功能遷移至新檔案。
-- **格式調整**：CSS 潤飾、Markdown 整理、JSON/CSV 轉換。
-- **撰寫測試**：生成單元測試案例 (Unit Tests)。
-- **簡單 Bug**：修復 TypeScript 預檢錯誤或語法語病。
-- **文案翻譯**：繁簡轉換、多語系 i18n 填寫。
-- **文件摘要**：讀取長篇文章後提取重點。
+適合「做什麼」已經很明確、AI 只需執行的任務：
 
-## 手動切換至強模型 (關鍵 20%)
+- 根據 spec 或 skeleton 寫測試
+- 格式修正、lint 修復、CSS 調整
+- 多語系翻譯和 i18n 填寫
+- 明確的代碼搬遷（來源 → 目標清楚）
+- 根據已通過的 `/plan` 生成 boilerplate
+- 文件整理和摘要
 
-**特點：深度推理、架構設計、疑難雜症。**
-*(例如：Claude Opus 4.6 / Sonnet 4.6, GPT-4.1, Gemini 2.5 Pro)*
+## Pro / Advanced 模型（需要判斷力時）
 
-- **系統設計**：從零規劃新模組的資料關係與通訊協議。
-- **核心重構**：變動超過 3 個具有高度耦合依賴的核心檔案。
-- **邏輯 Debug**：涉及非同步競態 (Race Conditions) 或底層記憶體洩漏的調查。
-- **安全審核**：對核心加解密或權限驗證邏輯進行全面 Scan。
-- **效能分析**：針對資料庫查詢優化與瓶頸診斷。
+*Claude Opus 4.6 / Sonnet 4.6、Gemini 3.1 Pro、GPT-5.4*
 
----
+當任務需要「權衡取捨的推理」時切換：
 
-## 省錢小撇步
+- feature 或 architecture-change 的 `/plan` phase — 設計方案
+- 涉及安全性 skill（auth-security、red-team）的 `/review`
+- Debug race condition、memory leak、flaky test
+- 帶 migration 安全考量的 schema 設計
+- 重構 3+ 個高耦合核心模組
+- Fast 模型第一次產出的邏輯有錯時
 
-1. **先讓 Flash 嘗試**：即便任務稍長，Flash 也能讀完。如果 Flash 給出的代碼邏輯有誤，此時再複製對話並切換 Pro。
-2. **精簡背景**：只提供必要的檔案路徑，避免 `ls -R` 導致過大的 Input Token。
-3. **分階段執行**：讓 Flash 先提取「修改清單」，確認無誤後再讓它分段實作。
+## 實用技巧
+
+1. **先讓 Fast 失敗。** 先用 Fast；如果產出有邏輯錯誤（不只是格式問題），再帶著同樣 context 切 Pro。一次浪費的 Fast 嘗試比一次 Pro 嘗試便宜。
+2. **分類就是信號。** 如果 `/bootstrap` 分類為 `feature` 以上，plan 和 review phase 傾向用 Pro。
+3. **分 phase 用不同模型。** Pro 產出 `/plan` 之後，讓 Fast 處理 `/implement` 的 boilerplate。不同 phase 可以用不同模型。
+4. **給 Fast 精簡 context。** 提供具體檔案路徑，不要 `ls -R`。Fast 模型在 noisy context 下退化比 Pro 嚴重。

@@ -1,4 +1,4 @@
-# Agentic OS v1.0 (Runtime v1.0 Anti-Drift Edition)
+# Agentic OS v1.1 (Runtime v1.1 Anti-Drift Edition)
 
 [English Version](../README.md)
 
@@ -6,7 +6,7 @@
 
 ## 🎯 專案定位
 
-**Agentic OS** 是一個專為頂尖開發者（使用 Gemini 2.5 Pro / 2.5 Flash, Claude Opus 4.6, 或 GPT-4.1）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
+**Agentic OS** 是一個專為頂尖開發者（使用 Gemini 3.1 Pro / 3.1 Flash, Claude Opus 4.6, 或 GPT-5.4）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
 
 我們對齊並優化了 Google Antigravity / Codex Web / Codex App 的使用情境：
 

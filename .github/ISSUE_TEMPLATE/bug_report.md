@@ -13,7 +13,7 @@ A clear description of what the bug is.
 ## Environment
 
 - **AI Platform**: (Claude Code / Antigravity / Codex / Cursor / Other)
-- **AI Model**: (e.g., Claude Opus 4.6, Gemini 2.5 Pro)
+- **AI Model**: (e.g., Claude Opus 4.6, Gemini 3.1 Pro, GPT-5.4)
 - **OS**: (macOS / Windows / Linux)
 - **Agentic OS Version**: (from `.agentcortex-manifest` or CITATION.cff)
 

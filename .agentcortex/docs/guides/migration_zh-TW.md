@@ -25,7 +25,7 @@
 
 ```text
 請執行 /bootstrap。
-我們剛升級到 Agentic OS v1.0。
+我們剛升級到 Agentic OS v1.1。
 請掃描專案中的既有文件，並自動完成以下工作：
 1. 識別散亂的筆記、規格、ADR，移動到正確目錄並重新命名
 2. 初始化 .agentcortex/context/current_state.md
