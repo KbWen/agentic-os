@@ -366,8 +366,8 @@ This is advisory — it warns but does not hard-block. The user may proceed afte
 
 ## 6. Antigravity Hard Stop (Runtime v5)
 
-- After outputting the bootstrap report, STOP IMMEDIATELY.
-- Do NOT proceed to `/plan`, `/implement`, or any code changes in the same turn.
-- Next step MUST be planning (or direct execution if `tiny-fix` via §0 fast-path).
-- Output: "Bootstrap complete. What would you like to do next? (e.g., proceed to plan)"
+- After outputting the bootstrap report, check whether the user explicitly requested a downstream phase in the same message.
+  - **Yes** (e.g., "bootstrap then plan", "start this and plan it"): proceed to that phase per AGENTS.md §6 — do NOT add an extra confirmation turn. The bootstrap report was already output, so the user has visibility into classification.
+  - **No** (user only said "start this task" or invoked `/bootstrap` alone): STOP. Output: "Bootstrap complete. What would you like to do next? (e.g., proceed to plan)"
 - **Tiny-fix fast-path**: If §0 pre-classified as tiny-fix, skip this stop entirely — proceed directly to inline plan + execute.
+- Regardless of flow-through, NO code changes are allowed inside bootstrap itself. Code belongs in `/implement`.

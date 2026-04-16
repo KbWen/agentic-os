@@ -33,17 +33,17 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 15 | Anti-Rationalization Pattern (framework-wide enhancement) | Gap Analysis | docs/specs/skill-research-integration.md §4C | quick-win | Pending | #14 |
 | 16 | Skill Validation Pipeline (meta-governance) | Gap Analysis | docs/specs/skill-research-integration.md §4D | feature | Pending | #14 |
 | 17 | Hard Work Log lock (advisory → blocking) | Expert review: concurrency safety | — | feature | Pending | — |
-| 18 | Intent Router DSL (natural language dispatch algorithm) | Expert review: routing ambiguity | — | feature | Pending | — |
+| 18 | Lightweight routing heuristics (decision tree in config.yaml, not a DSL) | Expert review: routing ambiguity | — | quick-win | Pending | — |
 | 19 | SSoT atomic writes (guard_context_write: CAS or transactional store) | Expert review: concurrent SSoT corruption | — | feature | Pending | — |
 | 20 | CI security scanning (Semgrep + TruffleHog + dependency audit) | Expert review: security posture | — | feature | Pending | — |
 | 21 | Skill cache timestamp + staleness invalidation | Expert review: stale skill cache | — | quick-win | Pending | — |
-| 22 | Rollback plan execution verification in /ship pre-flight | Expert review: rollback is documented not tested | — | quick-win | Pending | — |
-| 23 | Gate receipt structured format (JSON, not markdown prose) | Expert review: audit trail opacity | — | feature | Pending | — |
+| 22 | Rollback plan existence check in /ship (advisory, feature/arch-change only) | Expert review: rollback is documented not tested | — | quick-win | Pending | — |
+| 23 | Evidence section terse format (current gate block is already structured; tighten §Evidence prose) | Expert review: audit trail opacity | — | quick-win | Pending | — |
 | 24 | Scope breach detection in /implement (actual files vs plan) | Expert review: silent scope creep | — | quick-win | Pending | — |
-| 25 | Phase transition re-verification (gate receipts not just Current Phase field) | Expert review: Work Log tampering risk | — | feature | Pending | — |
+| 25 | Ship-phase gate receipt audit (verify prior phases have receipts, /ship only) | Expert review: Work Log tampering risk | — | quick-win | Pending | — |
 | 26 | Skill whitelist / injection protection for auto-loaded skills | Expert review: prompt injection via skill files | — | quick-win | Pending | — |
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Pending | — |
-| 28 | Token budget instrumentation (log files_read count in Work Log §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
+| 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
 
 ## Status Key
 
