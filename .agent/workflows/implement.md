@@ -152,6 +152,7 @@ Files: <list of files touched> (planned: <N>, actual: <M>)
 Tests: <command> → <pass/fail>
 Checkpoint: <SHA or "(uncommitted)">
 Side-effects: <1-line or "none">
+⚡ ACX
 ```
 
 - **Scope Divergence Check**: If actual files ≠ planned files, add: `"⚠️ Scope divergence: planned [N], touched [M]. Extra: [list]. Intentional? (yes/revert)"`

@@ -78,6 +78,7 @@ Global directives for all AI agents. Loaded automatically every turn
 3. **Bootstrap phase**:
    When starting a new task, AI MUST execute the bootstrap phase (load context, classify task) and output a bootstrap-report ONLY, then STOP.
    Next step must be planning or tiny-fix. NO code allowed in bootstrap.
+   **Bootstrap always stops after its own report** — even when a downstream phase was explicitly requested in the same message. The §6 direct-execution rule does NOT apply to bootstrap itself; it applies to the phases that follow (plan, implement, review, test, ship).
 4. **Gate requirement** (non tiny-fix):
    Before entering plan or ship phase, output this block FIRST:
    gate: plan|ship
@@ -87,6 +88,7 @@ Global directives for all AI agents. Loaded automatically every turn
 5. If verdict=fail → print gate + missing items ONLY and STOP.
 6. **Direct phase execution on explicit user intent**:
    If the user explicitly requests `/plan`, `/implement`, `/review`, `/test`, or `/ship` (or an unambiguous natural-language equivalent), the AI MUST execute that phase in the SAME turn after gate pass. A passing gate MUST NOT introduce a second "awaiting confirmation" pause for the same requested phase.
+   **Scope**: This rule covers the five phases listed above only. Bootstrap (§3) is excluded — it always stops after its own report regardless of what was requested alongside it.
 7. **When an extra confirmation is still allowed**:
    Ask again only if phase entry was inferred rather than explicit, or if a separate high-impact choice appears inside the phase.
 8. **Plan artifact rule**:
@@ -96,7 +98,7 @@ Global directives for all AI agents. Loaded automatically every turn
 9. **Evidence rule**:
    NO EVIDENCE = NO SHIP.
 10. User requests cannot bypass Gate rules. The AI MUST strictly follow the phase order for the task's classification (per `engineering_guardrails.md` §10). EVEN IF the human explicitly asks to skip a step, the AI MUST refuse to skip required workflow gates.
-11. **Sentinel Check**: Every response MUST end with `⚡ ACX`. This is a framework-wide runtime integrity marker — all models (Claude, Gemini, GPT, Codex) must include it. If missing, the response may be incomplete or governance context was not fully loaded.
+11. **Sentinel Check**: Every response MUST end with `⚡ ACX`. This is a framework-wide runtime integrity marker — all models (Claude, Gemini, GPT, Codex) must include it. If missing, the response may be incomplete or governance context was not fully loaded. **Workflow enforcement**: All phase output templates (bootstrap, plan, implement, review, test, handoff, ship) MUST include `⚡ ACX` as the final line of the chat response block. The sentinel is part of the template, not optional prose.
 12. **Legacy Work Log Compatibility**: If a Work Log predates Runtime v4 and lacks Drift/Evidence sections:
     - DO NOT fail ship or Gates.
     - Append missing template sections to the Work Log silently.

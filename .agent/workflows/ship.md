@@ -120,6 +120,7 @@ Evidence: Ref: Work Log §Evidence
 SSoT: updated | skipped (reason)
 Risk: <1-line or "none">
 Archive: <path> | <pending>
+⚡ ACX
 ```
 
 Compression rules:

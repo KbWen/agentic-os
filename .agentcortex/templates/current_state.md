@@ -15,6 +15,7 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: (updated by /ship)
+- **Last Verified**: (updated by /bootstrap on each session start — staleness indicator)
 - **Update Sequence**: 0
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)

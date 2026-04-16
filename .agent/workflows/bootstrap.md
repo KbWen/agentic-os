@@ -65,9 +65,11 @@ If the task is classified as `feature` or `architecture-change`, check:
    - **Cross-Branch Awareness**: Check "Branch List" for recently closed branches.
    - If current task overlaps with a recently merged branch's module, check the archive index for lightweight retrieval: prefer `.agentcortex/context/archive/INDEX.jsonl` (structured, deterministic query) if it exists; fall back to `.agentcortex/context/archive/INDEX.md` otherwise. Only open a specific archived log if its module/pattern entry matches your current task's target files. Do NOT scan all archive files.
    - If bootstrap must repair or refresh SSoT metadata (for example, stale Spec Index recovery), the write MUST go through `.agentcortex/tools/guard_context_write.py`.
+   - **Staleness Check**: After reading SSoT, check `Last Verified` field. If today's date minus `Last Verified` > 14 days, output advisory: `"⚠️ SSoT last verified <N> days ago. Consider running /govern-docs to refresh."` Do NOT block — advisory only.
+   - **Last Verified Update**: After successfully reading SSoT, update the `Last Verified` field to today's ISO date via `guard_context_write.py` (or direct write if Python unavailable).
 2. READ/CREATE `.agentcortex/context/work/<worklog-key>.md` (Work Log).
    - **Work Log Resolution**: Resolve a filesystem-safe `<worklog-key>` from the current branch before any path check. Store the raw git branch string in `Branch:`.
-   - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`.
+   - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`. When recovering from an archived log, write this entry to the new Work Log's `## Drift Log`: `"Recovered: prior log archived at .agentcortex/context/archive/work/<prior-key>.md (session: <date>)"`. This ensures the next session knows prior work existed.
    - **Bootstrap Branch Check**: If the Work Log already exists:
      - Check metadata (`Owner`, `Branch`, `Session`). If it matches your current session → RESUME safely. (Read `## Resume` if present, output "Resuming").
      - If metadata differs (another agent/user owns it) → **WARN the user AND require confirmation before proceeding** ("⚠️ Concurrent session detected. Proceed?").
@@ -253,13 +255,14 @@ Paths: <comma list or "(see Work Log §Task Description)">
 Skills: <comma list> (Ref: Work Log §Recommended Skills)
 Read: SSoT(<date>) · WorkLog(<new|resumed>) · Guardrails(<Full|Quick|Lite>)
 Next: <slash-command>
+⚡ ACX
 ```
 
 Everything below — Classification justification, Recommended Skills rule table, skill conflict pass, user preference merge, Context Read Receipt, Read Plan, Next Step options — is written to the Work Log sections. It is the AI's working notes, NOT the chat response. If the user needs detail, they will ask.
 
 ### 3.6 Recommended Skills Rule Table
 
-Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. No file reads required at this stage — skill metadata is already in context. This embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry / compact-index metadata on top later, but bootstrap does not depend on those files.
+Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage. Repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals.
 
    **Mandatory Skills (always activate when condition met):**
 
