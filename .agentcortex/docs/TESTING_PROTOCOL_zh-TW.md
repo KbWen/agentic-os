@@ -1,4 +1,4 @@
-# Testing Protocol (測試教戰守則) v1.0
+# Testing Protocol (測試教戰守則) v1.1
 >
 > **本文件旨在指引 AI Agent 產出高品質、可信任、且具備防禦性的測試程式碼。**
 

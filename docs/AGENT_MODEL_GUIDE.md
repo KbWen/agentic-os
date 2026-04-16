@@ -1,40 +1,48 @@
-# Agentic OS v1.0 Model Selection & Decision Guide (Human-Only)
+# Agentic OS v1.1 — Model Selection Guide
 
-This guide is for **You (Human)**. It will not be loaded into the AI prompt. Its purpose is to save tokens and maximize development efficiency.
+> For human reference only — this file is not loaded into AI context.
 
-## Core Principle: Fast-First
+## Principle: Match Model to Task Classification
 
-**Default to fast models (Gemini 2.5 Flash, Claude Haiku 4.5, GPT-4.1 mini).** Only switch to Pro/Advanced models if the fast model fails to solve the problem.
+Agentic OS classifies every task. Use that classification to pick your model:
 
----
+| Classification | Recommended Tier | Why |
+|---|---|---|
+| **tiny-fix** | Fast | Typo, config tweak — no reasoning needed |
+| **quick-win** | Fast (try first) → Pro (if stuck) | Scoped change; fast models handle most |
+| **hotfix** | Pro | Debugging requires deep reasoning + context |
+| **feature** | Pro for /plan, Fast for /implement boilerplate, Pro for /review | Mixed — plan and review need judgment |
+| **architecture-change** | Pro throughout | Cross-module reasoning, security implications |
 
-## Use Fast Models (Daily 80%)
+## Fast Models (Default Choice)
 
-**Features: Fast, low cost, large context.**
-*(Examples: Gemini 2.5 Flash, Claude Haiku 4.5, GPT-4.1 mini)*
+*Claude Haiku 4.5, Gemini 3.1 Flash, GPT-5.4-mini*
 
-- **Code Migration**: Moving features from legacy projects to new files.
-- **Formatting**: CSS touch-ups, Markdown cleanup, JSON/CSV conversion.
-- **Writing Tests**: Generating unit test cases.
-- **Simple Bugs**: Fixing TypeScript lint errors or syntax issues.
-- **Localization**: Traditional/Simplified Chinese conversion, i18n entries.
-- **Doc Summarization**: Extracting key points from long articles.
+Best for tasks where the **what** is clear and the AI just needs to execute:
 
-## Manual Switch to Pro/Advanced (Critical 20%)
+- Writing tests from a spec or skeleton
+- Formatting, linting fixes, CSS adjustments
+- Localization and i18n entries
+- Migrating code between files (clear source → target)
+- Generating boilerplate from an approved `/plan`
+- Doc cleanup and summarization
 
-**Features: Deep reasoning, architectural design, complex debugging.**
-*(Examples: Claude Opus 4.6 / Sonnet 4.6, GPT-4.1, Gemini 2.5 Pro)*
+## Pro / Advanced Models (When Judgment Matters)
 
-- **System Design**: Planning data relationships and protocols for new modules from scratch.
-- **Core Refactoring**: Modifying 3+ highly coupled core files.
-- **Logic Debugging**: Investigating race conditions or low-level memory leaks.
-- **Security Audit**: Comprehensive scanning of encryption or authorization logic.
-- **Performance Analysis**: Database query optimization and bottleneck diagnosis.
+*Claude Opus 4.6 / Sonnet 4.6, Gemini 3.1 Pro, GPT-5.4*
 
----
+Switch when the task requires **reasoning about tradeoffs**:
 
-## Cost-Saving Tips
+- `/plan` phase for feature or architecture-change — designing the approach
+- `/review` with security-sensitive skills (auth-security, red-team)
+- Debugging race conditions, memory leaks, or flaky tests
+- Schema design with migration safety concerns
+- Core refactoring touching 3+ coupled modules
+- Any task where the fast model produced incorrect logic on first attempt
 
-1. **Let Flash Try First**: Even for longer tasks, Flash can read it all. If the logic is wrong, copy the conversation and switch to Pro.
-2. **Lean Context**: Provide only necessary file paths; avoid `ls -R` which pads input tokens.
-3. **Phase Execution**: Let Flash extract a "change list" first. Once verified, let it implement in segments.
+## Practical Tips
+
+1. **Let Fast fail first.** Start with Fast; if the output has logic errors (not just formatting), switch to Pro with the same context. One wasted Fast attempt costs less than one Pro attempt.
+2. **Use classifications as a signal.** If `/bootstrap` classified the task as `feature` or higher, lean toward Pro for planning and review phases.
+3. **Phase-split large tasks.** Let Fast handle `/implement` boilerplate after Pro produced the `/plan`. Different phases can use different models.
+4. **Trim context for Fast models.** Provide specific file paths, not `ls -R`. Fast models degrade more on noisy context than Pro models do.

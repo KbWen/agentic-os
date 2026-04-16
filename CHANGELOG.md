@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0] - 2026-04-16
+
+### Token Optimization & Governance Hardening
+
+**Token Efficiency:**
+- SKILL.md heading-scope optimization: phase-entry loads only essential sections (~15-22% skill token savings on heavy scenarios) (#57)
+- Compressed phase outputs + Response Budget hard cap (≤8 lines prose) (#54)
+
+**Governance Improvements:**
+- Expert review quick-wins: rollback plan check in /ship, scope breach detection in /implement, ship-phase gate receipt audit, ADR auto-discovery in bootstrap (#56)
+- File existence guards in validate.ps1 and validate.sh (#55)
+
+**Deploy & Platform:**
+- Deploy skill subdirs recursively and fix dry-run accuracy (#52)
+- Correct migration guide path in bootstrap.md (#53)
+
 ## [1.0.0] - 2026-04-12
 
 ### Agentic OS v1.0 Public Release
