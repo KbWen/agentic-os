@@ -818,7 +818,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             } else {
                 $gateEvidenceMissing++
             }
-        } elseif ($content -notmatch '(?m)^- Gate:.*Verdict:') {
+        } elseif ($content -notmatch '(?mi)^(`?- )?gate:.*verdict:') {
             if ($isLegacyGateEvidenceLog) {
                 $legacyGateEvidenceMissing++
             } else {
@@ -826,7 +826,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
         } else {
             # Parse gate receipts and verify phase progression
-            $gates = @([regex]::Matches($content, '(?m)^- Gate:\s*(\w+)\s*\|') | ForEach-Object { $_.Groups[1].Value })
+            $gates = @([regex]::Matches($content, '(?mi)^(`?- )?gate:\s*(\w+)\s*\|') | ForEach-Object { $_.Groups[2].Value })
             if ($gates.Count -ge 2) {
                 for ($i = 1; $i -lt $gates.Count; $i++) {
                     $prev = $gates[$i - 1]

@@ -877,7 +877,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
       else
         gate_evidence_missing=$((gate_evidence_missing + 1))
       fi
-    elif ! printf '%s' "$wl_content" | grep -q '^- Gate:.*Verdict:'; then
+    elif ! printf '%s' "$wl_content" | grep -qiE '^(`?- )?gate:.*verdict:'; then
       if [[ "$legacy_gate_evidence" -eq 1 ]]; then
         legacy_gate_evidence_missing=$((legacy_gate_evidence_missing + 1))
       else
@@ -900,7 +900,7 @@ LEGAL = {
 lines = sys.stdin.read().splitlines()
 gates = []
 for l in lines:
-    m = re.match(r'^- Gate:\s*(\w+)\s*\|', l)
+    m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
         gates.append(m.group(1))
 if len(gates) < 2:
