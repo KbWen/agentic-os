@@ -15,23 +15,43 @@ All classification gates, phase requirements, and evidence rules in this workflo
 
 ## 0. Pre-Classification Fast Check (Token Efficiency Gate)
 
-Before loading any context, check if this task qualifies as `tiny-fix` using the inline criteria below (< 3 files, no semantic change, unambiguous scope). Ref: `engineering_guardrails.md` §10.3 — do NOT read that file for this check.
+Before loading any context, walk the decision table below top-to-bottom — **first match wins**. Ref: `engineering_guardrails.md` §10.3 — do NOT read that file for this check.
 
-**ADDITIONAL TINY-FIX EXCLUSIONS** (AC-22): Even if all other tiny-fix criteria are met, a task is NOT tiny-fix (minimum `quick-win`) if it:
+| IF the task... | THEN |
+|---|---|
+| modifies `docs/specs/_product-backlog.md` | route to `/spec-intake` (not bootstrap) |
+| modifies any file in `docs/specs/` or `docs/architecture/` | minimum `quick-win` — continue to Step 1 |
+| modifies `AGENTS.md`, `.agent/rules/*`, or `.agent/config.yaml` | minimum `quick-win` — continue to Step 1 |
+| modifies any file with `status: frozen` frontmatter | minimum `quick-win` — continue to Step 1 |
+| modifies <3 files AND is non-semantic (typo, docs, non-functional config) AND scope is unambiguous | **tiny-fix** — skip Steps 1–6, inline plan + execute + evidence (Work Log skipped per §5) |
+| scope is unclear or multi-module | continue to Step 1 for full context loading |
 
-- Modifies any file in `docs/specs/` (spec changes require design authority)
-- Modifies any file in `docs/architecture/` (domain doc changes require governance awareness)
-- Modifies `docs/specs/_product-backlog.md` (route to `/spec-intake` instead)
-- Modifies any file with `status: frozen` frontmatter
-- Modifies `AGENTS.md`, `.agent/rules/*`, or `.agent/config.yaml`
+**TOKEN LEAK BLOCK**: If the task is ultimately classified as `tiny-fix` or `quick-win`, reading `engineering_guardrails.md` at any point is a structural Token Leak violation. Rely purely on AGENTS.md §Core Directives and bypass full guardrails. Rationale: loading SSoT + specs + archives for a typo fix wastes ~2,500 tokens (P6).
 
-If yes → classify immediately, skip Steps 1–6, proceed directly to inline plan + execute + evidence (Work Log also skipped per §5).
+## 0b. Reading Mode Table (Token Efficiency Index)
 
-**TOKEN LEAK BLOCK**: If the task is ultimately classified as `tiny-fix` or `quick-win`, reading `engineering_guardrails.md` at any point is a structural Token Leak violation. You MUST rely purely on AGENTS.md §Core Directives and bypass full guardrails.
+> **Skip entirely if §0 classified as `tiny-fix`** — you already exited. This table only matters once you're continuing past §0.
 
-If no or uncertain → continue to Step 1 for full context loading. Do NOT guess — if scope is unclear, load context first.
+Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP — their content does not apply and reading them wastes tokens. The scope comments inline (`<!-- SCOPE: ... -->`) are the authoritative per-section gate; this table is the at-a-glance index.
 
-This exists because loading SSoT + specs + archives for a typo fix wastes ~2500 tokens (P6).
+| Section | tiny-fix | quick-win | feature/arch | hotfix |
+|---|---|---|---|---|
+| §0 Pre-Classification Fast Check | REQUIRED | REQUIRED | REQUIRED | REQUIRED |
+| §0a App Architecture Check | SKIP | SKIP | REQUIRED | SKIP |
+| §1 Initialization & Required Reading | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §1 Step 2a Spec Scope | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §1 Step 2b Domain Doc Context Loading | SKIP | SKIP | REQUIRED | SKIP |
+| §1 Steps 3–6 (private, migration, backlog, raw material) | SKIP | conditional | conditional | conditional |
+| §2 Work Log Header Setup | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §2a Advisory Work Log Lock | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §2b Phase Tracking Contract | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §3 Expected Output Format | inline only | REQUIRED | REQUIRED | REQUIRED |
+| §3.6 / §3.6a Recommended Skills | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §3.7 Work Log Content | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §4 Hard Checkpoints | REQUIRED | REQUIRED | REQUIRED | REQUIRED |
+| §5 Hard Gate | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §5b SSoT Sequence Pre-Ship Check | SKIP | REQUIRED | REQUIRED | REQUIRED |
+| §6 Antigravity Hard Stop | SKIP (auto-exit at §0) | REQUIRED | REQUIRED | REQUIRED |
 
 ## 0a. App Architecture Check (Zero-Cost Gate)
 
@@ -159,6 +179,7 @@ Write `## Session Info` and `## Drift Log` blocks immediately after header:
 - Agent: [model name]
 - Session: [timestamp]
 - Platform: [Antigravity / Codex Web / Codex App]
+- Guardrails loaded: [§ list — e.g., "§1, §2, §4, §7, §8.1, §10 (core)" | "skipped (quick-win)" | "skipped (tiny-fix)"]
 
 ## Drift Log
 - Skip Attempt: NO

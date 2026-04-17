@@ -34,6 +34,13 @@ The following sections are **conditional** (load only when triggered):
 > Conditional sections (§3, §5, §6, §8.2, §9, §11, §12) ≈ 156 lines ≈ **2,340 tokens**
 > Skipping all conditional sections saves up to **~2,340 tokens** per Full Mode session when none are triggered.
 
+### Loaded-Sections Receipt (Agent-Facing Signal)
+
+When `/bootstrap` reads this file in Full Mode, it MUST echo a one-line receipt in the Work Log `## Session Info` naming the sections actually loaded. Format:
+`Guardrails loaded: §1, §2, §4, §7, §8.1, §10 (core)` — plus any conditional sections triggered, e.g. `+ §5 (testing), §12 (implement).`
+
+This serves two purposes: (a) subsequent phases can trust that cited sections are in context without re-reading, and (b) the receipt is auditable — if a phase cites §6 but the receipt does not list it, either the receipt is stale (re-read per AGENTS.md Safety Valve + log to Drift Log) or the citation is fabricated.
+
 ## Role
 
 Non-negotiable principles for agent-driven development.
@@ -88,7 +95,7 @@ Before executing any implementation step, AI MUST internally assess and state:
 - **80–90%**: State the assumption explicitly, then proceed with caution.
 - **> 90%**: Proceed normally.
 
-This check is silent when confidence is high — no extra output needed above 90%. Only surfaces when it matters.
+**Narrative vs structured receipt**: "Silent above 90%" means no free-text narrative or chat prose. It does NOT mean silent in structured phase outputs — `/plan`, `/implement`, and `/ship` compact blocks MUST always include a `Confidence:` field (e.g., `Confidence: 95% — high`) so the gate is auditable in the Work Log. This keeps chat output terse while making the gate traceable.
 
 ### 4.2 Spec Freezing (SSoT Protection)
 

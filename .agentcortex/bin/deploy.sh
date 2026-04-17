@@ -861,3 +861,11 @@ echo "      # Also add if present: .claude/ .github/"
 echo "   3. Tell AI: 'Please run /bootstrap' to start"
 echo "   4. Agentic OS reference docs are under .agentcortex/docs/"
 echo ""
+
+# Python advisory — framework runs without Python, but guard_context_write.py
+# (SSoT optimistic locking) is Python-only; absent Python the AI falls back to
+# direct writes. Single-session safe; multi-session loses lock protection.
+if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
+    echo "Note: Python not on PATH — SSoT multi-session locking disabled (single-session OK). Install Python 3.8+ for full safety."
+    echo ""
+fi

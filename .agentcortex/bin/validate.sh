@@ -94,6 +94,24 @@ check_file_group() {
   fi
 }
 
+check_optional_file_group() {
+  local label="$1"
+  shift
+  local missing=()
+  local f
+  for f in "$@"; do
+    [[ -f "$f" ]] || missing+=("$f")
+  done
+  if ((${#missing[@]})); then
+    record_result WARN "$label"
+    for f in "${missing[@]}"; do
+      printf '  missing (optional): %s\n' "$f"
+    done
+  else
+    record_result PASS "$label"
+  fi
+}
+
 check_dir_group() {
   local label="$1"
   shift
@@ -188,7 +206,13 @@ required_files=(
   "$WORKFLOWS_DIR/decide.md"
   "$WORKFLOWS_DIR/test-classify.md"
   "$WORKFLOWS_DIR/spec-intake.md"
-  "$WORKFLOWS_DIR/claude-cli.md"
+  "$WORKFLOWS_DIR/adr.md"
+  "$WORKFLOWS_DIR/audit.md"
+  "$WORKFLOWS_DIR/brainstorm.md"
+  "$WORKFLOWS_DIR/research.md"
+  "$WORKFLOWS_DIR/retro.md"
+  "$WORKFLOWS_DIR/spec.md"
+  "$WORKFLOWS_DIR/sync-docs.md"
   "$SKILL_CONFLICT_MATRIX"
   "$AGENT_CONFIG_YAML"
   "$PLATFORM_DOC"
@@ -241,6 +265,11 @@ else
 fi
 
 check_file_group "required framework files present" "${required_files[@]}"
+
+check_optional_file_group "optional module workflow files present" \
+  "$WORKFLOWS_DIR/ask-openrouter.md" \
+  "$WORKFLOWS_DIR/codex-cli.md" \
+  "$WORKFLOWS_DIR/claude-cli.md"
 
 if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
   record_result SKIP "claude adapter files -- source repo (created by deploy in downstream)"
@@ -833,8 +862,10 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
     # A well-formed work log must have at least a Branch header and one ## section.
-    # Accept both the current "- Branch:" header and any legacy bolded variant.
-    if ! printf '%s' "$wl_content" | grep -Eq '^- (\*\*Branch\*\*|Branch):' || \
+    # Accept list form ("- Branch:" or "- **Branch**:") AND table form
+    # ("| Branch | ... |") — the canonical template at .agentcortex/templates/worklog.md
+    # uses a table for readability; earlier versions only matched list form.
+    if ! printf '%s' "$wl_content" | grep -Eq '(^- (\*\*Branch\*\*|Branch):|^\| (\*\*Branch\*\*|Branch) +\|)' || \
        ! printf '%s' "$wl_content" | grep -q '^## '; then
       printf '  possibly truncated work log: %s\n' "$(basename "$wl")"
       worklog_truncated=$((worklog_truncated + 1))
@@ -861,12 +892,12 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     if [[ -n "$created_date" ]] && [[ "$created_date" < "$WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF" ]]; then
       legacy_gate_evidence=1
     fi
-    # Header field: Current Phase
-    if ! printf '%s' "$wl_content" | grep -qE '^- (`Current Phase`|Current Phase):'; then
+    # Header field: Current Phase — accept list OR table form (see template/worklog.md)
+    if ! printf '%s' "$wl_content" | grep -qE '(^- (`Current Phase`|Current Phase):|^\| (`Current Phase`|Current Phase) +\|)'; then
       phase_field_missing=$((phase_field_missing + 1))
     fi
-    # Header field: Checkpoint SHA
-    if ! printf '%s' "$wl_content" | grep -qE '^- (`Checkpoint SHA`|Checkpoint SHA):'; then
+    # Header field: Checkpoint SHA — accept list OR table form
+    if ! printf '%s' "$wl_content" | grep -qE '(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)'; then
       checkpoint_missing=$((checkpoint_missing + 1))
     fi
     # Runtime section: ## Gate Evidence — check existence, receipt format,

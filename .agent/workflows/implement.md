@@ -32,6 +32,7 @@ Before ANY code change, AI MUST:
 1. Review active `## Global Lessons` entries from `.agentcortex/context/current_state.md`. If any HIGH-severity lesson trigger matches the current step, record the risk + mitigation in `## Known Risk` before changing code.
 2. IF Work Log contains a `Recommended Skills` entry: apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading). Then enforce skill-specific execution rules (see §Skill Execution Overrides below). Reuse `## Conflict Resolution` from bootstrap if multiple skills need precedence or scoping boundaries.
 3. *(Advisory — feature / architecture-change only)* If a step appears to conflict with a Spec Non-goal, surface: "⚠️ Step [N] may touch Non-goal: [item]. Proceed? (yes/no)"
+4. **Confidence Gate** (per `engineering_guardrails.md` §4.1): Re-assess confidence for THIS implementation step (not the overall plan). If `<80%`, STOP and clarify. If `80–90%`, state the assumption on the step before proceeding. If `>90%`, proceed — but when recording the step in `## Phase Summary` at end of phase, include `Confidence: <N>% — high` so the gate is auditable even for smooth-running steps.
 
 > **Discovery ownership**: Existing code patterns, doc lookup, external references, and spec alignment (AC mapping) are resolved during `/plan`. If discovery proves insufficient here, redirect to `/research` — do not add ad-hoc ceremony.
 

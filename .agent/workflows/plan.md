@@ -112,9 +112,12 @@ Steps:
 Risk+Rollback: <1-line risk> / <1-line rollback>
 AC Coverage: AC-1→step-N, AC-2→step-M, ...
 Non-goals: <comma list or "none">
+Confidence: <N>% — <rationale if <90%, else "high">
 Mode: Normal | Fast Lane
 ⚡ ACX
 ```
+
+> **Confidence field** (Ref: `engineering_guardrails.md` §4.1): Always output the number. If `<80%`, this gate is auto-fail — STOP and clarify. `80–90%` means state the assumption explicitly on this line. `>90%` may render as `Confidence: 95% — high` without extended rationale. This keeps the gate auditable in the Work Log even when confidence is high.
 
 Rules:
 - Each step MUST be **Functionally Atomic** — one logical unit of change (e.g., "Implement Data Schema"), NOT a 2-paragraph explanation.
@@ -165,9 +168,10 @@ This block persists across sessions. On resume, /bootstrap reads it immediately.
 
 ## Phase Summary Update
 
-After plan is approved, append one line to `## Phase Summary` in the Work Log:
+After plan is approved, append one line to `## Phase Summary` in the Work Log. **MUST include the `Confidence:` value** so `/ship`'s Confidence Trace Audit can read it from a persistent location (the chat-only compact block is ephemeral across sessions):
+
 ```
-- plan: [1-line summary — key decisions, target files count, mode Normal/Fast Lane]
+- plan: [1-line summary — key decisions, target files count, mode Normal/Fast Lane] | Confidence: <N>% — <high | 1-line rationale>
 ```
 
 ## State Transition
