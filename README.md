@@ -174,7 +174,7 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 | Dependency | Required? | Purpose |
 |:---|:---|:---|
 | **Git** | Required | Clone and deploy the framework |
-| **Bash** | Required | Run deploy & validate scripts (included with [Git for Windows](https://gitforwindows.org/)) |
+| **Bash** | Required | Run deploy & validate scripts (Git Bash from [Git for Windows](https://gitforwindows.org/) is enough on Windows) |
 | **Python 3.9+** | Recommended | Enables full validation (metadata, encoding, command sync checks) |
 | **SHA-256 tool** | Required for deploy | `sha256sum`, `shasum`, or `openssl` (pre-installed on most systems) |
 
@@ -197,14 +197,23 @@ git clone https://github.com/KbWen/agentic-os.git
 <summary><b>Windows (PowerShell / CMD)</b></summary>
 
 ```powershell
-# PowerShell
+# PowerShell (recommended for lightweight governance-brain install)
 powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .
 
 # CMD
 installers\deploy_brain.cmd .
 ```
 
-Both wrappers call `deploy_brain.sh` under the hood — requires [Git for Windows](https://gitforwindows.org/) (includes Git Bash) or WSL.
+Use the PowerShell entrypoint when possible. It resolves Git Bash directly and does not require a WSL distro.
+The CMD wrapper delegates through the same Windows-friendly path first, then falls back to bash only if needed.
+
+```powershell
+# Validation after install
+powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1
+
+# Lightweight validation when Python is not installed
+bash ./.agentcortex/bin/validate.sh --no-python
+```
 
 </details>
 

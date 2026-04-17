@@ -13,7 +13,7 @@
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: 2026-04-17
 - **Last Verified**: 2026-04-17
-- **Update Sequence**: 4
+- **Update Sequence**: 5
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
@@ -53,6 +53,7 @@
 - [Category: classification-flow][Severity: MEDIUM][Trigger: polish-pass-or-audit-batch] When the task is a batch of audit-driven polish edits that touch governance files (AGENTS.md, .agent/rules/*), the governance-file exclusion pushes it to `quick-win` minimum — not automatically `feature`. Classify by the flow you actually intend to run (quick-win skips spec + handoff legitimately); do not silently adopt `feature` label while running the quick-win flow. Self-check at bootstrap: "Am I going to write a spec? Will I run /handoff? If no to both, classification is quick-win."
 - [Category: worklog-format][Severity: LOW][Trigger: worklog-creation] Worklog header fields MUST use markdown list format (`- Branch: ...`) to match `validate.sh` regex `^- (\*\*Branch\*\*|Branch):`. YAML frontmatter and markdown tables both fail the check. Template at `.agentcortex/templates/worklog.md` uses a table for readability but the validator accepts only the list form today.
 - [Category: branch-awareness][Severity: LOW][Trigger: session-start-multi-turn-task] Run `git branch --show-current` at the start of any non-trivial task before deriving the worklog-key. The system-prompt gitStatus snapshot is taken once at session start and can become stale if the branch changed externally.
+- [Category: windows-install][Severity: MEDIUM][Trigger: windows-cmd-lightweight-install] On Windows, installer wrappers should prefer PowerShell or a real Git Bash path over PATH `bash.exe`; the WindowsApps `bash.exe` can be a WSL placeholder and break lightweight downstream installs when no distro is configured.
 
 ## Ship History
 
