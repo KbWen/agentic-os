@@ -234,3 +234,15 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
    f. **Restructure Advisory** (AC-19): Count L2 entries in the `primary_domain` log. If any section has ≥ `domain_doc.restructure_threshold` entries (default: 5 from `.agent/config.yaml`), output advisory: `"Domain doc '<domain>' has N entries. Consider /govern-docs --restructure <domain>."`
 
 8. **SSoT Heartbeat Update** (AC-25): As the final step of State Update & Archival, increment the `Update Sequence` by 1 in `current_state.md` and set `Last Updated` to the current ISO timestamp. This runs after all other ship writes (SSoT, archive, backlog, freeze, knowledge consolidation) are complete. Use guard_context_write.py for this write.
+
+## Post-Ship Lifecycle Suggestions (Advisory)
+
+> **Output format**: Single line appended to ship chat block. Emit ONLY triggered items. **Never blocks.**
+> **Template**: `Next: /retro · /<other-workflow> (<trigger reason>) — skip all?`
+
+Trigger conditions (check silently; emit only matches):
+- Always → `/retro`
+- Ship commit touches `docs/specs/` or `docs/architecture/` → `/sync-docs (docs changed)`
+- Ship commit touches `.agent/`, `AGENTS.md`, or `.agentcortex/` → `/govern-docs (governance changed)`
+
+Skip → no Drift Log entry required (ship is a terminal phase; retro will surface patterns separately).

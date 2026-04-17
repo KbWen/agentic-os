@@ -395,9 +395,10 @@ entries:
     detect_by:
       classification: [quick-win, feature, architecture-change, hotfix]
       intent_patterns: ["查文件", "check docs", "查官方文檔", "read the docs", "看文件再做"]
-      scope_signals: [framework API, library usage, config option, CLI command, version-sensitive pattern]
+      scope_signals: [framework API, library usage, config option, CLI command, version-sensitive pattern, project ADR tech stack]
       failure_signals: []
       phase_conditions: []
+    capability_condition: "docs/adr/ exists"  # zero cost when no ADR; auto-match when ADR present and task touches codebase files
     load_policy: on-match
     cost_type: mixed
     cost_risk: low
@@ -587,7 +588,7 @@ entries:
     detect_by:
       classification: [feature, architecture-change]
       intent_patterns: ["observability check", "production readiness", "觀測性檢查"]
-      scope_signals: [error handling, logging, crash reporting, observability]
+      scope_signals: [error handling, logging, crash reporting, observability, new API endpoint, new service class, new background job]
       failure_signals: []
       phase_conditions: [enter-review-or-ship]
     load_policy: phase-entry

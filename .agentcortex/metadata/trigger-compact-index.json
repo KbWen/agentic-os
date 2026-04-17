@@ -446,7 +446,8 @@
           "library usage",
           "config option",
           "CLI command",
-          "version-sensitive pattern"
+          "version-sensitive pattern",
+          "project ADR tech stack"
         ]
       },
       "load_policy": "on-match",
@@ -592,7 +593,10 @@
           "error handling",
           "logging",
           "crash reporting",
-          "observability"
+          "observability",
+          "new API endpoint",
+          "new service class",
+          "new background job"
         ]
       },
       "load_policy": "phase-entry",
