@@ -182,6 +182,8 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 > degraded mode — Python-dependent checks report `WARN` instead of `FAIL`.
 > Pass `--no-python` to suppress warnings: `bash .agentcortex/bin/validate.sh --no-python`
 
+**Install (first time):**
+
 ```bash
 # Clone Agentic OS
 git clone https://github.com/KbWen/agentic-os.git
@@ -193,21 +195,36 @@ git clone https://github.com/KbWen/agentic-os.git
 ./agentic-os/installers/deploy_brain.sh /path/to/your-project
 ```
 
+**Update (after first install):** the installer lives inside your project. Run it from your project root — it reads the deploy manifest and auto-fetches the latest framework version from GitHub.
+
+```bash
+bash installers/deploy_brain.sh .
+```
+
+> **Existing files won't be overwritten.** If your project already has `AGENTS.md`, `CLAUDE.md`, or other framework-managed files, they are preserved. The new framework version is saved as `<filename>.acx-incoming` sidecar. Review and merge manually — or ask your AI agent: *"Merge each .acx-incoming into its target, preserving my project-specific content and adopting framework updates."*
+
+> **AI-agent install:** If you're asking an AI assistant to install Agentic OS, point it to this README. The commands above are deterministic — no platform-specific heuristics required.
+
 <details>
 <summary><b>Windows (PowerShell / CMD)</b></summary>
 
 ```powershell
-# PowerShell (recommended for lightweight governance-brain install)
-powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .
+# Clone Agentic OS (first time)
+git clone https://github.com/KbWen/agentic-os.git
 
-# CMD
-installers\deploy_brain.cmd .
+# Deploy into your project
+powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 C:\path\to\your-project
+
+# CMD alternative
+.\agentic-os\installers\deploy_brain.cmd C:\path\to\your-project
 ```
 
 Use the PowerShell entrypoint when possible. It resolves Git Bash directly and does not require a WSL distro.
-The CMD wrapper delegates through the same Windows-friendly path first, then falls back to bash only if needed.
 
 ```powershell
+# Already installed? Run from your project root to update:
+powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .
+
 # Validation after install
 powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1
 

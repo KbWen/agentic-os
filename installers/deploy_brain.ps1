@@ -61,6 +61,7 @@ if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 $scriptDir = Normalize-PathString $scriptDir
 # When deployed to installers/, the project root is one level up.
 $projectRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($scriptDir, '..'))
+# Canonical path (referenced by validate.sh contract; routing logic lives in deploy_brain.sh)
 $canonical = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($projectRoot, '.agentcortex', 'bin', 'deploy.sh'))
 
 $bashLauncher = Resolve-BashLauncher
@@ -86,18 +87,14 @@ if ($DryRun) { $bashArgs += '--dry-run' }
 if ($Source) { $bashArgs += '--source'; $bashArgs += $Source }
 $bashArgs += "$Target"
 
-if (Test-Path -Path $canonical -PathType Leaf) {
-    # Normal path: canonical deploy exists locally
-    & $bashLauncher $canonical @bashArgs
-} else {
-    # Bootstrap path: delegate to wrapper which handles fetch
-    $wrapperSh = [System.IO.Path]::Combine($scriptDir, 'deploy_brain.sh')
-    if (-not (Test-Path -Path $wrapperSh -PathType Leaf)) {
-        Write-Error "Neither canonical deploy nor deploy_brain.sh wrapper found."
-        exit 1
-    }
-    & $bashLauncher $wrapperSh @bashArgs
+# Always delegate to deploy_brain.sh — it handles install vs update routing (NVM-style).
+# PS1's job is only to find bash; all dispatch logic lives in the sh wrapper.
+$wrapperSh = [System.IO.Path]::Combine($scriptDir, 'deploy_brain.sh')
+if (-not (Test-Path -Path $wrapperSh -PathType Leaf)) {
+    Write-Error "deploy_brain.sh wrapper not found alongside this script."
+    exit 1
 }
+& $bashLauncher $wrapperSh @bashArgs
 
 $exitCode = if (Get-Variable LASTEXITCODE -ErrorAction SilentlyContinue) { $LASTEXITCODE } else { 0 }
 exit $exitCode

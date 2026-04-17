@@ -7,14 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CANONICAL="$PROJECT_ROOT/.agentcortex/bin/deploy.sh"
 
-# If canonical deploy exists locally, use it (normal path)
-if [[ -f "$CANONICAL" ]]; then
-  exec bash "$CANONICAL" "$@"
-fi
-
-# --- Bootstrap: canonical deploy not found (fresh clone with gitignored Agentic OS) ---
-echo "Agentic OS framework not found locally — bootstrapping from remote..."
-
 ACX_SOURCE="${ACX_SOURCE:-}"
 ACX_CACHE="$PROJECT_ROOT/.agentcortex-src"
 MANIFEST="$PROJECT_ROOT/.agentcortex-manifest"
@@ -23,6 +15,16 @@ MANIFEST="$PROJECT_ROOT/.agentcortex-manifest"
 if [[ -z "$ACX_SOURCE" && -f "$MANIFEST" ]]; then
     ACX_SOURCE="$(grep '^source_repo:' "$MANIFEST" | awk '{print $2}')" || true
 fi
+
+# NVM-style dispatch:
+#   No manifest + canonical present  → first-time run from the cloned source repo → use canonical
+#   Manifest present (already installed) → always fetch fresh source for update
+#   No canonical, no manifest          → fresh bootstrap (only installers/ available)
+if [[ ! -f "$MANIFEST" && -f "$CANONICAL" ]]; then
+    exec bash "$CANONICAL" "$@"
+fi
+
+echo "Agentic OS bootstrap — fetching source and deploying..."
 
 if [[ -z "$ACX_SOURCE" ]]; then
     echo "" >&2
