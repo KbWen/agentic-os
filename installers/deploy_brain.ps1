@@ -17,11 +17,7 @@ function Normalize-PathString {
 function Resolve-BashLauncher {
     $candidates = @()
 
-    # 1. PATH lookup for bash itself
-    $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
-    if ($bashCmd) { $candidates += $bashCmd.Source }
-
-    # 2. Derive from `git` location — covers scoop, chocolatey, custom prefixes,
+    # 1. Derive from `git` location — covers scoop, chocolatey, custom prefixes,
     # portable Git, GitHub Desktop. ($gitRoot)\{bin,usr\bin}\bash.exe is the
     # standard Git for Windows layout regardless of install path.
     $gitCmd = Get-Command git -ErrorAction SilentlyContinue
@@ -36,15 +32,22 @@ function Resolve-BashLauncher {
         }
     }
 
-    # 3. Static fallback (standard installer locations)
+    # 2. Static fallback (standard installer locations)
     $candidates += @(
         'C:\Program Files\Git\bin\bash.exe',
         'C:\Program Files\Git\usr\bin\bash.exe',
         'C:\Program Files (x86)\Git\bin\bash.exe'
     )
 
+    # 3. PATH lookup for bash itself, but only after preferring real Git Bash.
+    # WindowsApps\bash.exe is commonly just the WSL placeholder and breaks the
+    # lightweight install flow when no distro is installed.
+    $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
+    if ($bashCmd) { $candidates += $bashCmd.Source }
+
     foreach ($candidate in $candidates | Select-Object -Unique) {
         if (-not (Test-Path -Path $candidate -PathType Leaf)) { continue }
+        if ($candidate -like '*\WindowsApps\bash.exe') { continue }
         & $candidate --version *> $null
         if ($LASTEXITCODE -eq 0) { return $candidate }
     }
