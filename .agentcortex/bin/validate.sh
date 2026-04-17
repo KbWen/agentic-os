@@ -862,8 +862,10 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
     # A well-formed work log must have at least a Branch header and one ## section.
-    # Accept both the current "- Branch:" header and any legacy bolded variant.
-    if ! printf '%s' "$wl_content" | grep -Eq '^- (\*\*Branch\*\*|Branch):' || \
+    # Accept list form ("- Branch:" or "- **Branch**:") AND table form
+    # ("| Branch | ... |") — the canonical template at .agentcortex/templates/worklog.md
+    # uses a table for readability; earlier versions only matched list form.
+    if ! printf '%s' "$wl_content" | grep -Eq '(^- (\*\*Branch\*\*|Branch):|^\| (\*\*Branch\*\*|Branch) +\|)' || \
        ! printf '%s' "$wl_content" | grep -q '^## '; then
       printf '  possibly truncated work log: %s\n' "$(basename "$wl")"
       worklog_truncated=$((worklog_truncated + 1))
@@ -890,12 +892,12 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     if [[ -n "$created_date" ]] && [[ "$created_date" < "$WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF" ]]; then
       legacy_gate_evidence=1
     fi
-    # Header field: Current Phase
-    if ! printf '%s' "$wl_content" | grep -qE '^- (`Current Phase`|Current Phase):'; then
+    # Header field: Current Phase — accept list OR table form (see template/worklog.md)
+    if ! printf '%s' "$wl_content" | grep -qE '(^- (`Current Phase`|Current Phase):|^\| (`Current Phase`|Current Phase) +\|)'; then
       phase_field_missing=$((phase_field_missing + 1))
     fi
-    # Header field: Checkpoint SHA
-    if ! printf '%s' "$wl_content" | grep -qE '^- (`Checkpoint SHA`|Checkpoint SHA):'; then
+    # Header field: Checkpoint SHA — accept list OR table form
+    if ! printf '%s' "$wl_content" | grep -qE '(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)'; then
       checkpoint_missing=$((checkpoint_missing + 1))
     fi
     # Runtime section: ## Gate Evidence — check existence, receipt format,

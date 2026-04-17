@@ -800,8 +800,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         $wlContent = Get-Content -Path $wl.FullName -Raw -ErrorAction SilentlyContinue
         if (-not $wlContent) { continue }
         # A well-formed work log must have at least a Branch header and one ## section.
-        # Accept both the current "- Branch:" header and any legacy bolded variant.
-        $hasBranchHeader = $wlContent -match '(?m)^- (\*\*Branch\*\*|Branch):'
+        # Accept list form ("- Branch:" or "- **Branch**:") AND table form
+        # ("| Branch | ... |") — the canonical template uses a table for readability.
+        $hasBranchHeader = $wlContent -match '(?m)(^- (\*\*Branch\*\*|Branch):|^\| (\*\*Branch\*\*|Branch) +\|)'
         $hasSectionHeader = $wlContent -match '(?m)^## '
         if (-not $hasBranchHeader -or -not $hasSectionHeader) {
             Write-Output "  possibly truncated work log: $($wl.Name)"
@@ -840,8 +841,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             $createdDate = $createdDateMatch.Groups[1].Value.Trim()
         }
         $isLegacyGateEvidenceLog = $createdDate -and $createdDate -lt $legacyGateEvidenceCutoff
-        if ($content -notmatch '(?m)^- (`Current Phase`|Current Phase):') { $phaseFieldMissing++ }
-        if ($content -notmatch '(?m)^- (`Checkpoint SHA`|Checkpoint SHA):') { $checkpointMissing++ }
+        # Accept list or table form for header fields (see .agentcortex/templates/worklog.md)
+        if ($content -notmatch '(?m)(^- (`Current Phase`|Current Phase):|^\| (`Current Phase`|Current Phase) +\|)') { $phaseFieldMissing++ }
+        if ($content -notmatch '(?m)(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)') { $checkpointMissing++ }
         if ($content -notmatch '(?m)^## Gate Evidence') {
             if ($isLegacyGateEvidenceLog) {
                 $legacyGateEvidenceMissing++
