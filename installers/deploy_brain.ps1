@@ -16,23 +16,37 @@ function Normalize-PathString {
 
 function Resolve-BashLauncher {
     $candidates = @()
+
+    # 1. PATH lookup for bash itself
     $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
     if ($bashCmd) { $candidates += $bashCmd.Source }
 
+    # 2. Derive from `git` location — covers scoop, chocolatey, custom prefixes,
+    # portable Git, GitHub Desktop. ($gitRoot)\{bin,usr\bin}\bash.exe is the
+    # standard Git for Windows layout regardless of install path.
+    $gitCmd = Get-Command git -ErrorAction SilentlyContinue
+    if ($gitCmd) {
+        $gitDir = Split-Path -Parent $gitCmd.Source   # e.g. ...\Git\cmd
+        $gitRoot = Split-Path -Parent $gitDir         # e.g. ...\Git
+        if ($gitRoot) {
+            $candidates += @(
+                (Join-Path $gitRoot 'bin\bash.exe'),
+                (Join-Path $gitRoot 'usr\bin\bash.exe')
+            )
+        }
+    }
+
+    # 3. Static fallback (standard installer locations)
     $candidates += @(
         'C:\Program Files\Git\bin\bash.exe',
         'C:\Program Files\Git\usr\bin\bash.exe',
         'C:\Program Files (x86)\Git\bin\bash.exe'
     )
 
-    foreach ($candidate in $candidates) {
-        if (-not (Test-Path -Path $candidate -PathType Leaf)) {
-            continue
-        }
+    foreach ($candidate in $candidates | Select-Object -Unique) {
+        if (-not (Test-Path -Path $candidate -PathType Leaf)) { continue }
         & $candidate --version *> $null
-        if ($LASTEXITCODE -eq 0) {
-            return $candidate
-        }
+        if ($LASTEXITCODE -eq 0) { return $candidate }
     }
 
     return $null

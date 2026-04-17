@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.1] - 2026-04-17
+
+### Polish: Audit Findings
+
+**Installer UX:**
+- Broadened Git-bash detection via `Get-Command git` derivation — covers scoop, chocolatey, portable Git, and custom-prefix installs (installers/deploy_brain.ps1)
+- Removed `--quiet` from `git clone` / `git pull` in bootstrap path so slow networks no longer look like a hang (installers/deploy_brain.sh)
+
+**Governance Wiring:**
+- `Confidence:` field added to `/plan` compact-block template — confidence gate (engineering_guardrails §4.1) now has an auditable receipt even when confidence is high
+- Confidence Trace Audit advisory added to `/ship` pre-flight
+- `AGENTS.md` No-Bypass rule clarified: bans skipping gates within a classification's documented phase list, does NOT override quick-win/hotfix fast-paths
+
+**Token Discipline:**
+- `CLAUDE.md` condensed 51→27 lines — removed duplicated Hard Rules section; Skills subsection reduced to pointer (AGENTS.md §Skill Safety already canonical)
+
+**Discoverability:**
+- `routing.md §3` header labels the skill activation table as the canonical skill index
+
 ## [1.1.0] - 2026-04-16
 
 ### Token Optimization & Governance Hardening

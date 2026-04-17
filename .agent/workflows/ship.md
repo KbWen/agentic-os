@@ -64,6 +64,10 @@ Scan Work Log `## Gate Evidence` for receipts from required prior phases:
 For each missing receipt output: `"⚠️ Missing gate receipt for: [phase]. Run that phase or provide evidence before shipping."`
 User may acknowledge and proceed. Missing receipts do NOT auto-fail the gate.
 
+### Confidence Trace Audit (/ship only)
+
+Scan Work Log `## Phase Summary` and the plan's compact block for a `Confidence:` entry. If the recorded confidence is `<80%` and no clarification/assumption is documented in `## Known Risk`, output: `"⚠️ Plan confidence was <80% with no recorded clarification. Verify before shipping."` This is advisory — it warns but does not hard-block, matching `engineering_guardrails.md` §4.1.
+
 ## Ship Checklist (mandatory — skip = ship fail)
 
 - [ ] Evidence recorded in Work Log

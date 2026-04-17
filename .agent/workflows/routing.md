@@ -106,6 +106,8 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ## 3. Skill Activation Trigger Map
 
+> **This table IS the canonical skill index** — it maps every user-facing trigger phrase to a skill ID. For "what skills are available?" questions, this is the answer. Skill bodies live in `.agents/skills/<skill>/SKILL.md`; trigger metadata (phases, cost_risk, load_policy) lives in `.agentcortex/metadata/trigger-compact-index.json` when present.
+>
 > Skills activated via the Intent Router attach to the **current workflow phase only**. They MUST NOT replace, skip, or alter phase order. See AGENTS.md §Skill Safety & Precedence for the full hard rule.
 
 | Phrases | Skill |

@@ -42,17 +42,17 @@ fi
 
 if [[ -d "$ACX_CACHE/.git" ]]; then
     echo "Updating cached Agentic OS source..."
-    if ! git -C "$ACX_CACHE" pull --quiet 2>&1; then
+    if ! git -C "$ACX_CACHE" pull 2>&1; then
         echo "" >&2
         echo "Failed to update cached source. Removing stale cache and re-cloning..." >&2
         rm -rf "$ACX_CACHE"
-        git clone --depth 1 --quiet "$ACX_SOURCE" "$ACX_CACHE"
+        git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
     fi
 else
     echo "Cloning Agentic OS from $ACX_SOURCE..."
     # Clean up any partial clone left by a prior interrupted attempt
     [[ -d "$ACX_CACHE" ]] && rm -rf "$ACX_CACHE"
-    git clone --depth 1 --quiet "$ACX_SOURCE" "$ACX_CACHE"
+    git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
 fi
 
 CACHED_CANONICAL="$ACX_CACHE/.agentcortex/bin/deploy.sh"
