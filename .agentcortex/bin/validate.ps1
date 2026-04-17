@@ -59,6 +59,22 @@ function Test-FileGroup {
     Add-Result -Level 'PASS' -Message $Label
 }
 
+function Test-OptionalFileGroup {
+    param(
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][string[]]$Paths
+    )
+    $missing = @($Paths | Where-Object { -not (Test-Path -Path $_ -PathType Leaf) })
+    if ($missing.Count -gt 0) {
+        Add-Result -Level 'WARN' -Message $Label
+        foreach ($path in $missing) {
+            Write-Output "  missing (optional): $path"
+        }
+        return
+    }
+    Add-Result -Level 'PASS' -Message $Label
+}
+
 function Test-DirGroup {
     param(
         [Parameter(Mandatory = $true)][string]$Label,
@@ -232,6 +248,13 @@ $requiredFiles = @(
     (Join-NormalPath $workflowsDir 'test-classify.md'),
     (Join-NormalPath $workflowsDir 'spec-intake.md'),
     (Join-NormalPath $workflowsDir 'claude-cli.md'),
+    (Join-NormalPath $workflowsDir 'adr.md'),
+    (Join-NormalPath $workflowsDir 'audit.md'),
+    (Join-NormalPath $workflowsDir 'brainstorm.md'),
+    (Join-NormalPath $workflowsDir 'research.md'),
+    (Join-NormalPath $workflowsDir 'retro.md'),
+    (Join-NormalPath $workflowsDir 'spec.md'),
+    (Join-NormalPath $workflowsDir 'sync-docs.md'),
     $skillConflictMatrix,
     $agentConfigYaml,
     $platformDoc,
@@ -283,9 +306,15 @@ $isSourceRepo = (Test-Path -Path $canonicalDeploySh -PathType Leaf) -and
 # Both source and downstream repos keep deploy_brain.* under installers/.
 # No path redefinition needed — $rootDeploySh/Ps1/Cmd already point to installers/.
 
+$optionalModuleFiles = @(
+    (Join-NormalPath $workflowsDir 'ask-openrouter.md'),
+    (Join-NormalPath $workflowsDir 'codex-cli.md')
+)
+
 if ($isSourceRepo) {
     Add-Result -Level 'SKIP' -Message 'claude adapter files -- source repo (created by deploy in downstream)'
     Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
+    Test-OptionalFileGroup -Label 'optional module workflow files present' -Paths $optionalModuleFiles
     $sourceDirs = @(
         $workflowsDir,
         (Join-NormalPath $root '.agents/skills'),
@@ -295,6 +324,7 @@ if ($isSourceRepo) {
 }
 else {
     Test-FileGroup -Label 'required framework files present' -Paths $requiredFiles
+    Test-OptionalFileGroup -Label 'optional module workflow files present' -Paths $optionalModuleFiles
     Test-FileGroup -Label 'claude adapter files present' -Paths $claudeRequiredFiles
     Test-DirGroup -Label 'required framework directories present' -Paths $requiredDirs
 }

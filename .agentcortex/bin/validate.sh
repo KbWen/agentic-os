@@ -94,6 +94,24 @@ check_file_group() {
   fi
 }
 
+check_optional_file_group() {
+  local label="$1"
+  shift
+  local missing=()
+  local f
+  for f in "$@"; do
+    [[ -f "$f" ]] || missing+=("$f")
+  done
+  if ((${#missing[@]})); then
+    record_result WARN "$label"
+    for f in "${missing[@]}"; do
+      printf '  missing (optional): %s\n' "$f"
+    done
+  else
+    record_result PASS "$label"
+  fi
+}
+
 check_dir_group() {
   local label="$1"
   shift
@@ -189,6 +207,13 @@ required_files=(
   "$WORKFLOWS_DIR/test-classify.md"
   "$WORKFLOWS_DIR/spec-intake.md"
   "$WORKFLOWS_DIR/claude-cli.md"
+  "$WORKFLOWS_DIR/adr.md"
+  "$WORKFLOWS_DIR/audit.md"
+  "$WORKFLOWS_DIR/brainstorm.md"
+  "$WORKFLOWS_DIR/research.md"
+  "$WORKFLOWS_DIR/retro.md"
+  "$WORKFLOWS_DIR/spec.md"
+  "$WORKFLOWS_DIR/sync-docs.md"
   "$SKILL_CONFLICT_MATRIX"
   "$AGENT_CONFIG_YAML"
   "$PLATFORM_DOC"
@@ -241,6 +266,10 @@ else
 fi
 
 check_file_group "required framework files present" "${required_files[@]}"
+
+check_optional_file_group "optional module workflow files present" \
+  "$WORKFLOWS_DIR/ask-openrouter.md" \
+  "$WORKFLOWS_DIR/codex-cli.md"
 
 if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
   record_result SKIP "claude adapter files -- source repo (created by deploy in downstream)"
