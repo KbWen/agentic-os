@@ -33,6 +33,11 @@ Before ANY code change, AI MUST:
 2. IF Work Log contains a `Recommended Skills` entry: apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading). Then enforce skill-specific execution rules (see §Skill Execution Overrides below). Reuse `## Conflict Resolution` from bootstrap if multiple skills need precedence or scoping boundaries.
 3. *(Advisory — feature / architecture-change only)* If a step appears to conflict with a Spec Non-goal, surface: "⚠️ Step [N] may touch Non-goal: [item]. Proceed? (yes/no)"
 4. **Confidence Gate** (per `engineering_guardrails.md` §4.1): Re-assess confidence for THIS implementation step (not the overall plan). If `<80%`, STOP and clarify. If `80–90%`, state the assumption on the step before proceeding. If `>90%`, proceed — but when recording the step in `## Phase Summary` at end of phase, include `Confidence: <N>% — high` so the gate is auditable even for smooth-running steps.
+5. **Plan-Derived Skill Check** *(feature / architecture-change — advisory)*: Scan the approved plan in the Work Log for structural signals. Zero additional file reads — plan is already loaded.
+   - **Output format**: Single line in chat. Emit ONLY activated skills (skip NOT listed). Zero output if none activate.
+   - **Template**: `Plan-derived skills: +<skill1>, +<skill2> (written to Work Log)`
+   - Triggers (silent; emit only matches): 3+ independent low-coupling subtasks → `dispatching-parallel-agents`; 4+ target files OR cross-module → `subagent-driven-development`; independent parallel workstreams → `using-git-worktrees`.
+   - Activated skills are appended to Work Log `Recommended Skills` with provenance `(plan-derived)`.
 
 > **Discovery ownership**: Existing code patterns, doc lookup, external references, and spec alignment (AC mapping) are resolved during `/plan`. If discovery proves insufficient here, redirect to `/research` — do not add ad-hoc ceremony.
 

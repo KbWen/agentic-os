@@ -362,9 +362,10 @@ These items are the AI's working notes. They live in the Work Log sections liste
 - **Next Step Recommendation** — the chat block's `Next:` field uses this map:
   - `tiny-fix` → proceed directly with inline plan
   - `quick-win` → `/plan`
-  - `feature` → `/brainstorm` or `/spec` (spec required before `/plan`)
-  - `architecture-change` → `/brainstorm` → `/spec` (ADR + spec required before `/plan`)
+  - `feature` → if no frozen spec: **`/brainstorm` first** (skip = log in Drift Log), then `/spec` → `/plan`; if frozen spec exists: `/spec` or `/plan`
+  - `architecture-change` → **`/brainstorm` first** (skip = log in Drift Log) → `/spec` (ADR required) → `/plan`
   - `hotfix` → `/research` (systematic debugging)
+  - *(Any classification)* Design fork detected (two viable approaches, OR/Either in task description) → suggest `/decide` before committing to a direction
 
 ## 4. Hard Checkpoints
 

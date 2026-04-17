@@ -54,6 +54,18 @@ If `verdict: fail`, the receipt records the failure and missing items. This make
   - If no spec exists: STOP. Output: "⚠️ No specification found. Run `/spec` first."
 - `tiny-fix`, `quick-win`, and `hotfix` are EXEMPT from this gate.
 
+## Pre-Plan Advisory Suggestions (Advisory — never blocks)
+
+> **Output format**: Single compact line. Emit ONLY when ≥1 condition triggers; emit NOTHING otherwise. Full reasoning goes to Drift Log, not chat.
+> **Template**: `Advisory: <item1> · <item2> · <item3> — reply skip/accept-<n>`
+
+Trigger conditions (check silently; emit only matches):
+- Classification `feature` or `architecture-change` + no `/brainstorm` or `/research` phase in Work Log → `/brainstorm (no exploration)`
+- Plan step selects a tech stack component (language, framework, database, infrastructure) → `/adr (tech choice)`
+- Plan step reveals a design fork (two valid approaches, OR/Either in step descriptions) → `/decide (design fork)`
+
+Skip → record reason in `## Drift Log` as `Skipped: <advisory> — <1-line reason>`. No reason required beyond 1 line.
+
 ## Design Gate (UI Tasks — Auto-Enforced)
 
 > Ref: `engineering_guardrails.md` §4.4 — Design-First Rule

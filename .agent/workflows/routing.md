@@ -16,6 +16,8 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ## 1. Workflow Trigger Map
 
+> **Auto-suggest when** column: Present only in sections where phase-lifecycle or classification context can trigger the workflow without an explicit user phrase. Core Phase Workflows, Spec & Intake, Emergency & Fix, Testing Helpers, and Utility sections do not have this column — they are routed explicitly or through governance gates.
+
 ### Core Phase Workflows
 
 | Phrases | Route |
@@ -39,12 +41,12 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ### Architecture & Setup
 
-| Phrases | Route |
-|---|---|
-| "設定架構", "init app", "define tech stack", "set up project" | `/app-init` (full) |
-| "加後端", "set up [layer]", "define [layer] conventions", "加 API", "加資料庫" | `/app-init --partial` (mid-development) |
-| "新增 skill", "add skill for X" | `/app-init` §3 (skill-only generation) |
-| "architecture decision", "為什麼選這個", "record decision", "ADR" | `/adr` |
+| Phrases | Route | Auto-suggest when |
+|---|---|---|
+| "設定架構", "init app", "define tech stack", "set up project" | `/app-init` (full) | — |
+| "加後端", "set up [layer]", "define [layer] conventions", "加 API", "加資料庫" | `/app-init --partial` (mid-development) | — |
+| "新增 skill", "add skill for X" | `/app-init` §3 (skill-only generation) | — |
+| "architecture decision", "為什麼選這個", "record decision", "ADR" | `/adr` | tech stack selection detected in /plan |
 
 ### Emergency & Fix
 
@@ -55,26 +57,26 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ### Research & Analysis
 
-| Phrases | Route |
-|---|---|
-| "研究一下", "investigate", "explore", "look into this" | `/research` |
-| "腦力激盪", "brainstorm", "explore options", "what are our choices" | `/brainstorm` |
-| "audit this repo", "評估現狀", "map existing code" | `/audit` |
+| Phrases | Route | Auto-suggest when |
+|---|---|---|
+| "研究一下", "investigate", "explore", "look into this" | `/research` | hotfix classification; uncertainty about root cause in /implement |
+| "腦力激盪", "brainstorm", "explore options", "what are our choices" | `/brainstorm` | feature/arch-change with no frozen spec (bootstrap §3.7) |
+| "audit this repo", "評估現狀", "map existing code" | `/audit` | first session in a new module, no ADR exists |
 
 ### Completion & Handoff
 
-| Phrases | Route |
-|---|---|
-| "交接", "handoff", "summarize for next session" | `/handoff` |
-| "記錄決定", "log decision", "why did we choose" | `/decide` |
-| "回顧", "retrospective", "lessons learned", "retro" | `/retro` |
+| Phrases | Route | Auto-suggest when |
+|---|---|---|
+| "交接", "handoff", "summarize for next session" | `/handoff` | — |
+| "記錄決定", "log decision", "why did we choose" | `/decide` | design fork detected in /plan or /implement (see plan.md Pre-Plan Advisory) |
+| "回顧", "retrospective", "lessons learned", "retro" | `/retro` | after /ship completes (ship.md lifecycle hook) |
 
 ### Documentation
 
-| Phrases | Route |
-|---|---|
-| "同步文件", "sync docs", "docs out of date" | `/sync-docs` |
-| "更新治理文件", "update governance docs" | `/govern-docs` |
+| Phrases | Route | Auto-suggest when |
+|---|---|---|
+| "同步文件", "sync docs", "docs out of date" | `/sync-docs` | /ship touches docs/specs/ or docs/architecture/ files |
+| "更新治理文件", "update governance docs" | `/govern-docs` | /ship release includes .agent/ or AGENTS.md changes |
 
 ### Testing & Planning Helpers
 
