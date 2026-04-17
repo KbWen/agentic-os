@@ -13,7 +13,7 @@
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: 2026-04-17
 - **Last Verified**: 2026-04-17
-- **Update Sequence**: 3
+- **Update Sequence**: 4
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
@@ -54,5 +54,6 @@
 
 ## Ship History
 
+- **v1.1.2** (2026-04-17): Polish batch 2 — Python advisory in deploy.sh (1.1), guardrails Loaded-Sections Receipt (3.2), bootstrap Reading Mode Table + §0 decision table (3.3 + 2.1), Confidence Gate harmonized with structured receipts + step-level in /implement (2.3), Read-Once Drift Log audit receipt in AGENTS.md (4.3). Commit `4976a92`. Closes remaining 6 of 12 post-v1.1.0 audit findings. [CHANGELOG](../../CHANGELOG.md#112---2026-04-17)
 - **v1.1.1-batch1** (2026-04-17): Polish pass — installer UX (Git-bash detection, clone progress), governance wiring (Confidence Gate receipt in /plan + /ship, No-Bypass scope clarified in AGENTS.md), token discipline (CLAUDE.md 51→27 lines), skill index signposted in routing.md §3. Commit `95ceafb`. Addresses 6 of 12 audit findings; remaining 6 deferred to batch 2 on same branch. [CHANGELOG](../../CHANGELOG.md#111---2026-04-17)
 - **v1.1.0** (2026-04-16): Token optimization & governance hardening. SKILL.md heading-scope (#57), phase output compression (#54), expert review quick-wins (#56), deploy fixes (#52, #53, #55). [CHANGELOG](../../CHANGELOG.md#110---2026-04-16)
