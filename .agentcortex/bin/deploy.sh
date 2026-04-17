@@ -77,7 +77,8 @@ get_tier() {
         # wrapper — user may customize these delegation scripts
         installers/deploy_brain.sh|installers/deploy_brain.ps1|installers/deploy_brain.cmd) echo "wrapper" ;;
 
-        # scaffold — created once, user expected to modify
+        # scaffold — created once, user expected to modify (or merge framework + project content)
+        AGENTS.md|CLAUDE.md) echo "scaffold" ;;
         .gitattributes) echo "scaffold" ;;
         .agentcortex/context/current_state.md) echo "scaffold" ;;
         .agentcortex/adr/*) echo "scaffold" ;;
@@ -178,9 +179,24 @@ deploy_file() {
             fi
         fi
     elif [ -f "$dst" ] && ! $is_update; then
-        # Fresh install but file already exists (pre-manifest era)
-        cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-        [ -n "$do_chmod" ] && chmod +x "$dst"
+        # Fresh install but file already exists (pre-manifest era, or first deploy into existing project).
+        # For scaffold/wrapper tiers, preserve the user's file and write a sidecar so nothing is clobbered.
+        if [ "$tier" != "core" ]; then
+            local dst_hash
+            dst_hash="$(compute_sha256 "$dst")"
+            if [ "$src_hash" != "$dst_hash" ]; then
+                cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst.acx-incoming"
+                echo "  [SKIP] $rel (pre-existing; new version at $rel.acx-incoming — merge manually or ask AI agent to merge)"
+                COUNT_SKIPPED=$((COUNT_SKIPPED + 1))
+                # Record the USER's current hash so future updates still detect modification.
+                record_deployed "$tier" "$rel" "$dst_hash"
+                return 0
+            fi
+            # Same content — safe to let it be (no cp needed since identical)
+        else
+            cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
+            [ -n "$do_chmod" ] && chmod +x "$dst"
+        fi
     else
         # File doesn't exist in target — always deploy
         cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
@@ -829,13 +845,16 @@ echo "Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
 echo ""
 if $IS_UPDATE; then
     echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
-    if [ "$COUNT_SKIPPED" -gt 0 ]; then
-        echo ""
-        echo "Skipped files have .acx-incoming sidecars with the new version."
-        echo "Review and merge manually, then re-run deploy to update the manifest."
-    fi
 else
     echo "Installed ${TOTAL_DEPLOYED} files."
+fi
+if [ "$COUNT_SKIPPED" -gt 0 ]; then
+    echo ""
+    echo "⚠ Skipped files detected — your existing files were preserved."
+    echo "  New versions are saved as *.acx-incoming sidecars."
+    echo ""
+    echo "  → Manual merge:  diff each pair, keep your content + adopt framework updates, then re-run deploy."
+    echo "  → AI-assisted:   ask your AI agent — \"merge each *.acx-incoming into its target, preserving project-specific content and adopting framework updates, then delete the sidecars\""
 fi
 echo ""
 echo "Platform Entry Points Ready:"
