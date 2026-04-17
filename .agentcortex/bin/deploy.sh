@@ -861,3 +861,16 @@ echo "      # Also add if present: .claude/ .github/"
 echo "   3. Tell AI: 'Please run /bootstrap' to start"
 echo "   4. Agentic OS reference docs are under .agentcortex/docs/"
 echo ""
+
+# Python availability advisory — affects guarded SSoT writes during /ship.
+# Framework runs without Python, but guard_context_write.py (optimistic locking
+# on current_state.md) is Python-only. Absent Python, the AI falls back to
+# direct writes per AGENTS.md §vNext State Model, which is single-session safe
+# but loses multi-session concurrency protection.
+if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
+    echo "Note: Python not detected on PATH."
+    echo "   Framework works without Python, but SSoT guarded writes fall back"
+    echo "   to direct writes (advisory locking disabled). For multi-session"
+    echo "   safety, install Python 3.8+ before using /ship across sessions."
+    echo ""
+fi

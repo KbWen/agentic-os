@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.2] - 2026-04-17
+
+### Polish Batch 2: Governance Depth
+
+**Installer UX (completes 1.1):**
+- `deploy.sh` prints a Python-availability advisory at end-of-run — framework works without Python, but guarded SSoT writes fall back to direct writes (advisory locking disabled) when Python is missing, so multi-session users should install Python 3.8+
+
+**Token Efficiency (completes 3.2 + 3.3):**
+- `engineering_guardrails.md §Reading Mode` adds Loaded-Sections Receipt rule — `/bootstrap` echoes loaded §s to Work Log `## Session Info` so later phases can cite without re-reading
+- `bootstrap.md` adds Reading Mode Table at top — at-a-glance per-classification index of which §s to read vs skip (saves re-scanning the 374-line file)
+- `bootstrap.md §0` replaces inline prose with decision table (first-match-wins) — less cognitive load per classification
+
+**Governance Depth (completes 2.3 + 4.3):**
+- `engineering_guardrails.md §4.1` harmonizes "silent above 90%" with structured receipts — narrative-silent but plan/implement/ship compact blocks always include `Confidence:` field
+- `implement.md` Pre-Execution Check adds per-step Confidence re-assessment — step-level auditability, not just plan-level
+- `AGENTS.md §Read-Once Discipline` requires Drift Log receipt on Safety-Valve re-reads — creates auditable trail for the honor-system rule
+
 ## [1.1.1] - 2026-04-17
 
 ### Polish: Audit Findings
