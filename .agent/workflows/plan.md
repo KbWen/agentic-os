@@ -168,9 +168,10 @@ This block persists across sessions. On resume, /bootstrap reads it immediately.
 
 ## Phase Summary Update
 
-After plan is approved, append one line to `## Phase Summary` in the Work Log:
+After plan is approved, append one line to `## Phase Summary` in the Work Log. **MUST include the `Confidence:` value** so `/ship`'s Confidence Trace Audit can read it from a persistent location (the chat-only compact block is ephemeral across sessions):
+
 ```
-- plan: [1-line summary — key decisions, target files count, mode Normal/Fast Lane]
+- plan: [1-line summary — key decisions, target files count, mode Normal/Fast Lane] | Confidence: <N>% — <high | 1-line rationale>
 ```
 
 ## State Transition

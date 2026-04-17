@@ -247,7 +247,6 @@ $requiredFiles = @(
     (Join-NormalPath $workflowsDir 'decide.md'),
     (Join-NormalPath $workflowsDir 'test-classify.md'),
     (Join-NormalPath $workflowsDir 'spec-intake.md'),
-    (Join-NormalPath $workflowsDir 'claude-cli.md'),
     (Join-NormalPath $workflowsDir 'adr.md'),
     (Join-NormalPath $workflowsDir 'audit.md'),
     (Join-NormalPath $workflowsDir 'brainstorm.md'),
@@ -308,7 +307,8 @@ $isSourceRepo = (Test-Path -Path $canonicalDeploySh -PathType Leaf) -and
 
 $optionalModuleFiles = @(
     (Join-NormalPath $workflowsDir 'ask-openrouter.md'),
-    (Join-NormalPath $workflowsDir 'codex-cli.md')
+    (Join-NormalPath $workflowsDir 'codex-cli.md'),
+    (Join-NormalPath $workflowsDir 'claude-cli.md')
 )
 
 if ($isSourceRepo) {

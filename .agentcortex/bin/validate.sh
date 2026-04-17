@@ -206,7 +206,6 @@ required_files=(
   "$WORKFLOWS_DIR/decide.md"
   "$WORKFLOWS_DIR/test-classify.md"
   "$WORKFLOWS_DIR/spec-intake.md"
-  "$WORKFLOWS_DIR/claude-cli.md"
   "$WORKFLOWS_DIR/adr.md"
   "$WORKFLOWS_DIR/audit.md"
   "$WORKFLOWS_DIR/brainstorm.md"
@@ -269,7 +268,8 @@ check_file_group "required framework files present" "${required_files[@]}"
 
 check_optional_file_group "optional module workflow files present" \
   "$WORKFLOWS_DIR/ask-openrouter.md" \
-  "$WORKFLOWS_DIR/codex-cli.md"
+  "$WORKFLOWS_DIR/codex-cli.md" \
+  "$WORKFLOWS_DIR/claude-cli.md"
 
 if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
   record_result SKIP "claude adapter files -- source repo (created by deploy in downstream)"

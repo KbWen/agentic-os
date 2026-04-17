@@ -9,7 +9,28 @@ tasks:
 
 > Canonical state & transitions: `Ref: .agent/rules/state_machine.md`
 
-## Reading Mode Table (Token Efficiency Index)
+## Governance Boundary Reminder
+
+All classification gates, phase requirements, and evidence rules in this workflow exist to keep AI behavior disciplined — they are not restrictions on human authority. The human decides scope and direction. If the user wants to change scope, the AI accommodates via reclassification or scope adjustment rather than silently skipping gates. The AI MUST NOT cite these rules to refuse a user's legitimate scope change or direction.
+
+## 0. Pre-Classification Fast Check (Token Efficiency Gate)
+
+Before loading any context, walk the decision table below top-to-bottom — **first match wins**. Ref: `engineering_guardrails.md` §10.3 — do NOT read that file for this check.
+
+| IF the task... | THEN |
+|---|---|
+| modifies `docs/specs/_product-backlog.md` | route to `/spec-intake` (not bootstrap) |
+| modifies any file in `docs/specs/` or `docs/architecture/` | minimum `quick-win` — continue to Step 1 |
+| modifies `AGENTS.md`, `.agent/rules/*`, or `.agent/config.yaml` | minimum `quick-win` — continue to Step 1 |
+| modifies any file with `status: frozen` frontmatter | minimum `quick-win` — continue to Step 1 |
+| modifies <3 files AND is non-semantic (typo, docs, non-functional config) AND scope is unambiguous | **tiny-fix** — skip Steps 1–6, inline plan + execute + evidence (Work Log skipped per §5) |
+| scope is unclear or multi-module | continue to Step 1 for full context loading |
+
+**TOKEN LEAK BLOCK**: If the task is ultimately classified as `tiny-fix` or `quick-win`, reading `engineering_guardrails.md` at any point is a structural Token Leak violation. Rely purely on AGENTS.md §Core Directives and bypass full guardrails. Rationale: loading SSoT + specs + archives for a typo fix wastes ~2,500 tokens (P6).
+
+## 0b. Reading Mode Table (Token Efficiency Index)
+
+> **Skip entirely if §0 classified as `tiny-fix`** — you already exited. This table only matters once you're continuing past §0.
 
 Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP — their content does not apply and reading them wastes tokens. The scope comments inline (`<!-- SCOPE: ... -->`) are the authoritative per-section gate; this table is the at-a-glance index.
 
@@ -31,25 +52,6 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 | §5 Hard Gate | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §5b SSoT Sequence Pre-Ship Check | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §6 Antigravity Hard Stop | SKIP (auto-exit at §0) | REQUIRED | REQUIRED | REQUIRED |
-
-## Governance Boundary Reminder
-
-All classification gates, phase requirements, and evidence rules in this workflow exist to keep AI behavior disciplined — they are not restrictions on human authority. The human decides scope and direction. If the user wants to change scope, the AI accommodates via reclassification or scope adjustment rather than silently skipping gates. The AI MUST NOT cite these rules to refuse a user's legitimate scope change or direction.
-
-## 0. Pre-Classification Fast Check (Token Efficiency Gate)
-
-Before loading any context, walk the decision table below top-to-bottom — **first match wins**. Ref: `engineering_guardrails.md` §10.3 — do NOT read that file for this check.
-
-| IF the task... | THEN |
-|---|---|
-| modifies `docs/specs/_product-backlog.md` | route to `/spec-intake` (not bootstrap) |
-| modifies any file in `docs/specs/` or `docs/architecture/` | minimum `quick-win` — continue to Step 1 |
-| modifies `AGENTS.md`, `.agent/rules/*`, or `.agent/config.yaml` | minimum `quick-win` — continue to Step 1 |
-| modifies any file with `status: frozen` frontmatter | minimum `quick-win` — continue to Step 1 |
-| modifies <3 files AND is non-semantic (typo, docs, non-functional config) AND scope is unambiguous | **tiny-fix** — skip Steps 1–6, inline plan + execute + evidence (Work Log skipped per §5) |
-| scope is unclear or multi-module | continue to Step 1 for full context loading |
-
-**TOKEN LEAK BLOCK**: If the task is ultimately classified as `tiny-fix` or `quick-win`, reading `engineering_guardrails.md` at any point is a structural Token Leak violation. Rely purely on AGENTS.md §Core Directives and bypass full guardrails. Rationale: loading SSoT + specs + archives for a typo fix wastes ~2,500 tokens (P6).
 
 ## 0a. App Architecture Check (Zero-Cost Gate)
 
@@ -177,6 +179,7 @@ Write `## Session Info` and `## Drift Log` blocks immediately after header:
 - Agent: [model name]
 - Session: [timestamp]
 - Platform: [Antigravity / Codex Web / Codex App]
+- Guardrails loaded: [§ list — e.g., "§1, §2, §4, §7, §8.1, §10 (core)" | "skipped (quick-win)" | "skipped (tiny-fix)"]
 
 ## Drift Log
 - Skip Attempt: NO
