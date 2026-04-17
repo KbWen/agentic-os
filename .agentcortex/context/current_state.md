@@ -11,9 +11,9 @@
   - Task Isolation: `.agentcortex/context/work/<worklog-key>.md`
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
-- **Last Updated**: 2026-04-16
-- **Last Verified**: 2026-04-16
-- **Update Sequence**: 2
+- **Last Updated**: 2026-04-17
+- **Last Verified**: 2026-04-17
+- **Update Sequence**: 3
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
@@ -54,4 +54,5 @@
 
 ## Ship History
 
+- **v1.1.1-batch1** (2026-04-17): Polish pass — installer UX (Git-bash detection, clone progress), governance wiring (Confidence Gate receipt in /plan + /ship, No-Bypass scope clarified in AGENTS.md), token discipline (CLAUDE.md 51→27 lines), skill index signposted in routing.md §3. Commit `95ceafb`. Addresses 6 of 12 audit findings; remaining 6 deferred to batch 2 on same branch. [CHANGELOG](../../CHANGELOG.md#111---2026-04-17)
 - **v1.1.0** (2026-04-16): Token optimization & governance hardening. SKILL.md heading-scope (#57), phase output compression (#54), expert review quick-wins (#56), deploy fixes (#52, #53, #55). [CHANGELOG](../../CHANGELOG.md#110---2026-04-16)
