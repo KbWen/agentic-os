@@ -12,16 +12,32 @@ import sys
 
 
 EXPECTED_COMMANDS = [
+    # Core workflow commands (AGENTS.md §1)
     "spec-intake",
+    "spec",
     "bootstrap",
     "plan",
     "implement",
     "review",
     "test",
+    "test-classify",
+    "test-skeleton",
     "handoff",
     "ship",
+    "hotfix",
+    "adr",
+    "retro",
+    "research",
+    "brainstorm",
+    "audit",
     "decide",
-    "test-classify",
+    "sync-docs",
+    "govern-docs",
+    "worktree-first",
+    "help",
+    # Optional modules
+    "ask-openrouter",
+    "codex-cli",
     "claude-cli",
 ]
 
