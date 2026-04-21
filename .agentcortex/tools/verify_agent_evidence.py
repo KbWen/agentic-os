@@ -299,12 +299,18 @@ def phase_order_status(classification: str, phases: list[str]) -> tuple[bool, bo
     return True, all(phase in seen for phase in required)
 
 
+_PASS_PATTERN = re.compile(r"\b(?:pass(?:ed)?|success|ok)\b", re.IGNORECASE)
+_FAIL_PATTERN = re.compile(r"\b(?:fail(?:ed)?|error)\b", re.IGNORECASE)
+
+
 def classify_result_marker(result: str) -> bool | None:
-    lowered = result.strip().lower()
-    if any(token in lowered for token in {"pass", "passed", "success", "ok"}):
-        return True
-    if any(token in lowered for token in {"fail", "failed", "error"}):
+    text = result.strip()
+    has_fail = bool(_FAIL_PATTERN.search(text))
+    has_pass = bool(_PASS_PATTERN.search(text))
+    if has_fail:
         return False
+    if has_pass:
+        return True
     return None
 
 
