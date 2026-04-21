@@ -146,13 +146,8 @@ class SkillNotesContractTests(unittest.TestCase):
             agents_text,
             "AGENTS.md Shared Phase Contracts: must reference config.yaml skill_cache_policy",
         )
-        # CLAUDE.md still references config.yaml in its startup loading instructions
-        claude_text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
-        self.assertIn(
-            "config.yaml",
-            claude_text,
-            "CLAUDE.md: should reference skill_cache_policy from config.yaml",
-        )
+        # CLAUDE.md is intentionally simplified to @import AGENTS.md (commit 95ceafb); it must
+        # NOT duplicate the skill_cache_policy reference that already lives in AGENTS.md above.
         # Phase workflow files reference AGENTS.md instead of repeating the skill-loading prose
         phase_workflows = [
             ROOT / ".agent/workflows/plan.md",

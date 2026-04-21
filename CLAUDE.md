@@ -15,7 +15,7 @@
 4. Read `.agent/rules/engineering_guardrails.md`. *(Skip for tiny-fix and quick-win.)*
 5. If `.agentcortex/context/work/<worklog-key>.md` exists, read to resume. *(Skip for tiny-fix.)*
 
-Token budget rationale: conditional loading saves ~5,000 tokens for tiny-fix, ~3,500 for quick-win. Full mechanics: `AGENTS.md §vNext State Model`.
+Token budget rationale: conditional loading saves ~5,000 tokens for tiny-fix, ~3,500 tokens for quick-win. Full mechanics: `AGENTS.md §vNext State Model`.
 
 ## Slash Commands
 

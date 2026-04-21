@@ -284,7 +284,7 @@ Everything below — Classification justification, Recommended Skills rule table
 
 ### 3.6 Recommended Skills Rule Table
 
-Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage. Repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals.
+Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. The embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage.
 
    **Mandatory Skills (always activate when condition met):**
 
