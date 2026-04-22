@@ -20,6 +20,13 @@ Accept spec from the user in ANY of these forms — do NOT ask the user to refor
 
 If the spec source is a file path, READ it immediately. Do NOT ask the user to paste it again.
 
+### Pre-flight: Research Artifacts
+
+Before processing any input, glob `docs/specs/_research-*.md`:
+- If files exist: list them to the user and ask: `"Found research files: <list>. Load which as background context for this intake? (all / specific / none)"`. Do NOT auto-prepend — stale files from abandoned sessions cause cross-contamination.
+- On the user's selection: read the chosen files and use their content as background context. Do NOT ask the user to re-explain findings already captured there.
+- **After** the Feature Inventory is written to `_product-backlog.md` (or a single feature spec is generated), delete each **consumed** `_research-*.md` file (only the ones the user selected). Files the user rejected as irrelevant should also be flagged: `"Delete stale research file <name>? (yes/no)"` — delete on confirmation. These files are transient by design.
+
 ---
 
 ## 1a. Context Budget: Persist Before Processing

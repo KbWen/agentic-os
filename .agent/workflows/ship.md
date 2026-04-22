@@ -77,6 +77,22 @@ Scan Work Log `## Phase Summary` and the plan's compact block for a `Confidence:
 - [ ] Domain Doc updated or skip justified (feature / architecture-change only — see §Knowledge Consolidation below)
 - [ ] Observability Readiness verified (feature / architecture-change only — see §Observability Readiness below)
 
+## Quick-win / Hotfix Knowledge Nudge (advisory)
+
+**Scope**: `quick-win` and `hotfix` only. Skipped for `tiny-fix`, `feature`, `architecture-change`.
+
+**Domain inference**: Derive `<affected module>` and `<domain>` from (in order): (a) Work Log Task Description keywords, (b) top-level path of changed files in the diff (e.g., `src/auth/*` → domain `auth`). If neither yields a clear answer, ask the user: `"Which domain does this fix belong to? (list existing docs/architecture/*.log.md names, or 'new:<name>')"`. Do NOT guess silently.
+
+After evidence is recorded, output this prompt once per ship (not re-prompted on retry):
+
+> "Did this fix change how `<affected module>` works in a non-obvious way? If yes, consider appending one line to `docs/architecture/<domain>.log.md` — no spec required, just a timestamped note."
+
+If the user confirms yes:
+- If `docs/architecture/<domain>.log.md` exists: append a minimal L2 entry (date, branch, one-line decision/constraint).
+- If it does not exist: offer `"No domain doc for '<domain>' yet. Create docs/architecture/<domain>.log.md now? (yes/no)"` — create only on confirmation.
+
+If the user says no: skip silently. This is never a gate — it only surfaces the option.
+
 ## Observability Readiness Check (feature / architecture-change only)
 
 **Scope**: This check applies ONLY to `feature` and `architecture-change` classifications. `tiny-fix`, `quick-win`, and `hotfix` are exempt.
