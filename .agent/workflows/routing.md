@@ -186,3 +186,10 @@ All commands are dispatched per `AGENTS.md §Agentic OS Runtime v5` and execute 
 | `/ask-openrouter` | `.agent/workflows/ask-openrouter.md` | **optional**: OpenRouter model |
 | `/codex-cli` | `.agent/workflows/codex-cli.md` | **optional**: Codex CLI delegation |
 | `/claude-cli` | `.agent/workflows/claude-cli.md` | **optional**: Claude CLI delegation |
+| `/execute-plan` | `.agent/workflows/execute-plan.md` | **alias** → `/implement` |
+| `/write-plan` | `.agent/workflows/write-plan.md` | **alias** → `/plan` |
+| `/superpowers-playbook` | `.agent/workflows/superpowers-playbook.md` | meta-playbook, all classifications |
+| `/new-feature` | `.agent/workflows/new-feature.md` | **deprecated**: use `feature` + `/bootstrap` |
+| `/medium-feature` | `.agent/workflows/medium-feature.md` | **deprecated**: use `feature`/`architecture-change` + `/bootstrap` |
+| `/small-fix` | `.agent/workflows/small-fix.md` | **deprecated**: use `quick-win` + `/bootstrap` |
+| `/other-custom` | `.agent/workflows/other-custom.md` | **deprecated**: custom/experimental flow |
