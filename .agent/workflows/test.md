@@ -97,7 +97,7 @@ Skip adversarial testing entirely for `tiny-fix` and `quick-win` classifications
 
 IF `verification-before-completion` is active, before claiming tests are done:
 Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)).
-Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste full test output (pass/fail counts, command used); Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
+Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste truncated test output (pass/fail counts, command used) per AGENTS.md Gate 3; Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
 
 ## Step 5: Persist Evidence (Hard Gate)
 
@@ -123,8 +123,8 @@ Unresolved: <1-line or "none">
 ```
 
 - Do not reprint the full test skeleton or the AC list — they are in the Work Log.
-- Do not paste the full pytest/junit output in chat. Summarize counts; persist the full output in the Work Log.
-- If a test fails, 1 line per failure: `<test_id>: <1-line cause>`. Full traceback goes to Work Log.
+- Do not paste the full pytest/junit output in chat. Summarize counts; persist the truncated output (per AGENTS.md Gate 3) in the Work Log.
+- If a test fails, 1 line per failure: `<test_id>: <1-line cause>`. Truncated traceback (most diagnostic 10 lines) goes to Work Log.
 - If the user asks for the full log or traceback, expand. Default is terse.
 
 ## Phase Summary Update
