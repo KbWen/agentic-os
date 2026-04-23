@@ -137,7 +137,7 @@ When `verification-before-completion` is active and completion is claimed for an
 
 1. **Scope**: Confirm changes cover ONLY agreed scope — diff actual files vs. planned target files.
 2. **Quality**: Execute required tests/static checks — ALL must pass. No "known failures".
-3. **Evidence**: Compile reproducible evidence (specific commands, outputs, versions). "It should work" is NOT evidence. **Follow Evidence Truncation Rule (engineering_guardrails.md §5.2b)**: Max 3 lines for success, max 10 lines for failure.
+3. **Evidence**: Compile reproducible evidence (specific commands, outputs, versions). "It should work" is NOT evidence. **Follow Evidence Truncation Rule (engineering_guardrails.md §5.2b)**: Max 3 lines for success, max 10 lines for failure. **Crucial:** For failures, extract the 10 *most diagnostic* lines (e.g., the actual Error/Exception and root stack trace at the bottom), NOT just the first 10 lines.
 4. **Risk**: Confirm rollback strategy exists. List known risks.
 5. **Communication**: Output completion summary (what changed, what was validated, what constraints remain).
 
