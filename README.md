@@ -376,6 +376,7 @@ Agentic OS is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PH
 | [Testing Protocol](.agentcortex/docs/TESTING_PROTOCOL.md) | Testing standards |
 | [Project Examples](.agentcortex/docs/PROJECT_EXAMPLES.md) | Node.js & Python examples |
 | [Token Governance](.agentcortex/docs/guides/token-governance.md) | Token optimization strategies |
+| [Token Optimization Quickstart](docs/guides/token-optimization-quickstart.md) | Reduce token costs immediately ([繁體中文](docs/guides/token-optimization-quickstart_zh-TW.md)) |
 | [Context Budget](.agentcortex/docs/guides/context-budget.md) | Context window management |
 | [Migration Guide](.agentcortex/docs/guides/migration.md) | Upgrade to v1.1+ |
 | [Codex Platform Guide](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) | Codex Web/App adaptation |
