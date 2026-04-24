@@ -14,7 +14,8 @@
 - **Last Updated**: 2026-04-17
 - **Last Verified**: 2026-04-17
 - **Update Sequence**: 5
-- **ADR Index**: (none yet)
+- **ADR Index**:
+  - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
 - **Active Backlog**: (none yet)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
   - (none yet — use `/spec-intake` or `/spec` to create new specs)
