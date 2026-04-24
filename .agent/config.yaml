@@ -94,3 +94,16 @@ document_lifecycle:
   # _raw-intake*.md files: MUST be deleted (not archived) by /ship when
   # all features from the intake are Shipped or Cancelled.
   raw_intake_cleanup: must_delete
+
+# Governance Exemption Scope
+# Directories considered production code where Design-First and Error Observability rules apply.
+# All other directories (e.g., tools/, scripts/, scratch/, tests/) are exempt.
+# IMPORTANT: Downstream projects MUST override this list to match their tech stack
+# (e.g., adding `cmd/`, `pkg/` for Go, or `pages/` for Next.js).
+# Note: Currently uses prefix matching. Be aware that `src/scripts/` will be treated
+# as production unless future logic supports exclude arrays.
+production_paths:
+  - src/
+  - app/
+  - lib/
+  - packages/
