@@ -730,7 +730,7 @@ else {
 if ($isSourceRepo) {
     $readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
     if (Test-Path -Path $readmeZhTw -PathType Leaf) {
-        Test-ContainsRegex -Path $readmeZhTw -Pattern '\u6D41\u7A0B\u9A45\u52D5.*AI Agent' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+        Test-ContainsLiteral -Path $readmeZhTw -Pattern '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
     }
     $readmeEn = Join-NormalPath $root 'README.md'
     if (Test-Path -Path $readmeEn -PathType Leaf) {
@@ -746,7 +746,7 @@ if ($isSourceRepo) {
 
 $testingProtocolZhTw = Join-NormalPath $root '.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md'
 if (Test-Path -Path $testingProtocolZhTw -PathType Leaf) {
-    Test-ContainsRegex -Path $testingProtocolZhTw -Pattern '\u6E2C\u8A66\u6559\u6230\u5B88\u5247' -SuccessMessage 'TESTING_PROTOCOL_zh-TW.md encoding looks healthy' -FailureMessage 'TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded'
+    Test-ContainsLiteral -Path $testingProtocolZhTw -Pattern '測試教戰守則' -SuccessMessage 'TESTING_PROTOCOL_zh-TW.md encoding looks healthy' -FailureMessage 'TESTING_PROTOCOL_zh-TW.md appears mojibaked or re-encoded'
 }
 
 $auditGuardrailsEn = Join-NormalPath $root '.agentcortex/docs/guides/audit-guardrails.md'
@@ -762,7 +762,7 @@ if (Test-Path -Path $auditGuardrailsEn -PathType Leaf) {
 
 $auditGuardrailsZhTw = Join-NormalPath $root '.agentcortex/docs/guides/audit-guardrails_zh-TW.md'
 if (Test-Path -Path $auditGuardrailsZhTw -PathType Leaf) {
-    Test-ContainsRegex -Path $auditGuardrailsZhTw -Pattern '\u81EA\u52D5\u5316.*Shell Script' -SuccessMessage 'audit-guardrails_zh-TW.md encoding looks healthy' -FailureMessage 'audit-guardrails_zh-TW.md appears mojibaked or re-encoded'
+    Test-ContainsLiteral -Path $auditGuardrailsZhTw -Pattern '為什麼不寫成自動化 Shell Script？' -SuccessMessage 'audit-guardrails_zh-TW.md encoding looks healthy' -FailureMessage 'audit-guardrails_zh-TW.md appears mojibaked or re-encoded'
 }
 
 $worklogMaxLines = if ($env:WORKLOG_MAX_LINES) { [int]$env:WORKLOG_MAX_LINES } else { 300 }
