@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(bash .agentcortex/bin/validate.sh)",
+      "Bash(xargs -I{} basename {} .md)",
+      "Bash(grep -v \"^\\\\* main$\")"
+    ]
+  }
+}

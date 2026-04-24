@@ -117,6 +117,8 @@ Before executing any implementation step, AI MUST internally assess and state:
 
 **Scope**: Any task that modifies user-visible interface elements (screens, components, layouts, styling, animations, navigation flows). Backend-only, CLI, and infrastructure changes are EXEMPT.
 
+**Scope Exemption (Directory-Based)**: This rule applies **only** to production code directories (e.g., `src/`, `app/`, `lib/`, `packages/`). Files in `tools/`, `scripts/`, `scratch/`, `tests/`, `__tests__/`, `*.test.*`, `*.spec.*`, and `.agentcortex/` are **automatically exempt**.
+
 **Design Source of Truth (DSoT)**: The canonical visual specification for UI work. Default tool: **Stitch**. Alternative tools (Figma, Pencil, etc.) are equally valid — the requirement is a linkable, inspectable, exportable design artifact.
 
 **Pipeline**:
@@ -170,7 +172,15 @@ Error logging MUST use a **production-observable sink** — a logger that surviv
 
 **Gate check**: Review MUST verify each `catch` block uses the project's production logger. If the project has no production logging strategy defined, flag at `/review`: *"No production-observable error sink identified — resolve before ship."*
 
-**Scope**: This rule applies to application/service code. Test-only code and CLI dev tools are exempt.
+**Scope**: This rule applies to application/service code (e.g., `src/`, `app/`, `lib/`, `packages/`). **Files in `tools/`, `scripts/`, `scratch/`, and test directories are automatically exempt.**
+
+### 5.2b Evidence Truncation Rule
+
+To prevent Work Log bloat and premature context compaction, agents MUST NOT paste raw terminal output verbatim into Work Logs.
+
+- **Test pass**: Paste only the final summary line (max 3 lines).
+- **Test fail**: Paste only the failing test name, assertion error, and relevant source line (max 10 lines per failure). Strip all passing test output.
+- **Build/lint output**: Paste only error-level output. Strip warnings and informational messages unless they are the subject of the task.
 
 ### 5.3 Spec Drift Prevention & Test Quality
 

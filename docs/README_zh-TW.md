@@ -35,6 +35,7 @@
 - 專案導入範例：`.agentcortex/docs/PROJECT_EXAMPLES_zh-TW.md`
 - 遷移與整合指南：`.agentcortex/docs/guides/migration_zh-TW.md`
 - Token 治理指南：`.agentcortex/docs/guides/token-governance_zh-TW.md`
+- Token 優化快速指南：[token-optimization-quickstart_zh-TW.md](guides/token-optimization-quickstart_zh-TW.md)（[English](guides/token-optimization-quickstart.md)）
 - 生命週期基準測試：[LIFECYCLE_BENCHMARK_zh-TW.md](LIFECYCLE_BENCHMARK_zh-TW.md)
 
 ## 📦 目錄總覽

@@ -1,0 +1,8 @@
+{
+  "owner": "codex-2026-04-17T11:03:02.3070184+08:00",
+  "session": "2026-04-17T11:03:02.3070184+08:00",
+  "branch": "codex/fix-windows-light-install",
+  "phase": "test",
+  "updated_at": "2026-04-17T11:07:26.5604450+08:00",
+  "stale_timeout_minutes": 60
+}
