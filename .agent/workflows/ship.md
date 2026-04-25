@@ -201,12 +201,17 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
    - If Ship History exceeds 10 entries, archive older entries to `.agentcortex/context/archive/ship-history-YYYY.md` and keep only the latest 10 in `current_state.md`.
 3. Archive `.agentcortex/context/work/<worklog-key>.md` to `.agentcortex/context/archive/` (if task complete).
     - Do NOT duplicate `/retro`-promoted Global Lessons during ship. `/retro` owns structured Global Lesson promotion.
-    - **Archive Index Update**: After archiving, append a structured record to `.agentcortex/context/archive/INDEX.jsonl` (one JSON object per line) via `.agentcortex/tools/guard_context_write.py`:
-      ```json
-      {"log": "<archived-filename>", "branch": "<branch>", "classification": "<tier>", "modules": ["<file-or-module>"], "specs": ["<spec-ref>"], "patterns": ["<tag>"], "decisions": ["<1-line>"], "shipped": "<YYYY-MM-DD>"}
+    - **Archive Index Update**: After archiving, append a structured record to `.agentcortex/context/archive/INDEX.jsonl`. Per ADR-003 (`docs/adr/ADR-003-hash-chained-audit-log.md`), every append MUST add `prev_sha` (computed by the helper) so the chain stays intact. Use:
+      ```bash
+      python .agentcortex/tools/append_chain_entry.py append \
+        --path .agentcortex/context/archive/INDEX.jsonl \
+        --entry '{"log": "<archived-filename>", "branch": "<branch>", "classification": "<tier>", "modules": ["<file-or-module>"], "specs": ["<spec-ref>"], "patterns": ["<tag>"], "decisions": ["<1-line>"], "shipped": "<YYYY-MM-DD>"}'
       ```
-      - If `INDEX.jsonl` does not exist, create it. If a legacy `INDEX.md` exists, keep it as a compatibility mirror but prefer `INDEX.jsonl` for new entries.
-      - Fallback: If `.agentcortex/tools/guard_context_write.py` is unavailable, write the JSONL line directly.
+      - The helper reads the previous entry, computes its sha256[:8], and prepends `prev_sha` to the new entry. The first (genesis) entry uses `prev_sha: "GENESIS"`.
+      - **Do NOT** include `prev_sha` in the `--entry` JSON yourself; the helper rejects entries that already contain it.
+      - **Do NOT** call `guard_context_write.py append` for `INDEX.jsonl` — that path lacks chain awareness and will silently break the chain on next `validate.sh` (caught by `check_audit_chain.py`). The helper is the only correct path.
+      - If `INDEX.jsonl` does not exist, the helper creates it. If a legacy `INDEX.md` exists, keep it as a compatibility mirror but prefer `INDEX.jsonl` for new entries.
+      - **Python-unavailable fallback**: If `python` is unavailable, write the JSONL line directly with `prev_sha: "GENESIS"` (treat as standalone entry; chain integrity becomes best-effort). Record the fallback in Work Log Drift Log.
 4. **Product Backlog Update**: If `docs/specs/_product-backlog.md` exists and this feature is listed:
    - Update feature status: `In Progress` → `Shipped`
    - Update `last_updated` in frontmatter
