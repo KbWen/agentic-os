@@ -24,11 +24,9 @@ skill_cache_policy:
   require_constraint: true
   #   4. The note body (after stripping labels/whitespace) meets this minimum
   min_body_chars: 50
-  # When trigger-compact-index.json exists AND the skill block carries
-  # a Content Hash / cached_hash, compare hashes FIRST.
-  # If the compact index is absent or the hash field is absent,
-  # fall back to the structural validity checks above.
-  prefer_hash_when_available: true
+  # NOTE: prefer_hash_when_available was removed in 2026-04-25 cleanup.
+  # No validator computed cached_hash in practice; the structural check
+  # above (1-4) is the actual cache predicate. See AGENTS.md §Skill Safety #7.
 
 # Advisory Work Log locking — prevents accidental concurrent edits.
 # Contract: AGENTS.md §Multi-Person Collaboration.
