@@ -24,7 +24,8 @@ v1 找出 38 條 finding，但圓桌挑戰後發現：
 | ID | 嚴重 | 標題 | 證據 / Cite |
 |---|---|---|---|
 | **SEC-N1** | **CRITICAL** | Work Log 是 prompt-injection 載體（攻擊者在 `## Task Description` 塞 `ignore previous instructions`，下個 session bootstrap 讀入無消毒） | `AGENTS.md §vNext State Model` Init Read mandates Work Log read; 全框架無 AI-context trust boundary |
-| **AC-4 (revised)** | **CRITICAL** | `red-team-adversarial/SKILL.md` 在 Antigravity path **不存在**（只在 `.agents/skills/`），Beast Mode 在 Antigravity 從 day 1 silent no-op | 已 spot-verify：`ls .agent/skills/red-team-adversarial/` → empty；`AGENTS.md §Platform Paths` |
+| ~~**AC-4 (revised)**~~ | ~~CRITICAL~~ → **DROP** | ~~`red-team-adversarial/SKILL.md` 在 Antigravity path 不存在~~ → **誤判**。`.agent/skills/<name>` 是設計刻意的 metadata stub（21 行 frontmatter + Quick Reference + pointer），`.agents/skills/<name>/SKILL.md` 是 full body（177 行）。review.md 直接引用 `.agents/skills/...` path 兩平台皆可達。Beast Mode 正常運作。 | 二次驗證：`file .agent/skills/red-team-adversarial` → Unicode text；`head -25` 顯示 frontmatter `runtime_anchor` 指回 workflow + body 路徑 |
+| **DOC-N1** | **MEDIUM**（取代 AC-4）| `AGENTS.md §Platform Paths` 寫「Distinct paths for platform compatibility」誤導 — 沒解釋一邊 metadata stub、一邊 full body 的雙層架構。連 careful 的 Security expert 都被誤導 → 下次必有人再踩。 | `AGENTS.md` end of file（"Platform Paths" 段）|
 | **SEC-N2** | HIGH | Archive Work Logs 內常含 secrets（curl output, JWT, conn-str），secret scanner 不掃 `.md`（只掃 changed source files） | `security_guardrails.md §3` scope vs `review.md` Security Scan 範圍 |
 | **SEC-N3** | HIGH | `doc-lookup` skill 的 WebFetch = SSRF + indirect prompt-injection 載體（`Ref: http://169.254.169.254/...` 即可命中 cloud metadata） | `review.md:27`; `security_guardrails.md §1 A10` 只覆蓋 application code |
 | **NEW-1** | HIGH | Worklog `.lock.json` 是 **vibe-lock**（agent 用普通 file IO 寫，無 `O_EXCL`，TOCTOU 可雙寫覆蓋） | `bootstrap.md §2a` 對比 `guard_context_write.py:119`（已驗證真鎖只在 `guard_context_write.py`） |
@@ -61,10 +62,10 @@ v1 找出 38 條 finding，但圓桌挑戰後發現：
 - **D1：AI Context Trust Boundary**（解 SEC-N1, SEC-N3, SEC-N2 部分）
   - Work Log / spec / external doc / WebFetch 結果均視為 untrusted；bootstrap 讀入時做最小消毒（不執行 directive 性語言、URL 必須白名單）
   - 為 archive Work Log 增 secret scanner pre-archive hook
-- **D2：Lock 統一**（解 NEW-1/2/3 + AC-5/6 + AC-4）
+- **D2：Lock 統一**（解 NEW-1/2/3 + AC-5/6）
   - 把 `guard_context_write.py` 的 `O_EXCL` + atomic-replace 抽成 `guard_write_any(path)`，applies to 所有治理檔案（不再限制 `.agentcortex/context/`）
   - INDEX.jsonl 改 `O_APPEND` 或走 guard
-  - Antigravity / Codex 雙路徑 skill 統一（修 AC-4，補 `.agent/skills/` 的 symlink 或 copy）
+  - ~~Antigravity skill 路徑修補~~ → 移除（AC-4 誤判）。改加 DOC-N1：補 `AGENTS.md §Platform Paths` 說明 stub vs body 雙層架構
 - **D3：State Machine 反向 transition + AC-3 Rollback Hard Gate**（解 NR-5 + AC-3 + HF-1 + HF-3）
   - 補 `IMPLEMENTING → CLASSIFIED` transition 與其 code-handling 規則（stash / partial-revert）
   - architecture-change 的 rollback plan 升 hard gate
