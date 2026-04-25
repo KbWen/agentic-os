@@ -222,6 +222,8 @@ $guardedWritesLint = Join-NormalPath $root '.agentcortex/tools/lint_governed_wri
 $lifecycleFrontmatterCheck = Join-NormalPath $root '.agentcortex/tools/check_lifecycle_frontmatter.py'
 $auditChainCheck = Join-NormalPath $root '.agentcortex/tools/check_audit_chain.py'
 $archiveIndexJsonl = Join-NormalPath $root '.agentcortex/context/archive/INDEX.jsonl'
+$lessonChainCheck = Join-NormalPath $root '.agentcortex/tools/check_lesson_chain.py'
+$ssotCurrentState = Join-NormalPath $root '.agentcortex/context/current_state.md'
 $commandSyncCheck = Join-NormalPath $root '.agentcortex/tools/check_command_sync.py'
 $triggerRegistry = Join-NormalPath $root '.agentcortex/metadata/trigger-registry.yaml'
 $triggerCompactIndex = Join-NormalPath $root '.agentcortex/metadata/trigger-compact-index.json'
@@ -385,6 +387,13 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     Invoke-PythonCheck -Label 'audit chain integrity (INDEX.jsonl)' -MissingPythonLevel 'FAIL' -ScriptPath $auditChainCheck -Arguments @('--path', $archiveIndexJsonl, '--quiet')
 } else {
     Add-Result -Level 'SKIP' -Message 'audit chain integrity -- archive INDEX.jsonl not present'
+}
+
+# PR #85 — Global Lessons chain (mirror of validate.sh integration).
+if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
+    Invoke-PythonCheck -Label 'lesson chain integrity (Global Lessons)' -MissingPythonLevel 'FAIL' -ScriptPath $lessonChainCheck -Arguments @('--path', $ssotCurrentState, '--quiet')
+} else {
+    Add-Result -Level 'SKIP' -Message 'lesson chain integrity -- current_state.md not present'
 }
 
 $legacyAuditHelper = Join-NormalPath $root 'tools/audit_ai_paths.sh'
