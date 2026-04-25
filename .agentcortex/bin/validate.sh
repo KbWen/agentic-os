@@ -43,6 +43,8 @@ TRIGGER_COMPACT_INDEX_GENERATOR="$ROOT/.agentcortex/tools/generate_compact_index
 GUARD_CONTEXT_WRITE="$ROOT/.agentcortex/tools/guard_context_write.py"
 GUARDED_WRITES_LINT="$ROOT/.agentcortex/tools/lint_governed_writes.py"
 LIFECYCLE_FRONTMATTER_CHECK="$ROOT/.agentcortex/tools/check_lifecycle_frontmatter.py"
+AUDIT_CHAIN_CHECK="$ROOT/.agentcortex/tools/check_audit_chain.py"
+ARCHIVE_INDEX_JSONL="$ROOT/.agentcortex/context/archive/INDEX.jsonl"
 COMMAND_SYNC_CHECK="$ROOT/.agentcortex/tools/check_command_sync.py"
 TRIGGER_REGISTRY="$ROOT/.agentcortex/metadata/trigger-registry.yaml"
 TRIGGER_COMPACT_INDEX="$ROOT/.agentcortex/metadata/trigger-compact-index.json"
@@ -336,6 +338,17 @@ run_python_check "guarded-write lint (governance paths)" FAIL "$GUARDED_WRITES_L
 # {owner, review_cadence, review_trigger, supersedes, superseded_by}.
 # Files dated before 2026-04-25 are grandfathered (WARN); newer files FAIL.
 run_python_check "lifecycle frontmatter (governance docs)" FAIL "$LIFECYCLE_FRONTMATTER_CHECK" --root "$ROOT"
+
+# ADR-003 — verify the hash chain on the archive INDEX.jsonl. A broken chain
+# means an entry was retroactively rewritten without going through
+# .agentcortex/tools/append_chain_entry.py. Capability-by-presence: file
+# absent or empty → no-op (PASS). Lesson L4 (current_state.md §Global
+# Lessons): honor-system rules need external observers, this is one.
+if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
+  run_python_check "audit chain integrity (INDEX.jsonl)" FAIL "$AUDIT_CHAIN_CHECK" --path "$ARCHIVE_INDEX_JSONL" --quiet
+else
+  record_result SKIP "audit chain integrity -- archive INDEX.jsonl not present"
+fi
 
 if [[ -f "$ROOT/tools/audit_ai_paths.sh" ]]; then
   record_result FAIL "legacy audit helper should move under .agentcortex/tools/: $ROOT/tools/audit_ai_paths.sh"

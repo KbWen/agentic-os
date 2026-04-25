@@ -220,6 +220,8 @@ $triggerCompactIndexGenerator = Join-NormalPath $root '.agentcortex/tools/genera
 $guardContextWrite = Join-NormalPath $root '.agentcortex/tools/guard_context_write.py'
 $guardedWritesLint = Join-NormalPath $root '.agentcortex/tools/lint_governed_writes.py'
 $lifecycleFrontmatterCheck = Join-NormalPath $root '.agentcortex/tools/check_lifecycle_frontmatter.py'
+$auditChainCheck = Join-NormalPath $root '.agentcortex/tools/check_audit_chain.py'
+$archiveIndexJsonl = Join-NormalPath $root '.agentcortex/context/archive/INDEX.jsonl'
 $commandSyncCheck = Join-NormalPath $root '.agentcortex/tools/check_command_sync.py'
 $triggerRegistry = Join-NormalPath $root '.agentcortex/metadata/trigger-registry.yaml'
 $triggerCompactIndex = Join-NormalPath $root '.agentcortex/metadata/trigger-compact-index.json'
@@ -377,6 +379,13 @@ Invoke-PythonCheck -Label 'guarded-write lint (governance paths)' -MissingPython
 
 # ADR-002 D2.3 — lifecycle frontmatter check mirror of validate.sh integration.
 Invoke-PythonCheck -Label 'lifecycle frontmatter (governance docs)' -MissingPythonLevel 'FAIL' -ScriptPath $lifecycleFrontmatterCheck -Arguments @('--root', $root)
+
+# ADR-003 — verify the hash chain on the archive INDEX.jsonl.
+if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
+    Invoke-PythonCheck -Label 'audit chain integrity (INDEX.jsonl)' -MissingPythonLevel 'FAIL' -ScriptPath $auditChainCheck -Arguments @('--path', $archiveIndexJsonl, '--quiet')
+} else {
+    Add-Result -Level 'SKIP' -Message 'audit chain integrity -- archive INDEX.jsonl not present'
+}
 
 $legacyAuditHelper = Join-NormalPath $root 'tools/audit_ai_paths.sh'
 if (Test-Path -Path $legacyAuditHelper -PathType Leaf) {
