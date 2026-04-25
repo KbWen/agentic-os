@@ -34,6 +34,15 @@ from guard_context_write import load_guard_policy, match_protected_path  # noqa:
 SCANNED_EXTENSIONS = {".py", ".sh", ".bash", ".ps1", ".js", ".ts", ".mjs", ".cjs"}
 EXCLUDED_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", "dist", "build"}
 
+# Path patterns where dynamic-path WARNs are nearly always false positives
+# (test fixtures using tmp_path / Path concatenation). FAIL findings in these
+# paths are STILL reported — only the noisy `dynamic path — manual review` WARNs
+# get suppressed. This preserves accuracy: real production-code dynamic paths
+# stay visible; test-fixture noise stops drowning the signal. (Cleanup PR #81.)
+TEST_PATH_RE = re.compile(
+    r"(^|/)(tests?|__tests__)/|(^|/)test_[^/]+\.(py|js|ts|sh|ps1)$|(^|/)[^/]+_test\.(py|js|ts|sh|ps1)$"
+)
+
 # AC-12: comment markers that suppress findings on the matching or preceding line
 EXEMPTION_RE = re.compile(r"guard-exempt\s*:\s*(?P<reason>.+?)(?:\*/|-->|$)")
 
@@ -255,6 +264,12 @@ def scan_file(path: Path, rel_posix: str, protected_globs: list[str]) -> list[Fi
             if literal is None:
                 # Variable / dynamic path — WARN unless exempt
                 if exemption is not None:
+                    continue
+                # Cleanup PR #81: suppress dynamic-path WARNs in test fixtures
+                # (tests/, __tests__/, test_*.py, *_test.py). FAIL findings
+                # against governed paths are still reported below — only the
+                # noisy "dynamic path" WARN class is suppressed for test files.
+                if TEST_PATH_RE.search(rel_posix):
                     continue
                 findings.append(Finding(
                     severity="WARN",

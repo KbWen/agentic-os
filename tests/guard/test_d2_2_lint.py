@@ -38,7 +38,7 @@ class TestPythonOpenWrite(unittest.TestCase):
             findings = lint.scan_file(full, "AGENTS.md", [".agentcortex/context/**", "AGENTS.md"])
             # The rel_posix passed in matches the lint's exemption list
             # so use a non-self-exempt name
-            findings = lint.scan_file(full, "lint_test.py", [".agentcortex/context/**", "AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", [".agentcortex/context/**", "AGENTS.md"])
             self.assertEqual(len(findings), 1)
             self.assertEqual(findings[0].severity, "FAIL")
             self.assertIn("AGENTS.md", findings[0].detail)
@@ -47,21 +47,21 @@ class TestPythonOpenWrite(unittest.TestCase):
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.py"
             full.write_text("open('AGENTS.md', 'r').read()\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             self.assertEqual(len(findings), 0)
 
     def test_default_mode_ok(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.py"
             full.write_text("open('AGENTS.md').read()\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             self.assertEqual(len(findings), 0)
 
     def test_unprotected_path_ok(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.py"
             full.write_text("open('random.txt', 'w').write('x')\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             self.assertEqual(len(findings), 0)
 
 
@@ -72,7 +72,7 @@ class TestVariablePathWarn(unittest.TestCase):
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.py"
             full.write_text("p = '/etc/passwd'\nopen(p, 'w').write('x')\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             warns = [f for f in findings if f.severity == "WARN"]
             self.assertGreaterEqual(len(warns), 1)
 
@@ -87,7 +87,7 @@ class TestExemptionMarker(unittest.TestCase):
                 "open('AGENTS.md', 'w').write('x')  # guard-exempt: legitimate test fixture\n",
                 encoding="utf-8",
             )
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             fails = [f for f in findings if f.severity == "FAIL"]
             warns = [f for f in findings if f.severity == "WARN"]
             self.assertEqual(len(fails), 0)
@@ -102,7 +102,7 @@ class TestExemptionMarker(unittest.TestCase):
                 "# guard-exempt: schema-bootstrap\nopen('AGENTS.md', 'w').write('x')\n",
                 encoding="utf-8",
             )
-            findings = lint.scan_file(full, "lint_test.py", ["AGENTS.md"])
+            findings = lint.scan_file(full, "src/sample.py", ["AGENTS.md"])
             fails = [f for f in findings if f.severity == "FAIL"]
             self.assertEqual(len(fails), 0)
 
@@ -114,14 +114,14 @@ class TestShellPatterns(unittest.TestCase):
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.sh"
             full.write_text("echo hi > AGENTS.md\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.sh", ["AGENTS.md"])
+            findings = lint.scan_file(full, "scripts/sample.sh", ["AGENTS.md"])
             self.assertEqual(len([f for f in findings if f.severity == "FAIL"]), 1)
 
     def test_shell_tee_to_governed(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "sample.sh"
             full.write_text("echo hi | tee AGENTS.md\n", encoding="utf-8")
-            findings = lint.scan_file(full, "lint_test.sh", ["AGENTS.md"])
+            findings = lint.scan_file(full, "scripts/sample.sh", ["AGENTS.md"])
             self.assertEqual(len([f for f in findings if f.severity == "FAIL"]), 1)
 
 
