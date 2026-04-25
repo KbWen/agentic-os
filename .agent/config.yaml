@@ -107,3 +107,30 @@ production_paths:
   - app/
   - lib/
   - packages/
+
+# Guard policy — paths that MUST be written via guard_context_write.py.
+# Enforced at lint time by tools/lint_governed_writes.py (CI).
+# Spec: docs/specs/lock-unification.md AC-1
+# ADR:  docs/adr/ADR-002-guarded-governance-writes.md §D1
+guard_policy:
+  # Glob list (POSIX style); matched via fnmatch against repo-relative POSIX paths.
+  protected_paths:
+    - ".agentcortex/context/**"
+    - "AGENTS.md"
+    - ".agent/rules/**"
+    - ".agent/workflows/**"
+    - ".agent/config.yaml"
+    - ".agent/skills/**"
+    - "docs/adr/**"
+    - "docs/architecture/*.log.md"
+    - "docs/specs/_product-backlog.md"
+  # Set true ONLY for explicit non-policy targets (CLI must also pass --allow-outside).
+  allow_outside_paths: false
+  # Lock TTL for stale-lock cleanup. Env var ACX_GUARD_STALE_SECONDS overrides per-call.
+  lock_stale_seconds: 900
+  # Per-target receipt directory; relative to repo root.
+  receipt_dir: ".agentcortex/context/.guard_receipts"
+  # When true, EVERY guarded write produces a per-target receipt.
+  per_target_receipts: true
+  # Phase 1 dual-write: also write to legacy .guard_receipt.json for one release.
+  legacy_receipt_mirror: true
