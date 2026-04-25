@@ -2,7 +2,13 @@
 status: living
 domain: document-governance
 created: 2026-03-29
-last_updated: 2026-03-29
+last_updated: 2026-04-25
+lifecycle:
+  owner: "/govern-docs"
+  review_cadence: on-event
+  review_trigger: "When a Domain Doc decision is added/superseded, OR when L2 Decision Log entry count exceeds restructure_threshold (.agent/config.yaml §domain_doc), OR when any new ADR amends document-governance scope"
+  supersedes: none
+  superseded_by: none
 ---
 
 # Document Governance — Layer 1 Synthesis

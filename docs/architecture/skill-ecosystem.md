@@ -2,7 +2,13 @@
 status: living
 domain: skill-ecosystem
 created: 2026-04-05
-last_updated: 2026-04-11
+last_updated: 2026-04-25
+lifecycle:
+  owner: "/govern-docs"
+  review_cadence: on-event
+  review_trigger: "When a new skill is added/retired, OR skill_conflict_matrix.md gains/removes entries, OR an ADR amends skill activation policy"
+  supersedes: none
+  superseded_by: none
 ---
 
 # Skill Ecosystem — Layer 1 Synthesis
