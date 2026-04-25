@@ -24,7 +24,7 @@ Before loading any context, walk the decision table below top-to-bottom — **fi
 | modifies `AGENTS.md`, `.agent/rules/*`, or `.agent/config.yaml` | minimum `quick-win` — continue to Step 1 |
 | modifies `.agentcortex/templates/*` or `.agentcortex/bin/validate.*` | minimum `quick-win` — continue to Step 1 |
 | modifies any file with `status: frozen` frontmatter | minimum `quick-win` — continue to Step 1 |
-| modifies <3 files (PR-scope, NOT per-logical-change) AND is non-semantic (typo, docs, non-functional config) AND scope is unambiguous | **tiny-fix** — skip Steps 1–6, inline plan + execute + evidence (Work Log skipped per §5) |
+| modifies <3 files (PR-scope, NOT per-logical-change) AND is non-semantic (typo, docs, non-functional config) AND scope is unambiguous AND target paths do NOT match any ADR's `applies_to:` glob | **tiny-fix** — skip Steps 1–6, inline plan + execute + evidence (Work Log skipped per §5) |
 | scope is unclear or multi-module | continue to Step 1 for full context loading |
 
 **TOKEN LEAK BLOCK**: If the task is ultimately classified as `tiny-fix` or `quick-win`, reading `engineering_guardrails.md` at any point is a structural Token Leak violation. Rely purely on AGENTS.md §Core Directives and bypass full guardrails. Rationale: loading SSoT + specs + archives for a typo fix wastes ~2,500 tokens (P6).
@@ -59,7 +59,11 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 > **When**: ONLY for `feature` or `architecture-change` classifications (AFTER Step 0 pre-classification).
 > **Skip for**: `tiny-fix`, `quick-win`, `hotfix` — these NEVER trigger this check. Zero extra tokens.
 
-If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>` (Lesson L5 fix, see SSoT §Global Lessons 2026-04-25). The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code:
+If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>` (Lesson L5 fix, see SSoT §Global Lessons 2026-04-25). The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code.
+
+**Python-unavailable fallback** (per AGENTS.md doctrine): If `python --version` fails (no Python on this host), record `"ADR coverage check skipped: python unavailable"` in Work Log Drift Log and proceed to Step 1 with `## External References` left empty for coverage info. Do NOT fail the bootstrap. The fallback degrades to no-coverage-prompt, never to a hard-fail.
+
+Tool exit codes:
 
 - **Exit 2 — `no_adr_at_all`** (`docs/adr/` is empty):
    → Output: `"🏗️ New project detected — no architecture ADR found. Run /app-init to establish project conventions? (yes/skip)"`
