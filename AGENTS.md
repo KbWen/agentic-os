@@ -208,4 +208,4 @@ If the answer to #3 is yes → add a section, do not create a new file.
 
 - Antigravity: `.agent/skills/`
 - Codex: `.agents/skills/`
-- Note: Distinct paths for platform compatibility.
+- Note: Both paths exist together. `.agent/skills/<name>` (Antigravity) is a **metadata stub** (~20 lines: frontmatter + Quick Reference + pointer to `runtime_anchor`). `.agents/skills/<name>/SKILL.md` is the **canonical full body** referenced by `runtime_anchor` and read on cache-miss. Workflows cite `.agents/skills/...` for cross-platform reach; bootstrap-time skill triggering reads only the stub.
