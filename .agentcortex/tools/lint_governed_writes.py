@@ -309,6 +309,11 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--root", default=".", help="Repo root (default: cwd)")
     ap.add_argument("--json", action="store_true", help="Emit findings as JSON")
     ap.add_argument("--verbose", action="store_true", help="Print per-file scan info")
+    ap.add_argument(
+        "--show-warn",
+        action="store_true",
+        help="Print every WARN line (default: print only FAILs and the summary). WARNs were drowning real signal — see R-5 in 3-expert post-merge audit.",
+    )
     return ap.parse_args()
 
 
@@ -350,13 +355,19 @@ def main() -> int:
         }
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        for f in findings:
-            print(f"  [{f.severity}] {f.file}:{f.line_no}  {f.pattern} — {f.detail}", file=sys.stderr)
-            print(f"           {f.matched}", file=sys.stderr)
+        # R-5 fix: print summary FIRST so it's not buried under 70 WARN lines.
+        # FAILs are always shown (action required). WARNs are silent unless
+        # --show-warn is passed (most are dynamic-path false-positives in tests/).
         print(
             f"governed-write lint: {files_scanned} file(s) scanned; "
             f"{fail_count} FAIL, {warn_count} WARN"
+            + (" (use --show-warn to see WARN lines)" if warn_count and not args.show_warn else "")
         )
+        for f in findings:
+            if f.severity == "WARN" and not args.show_warn:
+                continue
+            print(f"  [{f.severity}] {f.file}:{f.line_no}  {f.pattern} — {f.detail}", file=sys.stderr)
+            print(f"           {f.matched}", file=sys.stderr)
 
     return 1 if fail_count else 0
 

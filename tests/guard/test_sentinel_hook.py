@@ -158,15 +158,40 @@ class TestEndToEnd(unittest.TestCase):
         self.assertFalse(receipt.exists())
 
     def test_no_transcript_path_returns_zero(self) -> None:
-        # Direct call with empty payload
+        # R-6 fix: silent EXIT 0 left no trace; now logs could_not_verify.
         saved_stdin = sys.stdin
+        saved_receipt = hook.RECEIPT
+        hook.RECEIPT = self.base / "viol-no-path.jsonl"
         try:
             from io import StringIO
             sys.stdin = StringIO("{}")
             rc = hook.main()
         finally:
+            hook.RECEIPT = saved_receipt
             sys.stdin = saved_stdin
         self.assertEqual(rc, 0)
+        self.assertTrue((self.base / "viol-no-path.jsonl").exists())
+        obj = json.loads((self.base / "viol-no-path.jsonl").read_text(encoding="utf-8").strip())
+        self.assertEqual(obj["violation"], "could_not_verify")
+        self.assertEqual(obj["reason"], "missing_transcript_path")
+
+    def test_unreadable_transcript_path_logs_could_not_verify(self) -> None:
+        # R-6: transcript_path provided but file doesn't exist (Windows path
+        # mismatch, deleted file). Was silent EXIT 0; now leaves a trace.
+        saved_stdin = sys.stdin
+        saved_receipt = hook.RECEIPT
+        hook.RECEIPT = self.base / "viol-unreadable.jsonl"
+        try:
+            from io import StringIO
+            sys.stdin = StringIO(json.dumps({"transcript_path": "/no/such/path.jsonl", "session_id": "x"}))
+            rc = hook.main()
+        finally:
+            hook.RECEIPT = saved_receipt
+            sys.stdin = saved_stdin
+        self.assertEqual(rc, 0)
+        obj = json.loads((self.base / "viol-unreadable.jsonl").read_text(encoding="utf-8").strip())
+        self.assertEqual(obj["violation"], "could_not_verify")
+        self.assertIn("transcript_unreadable", obj["reason"])
 
 
 if __name__ == "__main__":

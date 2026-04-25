@@ -107,14 +107,48 @@ def write_violation(payload: dict, last_text: str, receipt_path: Path | None = N
         os.close(fd)
 
 
+def write_could_not_verify(payload: dict, reason: str, receipt_path: Path | None = None) -> None:
+    """R-6 fix: log explicit 'could-not-verify' instead of silent EXIT 0.
+
+    Without this telemetry, a misconfigured transcript_path on Windows or
+    cross-platform mounts silently disables sentinel enforcement.
+    """
+    if receipt_path is None:
+        receipt_path = RECEIPT
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": int(time.time()),
+        "session_id": payload.get("session_id"),
+        "violation": "could_not_verify",
+        "reason": reason,
+        "stop_hook_active": payload.get("stop_hook_active", False),
+    }
+    line = json.dumps(record, sort_keys=True, ensure_ascii=False) + "\n"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+    fd = os.open(str(receipt_path), flags, 0o644)
+    try:
+        os.write(fd, line.encode("utf-8"))
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 def main() -> int:
     payload = read_payload()
     transcript_str = payload.get("transcript_path", "")
     if not transcript_str:
+        # R-6: silent EXIT 0 left no trace; now logs could_not_verify.
+        write_could_not_verify(payload, reason="missing_transcript_path")
         return 0
-    last_text = last_assistant_text(Path(transcript_str))
+    transcript_path = Path(transcript_str)
+    if not transcript_path.exists():
+        write_could_not_verify(
+            payload, reason=f"transcript_unreadable: {transcript_str}"
+        )
+        return 0
+    last_text = last_assistant_text(transcript_path)
     if not last_text:
-        # No assistant text yet — nothing to check.
+        # No assistant text yet — nothing to check (legitimate first turn).
         return 0
     if has_sentinel(last_text):
         return 0
