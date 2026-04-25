@@ -1,5 +1,6 @@
 ---
-status: frozen
+status: shipped
+shipped_date: 2026-04-25
 frozen_date: 2026-04-25
 title: "Guarded Governance Writes — Lock Unification + CI Lint + Lifecycle Frontmatter"
 created: 2026-04-25
