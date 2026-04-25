@@ -218,6 +218,7 @@ $textIntegrityBaseline = Join-NormalPath $root '.agentcortex/tools/text_integrit
 $triggerMetadataValidator = Join-NormalPath $root '.agentcortex/tools/validate_trigger_metadata.py'
 $triggerCompactIndexGenerator = Join-NormalPath $root '.agentcortex/tools/generate_compact_index.py'
 $guardContextWrite = Join-NormalPath $root '.agentcortex/tools/guard_context_write.py'
+$guardedWritesLint = Join-NormalPath $root '.agentcortex/tools/lint_governed_writes.py'
 $commandSyncCheck = Join-NormalPath $root '.agentcortex/tools/check_command_sync.py'
 $triggerRegistry = Join-NormalPath $root '.agentcortex/metadata/trigger-registry.yaml'
 $triggerCompactIndex = Join-NormalPath $root '.agentcortex/metadata/trigger-compact-index.json'
@@ -369,6 +370,9 @@ else {
 }
 
 Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'FAIL' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)
+
+# ADR-002 D2.2 — guarded-write lint mirror of validate.sh integration.
+Invoke-PythonCheck -Label 'guarded-write lint (governance paths)' -MissingPythonLevel 'FAIL' -ScriptPath $guardedWritesLint -Arguments @('--root', $root)
 
 $legacyAuditHelper = Join-NormalPath $root 'tools/audit_ai_paths.sh'
 if (Test-Path -Path $legacyAuditHelper -PathType Leaf) {
