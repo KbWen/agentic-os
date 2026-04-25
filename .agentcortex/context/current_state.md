@@ -17,6 +17,7 @@
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
+  - docs/adr/ADR-003-hash-chained-audit-log.md — ADR-003: Hash-Chained Tamper-Evident Audit Log (INDEX.jsonl), proposed 2026-04-25
 - **Active Backlog**: (none yet)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
