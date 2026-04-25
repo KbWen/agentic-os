@@ -1,11 +1,15 @@
 ---
 status: proposed
 date: 2026-04-25
-deciders: ["@kbwen", "Claude Opus 4.7 (1M context)", "4-expert roundtable: Lock Designer / Doc Lifecycle Architect / Future-Proofing Skeptic / Pragmatist v2"]
 classification: architecture-change
-supersedes: none
-superseded_by: none
 primary_domain: document-governance
+deciders: "@kbwen + Claude Opus 4.7 + 4-expert roundtable (Lock Designer / Doc Lifecycle Architect / Future-Proofing Skeptic / Pragmatist v2)"
+lifecycle:
+  owner: "/adr"
+  review_cadence: on-event
+  review_trigger: "When a new ADR amends or supersedes ADR-002, OR when CI surfaces a recurring failure pattern in guarded writes the ADR did not anticipate"
+  supersedes: none
+  superseded_by: none
 ---
 
 # ADR-002: Guarded Governance Writes

@@ -34,7 +34,7 @@ class TestPythonOpenWrite(unittest.TestCase):
         with tempfile.TemporaryDirectory() as base_dir:
             # Use the rel_posix as governed path
             full = Path(base_dir) / "sample.py"
-            full.write_text("open('AGENTS.md', 'w').write('x')\n", encoding="utf-8")
+            full.write_text("open('AGENTS.md', 'w').write('x')\n", encoding="utf-8")  # guard-exempt: test fixture string
             findings = lint.scan_file(full, "AGENTS.md", [".agentcortex/context/**", "AGENTS.md"])
             # The rel_posix passed in matches the lint's exemption list
             # so use a non-self-exempt name
@@ -131,7 +131,7 @@ class TestSelfExempt(unittest.TestCase):
     def test_guard_tool_exempt(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             full = Path(base_dir) / "guard_context_write.py"
-            full.write_text("open('AGENTS.md', 'w').write('x')\n", encoding="utf-8")
+            full.write_text("open('AGENTS.md', 'w').write('x')\n", encoding="utf-8")  # guard-exempt: test fixture string
             findings = lint.scan_file(
                 full,
                 ".agentcortex/tools/guard_context_write.py",
@@ -185,6 +185,7 @@ class TestEndToEndExitCode(unittest.TestCase):
                 encoding="utf-8",
             )
             (base / "bad.py").write_text(
+                # guard-exempt: test fixture string
                 "open('AGENTS.md', 'w').write('x')\n", encoding="utf-8"
             )
             saved_argv = sys.argv[:]
