@@ -10,6 +10,12 @@ applies_to:
   - ".agentcortex/docs/guides/token-governance.md"
   - ".agentcortex/docs/guides/token-optimization-quickstart.md"
   - "docs/guides/token-optimization-quickstart*.md"
+lifecycle:
+  owner: "/adr"
+  review_cadence: on-event
+  review_trigger: "When friction-tuning rules are amended (new directory exemption, evidence truncation threshold change, prompt-cache policy update), OR when a downstream fork hits a token-cost regression attributable to these decisions"
+  supersedes: none
+  superseded_by: none
 ---
 
 # ADR-001: Governance Friction Tuning

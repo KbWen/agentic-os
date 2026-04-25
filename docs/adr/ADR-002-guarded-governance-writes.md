@@ -4,6 +4,15 @@ date: 2026-04-25
 classification: architecture-change
 primary_domain: document-governance
 deciders: "@kbwen + Claude Opus 4.7 + 4-expert roundtable (Lock Designer / Doc Lifecycle Architect / Future-Proofing Skeptic / Pragmatist v2)"
+applies_to:
+  - ".agentcortex/tools/guard_context_write.py"
+  - ".agentcortex/tools/lint_governed_writes.py"
+  - ".agentcortex/tools/check_lifecycle_frontmatter.py"
+  - ".agentcortex/bin/validate.sh"
+  - ".agentcortex/bin/validate.ps1"
+  - ".agent/config.yaml"
+  - ".agentcortex/context/.guard_receipts/**"
+  - ".agentcortex/context/.guard_locks/**"
 lifecycle:
   owner: "/adr"
   review_cadence: on-event
