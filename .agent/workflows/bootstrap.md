@@ -58,21 +58,29 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 > **When**: ONLY for `feature` or `architecture-change` classifications (AFTER Step 0 pre-classification).
 > **Skip for**: `tiny-fix`, `quick-win`, `hotfix` — these NEVER trigger this check. Zero extra tokens.
 
-If the task is classified as `feature` or `architecture-change`, check:
+If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>` (Lesson L5 fix, see SSoT §Global Lessons 2026-04-25). The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code:
 
-1. **No ADR exists**: `docs/adr/` contains no project-specific ADR.
+- **Exit 2 — `no_adr_at_all`** (`docs/adr/` is empty):
    → Output: `"🏗️ New project detected — no architecture ADR found. Run /app-init to establish project conventions? (yes/skip)"`
    → If yes: run `/app-init` workflow, then return here.
    → If skip: record `"App-init skipped by user"` in Work Log. Detection will NOT trigger again this session.
 
-2. **Partial ADR exists**: An ADR exists but has `[TBD]` sections relevant to the current task (e.g., task touches DB but ADR has `[TBD]` for Database section).
-   → Output: `"⚠️ Your architecture ADR has [TBD] sections relevant to this task: [list]. Fill them now via /app-init --partial? (yes/skip)"`
+- **Exit 1 — `no_covering_adr`** (ADRs exist, but no ADR's `applies_to` glob matches the current task's target files):
+   → Output: `"📐 No existing ADR covers this task's target files: [list]. Available ADRs: [list]. Run /adr to record this architectural decision before /spec? (yes/skip)"`
+   → If yes: route to `/adr` workflow, then return here.
+   → If skip: record `"ADR coverage skipped by user — task: <summary>"` in Work Log Drift Log. Detection will NOT re-trigger this session.
+   → ⚠️ Auxiliary stderr lists ADRs missing `applies_to:` frontmatter — these should be retro-fitted (one-line PR) so they participate in coverage matching going forward.
+
+- **Exit 0 — covered**: Proceed to Step 1. The covering ADR(s) are written to `## External References` of the Work Log so `/plan` and `/implement` can cite them.
+
+> **Why coverage, not existence?** Lesson L5: the prior "No ADR exists" check became permanently False after the first ADR shipped (ADR-001 landed → all subsequent `architecture-change` tasks silently skipped the prompt because *some* ADR existed). The `applies_to:` glob makes coverage a positive predicate.
+
+**Cost**: This check reads only the ADR frontmatter (~30 tokens × N ADRs). It does NOT read full ADR content — that happens later during /implement when skills are loaded. ADRs without `applies_to:` are reported but not blocking.
+
+**Partial-ADR escalation (preserved from prior wording)**: If a covering ADR has `[TBD]` sections relevant to the current task, surface them inline:
+   → Output: `"⚠️ Covering ADR [<name>] has [TBD] sections relevant to this task: [list]. Fill them now via /app-init --partial? (yes/skip)"`
    → If yes: run `/app-init` in partial mode (§8 of app-init.md — only ask questions for TBD sections).
    → If skip: proceed, but AI uses generic conventions (skill scaffold defaults).
-
-3. **ADR exists and covers this task**: No action needed. Proceed to Step 1.
-
-**Cost**: This check reads only the ADR frontmatter + section headers (~50 tokens). It does NOT read full ADR content — that happens later during /implement when skills are loaded.
 
 **User-initiated trigger**: If user says "設定架構", "init app", "define tech stack", or similar intent at ANY point (even mid-development), route to `/app-init` regardless of current phase or classification. This allows mid-project architecture decisions.
 

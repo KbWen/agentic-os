@@ -1,3 +1,17 @@
+---
+status: accepted
+date: 2026-04-23
+deciders: "@kbwen, AI Agent (Claude Opus 4.6)"
+classification: architecture-change
+applies_to:
+  - "AGENTS.md"
+  - ".agent/rules/engineering_guardrails.md"
+  - ".agentcortex/docs/guides/context-budget.md"
+  - ".agentcortex/docs/guides/token-governance.md"
+  - ".agentcortex/docs/guides/token-optimization-quickstart.md"
+  - "docs/guides/token-optimization-quickstart*.md"
+---
+
 # ADR-001: Governance Friction Tuning
 
 - **Status**: Accepted
