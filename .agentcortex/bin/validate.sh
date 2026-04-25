@@ -41,6 +41,8 @@ TEXT_INTEGRITY_BASELINE="$ROOT/.agentcortex/tools/text_integrity_baseline.txt"
 TRIGGER_METADATA_VALIDATOR="$ROOT/.agentcortex/tools/validate_trigger_metadata.py"
 TRIGGER_COMPACT_INDEX_GENERATOR="$ROOT/.agentcortex/tools/generate_compact_index.py"
 GUARD_CONTEXT_WRITE="$ROOT/.agentcortex/tools/guard_context_write.py"
+GUARDED_WRITES_LINT="$ROOT/.agentcortex/tools/lint_governed_writes.py"
+LIFECYCLE_FRONTMATTER_CHECK="$ROOT/.agentcortex/tools/check_lifecycle_frontmatter.py"
 COMMAND_SYNC_CHECK="$ROOT/.agentcortex/tools/check_command_sync.py"
 TRIGGER_REGISTRY="$ROOT/.agentcortex/metadata/trigger-registry.yaml"
 TRIGGER_COMPACT_INDEX="$ROOT/.agentcortex/metadata/trigger-compact-index.json"
@@ -324,6 +326,16 @@ else
 fi
 
 run_python_check "command sync check" FAIL "$COMMAND_SYNC_CHECK" --root "$ROOT"
+
+# ADR-002 D2.2 — guarded-write lint: fail CI on direct file writes against
+# .agent/config.yaml §guard_policy.protected_paths. Use guard_context_write.py
+# or annotate the line with `guard-exempt: <reason>`.
+run_python_check "guarded-write lint (governance paths)" FAIL "$GUARDED_WRITES_LINT" --root "$ROOT"
+
+# ADR-002 D2.3 — governance docs MUST declare lifecycle: frontmatter
+# {owner, review_cadence, review_trigger, supersedes, superseded_by}.
+# Files dated before 2026-04-25 are grandfathered (WARN); newer files FAIL.
+run_python_check "lifecycle frontmatter (governance docs)" FAIL "$LIFECYCLE_FRONTMATTER_CHECK" --root "$ROOT"
 
 if [[ -f "$ROOT/tools/audit_ai_paths.sh" ]]; then
   record_result FAIL "legacy audit helper should move under .agentcortex/tools/: $ROOT/tools/audit_ai_paths.sh"

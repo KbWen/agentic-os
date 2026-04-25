@@ -8,6 +8,12 @@ phase: A revised (audit-only, no code)
 scope: AGENTS.md / engineering_guardrails.md / .agent/workflows/* + post-roundtable verification of `guard_context_write.py` and skill paths
 checkpoint: ff9a950
 revision: v2 (2026-04-25, after expert roundtable)
+lifecycle:
+  owner: "/audit"
+  review_cadence: on-event
+  review_trigger: "When ADR-002/ADR-003 ship and resolve findings, OR when 6 months elapse without follow-up audit, OR when 3+ NEW Global Lessons cite issues this audit missed"
+  supersedes: none
+  superseded_by: none
 ---
 
 # Governance Lifecycle Simulation — Audit Report (v2)
