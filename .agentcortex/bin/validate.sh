@@ -45,6 +45,8 @@ GUARDED_WRITES_LINT="$ROOT/.agentcortex/tools/lint_governed_writes.py"
 LIFECYCLE_FRONTMATTER_CHECK="$ROOT/.agentcortex/tools/check_lifecycle_frontmatter.py"
 AUDIT_CHAIN_CHECK="$ROOT/.agentcortex/tools/check_audit_chain.py"
 ARCHIVE_INDEX_JSONL="$ROOT/.agentcortex/context/archive/INDEX.jsonl"
+LESSON_CHAIN_CHECK="$ROOT/.agentcortex/tools/check_lesson_chain.py"
+SSOT_CURRENT_STATE="$ROOT/.agentcortex/context/current_state.md"
 COMMAND_SYNC_CHECK="$ROOT/.agentcortex/tools/check_command_sync.py"
 TRIGGER_REGISTRY="$ROOT/.agentcortex/metadata/trigger-registry.yaml"
 TRIGGER_COMPACT_INDEX="$ROOT/.agentcortex/metadata/trigger-compact-index.json"
@@ -348,6 +350,15 @@ if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
   run_python_check "audit chain integrity (INDEX.jsonl)" FAIL "$AUDIT_CHAIN_CHECK" --path "$ARCHIVE_INDEX_JSONL" --quiet
 else
   record_result SKIP "audit chain integrity -- archive INDEX.jsonl not present"
+fi
+
+# PR #85 — Global Lessons hash chain. Lesson L4 / NR-5-companion fix:
+# without a chain, an agent could silently delete an inconvenient lesson
+# (e.g., remove L4 itself). Tamper-evident chain on §Global Lessons.
+if [[ -f "$SSOT_CURRENT_STATE" ]]; then
+  run_python_check "lesson chain integrity (Global Lessons)" FAIL "$LESSON_CHAIN_CHECK" --path "$SSOT_CURRENT_STATE" --quiet
+else
+  record_result SKIP "lesson chain integrity -- current_state.md not present"
 fi
 
 if [[ -f "$ROOT/tools/audit_ai_paths.sh" ]]; then
