@@ -208,6 +208,28 @@ Quality Tier: READY | NEEDS-ADJUSTMENT | INCOMPLETE
 
 ---
 
+## 4.5 Clarification Pass (≤3 questions, optional)
+
+> Borrowed from spec-kit's Clarify gate, integrated as an in-step hook (not a new phase) per AGENTS.md governance-friction tuning (ADR-001).
+
+After Quality Assessment but **before** §5 Confirm & Freeze:
+
+1. Self-check: scan the generated spec for fields whose ambiguity would cause `/plan` to ask the user the same question later. Examples:
+   - Failure-mode policy that the spec leaves unspecified (e.g., "on validation error, retry / fail-fast / queue?")
+   - Boundary that affects API surface (e.g., "max payload size?")
+   - Cross-cutting policy (e.g., "logging required at boundary X?")
+2. If you find ≥1 such gap AND your `Confidence` for the spec is < 90%, batch up to **3** questions in a single message and STOP. Tag each question to the spec section it would resolve.
+3. If your `Confidence` for the spec is ≥ 90% (no critical ambiguity), SKIP this step entirely — do NOT ask theatrical questions. Proceed to §5.
+4. After user answers, write resolutions into a new spec section:
+   ```markdown
+   ## Clarifications Resolved
+   - <Q1 topic>: <answer applied to AC/Constraint/...>
+   - <Q2 topic>: ...
+   ```
+5. Hard cap: **one** Clarification Pass round per spec. If after answering, more questions surface, classify the spec as `INCOMPLETE` and route to existing §4 Q&A protocol (max 2 rounds, batched).
+
+**Anti-pattern**: do not use this pass to re-ask anything already answered in source material, dependency specs, or `current_state.md` Global Lessons. The pass exists to reduce `/plan` churn, not to perform interrogation.
+
 ## 5. Confirm & Freeze
 
 After user confirms (any affirmative response):

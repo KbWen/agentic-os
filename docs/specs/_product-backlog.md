@@ -1,9 +1,9 @@
 ---
 status: living
 title: Product Backlog
-source: governance-bloat-review-2026-04-12
+source: governance-bloat-review-2026-04-12 + optimization-round-2026-05-04
 created: 2026-04-12
-last_updated: 2026-04-16T+expert-review-items
+last_updated: 2026-05-04
 ---
 
 # Product Backlog
@@ -45,6 +45,17 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Shipped | — |
 | 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
 | 29 | SKILL.md heading-scope optimization (phase-entry loads only essential sections) | Upstream H73: ~30% skill token savings | — | quick-win | Shipped | — |
+| 30 | Claude hooks enforcement layer (Stop sentinel, PreToolUse phase guard, PreCompact Work Log guard, UserPromptSubmit warn-only) | Opt-2026-05-04 T1.1a — closes HIGH lesson 19c054e7 (MUST without enforcement = theatre) | — | feature | Pending | — |
+| 31 | Cross-platform validate.sh sentinel + Work Log final-line marker check | Opt-2026-05-04 T1.1b — non-Claude platforms parity | — | quick-win | Shipped | #30 |
+| 32 | Reviewer freshness invariant in /review template + Global Lesson cross-link | Opt-2026-05-04 T1.4 — codifies HIGH lesson 4faa557a (multi-agent same-vendor blind spots) | — | quick-win | Shipped | — |
+| 33 | Claude Code plugin packaging (.claude-plugin/plugin.json + bin/ + commands/agents/hooks bundling, no monitors) | Opt-2026-05-04 T1.2 — Claude distribution channel; one-step install for acx-* shims + workflows | — | feature | Pending | #30, #31 |
+| 34 | AGENTS.override.md precedence chain support (mirror Codex pattern, byte-budget contract) | Opt-2026-05-04 T2.2a — per-machine override without polluting repo | — | quick-win | Shipped | — |
+| 35 | /spec-intake Clarification Pass (≤3 questions before emitting spec, recorded in spec ## Clarifications Resolved) | Opt-2026-05-04 T2.A — borrows spec-kit Clarify gate without adding a new phase | — | quick-win | Shipped | — |
+| 36 | /app-init onboard mode (read-only stdout summary for existing repo, no file writes; absorbs #39 /recap pointer) | Opt-2026-05-04 T2.B — w15 /team-onboarding pattern, no doc proliferation | — | quick-win | Shipped | — |
+| 37 | /plan template `[P]` parallel-task marker | Opt-2026-05-04 — spec-kit dependency-aware ordering for /implement | — | quick-win | Shipped | — |
+| 38 | AGENTS.md token-budget pass (~150 → ≤100 lines, link out detail to guides) | Opt-2026-05-04 T3 — "selling ad space" discipline (sshh) | — | quick-win | Pending | — |
+| 39 | /recap workflow pointer to Work Log Phase Summary (no new doc) | Opt-2026-05-04 T3 — w17 session-recap leverage; absorbed into #36 Onboard Mode | — | tiny-fix | Shipped | — |
+| 40 | review.md /ultrareview callout + hotfix.md /autofix-pr callout (Claude-CLI-only doc hook-in) | Opt-2026-05-04 T1.3 (descoped) — guide users to Anthropic cloud review fleet | — | tiny-fix | Shipped | — |
 
 ## Status Key
 

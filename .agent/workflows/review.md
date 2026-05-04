@@ -19,6 +19,20 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 
 This ensures domain-specific review criteria (API conventions, frontend patterns, DB safety, auth compliance) are enforced — not just generic code review.
 
+## Adversarial Reviewer Freshness Invariant
+
+> Codifies Global Lesson `[Category: audit-method][Severity: HIGH][Trigger: multi-agent-roundtable-same-vendor]` (current_state.md, ref: 4faa557a).
+
+When `/review` dispatches a sub-agent for adversarial review (e.g., `acx-reviewer`, code-review skill, red-team scan), the sub-agent **MUST be a fresh Task() instance** with no carryover from the `/implement` context.
+
+- ❌ **Prohibited**: reusing the implementing agent's session, memory, or transcript for review.
+- ❌ **Prohibited**: passing implementation rationale as review context ("here's why I made these choices, please review").
+- ✅ **Required**: spawn the reviewer with ONLY the diff + spec/AC + relevant standards. The reviewer must derive correctness independently.
+
+**Why**: Same-context review is confirmation bias by construction. The reviewer ratifies the implementer's choices instead of independently testing them.
+
+**Cross-vendor caveat**: even fresh same-vendor sub-agents share training-data blind spots (Lesson 4faa557a). For `architecture-change` and trust-boundary work, the review MUST add at least one external signal: WebFetch of authoritative published sources, `/ask-openrouter` to a different vendor, OR human review. Single-vendor adversarial roundtables are theatre for these classifications.
+
 **IF `doc-lookup` is active during review:**
 - For each framework API call in the diff, verify it matches official documentation:
   - Method signatures, parameter order, return types are correct
@@ -211,6 +225,17 @@ After review is complete, append one line to `## Phase Summary` in the Work Log:
 ```
 - review: [1-line summary — verdict, security findings count, spec compliance status]
 ```
+
+## Optional: Cloud Adversarial Review (Claude Code CLI only)
+
+When running inside Claude Code CLI and the change is high-stakes (auth, data migration, public API, security-sensitive logic), the user MAY invoke `/ultrareview` to dispatch a fleet of bug-hunting agents in Anthropic's cloud against the current branch or a PR. This is **opt-in and Claude-CLI-only** — not part of the cross-platform `/review` contract.
+
+- Trigger: user types `/ultrareview` (no args = current branch) or `/ultrareview <PR#>`.
+- Findings land back in the CLI / Desktop automatically.
+- Receipts: paste returned findings (or summary) into Work Log `## External References` as `External Review: ultrareview run-<id> — <verdict>`. Do NOT count this toward the Burden of Proof table unless the user confirms the verdict applies to current head.
+- Cost: billed against the user's Claude account; agent MUST NOT auto-trigger.
+
+Reference: <https://code.claude.com/docs/en/ultrareview>.
 
 ## Heading-Scoped Read Note
 

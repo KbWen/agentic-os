@@ -119,7 +119,9 @@ Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Out
 Target Files: <comma list>
 Steps:
   1. <action> — verify: <1-line method>
-  2. <action> — verify: <1-line method>
+  2. [P] <action> — verify: <1-line method>     # [P] = parallelizable with prior steps
+  3. [P] <action> — verify: <1-line method>
+  4. <action> — verify: <1-line method>         # depends on 2 & 3
   ...
 Risk+Rollback: <1-line risk> / <1-line rollback>
 AC Coverage: AC-1→step-N, AC-2→step-M, ...
@@ -128,6 +130,8 @@ Confidence: <N>% — <rationale if <90%, else "high">
 Mode: Normal | Fast Lane
 ⚡ ACX
 ```
+
+**`[P]` parallel marker** (optional, per spec-kit pattern): prefix any step with `[P]` if it has no data dependency on the immediately prior step and may be executed in parallel by `/implement`. Steps without `[P]` are treated as sequential. Use sparingly — only mark `[P]` when independence is obvious from the step descriptions; ambiguity defaults to sequential. `/implement` MAY batch tool calls for `[P]` runs to save turns.
 
 > **Confidence field** (Ref: `engineering_guardrails.md` §4.1): Always output the number. If `<80%`, this gate is auto-fail — STOP and clarify. `80–90%` means state the assumption explicitly on this line. `>90%` may render as `Confidence: 95% — high` without extended rationale. This keeps the gate auditable in the Work Log even when confidence is high.
 

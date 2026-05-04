@@ -209,3 +209,21 @@ If the answer to #3 is yes → add a section, do not create a new file.
 - Antigravity: `.agent/skills/`
 - Codex: `.agents/skills/`
 - Note: Both paths exist together. `.agent/skills/<name>` (Antigravity) is a **metadata stub** (~20 lines: frontmatter + Quick Reference + pointer to `runtime_anchor`). `.agents/skills/<name>/SKILL.md` is the **canonical full body** referenced by `runtime_anchor` and read on cache-miss. Workflows cite `.agents/skills/...` for cross-platform reach; bootstrap-time skill triggering reads only the stub.
+
+## Override Layer (`AGENTS.override.md`)
+
+Per-machine or per-fork overrides MUST live in a sibling override file rather than mutating canonical governance docs. This mirrors the Codex `AGENTS.override.md` precedence pattern (<https://developers.openai.com/codex/guides/agents-md>) so agents trained on either ecosystem reach for the same convention.
+
+**Precedence chain** (later layers override earlier):
+
+1. `AGENTS.md` (this file — canonical, committed)
+2. Project root `AGENTS.override.md` (committed only if the project intends the override to apply to all collaborators; otherwise gitignored)
+3. `~/.agentcortex/AGENTS.override.md` (per-user, never committed)
+
+**Rules**:
+- Override files MAY refine, narrow, or disable specific directives. They MUST NOT relax the gate sequence in `## Delivery Gates` or the No-Bypass Rule in `## Core Directives` — those are framework invariants.
+- Each override directive MUST cite the section it overrides: `> Overrides: AGENTS.md §<section> — <reason>`.
+- Agents MUST read override files at session start when present, in the precedence order above. Missing override files are not an error.
+- `validate.sh` SHOULD list any active override files in its summary so they are auditable.
+
+**Soft-launch status**: The runtime read step is documented but not yet enforced by automation. Treat absence of an override file as the default; the rule activates the moment one is created.

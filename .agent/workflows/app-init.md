@@ -272,6 +272,55 @@ Then return control to `/bootstrap` §1 (Initialization & Required Reading) with
 
 ---
 
+## 10. Onboard Mode (Existing Repo, Read-Only)
+
+**Trigger**:
+- `/app-init --mode=onboard`
+- Natural language: "onboard me to this repo", "幫我熟悉這個專案", "what's the state of this project"
+- Auto-suggested by `/bootstrap` when a NEW session opens against a repo that already has `current_state.md` AND the user asks "where am I" / "what's going on" without a clear task.
+
+**Hard guarantee**: This mode is **read-only**. It MUST NOT create, modify, or delete any file. Output goes to stdout only.
+
+**Inputs read** (in order, abort early if any is missing):
+1. `.agentcortex/context/current_state.md` — Project Intent, ADR Index, Spec Index, Active Backlog, last 3 Ship History entries, Active HIGH Global Lessons.
+2. `git log --oneline -10` — recent commit cadence.
+3. `.agentcortex/context/work/*.md` (filenames + Header `Current Phase` only — do NOT read full bodies) — open Work Logs.
+4. `docs/specs/_product-backlog.md` if present — Pending count by Tier.
+
+**Output template** (terse, ≤ 25 lines):
+
+```
+🧭 Repo Onboard — <repo-name>
+
+## Intent
+<1-line from current_state.md Project Intent>
+
+## Active Work
+- Open Work Logs: <count> (<list of branch names + Current Phase>)
+- Most recent ship: <Ship History entry 1, 1-line>
+
+## Backlog Snapshot
+- Pending features: <N>  · quick-wins: <N>  · architecture-changes: <N>
+- Top 3 by recency or priority: <names>
+
+## Recent Commits (10)
+<git log oneline>
+
+## Live Lessons (HIGH severity, capped at 5)
+<bullet list — read from current_state.md Global Lessons §HIGH>
+
+## Where to Start
+- For new contributor: read AGENTS.md (loaded every turn) → engineering_guardrails.md (when classification ≥ quick-win) → workflows under .agent/workflows/.
+- For continuation: pick a Pending row from Backlog Snapshot, run `/spec-intake` (multi-feature) or `/bootstrap` (single).
+- For a recap of an open session: `/recap` reads the active Work Log `## Phase Summary` (no extra cost).
+```
+
+**Token budget**: ≤ 1,500 tokens of input reads, ≤ 600 tokens of output. Strictly cheaper than re-running full `/bootstrap`.
+
+**Composition with `/recap`**: when the user asks for an open-session recap rather than a repo overview, point them at `/recap` (or do an inline 3-line summary from the active Work Log `## Phase Summary` — no new file).
+
+**No Doc Proliferation**: The summary MUST NOT be saved to `docs/guides/onboarding.md` or any other path. If the user wants a persisted onboarding artifact, escalate to `/govern-docs` — that workflow owns the permanence decision.
+
 ## Hard Rules
 
 1. **Never write project code** during app-init. This is a configuration/governance workflow only.

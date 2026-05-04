@@ -12,8 +12,8 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: 2026-05-04
-- **Last Verified**: 2026-04-25
-- **Update Sequence**: 7
+- **Last Verified**: 2026-05-04
+- **Update Sequence**: 8
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -65,6 +65,21 @@
 - [Category: governance-proposal][Severity: MEDIUM][Trigger: plan-proposes-must-rule][prev: 7f5a25c3] When /plan proposes adding a MUST rule to AGENTS.md or .agent/rules/, cross-check the [enforcement][HIGH] Global Lesson immediately at plan time — not just at /implement. A MUST rule without a corresponding hook, validator, or test is honor-system theatre regardless of where in the workflow it is caught. Self-check: "What enforces this rule if the AI ignores it?" If the answer is "nothing", delete the rule or add the enforcement first.
 
 ## Ship History
+
+### Ship-feat-optimization-round-2026-05-04
+- Feature shipped: Quick-win batch from optimization-round-2026-05-04 — backlog rows #31, #32, #34, #35, #36, #37, #39, #40 (8 governance enhancements). Zero behavioral change to runtime; pure rule additions across 5 workflows + AGENTS.md + validate (sh/ps1).
+- Edits:
+  - `.agent/workflows/review.md` — Adversarial Reviewer Freshness Invariant H2 (codifies HIGH lesson 4faa557a) + Cloud Adversarial Review (`/ultrareview`) callout
+  - `.agent/workflows/plan.md` — `[P]` parallel-task marker rule + template line (spec-kit pattern)
+  - `.agent/workflows/spec-intake.md` — §4.5 Clarification Pass (≤3 questions, optional, single-round)
+  - `.agent/workflows/app-init.md` — §10 Onboard Mode (read-only stdout, no doc writes; absorbs `/recap` pointer for active sessions)
+  - `.agent/workflows/hotfix.md` — §6 Cloud PR Auto-Fix (`/autofix-pr`) callout
+  - `AGENTS.md` — `## Override Layer (AGENTS.override.md)` precedence chain (mirrors Codex pattern)
+  - `.agentcortex/bin/validate.{sh,ps1}` — Work Log Phase Summary sentinel marker (⚡ ACX) WARN check
+- Tests: Pass — validate 71 PASS / 6 WARN / 0 FAIL (the new sentinel WARN counts 6 legacy logs without ⚡ ACX, by design WARN-only).
+- Commits: pending — see `feat/optimization-round-2026-05-04` branch.
+- Source: external research round (Claude Code w14-w17, OpenAI Codex 2026 AGENTS.md docs, github/spec-kit, dsifry/metaswarm, sshh).
+- Deferred: #30 (Claude hooks enforcement layer — feature), #33 (plugin packaging — feature), #38 (AGENTS.md token-budget pass — risky restructure).
 
 ### Ship-feat-acx-phase-shims-2026-05-04
 - Feature shipped: acx-* phase shims for Claude Code native skill injection — 5 shims (.claude/agents/acx-{implementer,reviewer,tester,handoff,shipper}.md), validate.sh+ps1 shim skill-existence check, review.md acx-* enforcement check.

@@ -42,3 +42,14 @@ Run `/review` then `/test`. Testing must include:
 ## 5. Evidence
 
 Work Log must contain: root cause description, fix rationale, reproduction test output, regression test output.
+
+## 6. Optional: Cloud PR Auto-Fix (Claude Code CLI only)
+
+When the hotfix is pushed to a PR and the user is running inside Claude Code CLI, the user MAY invoke `/autofix-pr` to enable Anthropic's cloud auto-fix loop on the PR. Claude Code on the web watches CI + review comments and pushes fixes until green.
+
+- Trigger: user types `/autofix-pr` from the PR's branch.
+- This is **opt-in and Claude-CLI-only** — agent MUST NOT auto-trigger; not part of the cross-platform `/hotfix` contract.
+- Receipts: paste the `/autofix-pr` confirmation into Work Log `## External References` as `External Fix Loop: autofix-pr enabled — <PR#>`.
+- The framework `/test` and `/review` gates STILL apply locally; cloud auto-fix is supplementary, not a substitute for the standard hotfix gate sequence.
+
+Reference: <https://code.claude.com/docs/en/claude-code-on-the-web#auto-fix-pull-requests>.

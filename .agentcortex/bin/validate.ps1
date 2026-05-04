@@ -848,6 +848,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $legacyGateEvidenceMissing = 0
     $gateProgressionIllegal = 0
     $phaseSummaryMissing = 0
+    $sentinelMarkerMissing = 0
     # Legal phase transitions for gate evidence validation
     $legalTransitions = @{
         'bootstrap' = @('plan')
@@ -899,6 +900,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
         }
         if ($content -notmatch '(?m)^## Phase Summary') { $phaseSummaryMissing++ }
+        # Sentinel marker discoverability — Work Log Phase Summary SHOULD carry
+        # ⚡ ACX (or plain ACX) at least once for AGENTS.md Sentinel Check audit.
+        # WARN-only — skip if Phase Summary itself is missing.
+        if (($content -match '(?m)^## Phase Summary') `
+            -and ($content -notmatch '(⚡\s?ACX|\sACX(\s|$))')) {
+            $sentinelMarkerMissing++
+        }
     }
     if ($phaseFieldMissing -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs missing Current Phase field: $phaseFieldMissing"
@@ -927,6 +935,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "work logs missing Phase Summary section: $phaseSummaryMissing"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'all active work logs have Phase Summary section'
+    }
+    if ($sentinelMarkerMissing -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs missing sentinel marker (ACX) in Phase Summary: $sentinelMarkerMissing"
+    } elseif ($worklogs.Count -gt 0 -and $phaseSummaryMissing -eq 0) {
+        Add-Result -Level 'PASS' -Message 'all active work logs carry sentinel marker for audit trail'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock
