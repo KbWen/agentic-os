@@ -45,7 +45,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Shipped | — |
 | 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
 | 29 | SKILL.md heading-scope optimization (phase-entry loads only essential sections) | Upstream H73: ~30% skill token savings | — | quick-win | Shipped | — |
-| 30 | Claude hooks enforcement layer (Stop sentinel, PreToolUse phase guard, PreCompact Work Log guard, UserPromptSubmit warn-only) | Opt-2026-05-04 T1.1a — closes HIGH lesson 19c054e7 (MUST without enforcement = theatre) | — | feature | Pending | — |
+| 30 | Claude hooks enforcement layer (Stop sentinel ✅ shipped previously; PreCompact Work Log guard ✅ shipped 2026-05-04; PreToolUse + UserPromptSubmit deferred — risk > ROI) | Opt-2026-05-04 T1.1a — closes HIGH lesson 19c054e7 in Claude platform; receipts surfaced via validate.{sh,ps1} | — | feature | Shipped | — |
 | 31 | Cross-platform validate.sh sentinel + Work Log final-line marker check | Opt-2026-05-04 T1.1b — non-Claude platforms parity | — | quick-win | Shipped | #30 |
 | 32 | Reviewer freshness invariant in /review template + Global Lesson cross-link | Opt-2026-05-04 T1.4 — codifies HIGH lesson 4faa557a (multi-agent same-vendor blind spots) | — | quick-win | Shipped | — |
 | 33 | Claude Code plugin packaging (.claude-plugin/plugin.json + bin/ + commands/agents/hooks bundling, no monitors) | Opt-2026-05-04 T1.2 — Claude distribution channel; one-step install for acx-* shims + workflows | — | feature | Pending | #30, #31 |

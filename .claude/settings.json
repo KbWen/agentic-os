@@ -1,6 +1,6 @@
 {
   "_comment": "Project-shared Claude Code config. User-local permissions live in settings.local.json.",
-  "_governance_ref": "Closes CC-2 from docs/audit/governance-lifecycle-2026-04-25.md §0.1 + Lesson L4 in current_state.md §Global Lessons.",
+  "_governance_ref": "Closes CC-2 from docs/audit/governance-lifecycle-2026-04-25.md §0.1 + Lesson L4 in current_state.md §Global Lessons. PreCompact hook closes Phase-Summary-flush gap from optimization-round-2026-05-04 (backlog #30 partial).",
   "hooks": {
     "Stop": [
       {
@@ -9,6 +9,17 @@
           {
             "type": "command",
             "command": "python .claude/hooks/check-sentinel.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/check-precompact.py"
           }
         ]
       }

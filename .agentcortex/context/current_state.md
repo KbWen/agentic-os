@@ -13,7 +13,7 @@
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: 2026-05-04
 - **Last Verified**: 2026-05-04
-- **Update Sequence**: 8
+- **Update Sequence**: 9
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -65,6 +65,18 @@
 - [Category: governance-proposal][Severity: MEDIUM][Trigger: plan-proposes-must-rule][prev: 7f5a25c3] When /plan proposes adding a MUST rule to AGENTS.md or .agent/rules/, cross-check the [enforcement][HIGH] Global Lesson immediately at plan time — not just at /implement. A MUST rule without a corresponding hook, validator, or test is honor-system theatre regardless of where in the workflow it is caught. Self-check: "What enforces this rule if the AI ignores it?" If the answer is "nothing", delete the rule or add the enforcement first.
 
 ## Ship History
+
+### Ship-feat-optimization-hooks-2026-05-04
+- Feature shipped: Closing the Claude-platform half of backlog #30 — PreCompact hook + framework receipt integration. Stop hook (`check-sentinel.py`) was previously shipped under CC-2/L4 but its violations.jsonl was never read by validate; this ship closes that loop. PreToolUse + UserPromptSubmit deferred (risk > ROI per design review).
+- Edits:
+  - `.claude/hooks/check-precompact.py` — new PreCompact hook; refuses compaction when active Work Log `## Phase Summary` is empty or stale relative to `Current Phase`. WARN by default, blocks (exit 2) when `AGENTIC_OS_PRECOMPACT_BLOCK=1`. Violation receipts at `.agentcortex/context/precompact-violations.jsonl`.
+  - `.claude/settings.json` — wired PreCompact hook alongside existing Stop hook.
+  - `tests/guard/test_precompact_hook.py` — 13 unit tests covering header parsing (list + table form), Phase Summary extraction, evaluate logic, end-to-end with temp Work Logs, and block-mode exit code.
+  - `.agentcortex/bin/validate.{sh,ps1}` — read both `sentinel-violations.jsonl` and `precompact-violations.jsonl`; emit WARN with count when non-zero, PASS when zero. Capability-by-presence (absent file = PASS).
+  - `.gitignore` — added `precompact-violations.jsonl` (alongside existing sentinel entry).
+- Tests: Pass — `python -m unittest tests.guard.test_sentinel_hook tests.guard.test_precompact_hook` → 27/27 in 0.1s. validate: 72 PASS / 7 WARN / 0 FAIL (new WARN: 3 historical sentinel violations now surfaced — these were silently accumulating in the receipt file before this ship).
+- Commits: pending — see `feat/optimization-hooks-2026-05-04` branch.
+- Scope cuts: PreToolUse phase-discipline hook and UserPromptSubmit warn hook were evaluated and deferred — false-positive risk on legitimate edits/chat outweighs the catch rate. Document in Drift Log of work log.
 
 ### Ship-feat-optimization-round-2026-05-04
 - Feature shipped: Quick-win batch from optimization-round-2026-05-04 — backlog rows #31, #32, #34, #35, #36, #37, #39, #40 (8 governance enhancements). Zero behavioral change to runtime; pure rule additions across 5 workflows + AGENTS.md + validate (sh/ps1).

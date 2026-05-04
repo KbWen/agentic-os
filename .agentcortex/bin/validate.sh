@@ -1097,6 +1097,30 @@ else
   record_result WARN "optional guard hook sample is not present; guarded-write checks remain advisory only"
 fi
 
+# Hook violation receipts — surface counts written by Claude Code Stop /
+# PreCompact hooks so the framework sees what the harness saw. WARN-only.
+# Capability-by-presence: absent file = 0 violations = PASS.
+SENTINEL_RECEIPTS="$ROOT/.agentcortex/context/sentinel-violations.jsonl"
+PRECOMPACT_RECEIPTS="$ROOT/.agentcortex/context/precompact-violations.jsonl"
+sentinel_violations=0
+precompact_violations=0
+if [[ -f "$SENTINEL_RECEIPTS" ]]; then
+  sentinel_violations="$(grep -c '"violation"' "$SENTINEL_RECEIPTS" 2>/dev/null || echo 0)"
+fi
+if [[ -f "$PRECOMPACT_RECEIPTS" ]]; then
+  precompact_violations="$(grep -c '"violation"' "$PRECOMPACT_RECEIPTS" 2>/dev/null || echo 0)"
+fi
+if [[ "$sentinel_violations" -gt 0 ]]; then
+  record_result WARN "sentinel hook violations recorded: ${sentinel_violations} (see ${SENTINEL_RECEIPTS})"
+else
+  record_result PASS "no sentinel hook violations recorded"
+fi
+if [[ "$precompact_violations" -gt 0 ]]; then
+  record_result WARN "precompact hook violations recorded: ${precompact_violations} (see ${PRECOMPACT_RECEIPTS})"
+else
+  record_result PASS "no precompact hook violations recorded"
+fi
+
 GITIGNORE="$ROOT/.gitignore"
 if [[ -f "$GITIGNORE" ]]; then
   gitignore_errors=0

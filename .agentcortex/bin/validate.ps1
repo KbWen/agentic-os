@@ -996,6 +996,33 @@ else {
     Add-Result -Level 'WARN' -Message 'optional guard hook sample is not present; guarded-write checks remain advisory only'
 }
 
+# Hook violation receipts — surface counts written by Claude Code Stop /
+# PreCompact hooks so the framework sees what the harness saw. WARN-only.
+$sentinelReceipts = Join-NormalPath $root '.agentcortex/context/sentinel-violations.jsonl'
+$precompactReceipts = Join-NormalPath $root '.agentcortex/context/precompact-violations.jsonl'
+$sentinelViolations = 0
+$precompactViolations = 0
+if (Test-Path -LiteralPath $sentinelReceipts) {
+    $sentinelViolations = (Select-String -LiteralPath $sentinelReceipts -Pattern '"violation"' -SimpleMatch -AllMatches |
+        Measure-Object).Count
+}
+if (Test-Path -LiteralPath $precompactReceipts) {
+    $precompactViolations = (Select-String -LiteralPath $precompactReceipts -Pattern '"violation"' -SimpleMatch -AllMatches |
+        Measure-Object).Count
+}
+if ($sentinelViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "sentinel hook violations recorded: $sentinelViolations (see $sentinelReceipts)"
+}
+else {
+    Add-Result -Level 'PASS' -Message 'no sentinel hook violations recorded'
+}
+if ($precompactViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "precompact hook violations recorded: $precompactViolations (see $precompactReceipts)"
+}
+else {
+    Add-Result -Level 'PASS' -Message 'no precompact hook violations recorded'
+}
+
 $gitignore = Join-NormalPath $root '.gitignore'
 if (Test-Path -Path $gitignore -PathType Leaf) {
     $gitignoreContent = Get-Content -Path $gitignore
