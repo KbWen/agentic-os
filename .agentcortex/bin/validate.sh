@@ -867,6 +867,8 @@ fi
 WORKLOG_MAX_LINES="${WORKLOG_MAX_LINES:-300}"
 WORKLOG_MAX_KB="${WORKLOG_MAX_KB:-12}"
 ACTIVE_WORKLOG_WARN_THRESHOLD="${ACTIVE_WORKLOG_WARN_THRESHOLD:-8}"
+ACTIVE_WORKLOG_FAIL_THRESHOLD="${ACTIVE_WORKLOG_FAIL_THRESHOLD:-12}"
+ARCHIVE_SIZE_WARN_KB="${ARCHIVE_SIZE_WARN_KB:-10240}"
 WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF="${WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF:-2026-03-25}"
 WORKLOG_DIR="$ROOT/.agentcortex/context/work"
 if [[ -d "$WORKLOG_DIR" ]]; then
@@ -887,10 +889,23 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   else
     record_result PASS "active work log sizes are within compaction thresholds"
   fi
-  if [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_WARN_THRESHOLD" ]]; then
-    record_result WARN "active work log count exceeds hygiene threshold (${worklog_count} > ${ACTIVE_WORKLOG_WARN_THRESHOLD})"
+  if [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_FAIL_THRESHOLD" ]]; then
+    record_result FAIL "active work log count exceeds hard limit (${worklog_count} > ${ACTIVE_WORKLOG_FAIL_THRESHOLD}); archive completed branches via /handoff or rm"
+  elif [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_WARN_THRESHOLD" ]]; then
+    record_result WARN "active work log count exceeds hygiene threshold (${worklog_count} > ${ACTIVE_WORKLOG_WARN_THRESHOLD}; hard limit ${ACTIVE_WORKLOG_FAIL_THRESHOLD})"
   else
     record_result PASS "active work log count is within hygiene threshold"
+  fi
+  # Archive directory size — surface unbounded growth before it becomes an
+  # ingestion-time hazard. WARN-only; opt-out via ARCHIVE_SIZE_WARN_KB=0.
+  ARCHIVE_DIR="$ROOT/.agentcortex/context/archive"
+  if [[ -d "$ARCHIVE_DIR" ]] && [[ "$ARCHIVE_SIZE_WARN_KB" -gt 0 ]]; then
+    archive_kb="$(du -sk "$ARCHIVE_DIR" 2>/dev/null | awk '{print $1}')"
+    if [[ -n "$archive_kb" ]] && [[ "$archive_kb" -gt "$ARCHIVE_SIZE_WARN_KB" ]]; then
+      record_result WARN "archive size ${archive_kb}KB exceeds threshold ${ARCHIVE_SIZE_WARN_KB}KB; consider /retro-driven cold-tier rotation"
+    else
+      record_result PASS "archive size within threshold (${archive_kb:-0}KB / ${ARCHIVE_SIZE_WARN_KB}KB)"
+    fi
   fi
   # Work Log integrity marker check — detect truncated writes from interrupted sessions
   worklog_truncated=0
@@ -920,6 +935,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   legacy_gate_evidence_missing=0
   gate_progression_illegal=0
   phase_summary_missing=0
+  sentinel_marker_missing=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -991,6 +1007,15 @@ print('ok')
     if ! printf '%s' "$wl_content" | grep -q '^## Phase Summary'; then
       phase_summary_missing=$((phase_summary_missing + 1))
     fi
+    # Sentinel marker discoverability — Work Log Phase Summary SHOULD contain
+    # ⚡ ACX at least once so the AGENTS.md Sentinel Check has a persistent
+    # audit trail (chat output is ephemeral). WARN-only — does not break ship.
+    # Accept either the emoji form "⚡ ACX" or the plain "ACX" tag for
+    # terminals that strip non-ASCII.
+    if printf '%s' "$wl_content" | grep -q '^## Phase Summary' \
+       && ! printf '%s' "$wl_content" | grep -qE '(⚡[[:space:]]?ACX|[[:space:]]ACX([[:space:]]|$))'; then
+      sentinel_marker_missing=$((sentinel_marker_missing + 1))
+    fi
   done
   if [[ "$phase_field_missing" -gt 0 ]]; then
     record_result WARN "work logs missing Current Phase field: ${phase_field_missing}"
@@ -1019,6 +1044,11 @@ print('ok')
     record_result WARN "work logs missing Phase Summary section: ${phase_summary_missing}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "all active work logs have Phase Summary section"
+  fi
+  if [[ "$sentinel_marker_missing" -gt 0 ]]; then
+    record_result WARN "work logs missing sentinel marker (⚡ ACX) in Phase Summary: ${sentinel_marker_missing}"
+  elif [[ "$worklog_count" -gt 0 ]] && [[ "$phase_summary_missing" -eq 0 ]]; then
+    record_result PASS "all active work logs carry sentinel marker for audit trail"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
@@ -1080,6 +1110,30 @@ if [[ -f "$OPTIONAL_GUARD_HOOK" ]]; then
   record_result PASS "optional guard hook sample present"
 else
   record_result WARN "optional guard hook sample is not present; guarded-write checks remain advisory only"
+fi
+
+# Hook violation receipts — surface counts written by Claude Code Stop /
+# PreCompact hooks so the framework sees what the harness saw. WARN-only.
+# Capability-by-presence: absent file = 0 violations = PASS.
+SENTINEL_RECEIPTS="$ROOT/.agentcortex/context/sentinel-violations.jsonl"
+PRECOMPACT_RECEIPTS="$ROOT/.agentcortex/context/precompact-violations.jsonl"
+sentinel_violations=0
+precompact_violations=0
+if [[ -f "$SENTINEL_RECEIPTS" ]]; then
+  sentinel_violations="$(grep -c '"violation"' "$SENTINEL_RECEIPTS" 2>/dev/null || echo 0)"
+fi
+if [[ -f "$PRECOMPACT_RECEIPTS" ]]; then
+  precompact_violations="$(grep -c '"violation"' "$PRECOMPACT_RECEIPTS" 2>/dev/null || echo 0)"
+fi
+if [[ "$sentinel_violations" -gt 0 ]]; then
+  record_result WARN "sentinel hook violations recorded: ${sentinel_violations} (see ${SENTINEL_RECEIPTS})"
+else
+  record_result PASS "no sentinel hook violations recorded"
+fi
+if [[ "$precompact_violations" -gt 0 ]]; then
+  record_result WARN "precompact hook violations recorded: ${precompact_violations} (see ${PRECOMPACT_RECEIPTS})"
+else
+  record_result PASS "no precompact hook violations recorded"
 fi
 
 GITIGNORE="$ROOT/.gitignore"

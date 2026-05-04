@@ -794,6 +794,8 @@ if (Test-Path -Path $auditGuardrailsZhTw -PathType Leaf) {
 $worklogMaxLines = if ($env:WORKLOG_MAX_LINES) { [int]$env:WORKLOG_MAX_LINES } else { 300 }
 $worklogMaxKb = if ($env:WORKLOG_MAX_KB) { [int]$env:WORKLOG_MAX_KB } else { 12 }
 $activeWorklogWarnThreshold = if ($env:ACTIVE_WORKLOG_WARN_THRESHOLD) { [int]$env:ACTIVE_WORKLOG_WARN_THRESHOLD } else { 8 }
+$activeWorklogFailThreshold = if ($env:ACTIVE_WORKLOG_FAIL_THRESHOLD) { [int]$env:ACTIVE_WORKLOG_FAIL_THRESHOLD } else { 12 }
+$archiveSizeWarnKb = if ($env:ARCHIVE_SIZE_WARN_KB) { [int]$env:ARCHIVE_SIZE_WARN_KB } else { 10240 }
 $legacyGateEvidenceCutoff = if ($env:WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF) { $env:WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF } else { '2026-03-25' }
 $worklogDir = Join-NormalPath $root '.agentcortex/context/work'
 if (Test-Path -Path $worklogDir -PathType Container) {
@@ -814,11 +816,26 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'PASS' -Message 'active work log sizes are within compaction thresholds'
     }
 
-    if ($worklogs.Count -gt $activeWorklogWarnThreshold) {
-        Add-Result -Level 'WARN' -Message "active work log count exceeds hygiene threshold ($($worklogs.Count) > $activeWorklogWarnThreshold)"
+    if ($worklogs.Count -gt $activeWorklogFailThreshold) {
+        Add-Result -Level 'FAIL' -Message "active work log count exceeds hard limit ($($worklogs.Count) > $activeWorklogFailThreshold); archive completed branches via /handoff or rm"
+    }
+    elseif ($worklogs.Count -gt $activeWorklogWarnThreshold) {
+        Add-Result -Level 'WARN' -Message "active work log count exceeds hygiene threshold ($($worklogs.Count) > $activeWorklogWarnThreshold; hard limit $activeWorklogFailThreshold)"
     }
     else {
         Add-Result -Level 'PASS' -Message 'active work log count is within hygiene threshold'
+    }
+    # Archive directory size — surface unbounded growth before ingestion hazard. WARN-only.
+    $archiveDir = Join-NormalPath $root '.agentcortex/context/archive'
+    if ((Test-Path -Path $archiveDir -PathType Container) -and ($archiveSizeWarnKb -gt 0)) {
+        $archiveKb = [int]((Get-ChildItem -Path $archiveDir -Recurse -File -ErrorAction SilentlyContinue |
+            Measure-Object -Property Length -Sum).Sum / 1024)
+        if ($archiveKb -gt $archiveSizeWarnKb) {
+            Add-Result -Level 'WARN' -Message "archive size ${archiveKb}KB exceeds threshold ${archiveSizeWarnKb}KB; consider /retro-driven cold-tier rotation"
+        }
+        else {
+            Add-Result -Level 'PASS' -Message "archive size within threshold (${archiveKb}KB / ${archiveSizeWarnKb}KB)"
+        }
     }
     # Work Log integrity marker check — detect truncated writes from interrupted sessions
     $worklogTruncated = 0
@@ -848,6 +865,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $legacyGateEvidenceMissing = 0
     $gateProgressionIllegal = 0
     $phaseSummaryMissing = 0
+    $sentinelMarkerMissing = 0
     # Legal phase transitions for gate evidence validation
     $legalTransitions = @{
         'bootstrap' = @('plan')
@@ -899,6 +917,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
         }
         if ($content -notmatch '(?m)^## Phase Summary') { $phaseSummaryMissing++ }
+        # Sentinel marker discoverability — Work Log Phase Summary SHOULD carry
+        # ⚡ ACX (or plain ACX) at least once for AGENTS.md Sentinel Check audit.
+        # WARN-only — skip if Phase Summary itself is missing.
+        if (($content -match '(?m)^## Phase Summary') `
+            -and ($content -notmatch '(⚡\s?ACX|\sACX(\s|$))')) {
+            $sentinelMarkerMissing++
+        }
     }
     if ($phaseFieldMissing -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs missing Current Phase field: $phaseFieldMissing"
@@ -927,6 +952,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "work logs missing Phase Summary section: $phaseSummaryMissing"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'all active work logs have Phase Summary section'
+    }
+    if ($sentinelMarkerMissing -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs missing sentinel marker (ACX) in Phase Summary: $sentinelMarkerMissing"
+    } elseif ($worklogs.Count -gt 0 -and $phaseSummaryMissing -eq 0) {
+        Add-Result -Level 'PASS' -Message 'all active work logs carry sentinel marker for audit trail'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock
@@ -981,6 +1011,33 @@ if (Test-Path -Path $optionalGuardHook -PathType Leaf) {
 }
 else {
     Add-Result -Level 'WARN' -Message 'optional guard hook sample is not present; guarded-write checks remain advisory only'
+}
+
+# Hook violation receipts — surface counts written by Claude Code Stop /
+# PreCompact hooks so the framework sees what the harness saw. WARN-only.
+$sentinelReceipts = Join-NormalPath $root '.agentcortex/context/sentinel-violations.jsonl'
+$precompactReceipts = Join-NormalPath $root '.agentcortex/context/precompact-violations.jsonl'
+$sentinelViolations = 0
+$precompactViolations = 0
+if (Test-Path -LiteralPath $sentinelReceipts) {
+    $sentinelViolations = (Select-String -LiteralPath $sentinelReceipts -Pattern '"violation"' -SimpleMatch -AllMatches |
+        Measure-Object).Count
+}
+if (Test-Path -LiteralPath $precompactReceipts) {
+    $precompactViolations = (Select-String -LiteralPath $precompactReceipts -Pattern '"violation"' -SimpleMatch -AllMatches |
+        Measure-Object).Count
+}
+if ($sentinelViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "sentinel hook violations recorded: $sentinelViolations (see $sentinelReceipts)"
+}
+else {
+    Add-Result -Level 'PASS' -Message 'no sentinel hook violations recorded'
+}
+if ($precompactViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "precompact hook violations recorded: $precompactViolations (see $precompactReceipts)"
+}
+else {
+    Add-Result -Level 'PASS' -Message 'no precompact hook violations recorded'
 }
 
 $gitignore = Join-NormalPath $root '.gitignore'
