@@ -25,9 +25,9 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 7 | Domain Doc L2 superseded entry archival | F-06 (P1) | — | quick-win | Pending | — |
 | 8 | `_product-backlog.md` completed backlog archive | F-07 (P1) | — | quick-win | Pending | — |
 | 9 | ~~`docs/reviews/` dead reference~~ — not a bug; created by `/audit`, ship check is capability-by-presence | F-08 (P2) | — | tiny-fix | Cancelled | — |
-| 10 | Active Work Log count: validate WARN→FAIL | F-09 (P2) | — | quick-win | Pending | — |
+| 10 | Active Work Log count: graduated WARN (>8) → FAIL (>12) | F-09 (P2) | — | quick-win | Shipped | — |
 | 11 | Shipped specs accumulation — status-driven filtering | F-10 (P2) | — | quick-win | Pending | #1 |
-| 12 | validate.sh: add archive size + Global Lessons count checks | F-02,F-01 | — | quick-win | Pending | #2, #3 |
+| 12 | validate.{sh,ps1}: archive size WARN check (Global Lessons cap already PASS) | F-02,F-01 | — | quick-win | Shipped | — |
 | 13 | Warm→Cold LLM summarization pass in /ship | Design | — | feature | Pending | #1, #3 |
 | 14 | External Skill Research & Integration (Phase A: 3 core skills) | Gap Analysis | docs/specs/skill-research-integration.md | feature | Pending | — |
 | 15 | Anti-Rationalization Pattern (framework-wide enhancement) | Gap Analysis | docs/specs/skill-research-integration.md §4C | quick-win | Pending | #14 |
@@ -38,12 +38,12 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 20 | CI security scanning (Semgrep + TruffleHog + dependency audit) | Expert review: security posture | — | feature | Pending | — |
 | 21 | Skill cache timestamp + staleness invalidation | Expert review: stale skill cache | — | quick-win | Pending | — |
 | 22 | Rollback plan existence check in /ship (advisory, feature/arch-change only) | Expert review: rollback is documented not tested | — | quick-win | Shipped | — |
-| 23 | Evidence section terse format (current gate block is already structured; tighten §Evidence prose) | Expert review: audit trail opacity | — | quick-win | Pending | — |
+| 23 | Evidence section terse format reference to §5.2b in worklog template | Expert review: audit trail opacity | — | quick-win | Shipped | — |
 | 24 | Scope breach detection in /implement (actual files vs plan) | Expert review: silent scope creep | — | quick-win | Shipped | — |
 | 25 | Ship-phase gate receipt audit (verify prior phases have receipts, /ship only) | Expert review: Work Log tampering risk | — | quick-win | Shipped | — |
 | 26 | ~~Skill whitelist~~ — Reverted: auto-load is intentional for extensibility; code review is the real gate | Expert review: prompt injection via skill files | — | — | Cancelled | — |
 | 27 | ADR auto-discovery in bootstrap (frontmatter-only scan) | Expert review: ADR indexing weakness | — | quick-win | Shipped | — |
-| 28 | Token budget instrumentation (optional files_read counter in §Session Info) | Expert review: unverified token budgets | — | quick-win | Pending | — |
+| 28 | Token budget instrumentation (optional Files Read counter in §Session Info, worklog template) | Expert review: unverified token budgets | — | quick-win | Shipped | — |
 | 29 | SKILL.md heading-scope optimization (phase-entry loads only essential sections) | Upstream H73: ~30% skill token savings | — | quick-win | Shipped | — |
 | 30 | Claude hooks enforcement layer (Stop sentinel ✅ shipped previously; PreCompact Work Log guard ✅ shipped 2026-05-04; PreToolUse + UserPromptSubmit deferred — risk > ROI) | Opt-2026-05-04 T1.1a — closes HIGH lesson 19c054e7 in Claude platform; receipts surfaced via validate.{sh,ps1} | — | feature | Shipped | — |
 | 31 | Cross-platform validate.sh sentinel + Work Log final-line marker check | Opt-2026-05-04 T1.1b — non-Claude platforms parity | — | quick-win | Shipped | #30 |

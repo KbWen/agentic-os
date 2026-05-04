@@ -32,6 +32,7 @@ usage: Used by /bootstrap workflow when creating a new Work Log at .agentcortex/
 - Agent: `<model-name>`
 - Session: `<YYYY-MM-DD HH:MM UTC>`
 - Platform: `<claude-code | codex | antigravity | api>`
+- Files Read: `<integer>` (optional — running count of file reads across this session for token-budget instrumentation; bootstrap may seed `0`, later phases may increment when material).
 
 ---
 
@@ -123,5 +124,6 @@ none
 ## Evidence
 
 > Reproducible evidence for completed phases. Commands, outputs, versions. "It should work" is NOT evidence.
+> **Terse format** (Ref: `engineering_guardrails.md` §5.2b Evidence Truncation Rule): success ≤ 3 lines per claim, failure ≤ 10 lines per claim with the most diagnostic context (root error + bottom of stack), strip passing-test noise. Multiple bullet entries preferred over one long paste.
 
 none

@@ -867,6 +867,8 @@ fi
 WORKLOG_MAX_LINES="${WORKLOG_MAX_LINES:-300}"
 WORKLOG_MAX_KB="${WORKLOG_MAX_KB:-12}"
 ACTIVE_WORKLOG_WARN_THRESHOLD="${ACTIVE_WORKLOG_WARN_THRESHOLD:-8}"
+ACTIVE_WORKLOG_FAIL_THRESHOLD="${ACTIVE_WORKLOG_FAIL_THRESHOLD:-12}"
+ARCHIVE_SIZE_WARN_KB="${ARCHIVE_SIZE_WARN_KB:-10240}"
 WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF="${WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF:-2026-03-25}"
 WORKLOG_DIR="$ROOT/.agentcortex/context/work"
 if [[ -d "$WORKLOG_DIR" ]]; then
@@ -887,10 +889,23 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   else
     record_result PASS "active work log sizes are within compaction thresholds"
   fi
-  if [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_WARN_THRESHOLD" ]]; then
-    record_result WARN "active work log count exceeds hygiene threshold (${worklog_count} > ${ACTIVE_WORKLOG_WARN_THRESHOLD})"
+  if [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_FAIL_THRESHOLD" ]]; then
+    record_result FAIL "active work log count exceeds hard limit (${worklog_count} > ${ACTIVE_WORKLOG_FAIL_THRESHOLD}); archive completed branches via /handoff or rm"
+  elif [[ "$worklog_count" -gt "$ACTIVE_WORKLOG_WARN_THRESHOLD" ]]; then
+    record_result WARN "active work log count exceeds hygiene threshold (${worklog_count} > ${ACTIVE_WORKLOG_WARN_THRESHOLD}; hard limit ${ACTIVE_WORKLOG_FAIL_THRESHOLD})"
   else
     record_result PASS "active work log count is within hygiene threshold"
+  fi
+  # Archive directory size — surface unbounded growth before it becomes an
+  # ingestion-time hazard. WARN-only; opt-out via ARCHIVE_SIZE_WARN_KB=0.
+  ARCHIVE_DIR="$ROOT/.agentcortex/context/archive"
+  if [[ -d "$ARCHIVE_DIR" ]] && [[ "$ARCHIVE_SIZE_WARN_KB" -gt 0 ]]; then
+    archive_kb="$(du -sk "$ARCHIVE_DIR" 2>/dev/null | awk '{print $1}')"
+    if [[ -n "$archive_kb" ]] && [[ "$archive_kb" -gt "$ARCHIVE_SIZE_WARN_KB" ]]; then
+      record_result WARN "archive size ${archive_kb}KB exceeds threshold ${ARCHIVE_SIZE_WARN_KB}KB; consider /retro-driven cold-tier rotation"
+    else
+      record_result PASS "archive size within threshold (${archive_kb:-0}KB / ${ARCHIVE_SIZE_WARN_KB}KB)"
+    fi
   fi
   # Work Log integrity marker check — detect truncated writes from interrupted sessions
   worklog_truncated=0
