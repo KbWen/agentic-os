@@ -1284,6 +1284,52 @@ if [[ -d "$ROOT/docs/specs" ]]; then
   fi
 fi
 
+# ACX phase shim skill-existence check: for each .claude/agents/acx-*.md,
+# verify that any skill name listed under skills: which maps to a .agent/skills/
+# directory actually has a SKILL.md body. Claude Code built-in skills (no
+# corresponding directory) are silently skipped.
+AGENTS_DIR="$ROOT/.claude/agents"
+if [[ -d "$AGENTS_DIR" ]]; then
+  shim_skill_errors=0
+  shim_count=0
+  shopt -s nullglob
+  for shim in "$AGENTS_DIR"/acx-*.md; do
+    [[ -f "$shim" ]] || continue
+    shim_count=$((shim_count + 1))
+    in_frontmatter=0
+    in_skills=0
+    while IFS= read -r line; do
+      [[ "$line" == "---" ]] && { in_frontmatter=$(( 1 - in_frontmatter )); in_skills=0; continue; }
+      [[ "$in_frontmatter" -eq 0 ]] && break
+      if [[ "$line" =~ ^skills: ]]; then in_skills=1; continue; fi
+      if [[ "$in_skills" -eq 1 ]]; then
+        if [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
+          skill_name="${BASH_REMATCH[1]}"
+          skill_dir="$ROOT/.agent/skills/$skill_name"
+          if [[ -d "$skill_dir" ]]; then
+            if [[ ! -f "$ROOT/.agents/skills/$skill_name/SKILL.md" ]]; then
+              printf '  shim skill missing SKILL.md: %s (referenced in %s)\n' "$skill_name" "$(basename "$shim")"
+              shim_skill_errors=$((shim_skill_errors + 1))
+            fi
+          fi
+        elif [[ ! "$line" =~ ^[[:space:]] ]]; then
+          in_skills=0
+        fi
+      fi
+    done < "$shim"
+  done
+  shopt -u nullglob
+  if [[ "$shim_count" -eq 0 ]]; then
+    record_result SKIP "acx phase shim skill check -- no acx-*.md shims found in .claude/agents/"
+  elif [[ "$shim_skill_errors" -gt 0 ]]; then
+    record_result FAIL "acx phase shim skill references are broken: ${shim_skill_errors} missing SKILL.md"
+  else
+    record_result PASS "acx phase shim skill references are all valid (${shim_count} shims checked)"
+  fi
+else
+  record_result SKIP "acx phase shim skill check -- .claude/agents/ not present"
+fi
+
 echo ""
 printf 'Summary: pass=%s warn=%s fail=%s skip=%s\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
