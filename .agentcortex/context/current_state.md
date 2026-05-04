@@ -11,9 +11,9 @@
   - Task Isolation: `.agentcortex/context/work/<worklog-key>.md`
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
-- **Last Updated**: 2026-04-25
+- **Last Updated**: 2026-05-04
 - **Last Verified**: 2026-04-25
-- **Update Sequence**: 6
+- **Update Sequence**: 7
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -62,8 +62,14 @@
 - [Category: adr-discipline][Severity: MEDIUM][Trigger: adr-bundling-multiple-decisions][prev: 6cf6a979] Bundling multiple architectural decisions into one ADR (e.g., ADR-002 D2.1+D2.2+D2.3) trades short-term commit count for long-term spec drift. ADR-002's bundled spec accumulated 3 deferred ACs (AC-23/24/25) before ship. Future ADRs: 1 architectural decision per ADR. Multiple ADRs OK and preferred. "Mirror ADR-001's 3-decision discipline" is the wrong precedent — the right unit is the smallest decision that ships independently with its own contract.
 - [Category: enforcement][Severity: HIGH][Trigger: must-rule-without-validator][prev: 19c054e7] Every "MUST" rule in AGENTS.md / engineering_guardrails.md that depends on agent self-attestation (Sentinel `⚡ ACX`, Token Leak Drift Log audit receipts, Skill cache hash, "MUST sanitize Work Log") is a honor-system rule and is functionally theatre. Adversary feasibility is 10/10 for these (a single user message can disable any of them). Discipline: every "MUST" = 1 hook OR validator OR test OR external observer. Rules without enforcement should be DELETED rather than left as honor-system theatre. Adding "MUST" without enforcement is anti-help — it creates false confidence the rule is in effect.
 - [Category: bootstrap-flow][Severity: HIGH][Trigger: post-first-adr-architecture-change][prev: efbd9e63] `bootstrap §0a` "App Architecture Check" condition `1. No ADR exists: docs/adr/ contains no project-specific ADR.` becomes permanently False once ANY ADR ships. After ADR-001 landed, all subsequent `architecture-change` tasks silently skip the ADR prompt — the very next architecture-change (ADR-002) already triggered this regression but was caught by accident. Fix: replace existence check with frontmatter `applies_to:` glob coverage check. Lesson: rules with date-dependent trigger conditions (e.g., "when X exists" / "when X count == 0") need explicit post-ship validation and decay-aware re-test.
+- [Category: governance-proposal][Severity: MEDIUM][Trigger: plan-proposes-must-rule][prev: 7f5a25c3] When /plan proposes adding a MUST rule to AGENTS.md or .agent/rules/, cross-check the [enforcement][HIGH] Global Lesson immediately at plan time — not just at /implement. A MUST rule without a corresponding hook, validator, or test is honor-system theatre regardless of where in the workflow it is caught. Self-check: "What enforces this rule if the AI ignores it?" If the answer is "nothing", delete the rule or add the enforcement first.
 
 ## Ship History
+
+### Ship-feat-acx-phase-shims-2026-05-04
+- Feature shipped: acx-* phase shims for Claude Code native skill injection — 5 shims (.claude/agents/acx-{implementer,reviewer,tester,handoff,shipper}.md), validate.sh+ps1 shim skill-existence check, review.md acx-* enforcement check.
+- Tests: Pass — validate 63 PASS / 0 FAIL; simulation confirmed native skill injection active at subagent startup.
+- Commits: `94ab322`
 
 ### Ship-architecture-change-adr-002-lock-unification-2026-04-25
 - Feature shipped: ADR-002 Guarded Governance Writes — D2.1 lock generalization (policy-driven scope, append mode, per-target receipts, configurable TTL, PID-liveness, lock_group stub for ADR-003); D2.2 CI lint `tools/lint_governed_writes.py` enforces guard usage on protected paths; D2.3 lifecycle frontmatter checker for governance docs (audit/, guides/governance-*, adr/, architecture L1).

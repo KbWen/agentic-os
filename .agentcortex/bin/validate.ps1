@@ -1158,6 +1158,45 @@ if (Test-Path -Path $specsDir -PathType Container) {
     }
 }
 
+# ACX phase shim skill-existence check (parity with validate.sh)
+$agentsDir = Join-NormalPath $root '.claude/agents'
+if (Test-Path -Path $agentsDir -PathType Container) {
+    $shimSkillErrors = 0
+    $shimCount = 0
+    foreach ($shim in (Get-ChildItem -Path $agentsDir -Filter 'acx-*.md' -File -ErrorAction SilentlyContinue)) {
+        $shimCount++
+        $lines = Get-Content -Path $shim.FullName -Encoding UTF8
+        $inFrontmatter = $false; $inSkills = $false
+        foreach ($line in $lines) {
+            if ($line -eq '---') { $inFrontmatter = -not $inFrontmatter; $inSkills = $false; continue }
+            if (-not $inFrontmatter) { break }
+            if ($line -match '^skills:') { $inSkills = $true; continue }
+            if ($inSkills) {
+                if ($line -match '^\s+-\s+(.+)$') {
+                    $skillName = $Matches[1].Trim()
+                    $skillDir = Join-NormalPath $root ".agent/skills/$skillName"
+                    if (Test-Path -Path $skillDir -PathType Container) {
+                        $skillBody = Join-NormalPath $root ".agents/skills/$skillName/SKILL.md"
+                        if (-not (Test-Path -Path $skillBody -PathType Leaf)) {
+                            Write-Output "  shim skill missing SKILL.md: $skillName (referenced in $($shim.Name))"
+                            $shimSkillErrors++
+                        }
+                    }
+                } elseif ($line -notmatch '^\s') { $inSkills = $false }
+            }
+        }
+    }
+    if ($shimCount -eq 0) {
+        Add-Result -Level 'SKIP' -Message 'acx phase shim skill check -- no acx-*.md shims found in .claude/agents/'
+    } elseif ($shimSkillErrors -gt 0) {
+        Add-Result -Level 'FAIL' -Message "acx phase shim skill references are broken: $shimSkillErrors missing SKILL.md"
+    } else {
+        Add-Result -Level 'PASS' -Message "acx phase shim skill references are all valid ($shimCount shims checked)"
+    }
+} else {
+    Add-Result -Level 'SKIP' -Message 'acx phase shim skill check -- .claude/agents/ not present'
+}
+
 Write-Output ''
 Write-Output "Summary: pass=$($script:PassCount) warn=$($script:WarnCount) fail=$($script:FailCount) skip=$($script:SkipCount)"
 if ($script:FailCount -gt 0) {

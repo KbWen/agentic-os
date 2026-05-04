@@ -38,6 +38,7 @@ This ensures domain-specific review criteria (API conventions, frontend patterns
 - Known risk traceability: if `## Known Risk` is populated, confirm each listed mitigation is actually present in the code or evidence.
 - PR-visible evidence contract: active Work Logs remain local-only. In framework/upstream repos, refresh a tracked review mirror at `.agentcortex/context/review/<worklog-key>.md` before opening or updating a PR so `agentcortex-verify.yml` can inspect the current evidence. Downstream repos may leave this path absent unless they opt into PR-visible evidence checks.
 - Review mirror scope: `.agentcortex/context/review/<worklog-key>.md` may reflect an in-progress PR. CI validates legal phase progression up to the current checkpoint; `/ship` still enforces the full completion gate before SSoT updates.
+- ACX shim enforcement: if the phase being reviewed has a corresponding `.claude/agents/acx-<phase>.md` shim AND the implementation dispatched subagents, verify that `subagent_type` used the correct `acx-*` shim name. Subagents spawned without the shim will NOT receive native skill injection — flag as **MEDIUM** defect requiring a follow-up fix in the calling workflow.
 
 ## Error Observability Compliance (§5.2a)
 
