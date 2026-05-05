@@ -934,6 +934,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   gate_evidence_missing=0
   legacy_gate_evidence_missing=0
   gate_progression_illegal=0
+  gate_progression_skipped=0
   phase_summary_missing=0
   sentinel_marker_missing=0
   for wl in "$WORKLOG_DIR"/*.md; do
@@ -967,9 +968,12 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         gate_evidence_missing=$((gate_evidence_missing + 1))
       fi
     else
-      # Parse gate receipts and verify phase progression
-      if [[ -n "${py_cmd:-}" ]] || { py_cmd="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || true)" && [[ -n "$py_cmd" ]]; }; then
-        gate_check="$("$py_cmd" -c "
+      # Parse gate receipts and verify phase progression. Use PYTHON_BIN
+      # (set in the preamble) so the SKIP path is consistent with
+      # run_python_check — silent skips here previously produced PASS by
+      # accident when Python was unavailable.
+      if [[ -n "$PYTHON_BIN" ]]; then
+        gate_check="$("$PYTHON_BIN" -c "
 import sys, re
 LEGAL = {
     'bootstrap': ['plan'],
@@ -1001,6 +1005,8 @@ print('ok')
           printf '  illegal gate progression in %s: %s\n' "$(basename "$wl")" "${gate_check#illegal:}"
           gate_progression_illegal=$((gate_progression_illegal + 1))
         fi
+      else
+        gate_progression_skipped=1
       fi
     fi
     # Runtime section: ## Phase Summary
@@ -1037,6 +1043,12 @@ print('ok')
   fi
   if [[ "$gate_progression_illegal" -gt 0 ]]; then
     record_result FAIL "work logs with illegal gate phase progression: ${gate_progression_illegal}"
+  elif [[ "$gate_progression_skipped" -eq 1 ]]; then
+    if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+      record_result SKIP "gate evidence phase progression -- python checks disabled (--no-python)"
+    else
+      record_result WARN "gate evidence phase progression -- python unavailable (install Python 3.9+ for full validation)"
+    fi
   elif [[ "$worklog_count" -gt 0 ]] && [[ "$gate_evidence_missing" -eq 0 ]] && [[ "$legacy_gate_evidence_missing" -eq 0 ]]; then
     record_result PASS "gate evidence phase progression is legal"
   fi
@@ -1053,11 +1065,12 @@ print('ok')
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
   stale_locks=0
-  py_cmd="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || true)"
+  lock_files_present=0
   for lockf in "$WORKLOG_DIR"/*.lock.json; do
     [[ -f "$lockf" ]] || continue
-    if [[ -n "$py_cmd" ]]; then
-      stale_verdict="$("$py_cmd" -c "
+    lock_files_present=1
+    if [[ -n "$PYTHON_BIN" ]]; then
+      stale_verdict="$("$PYTHON_BIN" -c "
 import json, sys, datetime
 try:
     with open(sys.argv[1]) as f:
@@ -1088,6 +1101,12 @@ except Exception:
   done
   if [[ "$stale_locks" -gt 0 ]]; then
     record_result WARN "stale advisory work log locks detected: ${stale_locks}"
+  elif [[ "$lock_files_present" -eq 1 ]] && [[ -z "$PYTHON_BIN" ]]; then
+    if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+      record_result SKIP "advisory lock staleness check -- python checks disabled (--no-python)"
+    else
+      record_result WARN "advisory lock staleness check -- python unavailable (install Python 3.9+ for full validation)"
+    fi
   fi
 else
   record_result SKIP "active work log directory not present"
