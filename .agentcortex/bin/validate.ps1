@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$NoPython
 )
 
@@ -828,8 +828,16 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     # Archive directory size — surface unbounded growth before ingestion hazard. WARN-only.
     $archiveDir = Join-NormalPath $root '.agentcortex/context/archive'
     if ((Test-Path -Path $archiveDir -PathType Container) -and ($archiveSizeWarnKb -gt 0)) {
-        $archiveKb = [int]((Get-ChildItem -Path $archiveDir -Recurse -File -ErrorAction SilentlyContinue |
-            Measure-Object -Property Length -Sum).Sum / 1024)
+        # Under Set-StrictMode -Version Latest, an empty pipeline through Measure-Object
+        # yields an object whose Sum property strict-mode treats as missing — guard via
+        # explicit array materialization so empty archives report 0 KB cleanly.
+        $archiveFiles = @(Get-ChildItem -Path $archiveDir -Recurse -File -ErrorAction SilentlyContinue)
+        if ($archiveFiles.Count -gt 0) {
+            $archiveKb = [int](($archiveFiles | Measure-Object -Property Length -Sum).Sum / 1024)
+        }
+        else {
+            $archiveKb = 0
+        }
         if ($archiveKb -gt $archiveSizeWarnKb) {
             Add-Result -Level 'WARN' -Message "archive size ${archiveKb}KB exceeds threshold ${archiveSizeWarnKb}KB; consider /retro-driven cold-tier rotation"
         }

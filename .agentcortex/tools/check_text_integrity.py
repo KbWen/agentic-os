@@ -92,7 +92,10 @@ def has_mixed_eol_bytes(data: bytes) -> bool:
 def inspect_file(path: pathlib.Path, root: pathlib.Path) -> list[str]:
     issues: list[str] = []
     data = path.read_bytes()
-    if data.startswith(UTF8_BOM):
+    # UTF-8 BOM is REQUIRED on .ps1 scripts that contain non-ASCII characters,
+    # otherwise Windows PowerShell 5.1 reads them as the system ANSI code page
+    # (e.g. CP950/Big5 on Taiwan locale) and the parser breaks on the mojibake.
+    if data.startswith(UTF8_BOM) and path.suffix.lower() != '.ps1':
         issues.append('utf8-bom')
     try:
         text = data.decode('utf-8')

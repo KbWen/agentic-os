@@ -57,7 +57,11 @@ function Inspect-File {
     param([string]$FilePath)
     $issues = @()
     $bytes = [System.IO.File]::ReadAllBytes($FilePath)
-    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+    # UTF-8 BOM is REQUIRED on .ps1 scripts containing non-ASCII characters,
+    # otherwise Windows PowerShell 5.1 reads them as the system ANSI code page
+    # (e.g. CP950/Big5 on Taiwan locale) and the parser breaks on the mojibake.
+    $ext = [System.IO.Path]::GetExtension($FilePath).ToLower()
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF -and $ext -ne ".ps1") {
         $issues += "utf8-bom"
     }
     try {
