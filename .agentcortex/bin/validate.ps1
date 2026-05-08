@@ -7,8 +7,10 @@ $ErrorActionPreference = 'Stop'
 
 function Normalize-PathString {
     param([Parameter(Mandatory = $true)][string]$Path)
-    if ($Path.StartsWith('\\?\')) { return $Path.Substring(4) }
-    return $Path
+    # Strip Windows long-path prefix (\\?\) before any further normalization.
+    if ($Path.StartsWith('\\?\')) { $Path = $Path.Substring(4) }
+    # Unify mixed separators to backslash so string-based comparisons are stable on Windows.
+    return $Path -replace '/', '\'
 }
 
 function Join-NormalPath {
@@ -16,7 +18,7 @@ function Join-NormalPath {
         [Parameter(Mandatory = $true)][string]$Base,
         [Parameter(Mandatory = $true)][string]$Child
     )
-    return [System.IO.Path]::Combine((Normalize-PathString $Base), $Child)
+    return Normalize-PathString ([System.IO.Path]::Combine((Normalize-PathString $Base), $Child))
 }
 
 function Add-Result {
