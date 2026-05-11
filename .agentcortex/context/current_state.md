@@ -13,7 +13,7 @@
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Last Updated**: 2026-05-07
 - **Last Verified**: 2026-05-07
-- **Update Sequence**: 12
+- **Update Sequence**: 13
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -65,6 +65,14 @@
 - [Category: governance-proposal][Severity: MEDIUM][Trigger: plan-proposes-must-rule][prev: 7f5a25c3] When /plan proposes adding a MUST rule to AGENTS.md or .agent/rules/, cross-check the [enforcement][HIGH] Global Lesson immediately at plan time — not just at /implement. A MUST rule without a corresponding hook, validator, or test is honor-system theatre regardless of where in the workflow it is caught. Self-check: "What enforces this rule if the AI ignores it?" If the answer is "nothing", delete the rule or add the enforcement first.
 
 ## Ship History
+
+### Ship-claude-reverent-matsumoto-30a74e-2026-05-07
+- Feature shipped: Onboarding entry-point unification — three-path branching (greenfield raw idea / brownfield adoption / single concrete task) consistently signaled across `.codex/INSTALL.md`, `README.md`, `docs/README_zh-TW.md` (quick-win, doc-only).
+  - Closes the gap where `.codex/INSTALL.md` §3 told downstream LLMs to run `/bootstrap` first regardless of starting point, contradicting the routing-index Ambiguity Rule §1 (multi-feature input → `/spec-intake`).
+  - 8 sibling docs audited (PROJECT_EXAMPLES × 2, CODEX_PLATFORM_GUIDE × 2, CLAUDE_PLATFORM_GUIDE, NONLINEAR_SCENARIOS × 2, superpowers-playbook) — all confirmed task-context language, no edit needed.
+  - zh-TW §3–§6 renumbered to close the §4 hole created when "從零開始" + "帶入素材" were merged into §3.
+- Tests: validate 66 PASS / 0 WARN / 0 FAIL / 10 SKIP.
+- Commits: pending — see `claude/reverent-matsumoto-30a74e` branch.
 
 ### Ship-claude-modest-antonelli-da2aec-2026-05-07
 - Feature shipped: Zero-Python downstream + AGENTS.md trim + deploy-gap fix + skill cleanup (PR #91, quick-win, 4 commits).

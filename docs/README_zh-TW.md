@@ -19,13 +19,15 @@
 - **命名空間隔離**：下游專案可自由添加自定義 skill 和 workflow，框架用 `.agentcortex-manifest` 區分管理範圍，用戶指令永遠優先。
 - **17 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
 
-## 🚀 推薦：從 /audit 開始
+## 🚀 三條起點路徑
 
-剛接觸 Agentic OS？先跑 `/audit` — **唯讀**遍歷你的 codebase，零風險：
+依你的專案狀態挑一條（詳細開場提示見「快速開始 §3」）：
 
-```
-/audit  →  /app-init  →  /spec-intake  →  挑一個 quick-win  →  完整 feature
-```
+| 起點 | 第一個指令 | 完整鏈 |
+|---|---|---|
+| 🆕 全新專案 + 多 feature 想法 | `/spec-intake` | spec-intake → 選 feature → bootstrap → app-init → plan → implement |
+| 🏗️ 既有 repo 首次導入 | `/audit`（唯讀掃描，零風險） | audit → app-init → spec-intake → quick-win → feature |
+| 🎯 單一明確任務 | `/bootstrap` | bootstrap → plan → implement → review → test → ship |
 
 詳見 [生命週期基準測試](LIFECYCLE_BENCHMARK_zh-TW.md)（[English](LIFECYCLE_BENCHMARK.md)）— 6 個真實場景的 token 消耗數據。
 
@@ -143,32 +145,69 @@ Fetch and follow instructions from <your-raw-url>/.codex/INSTALL.md
 
 > 若遇到 403 錯誤，請直接貼上 `.codex/INSTALL.md` 全文。
 
-### 3) 任務開場提示（從零開始）
+### 3) 開場提示 — 依你的起點挑一條
+
+> **共通前綴**（任何情境都先貼這一段）
+>
+> ```text
+> 請先閱讀並遵循 AGENTS.md — 這是本專案的治理憲法。
+> 在 /review 與 /test 通過前，禁止宣稱完成。
+> ```
+
+#### 情境 A：全新專案 + 多 feature 想法
+
+> 適用：有產品想法、有多個功能、還沒寫 code。
 
 ```text
-請先執行 /bootstrap。
+這是一個全新的專案。我的初步想法是：
+[一兩段描述產品和功能]
+
+請先執行 /spec-intake，把它拆成 Feature Inventory。
+我選定第一個 feature 後，再跑 /bootstrap → /app-init 建立技術棧 ADR，
+然後 /plan → /implement。
+```
+
+**為何 /spec-intake 先行**：多 feature 的 raw idea 必須先拆成 `docs/specs/_product-backlog.md`，
+否則 /bootstrap 的分類和 Work Log scope 都會錯位。
+
+#### 情境 B：既有 repo 首次導入 Agentic OS
+
+> 適用：repo 已經有程式碼，剛部署完框架。
+
+```text
+這個 repo 已有程式碼，剛部署完 Agentic OS。
+請先跑 /audit（唯讀掃描）建立既有結構的地圖，
+然後 /app-init 紀錄技術棧 ADR，
+等我準備加功能時再跑 /spec-intake。
+```
+
+#### 情境 C：已穩定專案 + 單一明確任務
+
+> 適用：專案已有 ADR，目前只想做一件具體的事。
+
+```text
+請先執行 /bootstrap 分類此任務。
 需求：[一句話]
 目標檔案：[path1, path2]
 限制：[不可改 API / 不可改 schema]
-驗收：[列 2-3 點可驗收條件]
+驗收：[列 2-3 點]
 ```
 
-### 4) 帶入前期討論素材（已與其他 AI 討論過）
+#### 情境 D：帶入前期討論素材（已與其他 AI 討論過）
 
-若已與其他 AI 模型完成規格討論、白皮書、技術文件等，不需要先自行整理——直接貼入即可，AI 會自行提取與歸檔。
+> 適用：手上有別的 AI 寫好的規格、白皮書、技術文件。直接貼入即可，AI 會自行提取與歸檔。
 
 ```text
-請先執行 /bootstrap。
-需求：[一句話總結]
-以下是前期討論的完整內容，請先消化後再開始規劃：
+請先執行 /spec-intake — 我帶來了前期討論的完整素材，請先消化後再決定流程。
 ---
 [直接貼上所有素材：對話記錄、規格書、技術文件等]
 ---
 ```
 
-> AI 會在 bootstrap 過程中自動：提取需求與限制 → 整理存入 `docs/specs/` → 分類任務 → 輸出標準 bootstrap 結果。
+> AI 在 /spec-intake 期間會自動：寫入 `docs/specs/_raw-intake.md` → 拆 Feature Inventory →
+> 寫入 `docs/specs/_product-backlog.md`。完成後再走 /bootstrap → /app-init 鏈。
 
-### 5) 跨回合交接提示（續做任務時使用）
+### 4) 跨回合交接提示（續做任務時使用）
 
 ```text
 以下是前一個模型留下的 handoff，請以此為「唯一真實狀態」繼續工作。
@@ -176,7 +215,7 @@ Fetch and follow instructions from <your-raw-url>/.codex/INSTALL.md
 [貼上 handoff 內容]
 ```
 
-### 6) 用指令驅動開發
+### 5) 用指令驅動開發
 
 1. `/bootstrap`：初始化任務並凍結分類
 2. `/plan`（或 `/write-plan`）：列檔案、步驟、風險、回退

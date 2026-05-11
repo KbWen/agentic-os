@@ -34,11 +34,54 @@ git clone https://github.com/KbWen/agentic-os.git
 > recent guard receipt before allowing staged changes to `current_state.md`.
 > This is advisory only — it does not block commits.
 
-## 3) Codex Opening Commands (Recommended paste)
+## 3) Opening Commands — Pick Your Entry Point
+
+The right first command depends on your starting point. **Always start with this preamble**:
 
 ```text
 Read and follow AGENTS.md first — it is the canonical governance for this repo.
-Then run /bootstrap to classify your task and load context.
-Use /brainstorm to clarify solutions, and /plan to generate an actionable plan.
 DO NOT claim completion until /review and /test have passed.
 ```
+
+Then add ONE of the three openers below:
+
+### A. Brand-new project, multi-feature idea
+
+> Use when you have a product idea with several features and no code yet.
+
+```text
+This is a brand-new project. My initial idea is:
+[1–2 paragraphs describing the product and its features]
+
+Please run /spec-intake to decompose this into a feature inventory.
+After I pick the first feature, run /bootstrap → /app-init to establish
+the tech stack ADR, then /plan and /implement.
+```
+
+**Why /spec-intake first**: a multi-feature raw idea must be decomposed into
+`docs/specs/_product-backlog.md` before any single feature is bootstrapped,
+otherwise classification and Work Log scope will be wrong.
+
+### B. Existing repository — adopting Agentic OS for the first time
+
+> Use when the framework was just deployed into a repo that already has code.
+
+```text
+This repo already has code but Agentic OS was just deployed.
+Please run /audit (read-only) to map the existing codebase,
+then /app-init to record the tech stack ADR,
+then /spec-intake when I'm ready to add features.
+```
+
+### C. Single, well-scoped task on an established project
+
+> Use when the project already has an ADR and you have one concrete task.
+
+```text
+Please run /bootstrap to classify and start this task.
+[Then describe the task — single feature, bug, or quick-win.]
+```
+
+> **Not sure which one?** Default to A for raw ideas, C for concrete tasks.
+> The AI's Intent Router will also auto-detect multi-feature input and
+> route to /spec-intake, but explicit beats inferred.

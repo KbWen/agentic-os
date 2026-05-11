@@ -144,13 +144,15 @@ Built for teams where multiple AI sessions work on the same codebase:
 - **Ship Guard** — checks for SSoT conflicts before merging
 - **Session Identity** — every AI session writes its model name and timestamp
 
-### 🚀 Recommended: Start with /audit
+### 🚀 Three Entry Paths
 
-New to Agentic OS? Run `/audit` first — it's a **read-only** traversal that maps your existing codebase with zero risk:
+Pick the one that matches your starting point (full opener templates in **Quick Start §2**):
 
-```
-/audit  →  /app-init  →  /spec-intake  →  pick a quick-win  →  full feature
-```
+| Starting point | First command | Full chain |
+|---|---|---|
+| 🆕 Brand-new project, multi-feature idea | `/spec-intake` | spec-intake → pick feature → bootstrap → app-init → plan → implement |
+| 🏗️ Existing repo, adopting Agentic OS | `/audit` (read-only, zero risk) | audit → app-init → spec-intake → quick-win → feature |
+| 🎯 Single concrete task on an established project | `/bootstrap` | bootstrap → plan → implement → review → test → ship |
 
 See the [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) ([繁體中文](docs/LIFECYCLE_BENCHMARK_zh-TW.md)) for real token consumption data across 6 development scenarios.
 
@@ -245,17 +247,44 @@ If you only want the governance templates (Markdown files) without running any t
 
 </details>
 
-### 2. Start Working
+### 2. Start Working — Pick Your Entry Point
 
-Tell your AI agent:
+The right first command depends on your starting point. **Always preface with**:
 
-> "Read `AGENTS.md` and bootstrap this task."
+> "Read `AGENTS.md` and follow it. Do not claim completion until /review and /test pass."
 
-Or use a slash command directly:
+Then add **one** of the following based on your situation:
 
+**A. Brand-new project, multi-feature idea** — `/spec-intake` first
+
+```text
+This is a brand-new project. My initial idea is:
+[1–2 paragraphs describing the product and its features]
+
+Please run /spec-intake to decompose this into a feature inventory.
+After I pick the first feature, run /bootstrap → /app-init to establish
+the tech stack ADR, then /plan and /implement.
 ```
+
+**B. Existing repository adopting Agentic OS** — `/audit` first
+
+```text
+This repo already has code; Agentic OS was just deployed.
+Run /audit (read-only) to map the codebase, then /app-init to record
+the tech stack ADR, then /spec-intake when I add features.
+```
+
+**C. Single concrete task on an established project** — `/bootstrap` directly
+
+```text
 /bootstrap
+[describe the single task]
 ```
+
+> **Why this matters**: a multi-feature raw idea routed straight to `/bootstrap`
+> is classified as a single task, skipping the Feature Inventory and
+> `_product-backlog.md` decomposition. The Intent Router auto-detects this in
+> most cases, but explicit beats inferred.
 
 ### 3. Follow the Flow
 
