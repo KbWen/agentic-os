@@ -1350,6 +1350,16 @@ if [[ -f "$BACKLOG_FILE" ]]; then
       fi
     fi
 
+    # L-3b: schema-zero guard — L-3 silently PASSes when ALL pending items have Kind=—
+    # (kind_variety=0 ≠ 1, so falls to the PASS branch without surfacing the empty schema).
+    if [[ "$total_pending" -gt 5 ]]; then
+      kind_assigned=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); if ($3 != "—" && $3 != "") print}' | wc -l | tr -d '[:space:]')
+      kind_assigned=${kind_assigned:-0}
+      if [[ "$kind_assigned" -eq 0 ]]; then
+        record_result WARN "backlog Kind schema-zero: all ${total_pending} pending items have Kind=— — populate Kind column to enable cluster routing and L-3 diversity checks"
+      fi
+    fi
+
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
     distinct_labels=$(grep '| Pending\|In Progress' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $4}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
     distinct_labels=${distinct_labels:-0}
@@ -1410,6 +1420,19 @@ if [[ -f "$CURRENT_STATE" ]]; then
     record_result WARN "Global Lessons exceeds cap (${lessons_count} > ${GLOBAL_LESSONS_MAX}); run /retro to archive LOW-severity entries"
   elif [[ "$lessons_count" -gt 0 ]]; then
     record_result PASS "Global Lessons count within cap (${lessons_count}/${GLOBAL_LESSONS_MAX})"
+  fi
+fi
+
+# Ship History pending-SHA guard: commit references must be resolved SHAs.
+# "pending" is a valid placeholder only during the ship branch; after merge
+# it must be replaced with the real SHA. Warn so CI surfaces the gap.
+if [[ -f "$CURRENT_STATE" ]]; then
+  pending_sha_count="$(grep -c '^- Commits: pending' "$CURRENT_STATE" 2>/dev/null | tr -d '\n' || echo 0)"
+  pending_sha_count="${pending_sha_count:-0}"
+  if [[ "$pending_sha_count" -gt 0 ]]; then
+    record_result WARN "Ship History has ${pending_sha_count} unresolved 'pending' commit reference(s) — replace with real SHAs after merge"
+  else
+    record_result PASS "Ship History commit references are all resolved"
   fi
 fi
 

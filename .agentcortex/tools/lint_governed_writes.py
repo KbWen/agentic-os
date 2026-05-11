@@ -186,6 +186,31 @@ _STRING_LITERAL_RE = re.compile(r"""^['"]([^'"]+)['"]$""")
 _SHELL_VAR_RE = re.compile(r"""\$|\`""")  # variable expansion or command sub
 _PATH_TOKEN_RE = re.compile(r"^[\w./\-]+$")
 
+# Matches the content inside shell single-quoted strings.
+# Shell single-quotes are fully literal — no escapes, no variable expansion,
+# and crucially no redirect operators. Stripping their content before running
+# SHELL_PATTERNS prevents '>' inside template literals like '<worklog-key>'
+# from being misclassified as a shell redirect.
+_SQ_STRING_RE = re.compile(r"'[^']*'")
+
+
+def _strip_sq_strings(text: str) -> str:
+    """Replace the interior of shell single-quoted strings with spaces.
+
+    Character offsets are preserved (same-length replacement) so that
+    line_no = text.count('\\n', 0, m.start()) + 1 remains accurate.
+
+    Known edge case: apostrophes in shell comments bracket adjacent characters
+    and can suppress a redirect that falls between two apostrophes on the same
+    line (e.g. ``# It's > /tmp/x``).  This is accepted noise reduction — the
+    lint is not comment-aware in general, and all affected findings are WARN-
+    level dynamic-path hits against non-protected paths.
+    """
+    def _blank(m: re.Match) -> str:
+        inner = m.group()[1:-1]
+        return "'" + " " * len(inner) + "'"
+    return _SQ_STRING_RE.sub(_blank, text)
+
 
 def extract_path_literal(expr: str, kind: str = "py_literal") -> str | None:
     """Return the bare path string if `expr` resolves statically; else None.
@@ -251,9 +276,14 @@ def scan_file(path: Path, rel_posix: str, protected_globs: list[str]) -> list[Fi
     except (OSError, UnicodeDecodeError):
         return findings
 
+    # For shell files, blank out single-quoted string interiors so redirect
+    # patterns don't fire on '>' inside template literals like '<worklog-key>'.
+    # Character offsets are preserved, so line_no calculations stay correct.
+    scan_text = _strip_sq_strings(text) if ext in {".sh", ".bash"} else text
+
     lines = text.splitlines()
     for pattern in patterns:
-        for m in pattern.regex.finditer(text):
+        for m in pattern.regex.finditer(scan_text):
             line_no = text.count("\n", 0, m.start()) + 1
             line_idx = line_no - 1
             exemption = line_or_prev_has_exemption(lines, line_idx)

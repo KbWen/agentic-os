@@ -8,20 +8,18 @@ usage: Used by /bootstrap workflow when creating a new Work Log at .agentcortex/
 
 ## Header
 
-| Field | Value |
-|---|---|
-| Branch | `<raw-branch-name>` |
-| Classification | `<tiny-fix \| quick-win \| hotfix \| feature \| architecture-change>` |
-| Classified by | `<model-name or human>` |
-| Frozen | `true` |
-| Created Date | `<YYYY-MM-DD>` |
-| Owner | `<session-id or username>` |
-| Guardrails Mode | `<Full \| Quick \| Lite>` |
-| Current Phase | `<bootstrap \| plan \| implement \| review \| test \| handoff \| ship>` |
-| Checkpoint SHA | `<git-sha or none>` |
-| Recommended Skills | `<comma-separated skill IDs or none>` |
-| Primary Domain Snapshot | `<domain \| none>` |
-| SSoT Sequence | `<N>` |
+- Branch: `<raw-branch-name>`
+- Classification: `<tiny-fix | quick-win | hotfix | feature | architecture-change>`
+- Classified by: `<model-name or human>`
+- Frozen: `<YYYY-MM-DD or true>`
+- Created Date: `<YYYY-MM-DD>`
+- Owner: `<session-id or username>`
+- Guardrails Mode: `<Full | Quick | Lite>`
+- Current Phase: `<bootstrap | plan | implement | review | test | handoff | ship>`
+- Checkpoint SHA: `<git-sha or none>`
+- Recommended Skills: `<comma-separated skill IDs or none>`
+- Primary Domain Snapshot: `<domain | none>`
+- SSoT Sequence: `<N>`
 
 ---
 

@@ -11,9 +11,9 @@
   - Task Isolation: `.agentcortex/context/work/<worklog-key>.md`
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
-- **Last Updated**: 2026-05-07
-- **Last Verified**: 2026-05-07
-- **Update Sequence**: 13
+- **Last Updated**: 2026-05-11
+- **Last Verified**: 2026-05-11
+- **Update Sequence**: 14
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -72,7 +72,7 @@
   - 8 sibling docs audited (PROJECT_EXAMPLES × 2, CODEX_PLATFORM_GUIDE × 2, CLAUDE_PLATFORM_GUIDE, NONLINEAR_SCENARIOS × 2, superpowers-playbook) — all confirmed task-context language, no edit needed.
   - zh-TW §3–§6 renumbered to close the §4 hole created when "從零開始" + "帶入素材" were merged into §3.
 - Tests: validate 66 PASS / 0 WARN / 0 FAIL / 10 SKIP.
-- Commits: pending — see `claude/reverent-matsumoto-30a74e` branch.
+- Commits: `867e37c`; merged via `cf9b622` (PR #92).
 
 ### Ship-claude-modest-antonelli-da2aec-2026-05-07
 - Feature shipped: Zero-Python downstream + AGENTS.md trim + deploy-gap fix + skill cleanup (PR #91, quick-win, 4 commits).
@@ -107,7 +107,7 @@
   - `.agentcortex/templates/worklog.md` — optional `Files Read: N` field in `## Session Info` for token-budget instrumentation; `## Evidence` section now references `engineering_guardrails.md §5.2b Evidence Truncation Rule` (3-line success / 10-line failure caps).
 - Tests: validate 73 PASS / 7 WARN / 0 FAIL (archive 74 KB, 8/8 active logs).
 - Backlog rows shipped: #10, #12, #23, #28. Pending count 20 → 16.
-- Commits: pending — same branch as PR #87.
+- Commits: `c0f63c3`; merged via `30e6fcc` (PR #87).
 
 ### Ship-feat-optimization-hooks-2026-05-04
 - Feature shipped: Closing the Claude-platform half of backlog #30 — PreCompact hook + framework receipt integration. Stop hook (`check-sentinel.py`) was previously shipped under CC-2/L4 but its violations.jsonl was never read by validate; this ship closes that loop. PreToolUse + UserPromptSubmit deferred (risk > ROI per design review).
@@ -118,7 +118,7 @@
   - `.agentcortex/bin/validate.{sh,ps1}` — read both `sentinel-violations.jsonl` and `precompact-violations.jsonl`; emit WARN with count when non-zero, PASS when zero. Capability-by-presence (absent file = PASS).
   - `.gitignore` — added `precompact-violations.jsonl` (alongside existing sentinel entry).
 - Tests: Pass — `python -m unittest tests.guard.test_sentinel_hook tests.guard.test_precompact_hook` → 27/27 in 0.1s. validate: 72 PASS / 7 WARN / 0 FAIL (new WARN: 3 historical sentinel violations now surfaced — these were silently accumulating in the receipt file before this ship).
-- Commits: pending — see `feat/optimization-hooks-2026-05-04` branch.
+- Commits: `0ca5788`; merged via `30e6fcc` (PR #87).
 - Scope cuts: PreToolUse phase-discipline hook and UserPromptSubmit warn hook were evaluated and deferred — false-positive risk on legitimate edits/chat outweighs the catch rate. Document in Drift Log of work log.
 
 ### Ship-feat-optimization-round-2026-05-04
@@ -132,7 +132,7 @@
   - `AGENTS.md` — `## Override Layer (AGENTS.override.md)` precedence chain (mirrors Codex pattern)
   - `.agentcortex/bin/validate.{sh,ps1}` — Work Log Phase Summary sentinel marker (⚡ ACX) WARN check
 - Tests: Pass — validate 71 PASS / 6 WARN / 0 FAIL (the new sentinel WARN counts 6 legacy logs without ⚡ ACX, by design WARN-only).
-- Commits: pending — see `feat/optimization-round-2026-05-04` branch.
+- Commits: `7b7071b`; merged via `30e6fcc` (PR #87).
 - Source: external research round (Claude Code w14-w17, OpenAI Codex 2026 AGENTS.md docs, github/spec-kit, dsifry/metaswarm, sshh).
 - Deferred: #30 (Claude hooks enforcement layer — feature), #33 (plugin packaging — feature), #38 (AGENTS.md token-budget pass — risky restructure).
 
