@@ -17,9 +17,15 @@ jobs:
   semgrep:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
-    container: semgrep/semgrep:1.123.0
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Semgrep
+        run: pip install semgrep==1.123.0
 
       - name: Run Semgrep
         run: semgrep --config auto --metrics=off --error .
