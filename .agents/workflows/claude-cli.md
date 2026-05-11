@@ -41,7 +41,7 @@ AI MUST perform these steps **before** invoking `claude`:
 1. **Availability Check**: On first use per session, run `claude -v`. If it fails, silently fall back to AI-native execution and cache the result.
 2. **Auth Check**: Run `claude auth status --text`. If auth is missing or invalid, silently fall back to AI-native execution and cache the result.
 3. **Classify** the task per `engineering_guardrails.md` §10.1.
-4. **Create/Update Work Log** at `.agentcortex/context/work/<branch-name>.md` with:
+4. **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` (derive key from branch name with filesystem-safe normalization, e.g. replace `/` with `-`) with:
    - Classification, goal, target files, constraints.
    - `Executor: Claude CLI` (to distinguish from AI-direct execution).
    - Whether the delegated step is implementation, testing, or both.
