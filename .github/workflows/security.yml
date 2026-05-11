@@ -17,6 +17,7 @@ jobs:
   semgrep:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +34,7 @@ jobs:
   trufflehog:
     name: Secret Detection (TruffleHog)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,10 +48,9 @@ jobs:
   dependency-audit:
     name: Dependency Audit (pip-audit)
     runs-on: ubuntu-latest
-    # Python-specific tool — only run when Python dependency files exist.
-    if: >
-      hashFiles('requirements*.txt') != '' ||
-      hashFiles('pyproject.toml') != ''
+    timeout-minutes: 10
+    # Job-level hashFiles() is evaluated before checkout (workspace empty) — always returns ''.
+    # Gating is handled at the shell level in the run step below.
     steps:
       - uses: actions/checkout@v4
 

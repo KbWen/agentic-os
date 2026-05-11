@@ -1,7 +1,7 @@
 """Structural tests for CI security scanning workflow.
 
 Spec: docs/specs/ci-security-scanning.md (AC-1 through AC-10)
-Run: python -m unittest tests.ci.test_security_workflow -v
+Run: python -m pytest tests/ci/test_security_workflow.py -v
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ class TestSecurityWorkflowExists(unittest.TestCase):
 
 
 class TestSecurityWorkflowPermissions(unittest.TestCase):
-    """AC-6: permissions: contents: read at top level."""
+    """AC-6: permissions: contents: read at top level; no job escalates to write."""
 
     def test_ac6_top_level_permissions_contents_read(self):
         wf = _load_workflow()
@@ -68,6 +68,16 @@ class TestSecurityWorkflowPermissions(unittest.TestCase):
             perms.get("contents"), "read",
             "Top-level permissions.contents must be 'read'",
         )
+
+    def test_ac6_no_job_level_contents_write(self):
+        wf = _load_workflow()
+        for job_name, job in (wf.get("jobs") or {}).items():
+            perms = job.get("permissions")
+            if perms and isinstance(perms, dict):
+                self.assertNotEqual(
+                    perms.get("contents"), "write",
+                    f"Job '{job_name}' escalates contents to write — prohibited (AC-6)",
+                )
 
 
 class TestSecurityWorkflowNoContinueOnError(unittest.TestCase):
@@ -80,6 +90,16 @@ class TestSecurityWorkflowNoContinueOnError(unittest.TestCase):
                 job.get("continue-on-error"), True,
                 f"Job '{job_name}' has continue-on-error: true — prohibited (AC-7)",
             )
+
+    def test_ac7_no_step_level_continue_on_error(self):
+        wf = _load_workflow()
+        for job_name, job in (wf.get("jobs") or {}).items():
+            for i, step in enumerate((job.get("steps") or [])):
+                self.assertNotEqual(
+                    step.get("continue-on-error"), True,
+                    f"Step {i} in job '{job_name}' has continue-on-error: true — "
+                    "step-level suppression also prohibited (AC-7)",
+                )
 
 
 class TestSemgrepJob(unittest.TestCase):
@@ -207,8 +227,10 @@ class TestDependencyAuditJob(unittest.TestCase):
     def test_ac4_uses_r_flag_for_requirements(self):
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
         combined = "\n".join(run_steps)
+        # pip-audit must use -r for requirements files (not audit CI env).
+        # Checks semantic presence; does not couple to exact variable form ($f vs array).
         self.assertIn(
-            "-r $f", combined,
+            "-r ", combined,
             "pip-audit must use -r flag per requirements file (not audit CI env)",
         )
 

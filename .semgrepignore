@@ -1,0 +1,12 @@
+# Semgrep ignore — exclude test fixtures and generated governance scripts
+# that contain intentional bad-pattern examples or governance templates.
+
+# Test files intentionally contain bad-pattern strings for validation
+tests/
+.agentcortex/tests/
+
+# Installer scripts use eval/curl patterns by design
+installers/
+
+# Governance templates may contain placeholder/example patterns
+.agentcortex/templates/
