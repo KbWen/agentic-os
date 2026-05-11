@@ -67,6 +67,16 @@
 
 ## Ship History
 
+### Ship-claude-relaxed-pare-db9f89-2026-05-11
+- Feature shipped: CI security scanning pipeline — Semgrep SAST + TruffleHog secret detection + pip-audit dependency audit (feature, backlog #20).
+  - `.github/workflows/security.yml`: three parallel jobs, all tools pinned (`semgrep==1.123.0`, `trufflehog@v3.94.3`, `pip-audit==2.10.0`); `contents: read` permissions; no `continue-on-error`.
+  - Critical correctness fix in /review: pip-audit `-r $f` per requirements file (without it, audits CI env not project deps).
+  - `docs/specs/ci-security-scanning.md`: frozen spec, 10 ACs.
+  - `tests/ci/test_security_workflow.py`: 26 structural tests, 4/4 adversarial mutations caught, PyYAML YAML-1.1 `on`-boolean handled.
+  - `validate.sh` + `validate.ps1`: security workflow presence check added.
+- Tests: 26 PASS / 0 FAIL (test_security_workflow.py) + validate 83 PASS / 0 FAIL.
+- Commits: `da553fd`; PR: https://github.com/KbWen/agentic-os/pull/94
+
 ### Ship-claude-reverent-matsumoto-30a74e-2026-05-07
 - Feature shipped: Onboarding entry-point unification — three-path branching (greenfield raw idea / brownfield adoption / single concrete task) consistently signaled across `.codex/INSTALL.md`, `README.md`, `docs/README_zh-TW.md` (quick-win, doc-only).
   - Closes the gap where `.codex/INSTALL.md` §3 told downstream LLMs to run `/bootstrap` first regardless of starting point, contradicting the routing-index Ambiguity Rule §1 (multi-feature input → `/spec-intake`).
