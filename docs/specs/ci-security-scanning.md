@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 title: CI Security Scanning
 created: 2026-05-11
 primary_domain: ci-security

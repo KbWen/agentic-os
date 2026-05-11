@@ -67,6 +67,16 @@
 
 ## Ship History
 
+### Ship-claude-relaxed-pare-db9f89-2026-05-11-r8
+- Feature shipped (continuation r5–r8): CI security scanning governance hardening.
+  - TruffleHog SHA-pinned: `47e7b7cd74f578e1e3145d48f669f22fd1330ca6` (was semver `@v3.94.3`)
+  - Added `.github/dependabot.yml` (github-actions weekly auto-bump)
+  - 31 structural tests (was 26): added `--strict`, `write-all` perms, `test-ci-structural`, SHA regex, bash array, `::warning::` annotation
+  - Spec amendments (frozen→shipped): AC-5 SHA req for 3rd-party, AC-8 SKIP 3-state, File Relationship, Accepted Risks, Semgrep factual correction
+  - `docs/specs/ci-security-scanning.md`: status → shipped
+- Tests: 31 PASS / 0 FAIL + validate 83/0/0/2.
+- Commits: `f68a408`→`2ee0fd4`; PR: https://github.com/KbWen/agentic-os/pull/94
+
 ### Ship-claude-relaxed-pare-db9f89-2026-05-11
 - Feature shipped: CI security scanning pipeline — Semgrep SAST + TruffleHog secret detection + pip-audit dependency audit (feature, backlog #20).
   - `.github/workflows/security.yml`: three parallel jobs, all tools pinned (`semgrep==1.123.0`, `trufflehog@v3.94.3`, `pip-audit==2.10.0`); `contents: read` permissions; no `continue-on-error`; `--config auto` (language-agnostic); dependency-audit `hashFiles` guard.
