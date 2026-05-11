@@ -11,13 +11,23 @@ import sys
 import unittest
 from pathlib import Path
 
-import yaml  # PyYAML — already present as Semgrep transitive dep in CI; stdlib fallback below
+try:
+    import yaml
+    _PYYAML_AVAILABLE = True
+except ImportError:
+    yaml = None  # type: ignore[assignment]
+    _PYYAML_AVAILABLE = False
 
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY_YML = ROOT / ".github" / "workflows" / "security.yml"
 
 # Floating-ref pattern: actions like @main, @master, @HEAD, @latest (case-insensitive)
 _FLOATING_REF_RE = re.compile(r"@(main|master|HEAD|latest)\b", re.IGNORECASE)
+
+
+def setUpModule():  # noqa: N802
+    if not _PYYAML_AVAILABLE:
+        raise unittest.SkipTest("pyyaml not installed — pip install pyyaml")
 
 
 def _load_workflow() -> dict:

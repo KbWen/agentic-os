@@ -46,6 +46,9 @@ jobs:
   dependency-audit:
     name: Dependency Audit (pip-audit)
     runs-on: ubuntu-latest
+    if: >
+      hashFiles('requirements*.txt') != '' ||
+      hashFiles('pyproject.toml') != ''
     steps:
       - uses: actions/checkout@v4
 

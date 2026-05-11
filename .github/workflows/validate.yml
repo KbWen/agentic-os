@@ -144,6 +144,22 @@ jobs:
           cd /tmp/test-project
           bash .agentcortex/bin/validate.sh
 
+  test-ci-structural:
+    name: CI Structural Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install pyyaml pytest
+
+      - name: Run CI structural tests
+        run: python -m pytest tests/ci/ -v
+
   deploy-no-python:
     name: Deploy Smoke Test (No Python)
     runs-on: ubuntu-latest
