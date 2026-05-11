@@ -1,6 +1,6 @@
 """Structural tests for CI security scanning workflow.
 
-Spec: docs/specs/ci-security-scanning.md (AC-1 through AC-10)
+Spec: docs/specs/ci-security-scanning.md (AC-1 through AC-11)
 Run: python -m pytest tests/ci/test_security_workflow.py -v
 """
 
@@ -356,3 +356,17 @@ class TestWorkflowIsolation(unittest.TestCase):
             ".semgrepignore must exist at repo root to prevent Semgrep false positives "
             "on test fixtures and installer scripts (--config auto + --error)",
         )
+
+    def test_semgrepignore_excludes_fixture_dirs(self):
+        """AC-11: .semgrepignore must exclude the directories that contain
+        intentional bad-pattern examples so --config auto --error never fails on them."""
+        semgrepignore = ROOT / ".semgrepignore"
+        if not semgrepignore.exists():
+            self.skipTest(".semgrepignore missing — covered by test_semgrepignore_exists")
+        content = semgrepignore.read_text(encoding="utf-8")
+        required_exclusions = ["tests/", "installers/", ".agentcortex/templates/"]
+        for entry in required_exclusions:
+            self.assertIn(
+                entry, content,
+                f".semgrepignore must exclude '{entry}' (contains intentional bad patterns)",
+            )

@@ -28,6 +28,7 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 - **AC-8** — The `validate.sh` and `validate.ps1` scripts gain a security workflow presence check: PASS if `.github/workflows/security.yml` exists; WARN if `.github/workflows/` exists but `security.yml` is absent (non-blocking); SKIP (no output, no counter impact) if `.github/workflows/` directory does not exist (non-Actions repos).
 - **AC-9** — Running the updated `validate.sh` / `validate.ps1` against this repo produces 0 FAIL after the workflow file is added.
 - **AC-10** — The security workflow is isolated in its own file (`security.yml`). The framework validation workflow (`validate.yml`) gains an additive `test-ci-structural` job to execute structural tests (AC-10 evidence); no existing validate jobs are modified or removed.
+- **AC-11** — A `.semgrepignore` file exists at repo root and excludes `tests/`, `.agentcortex/templates/`, and `installers/`. These directories contain intentional bad-pattern examples and eval/curl installer patterns that would cause false positives under `--config auto --error`. The structural test suite asserts both file existence and required exclusions so accidental deletion is caught by CI rather than silently passing with zero coverage.
 
 ## Non-goals
 
