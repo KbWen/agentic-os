@@ -69,13 +69,15 @@
 
 ### Ship-claude-relaxed-pare-db9f89-2026-05-11
 - Feature shipped: CI security scanning pipeline — Semgrep SAST + TruffleHog secret detection + pip-audit dependency audit (feature, backlog #20).
-  - `.github/workflows/security.yml`: three parallel jobs, all tools pinned (`semgrep==1.123.0`, `trufflehog@v3.94.3`, `pip-audit==2.10.0`); `contents: read` permissions; no `continue-on-error`.
+  - `.github/workflows/security.yml`: three parallel jobs, all tools pinned (`semgrep==1.123.0`, `trufflehog@v3.94.3`, `pip-audit==2.10.0`); `contents: read` permissions; no `continue-on-error`; `--config auto` (language-agnostic); dependency-audit `hashFiles` guard.
   - Critical correctness fix in /review: pip-audit `-r $f` per requirements file (without it, audits CI env not project deps).
   - `docs/specs/ci-security-scanning.md`: frozen spec, 10 ACs.
   - `tests/ci/test_security_workflow.py`: 26 structural tests, 4/4 adversarial mutations caught, PyYAML YAML-1.1 `on`-boolean handled.
-  - `validate.sh` + `validate.ps1`: security workflow presence check added.
-- Tests: 26 PASS / 0 FAIL (test_security_workflow.py) + validate 83 PASS / 0 FAIL.
-- Commits: `da553fd`; PR: https://github.com/KbWen/agentic-os/pull/94
+  - `validate.sh` + `validate.ps1` + `.github/workflows/validate.yml`: security workflow presence check + pytest CI job added.
+  - `deploy.sh`: 3 missing runtime tools added to whitelist (`check_adr_coverage.py`, `append_chain_entry.py`, `append_lesson.py`); WARN message genericized.
+- Tests: 26 PASS / 0 FAIL (test_security_workflow.py) + validate 83 PASS / 0 WARN / 0 FAIL / 2 SKIP.
+- Downstream smoke test: 181 files deployed; 72 PASS / 3 WARN / 0 FAIL / 3 SKIP.
+- Commits: `da553fd`→`d9807c0`; PR: https://github.com/KbWen/agentic-os/pull/94
 
 ### Ship-claude-reverent-matsumoto-30a74e-2026-05-07
 - Feature shipped: Onboarding entry-point unification — three-path branching (greenfield raw idea / brownfield adoption / single concrete task) consistently signaled across `.codex/INSTALL.md`, `README.md`, `docs/README_zh-TW.md` (quick-win, doc-only).
