@@ -207,14 +207,14 @@ class TestTruffleHogJob(unittest.TestCase):
             _FLOATING_REF_RE.search(uses),
             f"TruffleHog action uses floating ref: {uses!r} — must pin to tag or SHA",
         )
-        # Must be pinned to full semver (vMAJOR.MINOR.PATCH) or a 40-char commit SHA.
-        # Spec AC-5 allows either form; this test accepts both.
+        # Third-party actions (non actions/*) MUST use a 40-char commit SHA per AC-5.
+        # Semver tags are mutable and do not provide supply-chain immutability.
         self.assertIn("@", uses)
         tag = uses.split("@")[1]
         self.assertRegex(
             tag,
-            r"^(v\d+\.\d+\.\d+|[0-9a-f]{40})$",
-            f"TruffleHog tag {tag!r} must be full semver (vX.Y.Z) or a 40-char commit SHA",
+            r"^[0-9a-f]{40}$",
+            f"TruffleHog tag {tag!r} must be a 40-char commit SHA — semver tags are mutable (AC-5)",
         )
 
 
