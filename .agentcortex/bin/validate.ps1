@@ -1338,7 +1338,7 @@ if (Test-Path -Path $securityWorkflow -PathType Leaf) {
     Add-Result -Level 'PASS' -Message 'security scanning workflow present at .github/workflows/security.yml'
 }
 else {
-    Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (backlog #20: add Semgrep + TruffleHog + pip-audit)'
+    Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)'
 }
 
 # Document lifecycle bloat checks

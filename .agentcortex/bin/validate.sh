@@ -1417,7 +1417,7 @@ SECURITY_WORKFLOW="$ROOT/.github/workflows/security.yml"
 if [[ -f "$SECURITY_WORKFLOW" ]]; then
   record_result PASS "security scanning workflow present at .github/workflows/security.yml"
 else
-  record_result WARN "security scanning workflow absent — .github/workflows/security.yml not found (backlog #20: add Semgrep + TruffleHog + pip-audit)"
+  record_result WARN "security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)"
 fi
 
 # Document lifecycle bloat checks
