@@ -665,6 +665,7 @@ write_downstream_ignore_block() {
 
 # Runtime State (work logs are session-local; private is never committed)
 .agentcortex/context/work/*.md
+.agentcortex/context/work/*.lock.json
 !.agentcortex/context/work/.gitkeep.md
 .agentcortex/context/.guard_receipt.json
 .agentcortex/context/.guard_locks/
@@ -693,6 +694,7 @@ strip_managed_ignore_blocks() {
     BEGIN {
         # Current managed entries
         managed[".agentcortex/context/work/*.md"] = 1
+        managed[".agentcortex/context/work/*.lock.json"] = 1
         managed["!.agentcortex/context/work/.gitkeep.md"] = 1
         managed[".agentcortex/context/.guard_receipt.json"] = 1
         managed[".agentcortex/context/.guard_locks/"] = 1

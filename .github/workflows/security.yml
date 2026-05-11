@@ -68,9 +68,9 @@ jobs:
           done
           if [ -n "$req_args" ]; then
             pip-audit $req_args --vulnerability-service osv --strict
-          elif [ -f pyproject.toml ]; then
+          elif [ -f pyproject.toml ] && grep -qE '^\[project\]|^\[build-system\]' pyproject.toml; then
             pip-audit . --vulnerability-service osv --strict
           else
-            echo "No Python dependency files found in repo root — skipping audit"
+            echo "No auditable Python dependency files found in repo root — skipping audit"
             exit 0
           fi

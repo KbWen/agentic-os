@@ -222,6 +222,18 @@ class TestDependencyAuditJob(unittest.TestCase):
         combined = "\n".join(run_steps)
         self.assertIn("skipping", combined.lower(), "Must have skip message when no requirements found")
 
+    def test_ac4_pyproject_toml_project_mode(self):
+        run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
+        combined = "\n".join(run_steps)
+        # When only pyproject.toml exists, pip-audit . audits the project's deps.
+        # Guard must check for [project]/[build-system] before invoking project mode.
+        self.assertIn("pip-audit .", combined,
+                      "pip-audit must use project mode (pip-audit .) for pyproject.toml-only repos")
+        # grep pattern uses \[project\] / \[build-system\] (escaped brackets for regex literal match)
+        # so check for the word itself, not the bracket-wrapped form
+        self.assertIn("build-system", combined,
+                      "pyproject.toml branch must guard on [project] or [build-system] presence")
+
     def test_ac5_pip_audit_version_pinned(self):
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
         combined = "\n".join(run_steps)
@@ -245,21 +257,27 @@ class TestVersionPinningGlobal(unittest.TestCase):
 
 
 class TestWorkflowIsolation(unittest.TestCase):
-    """AC-10: security.yml is a separate file; validate.yml is not modified."""
+    """AC-10: security.yml is a separate file; security jobs do not bleed into validate.yml."""
 
     def test_ac10_security_yml_is_separate_file(self):
         self.assertTrue(SECURITY_YML.exists())
 
-    def test_ac10_validate_yml_unchanged_jobs(self):
+    def test_ac10_security_jobs_not_in_validate_yml(self):
         validate_yml = ROOT / ".github" / "workflows" / "validate.yml"
         if not validate_yml.exists():
             self.skipTest("validate.yml not present")
         with validate_yml.open(encoding="utf-8") as f:
             wf = yaml.safe_load(f)
-        # validate.yml must not contain security scanner jobs
         jobs = set((wf.get("jobs") or {}).keys())
         security_jobs = {"semgrep", "trufflehog", "dependency-audit"}
         self.assertFalse(
             jobs & security_jobs,
             f"Security jobs found in validate.yml: {jobs & security_jobs} — must stay in security.yml",
+        )
+        # Core validate jobs must still exist (guard against accidental deletion)
+        expected_core = {"validate", "shellcheck"}
+        present_core = jobs & expected_core
+        self.assertTrue(
+            present_core,
+            f"Core validate jobs missing from validate.yml: {expected_core - present_core}",
         )
