@@ -21,8 +21,12 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY_YML = ROOT / ".github" / "workflows" / "security.yml"
 
-# Floating-ref pattern: actions like @main, @master, @HEAD, @latest (case-insensitive)
-_FLOATING_REF_RE = re.compile(r"@(main|master|HEAD|latest)\b", re.IGNORECASE)
+# Floating-ref denylist: known mutable branch/alias names used as action refs.
+# Does NOT flag @v4 / @v5 (major-version tags, accepted per AC-5 for first-party setup actions).
+_FLOATING_REF_RE = re.compile(
+    r"@(main|master|HEAD|latest|develop|dev|trunk|stable|edge|next|nightly|release|current)\b",
+    re.IGNORECASE,
+)
 
 
 def setUpModule():  # noqa: N802
@@ -194,10 +198,15 @@ class TestTruffleHogJob(unittest.TestCase):
             _FLOATING_REF_RE.search(uses),
             f"TruffleHog action uses floating ref: {uses!r} — must pin to tag or SHA",
         )
-        # Must have a version suffix
+        # Must be pinned to full semver (vMAJOR.MINOR.PATCH) or a 40-char commit SHA.
+        # Spec AC-5 allows either form; this test accepts both.
         self.assertIn("@", uses)
         tag = uses.split("@")[1]
-        self.assertRegex(tag, r"^v\d+\.\d+\.\d+$", f"TruffleHog tag {tag!r} must be semver")
+        self.assertRegex(
+            tag,
+            r"^(v\d+\.\d+\.\d+|[0-9a-f]{40})$",
+            f"TruffleHog tag {tag!r} must be full semver (vX.Y.Z) or a 40-char commit SHA",
+        )
 
 
 class TestDependencyAuditJob(unittest.TestCase):
@@ -270,11 +279,14 @@ class TestVersionPinningGlobal(unittest.TestCase):
     """AC-5: no floating refs anywhere in the workflow file."""
 
     def test_ac5_no_floating_refs_in_raw_yaml(self):
+        # Anchor search to `uses:` lines only — avoids false positives from comments
+        # or SSH-style URLs (e.g. git@main.example.com) elsewhere in the file.
         raw = SECURITY_YML.read_text(encoding="utf-8")
-        matches = _FLOATING_REF_RE.findall(raw)
+        uses_lines = [ln for ln in raw.splitlines() if re.search(r"^\s*-?\s*uses:", ln)]
+        matches = [m for ln in uses_lines for m in _FLOATING_REF_RE.findall(ln)]
         self.assertFalse(
             matches,
-            f"Floating action refs found: {matches} — must pin to tag or SHA (AC-5)",
+            f"Floating action refs in uses: lines: {matches} — must pin to tag or SHA (AC-5)",
         )
 
 
@@ -302,4 +314,15 @@ class TestWorkflowIsolation(unittest.TestCase):
         self.assertTrue(
             present_core,
             f"Core validate jobs missing from validate.yml: {expected_core - present_core}",
+        )
+
+    def test_semgrepignore_exists(self):
+        # .semgrepignore prevents false positives from test fixtures / installers
+        # blocking every PR via --error. Its accidental deletion would not be caught
+        # by any other test, so we assert it explicitly.
+        semgrepignore = ROOT / ".semgrepignore"
+        self.assertTrue(
+            semgrepignore.exists(),
+            ".semgrepignore must exist at repo root to prevent Semgrep false positives "
+            "on test fixtures and installer scripts (--config auto + --error)",
         )

@@ -40,6 +40,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      # On pull_request: scans base..head range automatically.
+      # On push to main: scans github.event.before..github.sha range.
+      # Requires branch protection to block force-pushes (event.before = 0000... edge case).
       - name: Scan for secrets
         uses: trufflesecurity/trufflehog@v3.94.3
         with:
