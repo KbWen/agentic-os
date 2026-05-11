@@ -97,15 +97,21 @@ class TestSemgrepJob(unittest.TestCase):
         combined = "\n".join(run_steps)
         self.assertIn("semgrep", combined, "No semgrep invocation found in steps")
 
-    def test_ac2_semgrep_uses_python_ruleset(self):
+    def test_ac2_semgrep_uses_auto_config(self):
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
         combined = "\n".join(run_steps)
-        self.assertIn("p/python", combined, "Semgrep must use p/python config")
+        self.assertIn(
+            "--config auto", combined,
+            "Semgrep must use --config auto (language-agnostic; no hardcoded language rulesets)",
+        )
 
-    def test_ac2_semgrep_uses_bash_ruleset(self):
-        run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
-        combined = "\n".join(run_steps)
-        self.assertIn("p/bash", combined, "Semgrep must use p/bash config")
+    def test_ac2_semgrep_uses_container(self):
+        container = self.job.get("container") or ""
+        container_image = container if isinstance(container, str) else container.get("image", "")
+        self.assertIn(
+            "semgrep", container_image.lower(),
+            "Semgrep job must use a semgrep container image (no Python host install required)",
+        )
 
     def test_ac2_semgrep_metrics_off(self):
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
@@ -118,13 +124,16 @@ class TestSemgrepJob(unittest.TestCase):
         self.assertIn("--error", combined, "Semgrep must exit non-zero on finding (--error)")
 
     def test_ac5_semgrep_version_pinned(self):
-        # install step must pin exact semgrep version (pip install semgrep==X.Y.Z)
+        # Version pinned via container image tag (semgrep/semgrep:X.Y.Z) or pip (semgrep==X.Y.Z).
+        container = self.job.get("container") or ""
+        container_image = container if isinstance(container, str) else container.get("image", "")
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
         combined = "\n".join(run_steps)
-        self.assertRegex(
-            combined,
-            r"semgrep==\d+\.\d+\.\d+",
-            "Semgrep pip install must pin an exact version (semgrep==X.Y.Z)",
+        has_container_pin = bool(re.search(r":\d+\.\d+\.\d+$", container_image))
+        has_pip_pin = bool(re.search(r"semgrep==\d+\.\d+\.\d+", combined))
+        self.assertTrue(
+            has_container_pin or has_pip_pin,
+            f"Semgrep version must be pinned via container tag (:X.Y.Z) or pip (semgrep==X.Y.Z); got container={container_image!r}",
         )
 
 

@@ -19,10 +19,10 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 ## Acceptance Criteria
 
 - **AC-1** — A workflow file exists at `.github/workflows/security.yml` and is triggered on `pull_request` targeting `main` (and on `push` to `main`).
-- **AC-2** — The workflow contains a `semgrep` job that runs Semgrep with the `p/python` and `p/bash` community rulesets against `.py` and `.sh` files. The job exits non-zero on any finding.
+- **AC-2** — The workflow contains a `semgrep` job that runs Semgrep with `--config auto` (language-agnostic; detects languages present in the repo automatically) and `--metrics=off --error`. The job runs inside a pinned Semgrep container image so no host Python installation is required. The job exits non-zero on any finding.
 - **AC-3** — The workflow contains a `trufflehog` job that scans only commits introduced by the current PR (`--since-commit <base-sha>`) for leaked secrets. The job exits non-zero on any verified finding.
 - **AC-4** — The workflow contains a `dependency-audit` job that runs `pip-audit` (OSV-backed) if any `requirements*.txt` or `pyproject.toml` file exists in the repo root. The job exits non-zero on findings with severity HIGH or CRITICAL.
-- **AC-5** — All three scanner versions (Semgrep, TruffleHog GitHub Action, pip-audit) are pinned to a specific tag or SHA — not `@main`, `@latest`, or an unversioned branch ref.
+- **AC-5** — All three scanner versions are pinned to a specific tag — not `@main`, `@latest`, or an unversioned branch ref. Semgrep version is pinned via container image tag (e.g. `semgrep/semgrep:X.Y.Z`); TruffleHog via GitHub Action semver tag; pip-audit via `pip install pip-audit==X.Y.Z`.
 - **AC-6** — The workflow declares `permissions: contents: read` at the top level (minimal permissions).
 - **AC-7** — No security job uses `continue-on-error: true` (silent failures prohibited).
 - **AC-8** — The `validate.sh` and `validate.ps1` scripts gain a security workflow presence check: PASS if `.github/workflows/security.yml` exists, WARN if absent (non-blocking — projects without GitHub Actions still pass the main gate).
@@ -45,7 +45,7 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 - Target additional CI wall-time: ≤ 3 minutes per PR (all three jobs can run in parallel).
 - Must require no external API keys or paid-tier accounts — community/open-source tiers only.
 - Semgrep must not phone home with repo contents (`--metrics=off` or equivalent).
-- All tool installs must go through `pip install` or official GitHub Actions (`actions/` or tool-vendor-published actions) — no vendored binaries committed to the repo.
+- All tool installs must use official distribution channels (container images from Docker Hub/GHCR, official GitHub Actions, or `pip install`) — no vendored binaries committed to the repo. Prefer container images over `pip install` to avoid imposing a Python dependency on non-Python repos.
 
 ## File Relationship
 
@@ -68,4 +68,5 @@ None — scope was unambiguous from backlog item description.
 - [DECISION] PR-scoped TruffleHog scan (`--since-commit`) over full-history scan: keeps CI wall-time within budget; pre-existing historical secrets should be rotated regardless of scan outcome.
 - [DECISION] Separate `security.yml` workflow file over adding jobs to `validate.yml`: keeps framework integrity checks and security scans independently retry-able; validate.yml failures don't block security job reruns and vice versa.
 - [CONSTRAINT] All scanner action versions MUST be pinned to a specific tag or commit SHA — not floating refs — to prevent supply-chain attacks on the CI pipeline itself.
-- [TRADEOFF] Semgrep community rules only (no Pro rulesets): agentic-os has no application-layer code (no web server, no auth, no DB) that benefits from Pro rules; governance scripts are adequately covered by `p/python` + `p/bash`. Acceptable given the zero-cost constraint.
+- [TRADEOFF] Semgrep `--config auto` (community rules, language-agnostic) over hardcoded `p/python + p/bash`: downstream repos use diverse languages; auto-detection avoids baking in language assumptions. Community-tier only — no Pro rulesets, no API key required.
+- [TRADEOFF] Semgrep runs in a container image rather than via `pip install`: removes Python as a host dependency for SAST, making the job usable for any-language repos. Version pinning moves from pip version string to container image tag.

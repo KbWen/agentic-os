@@ -17,18 +17,12 @@ jobs:
   semgrep:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
+    container: semgrep/semgrep:1.123.0
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Semgrep
-        run: pip install semgrep==1.123.0
-
-      - name: Run Semgrep (p/python + p/bash)
-        run: semgrep --config p/python --config p/bash --metrics=off --error .
+      - name: Run Semgrep
+        run: semgrep --config auto --metrics=off --error .
 
   trufflehog:
     name: Secret Detection (TruffleHog)
@@ -46,6 +40,7 @@ jobs:
   dependency-audit:
     name: Dependency Audit (pip-audit)
     runs-on: ubuntu-latest
+    # Python-specific tool — only run when Python dependency files exist.
     if: >
       hashFiles('requirements*.txt') != '' ||
       hashFiles('pyproject.toml') != ''
@@ -61,9 +56,6 @@ jobs:
 
       - name: Audit Python dependencies
         run: |
-          # Spec AC-4: conditional on requirements*.txt or pyproject.toml in repo root
-          # Build -r flags for each requirements file found (pip-audit must be told which
-          # files to scan; without -r it audits the CI environment, not the project).
           req_args=""
           for f in requirements*.txt; do
             [ -f "$f" ] && req_args="$req_args -r $f"
