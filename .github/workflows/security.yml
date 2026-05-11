@@ -26,7 +26,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install Semgrep
-        run: pip install semgrep==1.123.0
+        run: pip install setuptools semgrep==1.123.0
 
       - name: Run Semgrep
         run: semgrep --config auto --error .
