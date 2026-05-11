@@ -29,7 +29,7 @@ jobs:
         run: pip install semgrep==1.123.0
 
       - name: Run Semgrep
-        run: semgrep --config auto --metrics=off --error .
+        run: semgrep --config auto --error .
 
   trufflehog:
     name: Secret Detection (TruffleHog)

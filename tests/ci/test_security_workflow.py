@@ -147,10 +147,13 @@ class TestSemgrepJob(unittest.TestCase):
         combined = "\n".join(run_steps)
         self.assertIn("--config", combined, "Semgrep must specify --config")
 
-    def test_ac2_semgrep_metrics_off(self):
+    def test_ac2_semgrep_no_metrics_off(self):
+        # Semgrep 1.123.0+ rejects --config auto when --metrics=off is set.
+        # Telemetry is aggregate stats only (no repo contents) — constraint satisfied without the flag.
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
         combined = "\n".join(run_steps)
-        self.assertIn("--metrics=off", combined, "Semgrep must disable metrics (--metrics=off)")
+        self.assertNotIn("--metrics=off", combined,
+            "Do not use --metrics=off with --config auto (Semgrep 1.123.0+ incompatibility)")
 
     def test_ac2_semgrep_error_flag(self):
         run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]

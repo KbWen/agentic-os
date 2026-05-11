@@ -19,7 +19,7 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 ## Acceptance Criteria
 
 - **AC-1** — A workflow file exists at `.github/workflows/security.yml` and is triggered on `pull_request` targeting `main` (and on `push` to `main`).
-- **AC-2** — The workflow contains a `semgrep` job that runs Semgrep with `--config auto` (language-agnostic; auto-detects languages present in the repo) and `--metrics=off --error`. The job exits non-zero on any finding.
+- **AC-2** — The workflow contains a `semgrep` job that runs Semgrep with `--config auto --error` (language-agnostic; auto-detects languages present in the repo). The job exits non-zero on any finding. Note: `--metrics=off` is NOT used — Semgrep 1.123.0+ rejects `--config auto` when metrics are disabled (`Cannot create auto config when metrics are off`); Semgrep telemetry is aggregate stats only (file counts, rule counts — no repo content), so omitting `--metrics=off` still satisfies the no-repo-content constraint.
 - **AC-3** — The workflow contains a `trufflehog` job that performs a full-history scan (`fetch-depth: 0`) with `--only-verified` to bound false positives. The job exits non-zero on any verified finding.
 - **AC-4** — The workflow contains a `dependency-audit` job that runs `pip-audit` (OSV-backed). The run step detects Python dependency files at runtime (after checkout): `requirements*.txt` files are passed via `-r`; a `pyproject.toml` with `[project]` or `[build-system]` is audited via `pip-audit .`; if neither is present, the step exits 0 (skip). The job exits non-zero on any finding (`--strict`; pip-audit has no native severity filter — more conservative than HIGH/CRITICAL minimum and acceptable). Note: job-level `if: hashFiles(...)` is NOT used — it evaluates before checkout and always returns empty on GitHub-hosted runners.
 - **AC-5** — All three scanner versions are pinned — not `@main`, `@latest`, or an unversioned branch ref. Semgrep via `pip install semgrep==X.Y.Z`; TruffleHog via GitHub Action **commit SHA** (40 hex chars) with a human-readable version comment (e.g., `@abc123...  # vX.Y.Z`) — semver tags are mutable and do not provide supply-chain immutability for third-party actions; first-party `actions/*` actions may use major-version tags (e.g., `@v4`); pip-audit via `pip install pip-audit==X.Y.Z`. Dependabot (`github-actions` ecosystem) MUST be configured to auto-bump SHA pins.
@@ -51,7 +51,7 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 - Must run on `ubuntu-latest` GitHub-hosted runners (no self-hosted runners).
 - Target additional CI wall-time: ≤ 3 minutes per PR (all three jobs can run in parallel).
 - Must require no external API keys or paid-tier accounts — community/open-source tiers only.
-- Semgrep must not phone home with repo contents (`--metrics=off` or equivalent).
+- Semgrep must not phone home with repo contents. `--metrics=off` is NOT used (incompatible with `--config auto` in Semgrep 1.123.0+); Semgrep telemetry transmits only aggregate stats, never file contents — constraint is satisfied without the flag.
 - All tool installs must use official distribution channels (official GitHub Actions or `pip install`) — no vendored binaries committed to the repo. Semgrep via `pip install` (Docker Hub tags use two-part semver `1.x`, not three-part `1.x.y` — makes pinning unreliable); TruffleHog via official GitHub Action.
 
 ## File Relationship
