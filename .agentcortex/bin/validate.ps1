@@ -1332,6 +1332,15 @@ else {
 Test-ContainsLiteral -Path $projectAgentsFile -Pattern '.agent/workflows/routing.md' -SuccessMessage 'AGENTS.md references routing index (authority handoff present)' -FailureMessage 'AGENTS.md missing routing index reference (authority handoff absent)'
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'commands.md') -Pattern '.agent/workflows/routing.md' -SuccessMessage 'commands.md points to canonical routing index' -FailureMessage 'commands.md missing canonical routing index reference'
 
+# Security scanning workflow presence check (AC-8 of ci-security-scanning spec)
+$securityWorkflow = Join-NormalPath $root '.github/workflows/security.yml'
+if (Test-Path -Path $securityWorkflow -PathType Leaf) {
+    Add-Result -Level 'PASS' -Message 'security scanning workflow present at .github/workflows/security.yml'
+}
+else {
+    Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (backlog #20: add Semgrep + TruffleHog + pip-audit)'
+}
+
 # Document lifecycle bloat checks
 $globalLessonsMax = if ($env:GLOBAL_LESSONS_MAX) { [int]$env:GLOBAL_LESSONS_MAX } else { 20 }
 if (Test-Path -Path $currentStatePath -PathType Leaf) {

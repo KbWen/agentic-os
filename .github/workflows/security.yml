@@ -1,0 +1,72 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Semgrep
+        run: pip install semgrep==1.123.0
+
+      - name: Run Semgrep (p/python + p/bash)
+        run: semgrep --config p/python --config p/bash --metrics=off --error .
+
+  trufflehog:
+    name: Secret Detection (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@v3.94.3
+        with:
+          extra_args: --only-verified
+
+  dependency-audit:
+    name: Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.10.0
+
+      - name: Audit Python dependencies
+        run: |
+          # Spec AC-4: conditional on requirements*.txt or pyproject.toml in repo root
+          # Build -r flags for each requirements file found (pip-audit must be told which
+          # files to scan; without -r it audits the CI environment, not the project).
+          req_args=""
+          for f in requirements*.txt; do
+            [ -f "$f" ] && req_args="$req_args -r $f"
+          done
+          if [ -z "$req_args" ] && [ ! -f pyproject.toml ]; then
+            echo "No Python dependency files found in repo root — skipping audit"
+            exit 0
+          fi
+          pip-audit $req_args --vulnerability-service osv --strict
