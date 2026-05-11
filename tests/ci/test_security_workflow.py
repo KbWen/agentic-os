@@ -142,9 +142,15 @@ class TestTruffleHogJob(unittest.TestCase):
         self.assertTrue(self.job, "jobs.trufflehog missing")
 
     def test_ac3_trufflehog_only_verified(self):
-        # --only-verified must appear somewhere in step config or extra_args
-        raw = str(self.job)
-        self.assertIn("only-verified", raw, "TruffleHog must use --only-verified")
+        # --only-verified must appear in the extra_args of the trufflehog action step
+        th_steps = [
+            s for s in (self.job.get("steps") or [])
+            if "trufflehog" in str(s.get("uses", "")).lower()
+        ]
+        self.assertTrue(th_steps, "No TruffleHog action step found")
+        extra_args = (th_steps[0].get("with") or {}).get("extra_args", "")
+        self.assertIn("--only-verified", extra_args,
+                      "TruffleHog must use --only-verified in extra_args")
 
     def test_ac3_checkout_full_depth(self):
         checkout_steps = [

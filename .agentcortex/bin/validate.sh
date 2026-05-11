@@ -1413,11 +1413,14 @@ check_contains_literal \
   "commands.md missing canonical routing index reference"
 
 # Security scanning workflow presence check (AC-8 of ci-security-scanning spec)
+# Only relevant for repos using GitHub Actions (skip for non-Actions repos)
 SECURITY_WORKFLOW="$ROOT/.github/workflows/security.yml"
-if [[ -f "$SECURITY_WORKFLOW" ]]; then
-  record_result PASS "security scanning workflow present at .github/workflows/security.yml"
-else
-  record_result WARN "security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)"
+if [[ -d "$ROOT/.github/workflows" ]]; then
+  if [[ -f "$SECURITY_WORKFLOW" ]]; then
+    record_result PASS "security scanning workflow present at .github/workflows/security.yml"
+  else
+    record_result WARN "security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)"
+  fi
 fi
 
 # Document lifecycle bloat checks

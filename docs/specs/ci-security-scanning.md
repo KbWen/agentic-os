@@ -27,7 +27,7 @@ Add automated security scanning to GitHub Actions CI so every PR to `main` is ch
 - **AC-7** — No security job uses `continue-on-error: true` (silent failures prohibited).
 - **AC-8** — The `validate.sh` and `validate.ps1` scripts gain a security workflow presence check: PASS if `.github/workflows/security.yml` exists, WARN if absent (non-blocking — projects without GitHub Actions still pass the main gate).
 - **AC-9** — Running the updated `validate.sh` / `validate.ps1` against this repo produces 0 FAIL after the workflow file is added.
-- **AC-10** — The security workflow is isolated in its own file and does not modify `.github/workflows/validate.yml`.
+- **AC-10** — The security workflow is isolated in its own file (`security.yml`). The framework validation workflow (`validate.yml`) gains an additive `test-ci-structural` job to execute structural tests (AC-10 evidence); no existing validate jobs are modified or removed.
 
 ## Non-goals
 

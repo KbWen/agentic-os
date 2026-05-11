@@ -66,8 +66,11 @@ jobs:
           for f in requirements*.txt; do
             [ -f "$f" ] && req_args="$req_args -r $f"
           done
-          if [ -z "$req_args" ] && [ ! -f pyproject.toml ]; then
+          if [ -n "$req_args" ]; then
+            pip-audit $req_args --vulnerability-service osv --strict
+          elif [ -f pyproject.toml ]; then
+            pip-audit . --vulnerability-service osv --strict
+          else
             echo "No Python dependency files found in repo root — skipping audit"
             exit 0
           fi
-          pip-audit $req_args --vulnerability-service osv --strict

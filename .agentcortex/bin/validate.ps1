@@ -1333,12 +1333,16 @@ Test-ContainsLiteral -Path $projectAgentsFile -Pattern '.agent/workflows/routing
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'commands.md') -Pattern '.agent/workflows/routing.md' -SuccessMessage 'commands.md points to canonical routing index' -FailureMessage 'commands.md missing canonical routing index reference'
 
 # Security scanning workflow presence check (AC-8 of ci-security-scanning spec)
+# Only relevant for repos using GitHub Actions (skip for non-Actions repos)
 $securityWorkflow = Join-NormalPath $root '.github/workflows/security.yml'
-if (Test-Path -Path $securityWorkflow -PathType Leaf) {
-    Add-Result -Level 'PASS' -Message 'security scanning workflow present at .github/workflows/security.yml'
-}
-else {
-    Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)'
+$githubWorkflowsDir = Join-NormalPath $root '.github/workflows'
+if (Test-Path -Path $githubWorkflowsDir -PathType Container) {
+    if (Test-Path -Path $securityWorkflow -PathType Leaf) {
+        Add-Result -Level 'PASS' -Message 'security scanning workflow present at .github/workflows/security.yml'
+    }
+    else {
+        Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)'
+    }
 }
 
 # Document lifecycle bloat checks
