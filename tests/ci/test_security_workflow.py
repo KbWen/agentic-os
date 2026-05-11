@@ -24,7 +24,8 @@ SECURITY_YML = ROOT / ".github" / "workflows" / "security.yml"
 # Floating-ref denylist: known mutable branch/alias names used as action refs.
 # Does NOT flag @v4 / @v5 (major-version tags, accepted per AC-5 for first-party setup actions).
 _FLOATING_REF_RE = re.compile(
-    r"@(main|master|HEAD|latest|develop|dev|trunk|stable|edge|next|nightly|release|current)\b",
+    r"@(main|master|HEAD|latest|develop|dev|trunk|stable|edge|next|nightly|release|current"
+    r"|beta|alpha|rc|canary|preview|unstable|snapshot|experimental|pre)\b",
     re.IGNORECASE,
 )
 
@@ -77,7 +78,15 @@ class TestSecurityWorkflowPermissions(unittest.TestCase):
         wf = _load_workflow()
         for job_name, job in (wf.get("jobs") or {}).items():
             perms = job.get("permissions")
-            if perms and isinstance(perms, dict):
+            if perms is None:
+                continue
+            if isinstance(perms, str):
+                # scalar forms like `permissions: write-all` are also prohibited
+                self.assertNotIn(
+                    perms.lower(), ("write-all", "write"),
+                    f"Job '{job_name}' uses scalar permissions '{perms}' — prohibited (AC-6)",
+                )
+            elif isinstance(perms, dict):
                 self.assertNotEqual(
                     perms.get("contents"), "write",
                     f"Job '{job_name}' escalates contents to write — prohibited (AC-6)",
@@ -274,6 +283,14 @@ class TestDependencyAuditJob(unittest.TestCase):
             "pip-audit install must pin exact version (pip-audit==X.Y.Z)",
         )
 
+    def test_ac4_strict_flag(self):
+        run_steps = [s.get("run", "") for s in (self.job.get("steps") or [])]
+        combined = "\n".join(run_steps)
+        self.assertIn(
+            "--strict", combined,
+            "pip-audit must use --strict to exit non-zero on any finding (AC-4)",
+        )
+
 
 class TestVersionPinningGlobal(unittest.TestCase):
     """AC-5: no floating refs anywhere in the workflow file."""
@@ -298,8 +315,10 @@ class TestWorkflowIsolation(unittest.TestCase):
 
     def test_ac10_security_jobs_not_in_validate_yml(self):
         validate_yml = ROOT / ".github" / "workflows" / "validate.yml"
-        if not validate_yml.exists():
-            self.skipTest("validate.yml not present")
+        self.assertTrue(
+            validate_yml.exists(),
+            "validate.yml must exist — accidental deletion should be a FAIL, not a skip",
+        )
         with validate_yml.open(encoding="utf-8") as f:
             wf = yaml.safe_load(f)
         jobs = set((wf.get("jobs") or {}).keys())
@@ -308,12 +327,16 @@ class TestWorkflowIsolation(unittest.TestCase):
             jobs & security_jobs,
             f"Security jobs found in validate.yml: {jobs & security_jobs} — must stay in security.yml",
         )
-        # Core validate jobs must still exist (guard against accidental deletion)
+        # Core validate jobs must all still exist (guard against accidental deletion)
         expected_core = {"validate", "shellcheck"}
-        present_core = jobs & expected_core
         self.assertTrue(
-            present_core,
-            f"Core validate jobs missing from validate.yml: {expected_core - present_core}",
+            expected_core.issubset(jobs),
+            f"Core validate jobs missing from validate.yml: {expected_core - jobs}",
+        )
+        # AC-10: test-ci-structural job must exist (it is the AC-10 evidence runner)
+        self.assertIn(
+            "test-ci-structural", jobs,
+            "validate.yml must contain additive test-ci-structural job (AC-10)",
         )
 
     def test_semgrepignore_exists(self):

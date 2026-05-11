@@ -65,6 +65,7 @@ jobs:
         run: pip install pip-audit==2.10.0
 
       - name: Audit Python dependencies
+        shell: bash
         run: |
           req_args=""
           for f in requirements*.txt; do
