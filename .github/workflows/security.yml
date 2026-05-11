@@ -67,12 +67,12 @@ jobs:
       - name: Audit Python dependencies
         shell: bash
         run: |
-          req_args=""
+          req_args=()
           for f in requirements*.txt; do
-            [ -f "$f" ] && req_args="$req_args -r $f"
+            [ -f "$f" ] && req_args+=(-r "$f")
           done
-          if [ -n "$req_args" ]; then
-            pip-audit $req_args --vulnerability-service osv --strict
+          if [ "${#req_args[@]}" -gt 0 ]; then
+            pip-audit "${req_args[@]}" --vulnerability-service osv --strict
           elif [ -f pyproject.toml ] && grep -qE '^\[project\]|^\[build-system\]' pyproject.toml; then
             pip-audit . --vulnerability-service osv --strict
           else

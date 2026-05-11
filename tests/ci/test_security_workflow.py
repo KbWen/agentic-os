@@ -91,6 +91,10 @@ class TestSecurityWorkflowPermissions(unittest.TestCase):
                     perms.get("contents"), "write",
                     f"Job '{job_name}' escalates contents to write — prohibited (AC-6)",
                 )
+            else:
+                self.fail(
+                    f"Job '{job_name}' has unexpected permissions type {type(perms).__name__!r}: {perms!r}",
+                )
 
 
 class TestSecurityWorkflowNoContinueOnError(unittest.TestCase):
@@ -213,7 +217,7 @@ class TestTruffleHogJob(unittest.TestCase):
         tag = uses.split("@")[1]
         self.assertRegex(
             tag,
-            r"^[0-9a-f]{40}$",
+            r"^[0-9a-fA-F]{40}$",
             f"TruffleHog tag {tag!r} must be a 40-char commit SHA — semver tags are mutable (AC-5)",
         )
 
