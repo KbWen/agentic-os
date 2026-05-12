@@ -47,9 +47,9 @@ Ask the user ONE batched question set (max 5 questions). Do NOT ask one at a tim
 
 ## 2. Generate Project ADR
 
-Create `docs/adr/ADR-002-project-architecture.md` using the template at `.agentcortex/templates/adr-tech-stack.md`.
+Create `docs/adr/ADR-001-project-architecture.md` using the template at `.agentcortex/templates/adr-tech-stack.md`.
 
-**Numbering**: If `ADR-002` already exists, increment to next available number.
+**Numbering**: If `ADR-001` already exists, increment to next available number.
 
 Fill in all sections from user answers. For `[TBD]` items, include a `## Open Decisions` section listing them.
 

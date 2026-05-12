@@ -139,7 +139,7 @@ When a skill is loaded, it **changes how you implement** — not just what you s
 ## Mid-Execution Guard
 
 - **Classification Escalation**: If actual changes exceed the current classification threshold (e.g., `quick-win` touching >2 modules or adding new directories), AI MUST pause and trigger the `IMPLEMENTING → CLASSIFIED` reverse transition (state_machine.md §Allowed Transitions). The exact procedure:
-  1. **Hard-block thresholds** (Lesson L4 / NR-5 fix): if actual diff > 200 lines OR > 2 modules touched OR new directory added, the escalation is MANDATORY. The agent does NOT ask "Escalate? (yes/no)"; the only user choice is which higher tier to escalate to.
+  1. **Hard-block thresholds**: if actual diff > 200 lines OR > 2 modules touched OR new directory added, the escalation is MANDATORY. The agent does NOT ask "Escalate? (yes/no)"; the only user choice is which higher tier to escalate to.
   2. **Soft-block thresholds** (everything else within the original classification): AI asks "⚠️ Scope has grown beyond `[current-tier]`. Recommend escalating to `[higher-tier]`. Proceed with reverse-transition? (yes/no)" — user "no" is acceptable here; agent records the explicit user-acknowledged scope override in `## Drift Log`.
   3. **On escalation (mandatory or accepted)**:
      a. `git stash push -m "scope-creep escalation: <branch>"` — preserves uncommitted code; avoids losing work.

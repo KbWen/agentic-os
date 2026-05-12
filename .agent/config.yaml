@@ -121,9 +121,9 @@ production_paths:
   - packages/
 
 # Guard policy — paths that MUST be written via guard_context_write.py.
-# Enforced at lint time by tools/lint_governed_writes.py (CI).
-# Spec: docs/specs/lock-unification.md AC-1
-# ADR:  docs/adr/ADR-002-guarded-governance-writes.md §D1
+# Enforced at lint time by .agentcortex/tools/lint_governed_writes.py (CI).
+# Direct file writes to protected_paths are rejected to keep SSoT and
+# governance documents consistent under concurrent edits.
 guard_policy:
   # Glob list (POSIX style); matched via fnmatch against repo-relative POSIX paths.
   protected_paths:

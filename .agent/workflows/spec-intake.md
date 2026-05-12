@@ -246,7 +246,7 @@ Quality Tier: READY | NEEDS-ADJUSTMENT | INCOMPLETE
 
 ## 4.5 Clarification Pass (≤3 questions, optional)
 
-> Borrowed from spec-kit's Clarify gate, integrated as an in-step hook (not a new phase) per AGENTS.md governance-friction tuning (ADR-001).
+> Borrowed from spec-kit's Clarify gate, integrated as an in-step hook (not a new phase) to minimize governance friction.
 
 After Quality Assessment but **before** §5 Confirm & Freeze:
 

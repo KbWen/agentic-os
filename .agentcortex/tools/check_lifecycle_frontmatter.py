@@ -194,7 +194,8 @@ def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description=(
             "Validate that governance docs (audit/, guides/governance-*, adr/, architecture/*.md L1) "
-            "declare the lifecycle: frontmatter contract per ADR-002 D3. "
+            "declare the required lifecycle: frontmatter contract "
+            "{owner, review_cadence, review_trigger, supersedes, superseded_by}. "
             "Files dated before 2026-04-25 are grandfathered (WARN); newer files FAIL on missing fields."
         )
     )

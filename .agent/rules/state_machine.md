@@ -40,7 +40,7 @@ These rules override the initial classification. AI MUST apply them during `/boo
 
 - **Auth Escalation**: If a `quick-win` touches authentication, authorization, session management, or token handling → escalate to `hotfix` minimum. Hotfix requires REVIEWED + TESTED gates.
 - **Governance File Escalation**: If a `tiny-fix` modifies `.agent/rules/*`, `.agent/config.yaml`, or `AGENTS.md` → escalate to `quick-win` minimum.
-- **Scope Escalation**: If actual changes exceed classification threshold (e.g., `quick-win` touching >2 modules) → reverse-transition `IMPLEMENTING → CLASSIFIED` (or `IMPLEMENTABLE → CLASSIFIED`) per the explicit transitions above. **Hard-block thresholds** (Lesson L4 anti-honor-system): user "no" answer to escalation prompt is NOT acceptable when ANY of these are true: actual diff > 200 lines OR > 2 modules touched OR new directory added. In those cases the reverse transition is MANDATORY; the only choice the user gets is which higher tier to escalate to.
+- **Scope Escalation**: If actual changes exceed classification threshold (e.g., `quick-win` touching >2 modules) → reverse-transition `IMPLEMENTING → CLASSIFIED` (or `IMPLEMENTABLE → CLASSIFIED`) per the explicit transitions above. **Hard-block thresholds**: user "no" answer to escalation prompt is NOT acceptable when ANY of these are true: actual diff > 200 lines OR > 2 modules touched OR new directory added. In those cases the reverse transition is MANDATORY; the only choice the user gets is which higher tier to escalate to.
 
 ## Hard Gates
 

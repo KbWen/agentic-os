@@ -59,7 +59,7 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 > **When**: ONLY for `feature` or `architecture-change` classifications (AFTER Step 0 pre-classification).
 > **Skip for**: `tiny-fix`, `quick-win`, `hotfix` — these NEVER trigger this check. Zero extra tokens.
 
-If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>` (Lesson L5 fix, see SSoT §Global Lessons 2026-04-25). The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code.
+If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>`. The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code.
 
 **Python-unavailable fallback** (per AGENTS.md doctrine): If `python --version` fails (no Python on this host), record `"ADR coverage check skipped: python unavailable"` in Work Log Drift Log and proceed to Step 1 with `## External References` left empty for coverage info. Do NOT fail the bootstrap. The fallback degrades to no-coverage-prompt, never to a hard-fail.
 
@@ -78,7 +78,7 @@ Tool exit codes:
 
 - **Exit 0 — covered**: Proceed to Step 1. The covering ADR(s) are written to `## External References` of the Work Log so `/plan` and `/implement` can cite them.
 
-> **Why coverage, not existence?** Lesson L5: the prior "No ADR exists" check became permanently False after the first ADR shipped (ADR-001 landed → all subsequent `architecture-change` tasks silently skipped the prompt because *some* ADR existed). The `applies_to:` glob makes coverage a positive predicate.
+> **Why coverage, not existence?** A naive "No ADR exists" check becomes permanently False once *any* ADR ships — every subsequent `architecture-change` task would silently skip the prompt. The `applies_to:` glob makes coverage a positive predicate scoped to the files actually being changed.
 
 **Cost**: This check reads only the ADR frontmatter (~30 tokens × N ADRs). It does NOT read full ADR content — that happens later during /implement when skills are loaded. ADRs without `applies_to:` are reported but not blocking.
 

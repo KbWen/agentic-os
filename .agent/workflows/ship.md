@@ -206,7 +206,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
    - If Ship History exceeds 10 entries, archive older entries to `.agentcortex/context/archive/ship-history-YYYY.md` and keep only the latest 10 in `current_state.md`.
 3. Archive `.agentcortex/context/work/<worklog-key>.md` to `.agentcortex/context/archive/` (if task complete).
     - Do NOT duplicate `/retro`-promoted Global Lessons during ship. `/retro` owns structured Global Lesson promotion.
-    - **Archive Index Update**: After archiving, append a structured record to `.agentcortex/context/archive/INDEX.jsonl`. Per ADR-003 (`docs/adr/ADR-003-hash-chained-audit-log.md`), every append MUST add `prev_sha` (computed by the helper) so the chain stays intact. Use:
+    - **Archive Index Update**: After archiving, append a structured record to `.agentcortex/context/archive/INDEX.jsonl`. The archive index is a hash-chained audit log — every append MUST add `prev_sha` (computed by the helper) so the chain stays intact. Use:
       ```bash
       python .agentcortex/tools/append_chain_entry.py append \
         --path .agentcortex/context/archive/INDEX.jsonl \
