@@ -43,6 +43,10 @@ PHASE_RULES = {
     "architecture-change": ["bootstrap", "adr", "spec", "plan", "implement", "review", "test", "handoff", "ship"],
     "hotfix": ["bootstrap", "research", "plan", "implement", "review", "test", "ship"],
 }
+KNOWN_PHASES = {
+    "bootstrap", "spec", "spec-intake", "adr", "research", "plan", "implement",
+    "review", "test", "handoff", "ship", "retro", "audit", "hotfix",
+}
 STRUCTURED_LESSON = re.compile(
     r"^\s*-\s*\[Category:\s*(?P<category>[^\]]+)\]\[Severity:\s*(?P<severity>HIGH|MEDIUM|LOW)\]"
     r"\[Trigger:\s*(?P<trigger>[^\]]+)\]\s*(?P<body>.+?)\s*$"
@@ -288,10 +292,15 @@ def phase_order_status(classification: str, phases: list[str]) -> tuple[bool, bo
         return False, False
     if "ship" in phases and phases[-1] != "ship":
         return False, False
+    for phase in phases:
+        if phase not in KNOWN_PHASES:
+            return False, False
+    # Required phases must appear in canonical order. Extra known phases
+    # (e.g. optional `review`/`test` for quick-win) are allowed anywhere.
     seen: set[str] = set()
     for phase in phases:
         if phase not in required:
-            return False, False
+            continue
         phase_index = required.index(phase)
         if any(required[index] not in seen for index in range(phase_index)):
             return False, False

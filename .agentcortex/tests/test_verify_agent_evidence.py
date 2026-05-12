@@ -224,6 +224,44 @@ class VerifyAgentEvidenceTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("invalid phase sequence", result.stderr)
 
+    def test_quick_win_with_optional_review_test_phases_is_allowed(self) -> None:
+        write_file(
+            self.root / ".agentcortex/context/work/sample.md",
+            build_work_log(
+                classification="quick-win",
+                phases="- bootstrap\n- plan\n- implement\n- review\n- test\n- ship",
+                external_references="- none",
+            ),
+        )
+        result = run_tool(
+            self.root,
+            "--root",
+            ".",
+            "--path",
+            ".agentcortex/context/work/sample.md",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("invalid phase sequence", result.stderr)
+
+    def test_quick_win_with_unknown_phase_token_fails(self) -> None:
+        write_file(
+            self.root / ".agentcortex/context/work/sample.md",
+            build_work_log(
+                classification="quick-win",
+                phases="- bootstrap\n- plan\n- bogus-phase\n- implement\n- ship",
+                external_references="- none",
+            ),
+        )
+        result = run_tool(
+            self.root,
+            "--root",
+            ".",
+            "--path",
+            ".agentcortex/context/work/sample.md",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid phase sequence", result.stderr)
+
     def test_high_lesson_trigger_without_known_risk_warns(self) -> None:
         write_file(
             self.root / ".agentcortex/context/work/sample.md",
