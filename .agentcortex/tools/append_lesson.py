@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Append a hash-chained Global Lesson to current_state.md §Global Lessons.
 
-Sister of append_chain_entry.py (ADR-003); same primitive, different format.
-The new lesson bullet automatically gets `[prev:<8-char>]` computed from
-the previous lesson's canonical form (or `GENESIS` for the first).
+Sister of append_chain_entry.py; same hash-chain primitive, different
+format. The new lesson bullet automatically gets `[prev:<8-char>]`
+computed from the previous lesson's canonical form (or `GENESIS` for
+the first).
 
 Usage:
   python .agentcortex/tools/append_lesson.py \\

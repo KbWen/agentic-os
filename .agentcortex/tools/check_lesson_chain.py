@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """Hash-chain validator for current_state.md §Global Lessons.
 
-Sister of check_audit_chain.py (ADR-003); same primitive, different format.
-Each lesson bullet carries `[prev:<8-char>]` between the trigger tag and
-the body. The hash is sha256[:8] of the canonical form (tags + body
-WITHOUT the prev token), matching the convention used in
+Sister of check_audit_chain.py; same hash-chain primitive, different
+format. Each lesson bullet carries `[prev:<8-char>]` between the trigger
+tag and the body. The hash is sha256[:8] of the canonical form (tags +
+body WITHOUT the prev token), matching the convention used in
 append_chain_entry.py.
 
-Closes one half of the L4 honor-system gap for Global Lessons:
-without the chain, an agent could silently delete an inconvenient
-lesson (e.g., remove L4 itself to weaken the rule against silent
-deletion). The chain makes any retroactive edit cryptographically
+Without the chain, an agent could silently delete an inconvenient
+lesson — for example, removing a lesson that constrains its own future
+behaviour. The chain makes any retroactive edit cryptographically
 detectable.
 
 Exit codes:

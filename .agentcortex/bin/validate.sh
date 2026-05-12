@@ -336,30 +336,30 @@ fi
 
 run_python_check "command sync check" FAIL "$COMMAND_SYNC_CHECK" --root "$ROOT"
 
-# ADR-002 D2.2 — guarded-write lint: fail CI on direct file writes against
+# Guarded-write lint: fail CI on direct file writes against
 # .agent/config.yaml §guard_policy.protected_paths. Use guard_context_write.py
 # or annotate the line with `guard-exempt: <reason>`.
 run_python_check "guarded-write lint (governance paths)" FAIL "$GUARDED_WRITES_LINT" --root "$ROOT"
 
-# ADR-002 D2.3 — governance docs MUST declare lifecycle: frontmatter
+# Governance docs MUST declare lifecycle: frontmatter
 # {owner, review_cadence, review_trigger, supersedes, superseded_by}.
 # Files dated before 2026-04-25 are grandfathered (WARN); newer files FAIL.
 run_python_check "lifecycle frontmatter (governance docs)" FAIL "$LIFECYCLE_FRONTMATTER_CHECK" --root "$ROOT"
 
-# ADR-003 — verify the hash chain on the archive INDEX.jsonl. A broken chain
-# means an entry was retroactively rewritten without going through
+# Verify the hash chain on the archive INDEX.jsonl. A broken chain means an
+# entry was retroactively rewritten without going through
 # .agentcortex/tools/append_chain_entry.py. Capability-by-presence: file
-# absent or empty → no-op (PASS). Lesson L4 (current_state.md §Global
-# Lessons): honor-system rules need external observers, this is one.
+# absent or empty → no-op (PASS). External observer for an otherwise
+# honor-system rule on archive integrity.
 if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
   run_python_check "audit chain integrity (INDEX.jsonl)" FAIL "$AUDIT_CHAIN_CHECK" --path "$ARCHIVE_INDEX_JSONL" --quiet
 else
   record_result SKIP "audit chain integrity -- archive INDEX.jsonl not present"
 fi
 
-# PR #85 — Global Lessons hash chain. Lesson L4 / NR-5-companion fix:
-# without a chain, an agent could silently delete an inconvenient lesson
-# (e.g., remove L4 itself). Tamper-evident chain on §Global Lessons.
+# Global Lessons hash chain. Without a chain, an agent could silently delete
+# an inconvenient lesson that constrains its own future behaviour. Tamper-
+# evident chain on §Global Lessons closes that gap.
 if [[ -f "$SSOT_CURRENT_STATE" ]]; then
   run_python_check "lesson chain integrity (Global Lessons)" FAIL "$LESSON_CHAIN_CHECK" --path "$SSOT_CURRENT_STATE" --quiet
 else

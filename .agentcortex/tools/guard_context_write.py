@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Guarded read/write operations for Agentic OS context files.
 
-ADR-002 (D2.1): policy-driven path scope, append mode, per-target receipts,
-configurable lock TTL, process-liveness check, lock_group placeholder.
-
-Spec: docs/specs/lock-unification.md
+Provides policy-driven path scope (.agent/config.yaml §guard_policy),
+append mode, per-target write receipts, configurable lock TTL with
+process-liveness check, and a multi-path lock_group placeholder.
 """
 
 from __future__ import annotations
@@ -48,7 +47,7 @@ LOCK_STALE_SECONDS = 900
 CONFIG_PATH = Path(".agent/config.yaml")
 
 # Default policy used when config.yaml is missing or has no guard_policy block.
-# Mirrors the default block written into config.yaml by ADR-002 D2.1 step 1.
+# Mirrors the default block that downstream config.yaml ships with.
 DEFAULT_PROTECTED_PATHS: tuple[str, ...] = (
     ".agentcortex/context/**",
     "AGENTS.md",
@@ -218,7 +217,7 @@ def resolve_target(root: Path, target: str, *, policy: dict | None = None, allow
     rel_posix = str(path.relative_to(root.resolve())).replace("\\", "/") if path.is_relative_to(root.resolve()) else None
 
     if policy is None:
-        # Legacy mode (pre-ADR-002): only .agentcortex/context/ is writable.
+        # Legacy mode (no guard_policy in config.yaml): only .agentcortex/context/ is writable.
         context_root = (root / CONTEXT_ROOT).resolve()
         try:
             path.relative_to(context_root)
@@ -226,7 +225,7 @@ def resolve_target(root: Path, target: str, *, policy: dict | None = None, allow
             raise ValueError(f"target must stay under {CONTEXT_ROOT.as_posix()}: {target}") from exc
         return path
 
-    # Policy mode (ADR-002 D2.1)
+    # Policy mode (guard_policy in config.yaml)
     if rel_posix is None:
         raise ValueError(f"target must stay within repo root: {target}")
     if match_protected_path(rel_posix, policy["protected_paths"]):
@@ -297,8 +296,8 @@ def stale_lock_threshold(policy: dict | None = None) -> int:
 def clear_stale_lock(lock_path: Path, *, policy: dict | None = None) -> bool:
     """Clear lock if (a) holder process is dead OR (b) age exceeds threshold.
 
-    Liveness check (ADR-002 D2.1 AC-6): a live PID overrides age — never clear
-    a lock held by a running process even if it's been held for a long time.
+    Liveness check: a live PID overrides age — never clear a lock held
+    by a running process even if it's been held for a long time.
     """
     try:
         age_seconds = lock_age_seconds(lock_path)
@@ -397,15 +396,16 @@ def file_lock(
 def lock_group(paths: Sequence[str | Path], *, root: Path | None = None, policy: dict | None = None) -> Iterator[None]:
     """Acquire a group of file locks atomically.
 
-    AC-8: single-path invocation works identically to file_lock.
-    Multi-path semantics are reserved for ADR-003 D3 reverse-transition needs.
+    Single-path invocation works identically to file_lock. Multi-path
+    semantics are reserved for future reverse-transition needs and not
+    yet implemented (lock-ordering rules undefined).
     """
     if len(paths) == 0:
         yield
         return
     if len(paths) > 1:
         raise NotImplementedError(
-            "multi-path lock_group reserved for ADR-003 D3 reverse-transition (lock-ordering not yet specified)"
+            "multi-path lock_group not yet implemented (lock-ordering rules undefined)"
         )
     base = (root or Path(".")).resolve()
     target = (base / paths[0]).resolve() if not isinstance(paths[0], Path) or not paths[0].is_absolute() else Path(paths[0]).resolve()

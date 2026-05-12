@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""ADR-003 — verify a hash-chained JSONL audit log.
+"""Verify a hash-chained JSONL audit log.
 
 Walks each line, recomputes the canonical sha256[:8] of the previous
 entry (excluding its prev_sha field), and compares to the declared
 prev_sha. Any mismatch = chain broken = retroactive tampering detected.
-
-Spec: docs/specs/hash-chained-audit-log.md
-ADR: docs/adr/ADR-003-hash-chained-audit-log.md
+Counterpart to append_chain_entry.py.
 
 Exit codes:
   0  chain intact (or file empty / missing — capability-by-presence)

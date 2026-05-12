@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""ADR-002 D2.3 — Lifecycle frontmatter checker for governance docs.
+"""Lifecycle frontmatter checker for governance docs.
 
-Spec: docs/specs/lock-unification.md AC-15..AC-20
-ADR:  docs/adr/ADR-002-guarded-governance-writes.md §D3
+Scans governance docs and verifies they declare the `lifecycle:`
+frontmatter contract: {owner, review_cadence, review_trigger,
+supersedes, superseded_by}. The contract makes ownership and review
+cadence explicit so audit/ADR/governance-guide files don't silently
+go stale.
 
-Scans governance docs and verifies they declare the `lifecycle:` frontmatter
-contract: {owner, review_cadence, review_trigger, supersedes, superseded_by}.
-
-Grandfather rule: files dated before 2026-04-25 (the ADR's date) emit WARN
-on missing fields. Files dated 2026-04-25+ emit FAIL.
+Grandfather rule: files dated before 2026-04-25 emit WARN on missing
+fields; files dated 2026-04-25+ emit FAIL.
 
 Exit codes:
   0  no FAIL findings (PASS or WARN only)

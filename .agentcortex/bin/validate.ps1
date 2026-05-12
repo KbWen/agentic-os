@@ -397,20 +397,20 @@ else {
 
 Invoke-PythonCheck -Label 'command sync check' -MissingPythonLevel 'FAIL' -ScriptPath $commandSyncCheck -Arguments @('--root', $root)
 
-# ADR-002 D2.2 — guarded-write lint mirror of validate.sh integration.
+# Guarded-write lint mirror of validate.sh integration.
 Invoke-PythonCheck -Label 'guarded-write lint (governance paths)' -MissingPythonLevel 'FAIL' -ScriptPath $guardedWritesLint -Arguments @('--root', $root)
 
-# ADR-002 D2.3 — lifecycle frontmatter check mirror of validate.sh integration.
+# Lifecycle frontmatter check mirror of validate.sh integration.
 Invoke-PythonCheck -Label 'lifecycle frontmatter (governance docs)' -MissingPythonLevel 'FAIL' -ScriptPath $lifecycleFrontmatterCheck -Arguments @('--root', $root)
 
-# ADR-003 — verify the hash chain on the archive INDEX.jsonl.
+# Verify the hash chain on the archive INDEX.jsonl.
 if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     Invoke-PythonCheck -Label 'audit chain integrity (INDEX.jsonl)' -MissingPythonLevel 'FAIL' -ScriptPath $auditChainCheck -Arguments @('--path', $archiveIndexJsonl, '--quiet')
 } else {
     Add-Result -Level 'SKIP' -Message 'audit chain integrity -- archive INDEX.jsonl not present'
 }
 
-# PR #85 — Global Lessons chain (mirror of validate.sh integration).
+# Global Lessons chain (mirror of validate.sh integration).
 if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
     Invoke-PythonCheck -Label 'lesson chain integrity (Global Lessons)' -MissingPythonLevel 'FAIL' -ScriptPath $lessonChainCheck -Arguments @('--path', $ssotCurrentState, '--quiet')
 } else {

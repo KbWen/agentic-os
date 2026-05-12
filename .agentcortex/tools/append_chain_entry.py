@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""ADR-003 — append a hash-chained entry to a JSONL audit log.
+"""Append a hash-chained entry to a JSONL audit log.
 
 Each appended JSON object carries a `prev_sha` field naming the
 sha256[:8] of the canonical-form previous entry (with its own `prev_sha`
 stripped before hashing for stability). The first (genesis) entry uses
-`prev_sha: "GENESIS"`.
-
-Spec: docs/specs/hash-chained-audit-log.md
-ADR: docs/adr/ADR-003-hash-chained-audit-log.md
+`prev_sha: "GENESIS"`. Retroactive edits to history break the chain and
+are caught by check_audit_chain.py at validate time.
 
 Usage:
   # Append a new entry

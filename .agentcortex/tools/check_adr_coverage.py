@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """bootstrap §0a — ADR coverage check (replaces "no ADR exists" trigger).
 
-Lesson L5 (current_state.md §Global Lessons, 2026-04-25):
-  bootstrap §0a's existing "No ADR exists" condition becomes permanently
-  False after the first ADR ships, silently skipping the ADR prompt for
-  every subsequent architecture-change. This tool replaces existence
-  with COVERAGE: each ADR declares its `applies_to:` glob list in
-  frontmatter; if NO ADR's glob matches the current task's changed files,
-  fire the prompt.
+A naive "No ADR exists" check becomes permanently False after the first
+ADR ships, silently skipping the ADR prompt for every subsequent
+architecture-change task. This tool replaces existence with COVERAGE:
+each ADR declares its `applies_to:` glob list in frontmatter; if NO
+ADR's glob matches the current task's changed files, fire the prompt.
 
 Usage:
   python .agentcortex/tools/check_adr_coverage.py --root . --paths file1 file2 ...

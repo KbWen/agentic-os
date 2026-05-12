@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""ADR-002 D2.2 — CI lint for direct file writes against governed paths.
+"""CI lint for direct file writes against governed paths.
 
-Spec: docs/specs/lock-unification.md AC-9..AC-14
-ADR:  docs/adr/ADR-002-guarded-governance-writes.md §D2
-
-Scans tracked source files for direct write patterns (open(..., 'w'), shell
-redirect, PowerShell Set-Content, JS fs.writeFile, etc.) targeting paths
-matching .agent/config.yaml §guard_policy.protected_paths globs. Such writes
-MUST go through guard_context_write.py instead.
+Scans tracked source files for direct write patterns (open(..., 'w'),
+shell redirect, PowerShell Set-Content, JS fs.writeFile, etc.) targeting
+paths matching .agent/config.yaml §guard_policy.protected_paths globs.
+Such writes MUST go through guard_context_write.py instead, which
+provides optimistic locking and per-target receipts.
 
 Exit codes:
   0  no FAIL findings (PASS or WARN only)
