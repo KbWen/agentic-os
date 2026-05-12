@@ -19,7 +19,7 @@
 - **Update Sequence**: 0
 - **ADR Index**: (none yet)
 - **Active Backlog**: (none yet)
-- **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
+- **Spec Index** (project specs at `docs/specs/`):
   - (none yet — use `/spec-intake` or `/spec` to create new specs)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.

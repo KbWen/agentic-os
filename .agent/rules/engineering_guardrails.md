@@ -145,7 +145,7 @@ Before executing any implementation step, AI MUST internally assess and state:
   - Specs: `docs/specs/[feature-name].md`
   - Guides: `docs/guides/[topic].md`
   - Agent Work Logs: `.agentcortex/context/work/`
-- **Write Path Guard**: Agents MUST NOT write project specs to `.agentcortex/specs/` or project ADRs to `.agentcortex/adr/`. Those directories contain framework-owned template fixtures only. All project artifacts MUST go to `docs/specs/` and `docs/adr/`. If the SSoT Spec Index references `.agentcortex/specs/`, READ from it but WRITE new work to `docs/specs/`.
+- **Write Path Guard**: Agents MUST NOT write project specs to `.agentcortex/specs/` or project ADRs to `.agentcortex/adr/`. These paths are a reserved framework namespace (no content ships there today; the framework may populate them in future template updates). All project artifacts MUST go to `docs/specs/` and `docs/adr/`.
   - Private Context: `.agentcortex/context/private/` (local-only, gitignored)
     - USE FOR: personal dev environment configs, private remote URLs, internal credentials references, team-specific workflows not intended for public repos.
     - DO NOT USE FOR: project architecture docs, contribution guides, public development standards.

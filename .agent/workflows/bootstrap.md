@@ -165,7 +165,7 @@ Tool exit codes:
 <!-- END conditional steps -->
 7. Classify task per `engineering_guardrails.md`.
 
-**Write Path Guard** (all classifications): Project specs → `docs/specs/`, project ADRs → `docs/adr/`. NEVER write to `.agentcortex/specs/` or `.agentcortex/adr/` — those are framework-owned template fixtures. If the Spec Index references `.agentcortex/specs/`, READ from it but WRITE new work to `docs/specs/`.
+**Write Path Guard** (all classifications): Project specs → `docs/specs/`, project ADRs → `docs/adr/`. NEVER write to `.agentcortex/specs/` or `.agentcortex/adr/` — these paths are a reserved framework namespace (no content ships there today; may be populated in future template updates).
 
 Classification Tiers:
 

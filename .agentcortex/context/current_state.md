@@ -19,7 +19,7 @@
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
   - docs/adr/ADR-003-hash-chained-audit-log.md — ADR-003: Hash-Chained Tamper-Evident Audit Log (INDEX.jsonl), proposed 2026-04-25
 - **Active Backlog**: docs/specs/_product-backlog.md (40 items; Kind/Labels/Priority columns active 2026-05-06)
-- **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
+- **Spec Index** (project specs at `docs/specs/`):
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20)
 - **Canonical Commands**:
