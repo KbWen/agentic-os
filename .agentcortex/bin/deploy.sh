@@ -637,6 +637,12 @@ for f in "$REPO_ROOT"/.agentcortex/docs/guides/*.md; do
     [ -f "$f" ] || continue
     deploy_file "$f" ".agentcortex/docs/guides/$(basename "$f")"
 done
+# Downstream-facing quickstart guides live in framework's docs/guides/ (root-style path).
+# Deploy them to .agentcortex/docs/guides/ alongside the framework-internal guides.
+for f in "$REPO_ROOT"/docs/guides/token-optimization-quickstart*.md; do
+    [ -f "$f" ] || continue
+    deploy_file "$f" ".agentcortex/docs/guides/$(basename "$f")"
+done
 
 # --- Deploy: .claude/commands (core) ---
 if [ -d "$REPO_ROOT/.claude/commands" ]; then

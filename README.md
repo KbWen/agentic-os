@@ -22,8 +22,8 @@
 
 <p align="center">
   <a href="docs/README_zh-TW.md">繁體中文</a> &middot;
-  <a href="CONTRIBUTING.md">Contributing</a> &middot;
-  <a href="CHANGELOG.md">Changelog</a>
+  <a href="https://github.com/KbWen/agentic-os/blob/main/CONTRIBUTING.md">Contributing</a> &middot;
+  <a href="https://github.com/KbWen/agentic-os/blob/main/CHANGELOG.md">Changelog</a>
 </p>
 
 ---
@@ -155,7 +155,7 @@ Pick the one that matches your starting point (full opener templates in **Quick 
 | 🏗️ Existing repo, adopting Agentic OS | `/audit` (read-only, zero risk) | audit → app-init → spec-intake → quick-win → feature |
 | 🎯 Single concrete task on an established project | `/bootstrap` | bootstrap → plan → implement → review → test → ship |
 
-See the [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) ([繁體中文](docs/LIFECYCLE_BENCHMARK_zh-TW.md)) for real token consumption data across 6 development scenarios.
+See the [Lifecycle Benchmark](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK.md) ([繁體中文](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK_zh-TW.md)) for real token consumption data across 6 development scenarios.
 
 ### 📉 Token Efficiency
 
@@ -402,24 +402,24 @@ Agentic OS is built on [10 non-negotiable principles](.agentcortex/docs/AGENT_PH
 | Document | Description |
 |:---|:---|
 | [Agent Philosophy](.agentcortex/docs/AGENT_PHILOSOPHY.md) | 10 core principles |
-| [Model Selection Guide](docs/AGENT_MODEL_GUIDE.md) | Flash vs. Pro guidance |
+| [Model Selection Guide](https://github.com/KbWen/agentic-os/blob/main/docs/AGENT_MODEL_GUIDE.md) | Flash vs. Pro guidance |
 | [Testing Protocol](.agentcortex/docs/TESTING_PROTOCOL.md) | Testing standards |
 | [Project Examples](.agentcortex/docs/PROJECT_EXAMPLES.md) | Node.js & Python examples |
 | [Token Governance](.agentcortex/docs/guides/token-governance.md) | Token optimization strategies |
-| [Token Optimization Quickstart](docs/guides/token-optimization-quickstart.md) | Reduce token costs immediately ([繁體中文](docs/guides/token-optimization-quickstart_zh-TW.md)) |
+| [Token Optimization Quickstart](https://github.com/KbWen/agentic-os/blob/main/docs/guides/token-optimization-quickstart.md) | Reduce token costs immediately ([繁體中文](https://github.com/KbWen/agentic-os/blob/main/docs/guides/token-optimization-quickstart_zh-TW.md)) |
 | [Context Budget](.agentcortex/docs/guides/context-budget.md) | Context window management |
 | [Migration Guide](.agentcortex/docs/guides/migration.md) | Upgrade to v1.1+ |
 | [Codex Platform Guide](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) | Codex Web/App adaptation |
 | [Claude Platform Guide](.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md) | Claude Code integration |
 | [Nonlinear Scenarios](.agentcortex/docs/NONLINEAR_SCENARIOS.md) | Recovery from interrupted sessions |
-| [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) | 6 real scenarios with token costs |
-| [生命週期基準測試](docs/LIFECYCLE_BENCHMARK_zh-TW.md) | Token 消耗量測（繁體中文） |
+| [Lifecycle Benchmark](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK.md) | 6 real scenarios with token costs |
+| [生命週期基準測試](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK_zh-TW.md) | Token 消耗量測（繁體中文） |
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing as a human or AI agent.
+See [CONTRIBUTING.md](https://github.com/KbWen/agentic-os/blob/main/CONTRIBUTING.md) for guidelines on contributing as a human or AI agent.
 
 ## License
 

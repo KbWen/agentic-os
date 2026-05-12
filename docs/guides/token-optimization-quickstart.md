@@ -2,7 +2,7 @@
 
 > **Audience**: Developers who cloned Agentic OS and want to reduce token consumption immediately.
 >
-> **Prerequisite knowledge**: None — this guide is self-contained. For deep dives, see [Token Governance](../../.agentcortex/docs/guides/token-governance.md) and [Context Budget](../../.agentcortex/docs/guides/context-budget.md).
+> **Prerequisite knowledge**: None — this guide is self-contained. For deep dives, see [Token Governance](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/token-governance.md) and [Context Budget](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md).
 
 ---
 
@@ -127,7 +127,7 @@ Agentic OS already enforces this (see `AGENTS.md §Response Brevity`), but you c
 
 ### Reduce File Reads at Bootstrap
 
-The [Context Budget Guide](../../.agentcortex/docs/guides/context-budget.md) defines exactly which files are read per classification:
+The [Context Budget Guide](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md) defines exactly which files are read per classification:
 
 | Classification | Max File Reads |
 |:---|:---|
@@ -170,8 +170,8 @@ Agentic OS is designed to improve over time. Here's how the framework evolves wi
 3. **Work Log compaction** — Old entries are automatically archived, keeping context lean.
 4. **Classification accuracy improves** — As the SSoT accumulates ship history, the AI gets better at pattern-matching task types.
 
-> **For framework contributors**: If you want to propose structural token optimizations (e.g., merging workflow files, slimming guardrails), open an issue or submit a PR. The [Lifecycle Benchmark](../LIFECYCLE_BENCHMARK.md) provides baseline measurements for comparison.
+> **For framework contributors**: If you want to propose structural token optimizations (e.g., merging workflow files, slimming guardrails), open an issue or submit a PR. The [Lifecycle Benchmark](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK.md) provides baseline measurements for comparison.
 
 ---
 
-*See also: [Token Governance (internal)](../../.agentcortex/docs/guides/token-governance.md) · [Context Budget (internal)](../../.agentcortex/docs/guides/context-budget.md) · [Lifecycle Benchmark](../LIFECYCLE_BENCHMARK.md)*
+*See also: [Token Governance (internal)](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/token-governance.md) · [Context Budget (internal)](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md) · [Lifecycle Benchmark](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK.md)*

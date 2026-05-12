@@ -2,7 +2,7 @@
 
 > **對象**：Clone Agentic OS 後想立即降低 Token 消耗的開發者。
 >
-> **前置知識**：不需要。本指南自成一體。深入了解請參考 [Token Governance](../../.agentcortex/docs/guides/token-governance.md) 和 [Context Budget](../../.agentcortex/docs/guides/context-budget.md)。
+> **前置知識**：不需要。本指南自成一體。深入了解請參考 [Token Governance](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/token-governance.md) 和 [Context Budget](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md)。
 
 ---
 
@@ -127,7 +127,7 @@ Agentic OS 已經強制執行這個規則（參見 `AGENTS.md §Response Brevity
 
 ### 減少 Bootstrap 時的檔案讀取
 
-[Context Budget Guide](../../.agentcortex/docs/guides/context-budget.md) 定義了每個分類可以讀取的檔案數量上限：
+[Context Budget Guide](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md) 定義了每個分類可以讀取的檔案數量上限：
 
 | 分類 | 最大檔案讀取數 |
 |:---|:---|
@@ -170,8 +170,8 @@ Agentic OS 的設計允許它隨著使用而自動改進：
 3. **Work Log 自動壓縮** — 舊條目自動歸檔，保持 Context 精簡。
 4. **分類精準度提升** — 隨著 SSoT 累積交付歷史，AI 能更好地進行任務類型的模式匹配。
 
-> **給框架貢獻者**：如果你想提議結構性的 Token 優化（例如合併 Workflow 檔案、精簡 Guardrails），請開 Issue 或提交 PR。[生命週期基準測試](../LIFECYCLE_BENCHMARK_zh-TW.md) 提供了可量測的基線數據。
+> **給框架貢獻者**：如果你想提議結構性的 Token 優化（例如合併 Workflow 檔案、精簡 Guardrails），請開 Issue 或提交 PR。[生命週期基準測試](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK_zh-TW.md) 提供了可量測的基線數據。
 
 ---
 
-*另見：[Token Governance（內部）](../../.agentcortex/docs/guides/token-governance.md) · [Context Budget（內部）](../../.agentcortex/docs/guides/context-budget.md) · [生命週期基準測試](../LIFECYCLE_BENCHMARK_zh-TW.md)*
+*另見：[Token Governance（內部）](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/token-governance.md) · [Context Budget（內部）](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md) · [生命週期基準測試](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK_zh-TW.md)*
