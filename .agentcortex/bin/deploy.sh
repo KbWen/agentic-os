@@ -151,10 +151,23 @@ deploy_file() {
         else
             # Scaffold/wrapper: check if user modified
             if [ -z "$old_manifest_hash" ]; then
-                # File exists in target but not in old manifest — treat as new
-                cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-                [ -n "$do_chmod" ] && chmod +x "$dst"
-                COUNT_NEW=$((COUNT_NEW + 1))
+                # File exists in target but not in old manifest. The file
+                # likely carries user content (legacy migration, pre-manifest
+                # era, or content brought in out-of-band). Preserve it via
+                # sidecar when content differs from the framework version —
+                # never silently overwrite scaffold-tier user content.
+                local dst_hash
+                dst_hash="$(compute_sha256 "$dst")"
+                if [ "$src_hash" != "$dst_hash" ]; then
+                    cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst.acx-incoming"
+                    echo "  [SKIP] $rel (pre-existing/migrated; new version at $rel.acx-incoming — merge manually or ask AI agent to merge)"
+                    COUNT_SKIPPED=$((COUNT_SKIPPED + 1))
+                    # Record the user's current hash so future updates still detect modification.
+                    record_deployed "$tier" "$rel" "$dst_hash"
+                    return 0
+                fi
+                # Same content — no-op; record the matching hash for future runs.
+                COUNT_UPDATED=$((COUNT_UPDATED + 1))
             else
                 local dst_hash
                 dst_hash="$(compute_sha256 "$dst")"
