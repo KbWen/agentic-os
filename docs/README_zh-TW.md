@@ -245,7 +245,7 @@ flowchart LR
 
 ## 🧠 Token Hygiene（避免小任務放大成本）
 
-- 任務啟動只讀：`.agentcortex/context/current_state.md` 與 `.agentcortex/context/work/<branch>.md`。
+- 任務啟動只讀：`.agentcortex/context/current_state.md` 與 `.agentcortex/context/work/<worklog-key>.md`（worklog-key = branch name 的 filesystem-safe 正規化，例如 `/` 換 `-`）。
 - 優先精準檢索（`rg <keyword> <path>`），避免全樹掃描。
 - 先用 `/plan` 收斂檔案範圍，再進入 `/implement`，降低來回修正。
 - 小型任務沿用 Fast Lane；若變更開始影響狀態/策略，立即升級流程，避免返工。

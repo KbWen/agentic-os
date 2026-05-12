@@ -11,9 +11,9 @@
   - Task Isolation: `.agentcortex/context/work/<worklog-key>.md`
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
-- **Last Updated**: 2026-05-07
-- **Last Verified**: 2026-05-07
-- **Update Sequence**: 13
+- **Last Updated**: 2026-05-11
+- **Last Verified**: 2026-05-11
+- **Update Sequence**: 15
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -21,6 +21,7 @@
 - **Active Backlog**: docs/specs/_product-backlog.md (40 items; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (framework template specs at `.agentcortex/specs/`; project specs go to `docs/specs/`):
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
+  - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -64,7 +65,36 @@
 - [Category: bootstrap-flow][Severity: HIGH][Trigger: post-first-adr-architecture-change][prev: efbd9e63] `bootstrap §0a` "App Architecture Check" condition `1. No ADR exists: docs/adr/ contains no project-specific ADR.` becomes permanently False once ANY ADR ships. After ADR-001 landed, all subsequent `architecture-change` tasks silently skip the ADR prompt — the very next architecture-change (ADR-002) already triggered this regression but was caught by accident. Fix: replace existence check with frontmatter `applies_to:` glob coverage check. Lesson: rules with date-dependent trigger conditions (e.g., "when X exists" / "when X count == 0") need explicit post-ship validation and decay-aware re-test.
 - [Category: governance-proposal][Severity: MEDIUM][Trigger: plan-proposes-must-rule][prev: 7f5a25c3] When /plan proposes adding a MUST rule to AGENTS.md or .agent/rules/, cross-check the [enforcement][HIGH] Global Lesson immediately at plan time — not just at /implement. A MUST rule without a corresponding hook, validator, or test is honor-system theatre regardless of where in the workflow it is caught. Self-check: "What enforces this rule if the AI ignores it?" If the answer is "nothing", delete the rule or add the enforcement first.
 
+- [Category: spec-factual-claims][Severity: MEDIUM][Trigger: domain-decision-tool-behavior-claim][prev: eea362e5] Domain Decisions that make factual claims about tool behavior (e.g., 'no external API call', 'language-agnostic') MUST be verified against tool documentation before the spec is frozen. Factual errors in Domain Decisions survive implementation and review phases because reviewers check AC compliance, not rationale accuracy. Self-check at spec-write: for each [DECISION] that asserts tool behavior, find one authoritative source confirming the claim.
 ## Ship History
+
+### Ship-claude-relaxed-pare-db9f89-2026-05-11-merged
+- PR #94 merged to main: squash commit `2467f9ab` (2026-05-11T15:52:08Z).
+  - Post-ship CI fixes: `--metrics=off` removed (Semgrep 1.123.0 incompatibility with `--config auto`); semgrep job Python 3.11 (`pkg_resources` missing on 3.12 runner).
+  - AC-11 added: `.semgrepignore` existence + exclusions structurally tested; test count 31→32.
+  - All 11 CI checks green on merge commit.
+
+### Ship-claude-relaxed-pare-db9f89-2026-05-11-r8
+- Feature shipped (continuation r5–r8): CI security scanning governance hardening.
+  - TruffleHog SHA-pinned: `47e7b7cd74f578e1e3145d48f669f22fd1330ca6` (was semver `@v3.94.3`)
+  - Added `.github/dependabot.yml` (github-actions weekly auto-bump)
+  - 31 structural tests (was 26): added `--strict`, `write-all` perms, `test-ci-structural`, SHA regex, bash array, `::warning::` annotation
+  - Spec amendments (frozen→shipped): AC-5 SHA req for 3rd-party, AC-8 SKIP 3-state, File Relationship, Accepted Risks, Semgrep factual correction
+  - `docs/specs/ci-security-scanning.md`: status → shipped
+- Tests: 31 PASS / 0 FAIL + validate 83/0/0/2.
+- Commits: `f68a408`→`2ee0fd4`; PR: https://github.com/KbWen/agentic-os/pull/94
+
+### Ship-claude-relaxed-pare-db9f89-2026-05-11
+- Feature shipped: CI security scanning pipeline — Semgrep SAST + TruffleHog secret detection + pip-audit dependency audit (feature, backlog #20).
+  - `.github/workflows/security.yml`: three parallel jobs, all tools pinned (`semgrep==1.123.0`, `trufflehog@v3.94.3`, `pip-audit==2.10.0`); `contents: read` permissions; no `continue-on-error`; `--config auto` (language-agnostic); dependency-audit `hashFiles` guard.
+  - Critical correctness fix in /review: pip-audit `-r $f` per requirements file (without it, audits CI env not project deps).
+  - `docs/specs/ci-security-scanning.md`: frozen spec, 10 ACs.
+  - `tests/ci/test_security_workflow.py`: 26 structural tests, 4/4 adversarial mutations caught, PyYAML YAML-1.1 `on`-boolean handled.
+  - `validate.sh` + `validate.ps1` + `.github/workflows/validate.yml`: security workflow presence check + pytest CI job added.
+  - `deploy.sh`: 3 missing runtime tools added to whitelist (`check_adr_coverage.py`, `append_chain_entry.py`, `append_lesson.py`); WARN message genericized.
+- Tests: 26 PASS / 0 FAIL (test_security_workflow.py) + validate 83 PASS / 0 WARN / 0 FAIL / 2 SKIP.
+- Downstream smoke test: 181 files deployed; 72 PASS / 3 WARN / 0 FAIL / 3 SKIP.
+- Commits: `da553fd`→`d9807c0`; PR: https://github.com/KbWen/agentic-os/pull/94
 
 ### Ship-claude-reverent-matsumoto-30a74e-2026-05-07
 - Feature shipped: Onboarding entry-point unification — three-path branching (greenfield raw idea / brownfield adoption / single concrete task) consistently signaled across `.codex/INSTALL.md`, `README.md`, `docs/README_zh-TW.md` (quick-win, doc-only).
@@ -72,7 +102,7 @@
   - 8 sibling docs audited (PROJECT_EXAMPLES × 2, CODEX_PLATFORM_GUIDE × 2, CLAUDE_PLATFORM_GUIDE, NONLINEAR_SCENARIOS × 2, superpowers-playbook) — all confirmed task-context language, no edit needed.
   - zh-TW §3–§6 renumbered to close the §4 hole created when "從零開始" + "帶入素材" were merged into §3.
 - Tests: validate 66 PASS / 0 WARN / 0 FAIL / 10 SKIP.
-- Commits: pending — see `claude/reverent-matsumoto-30a74e` branch.
+- Commits: `867e37c`; merged via `cf9b622` (PR #92).
 
 ### Ship-claude-modest-antonelli-da2aec-2026-05-07
 - Feature shipped: Zero-Python downstream + AGENTS.md trim + deploy-gap fix + skill cleanup (PR #91, quick-win, 4 commits).
@@ -107,7 +137,7 @@
   - `.agentcortex/templates/worklog.md` — optional `Files Read: N` field in `## Session Info` for token-budget instrumentation; `## Evidence` section now references `engineering_guardrails.md §5.2b Evidence Truncation Rule` (3-line success / 10-line failure caps).
 - Tests: validate 73 PASS / 7 WARN / 0 FAIL (archive 74 KB, 8/8 active logs).
 - Backlog rows shipped: #10, #12, #23, #28. Pending count 20 → 16.
-- Commits: pending — same branch as PR #87.
+- Commits: `c0f63c3`; merged via `30e6fcc` (PR #87).
 
 ### Ship-feat-optimization-hooks-2026-05-04
 - Feature shipped: Closing the Claude-platform half of backlog #30 — PreCompact hook + framework receipt integration. Stop hook (`check-sentinel.py`) was previously shipped under CC-2/L4 but its violations.jsonl was never read by validate; this ship closes that loop. PreToolUse + UserPromptSubmit deferred (risk > ROI per design review).
@@ -118,7 +148,7 @@
   - `.agentcortex/bin/validate.{sh,ps1}` — read both `sentinel-violations.jsonl` and `precompact-violations.jsonl`; emit WARN with count when non-zero, PASS when zero. Capability-by-presence (absent file = PASS).
   - `.gitignore` — added `precompact-violations.jsonl` (alongside existing sentinel entry).
 - Tests: Pass — `python -m unittest tests.guard.test_sentinel_hook tests.guard.test_precompact_hook` → 27/27 in 0.1s. validate: 72 PASS / 7 WARN / 0 FAIL (new WARN: 3 historical sentinel violations now surfaced — these were silently accumulating in the receipt file before this ship).
-- Commits: pending — see `feat/optimization-hooks-2026-05-04` branch.
+- Commits: `0ca5788`; merged via `30e6fcc` (PR #87).
 - Scope cuts: PreToolUse phase-discipline hook and UserPromptSubmit warn hook were evaluated and deferred — false-positive risk on legitimate edits/chat outweighs the catch rate. Document in Drift Log of work log.
 
 ### Ship-feat-optimization-round-2026-05-04
@@ -132,7 +162,7 @@
   - `AGENTS.md` — `## Override Layer (AGENTS.override.md)` precedence chain (mirrors Codex pattern)
   - `.agentcortex/bin/validate.{sh,ps1}` — Work Log Phase Summary sentinel marker (⚡ ACX) WARN check
 - Tests: Pass — validate 71 PASS / 6 WARN / 0 FAIL (the new sentinel WARN counts 6 legacy logs without ⚡ ACX, by design WARN-only).
-- Commits: pending — see `feat/optimization-round-2026-05-04` branch.
+- Commits: `7b7071b`; merged via `30e6fcc` (PR #87).
 - Source: external research round (Claude Code w14-w17, OpenAI Codex 2026 AGENTS.md docs, github/spec-kit, dsifry/metaswarm, sshh).
 - Deferred: #30 (Claude hooks enforcement layer — feature), #33 (plugin packaging — feature), #38 (AGENTS.md token-budget pass — risky restructure).
 

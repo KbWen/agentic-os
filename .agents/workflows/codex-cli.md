@@ -34,7 +34,7 @@ Run this via Codex CLI: [task description]
 AI MUST perform these steps **before** invoking `codex`:
 
 1. **Classify** the task per `engineering_guardrails.md` §10.1.
-2. **Create/Update Work Log** at `.agentcortex/context/work/<branch-name>.md` with:
+2. **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` (derive key from branch name with filesystem-safe normalization, e.g. replace `/` with `-`) with:
    - Classification, goal, target files, constraints.
    - `Executor: Codex CLI` (to distinguish from AI-direct execution).
 3. **Generate the Codex command** by injecting governance context:

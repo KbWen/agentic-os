@@ -113,6 +113,20 @@ function Test-ContainsLiteral {
     }
 }
 
+function Get-NormalizedContent {
+    # Read file content and normalize line endings to LF.
+    # .NET regex anchors ($) in (?m) mode match only before \n, not \r\n,
+    # so CRLF files silently fail patterns like ^status:\s*living$.
+    # Prefer this over Get-Content -Raw for any check that uses multiline regex.
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [string]$Encoding = 'utf8'
+    )
+    $raw = Get-Content -Path $Path -Raw -Encoding $Encoding -ErrorAction SilentlyContinue
+    if ($null -eq $raw) { return $null }
+    return $raw -replace "`r`n", "`n" -replace "`r", "`n"
+}
+
 function Test-ContainsRegex {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -124,7 +138,7 @@ function Test-ContainsRegex {
         Add-Result -Level 'FAIL' -Message $FailureMessage
         return
     }
-    $content = Get-Content -Raw -Encoding utf8 -Path $Path
+    $content = Get-NormalizedContent -Path $Path
     if ($content -match $Pattern) {
         Add-Result -Level 'PASS' -Message $SuccessMessage
     }
@@ -637,7 +651,7 @@ if (Test-Path -Path $architectureDir -PathType Container) {
         if ($domainDoc.Name -like '*.log.md') {
             continue
         }
-        $domainDocContent = Get-Content -Path $domainDoc.FullName -Raw -Encoding utf8
+        $domainDocContent = Get-NormalizedContent -Path $domainDoc.FullName
         if ($domainDocContent -notmatch '(?m)^status:\s*living$' -or $domainDocContent -notmatch '(?m)^domain:\s*\S+\s*$') {
             Write-Output "  domain doc candidate missing full L1 contract (status: living + domain:): $($domainDoc.FullName)"
             $domainDocFrontmatterWarn++
@@ -1205,6 +1219,106 @@ else {
     Add-Result -Level 'WARN' -Message 'SSoT completeness checks skipped: current_state.md not found'
 }
 
+# Ship History pending-SHA guard: commit references must be resolved SHAs.
+# A "pending" placeholder is valid for at most the duration of the ship branch;
+# after merge it must be replaced. Warn so CI surfaces unresolved references.
+if (Test-Path -Path $currentStatePath -PathType Leaf) {
+    $csRaw = Get-NormalizedContent -Path $currentStatePath
+    $pendingCount = ([regex]::Matches($csRaw, '(?m)^- Commits: pending')).Count
+    if ($pendingCount -gt 0) {
+        Add-Result -Level 'WARN' -Message "Ship History has $pendingCount unresolved 'pending' commit reference(s) — replace with real SHAs after merge"
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'Ship History commit references are all resolved'
+    }
+}
+
+# Backlog schema check: verify Kind/Labels/Priority columns present when backlog exists
+$backlogFile = Join-NormalPath $root 'docs/specs/_product-backlog.md'
+if (Test-Path -Path $backlogFile -PathType Leaf) {
+    $backlogLines = Get-Content -Path $backlogFile -Encoding utf8
+    $backlogHeader = $backlogLines | Where-Object { $_ -match '\|.*Feature.*\|' } | Select-Object -First 1
+    $missingCols = @()
+    if ($backlogHeader -notmatch 'Kind')     { $missingCols += 'Kind' }
+    if ($backlogHeader -notmatch 'Labels')   { $missingCols += 'Labels' }
+    if ($backlogHeader -notmatch 'Priority') { $missingCols += 'Priority' }
+    if ($missingCols.Count -eq 0) {
+        Add-Result -Level 'PASS' -Message 'backlog schema: Kind/Labels/Priority columns present'
+
+        $pendingRows = @($backlogLines | Where-Object { $_ -match '\| Pending' })
+        $totalPending = $pendingRows.Count
+
+        # L-1: P0 ratio lint — warn if >20% of pending items are P0
+        if ($totalPending -gt 4) {
+            $p0Pending = @($pendingRows | Where-Object { $_ -match '\| P0 \|' }).Count
+            if ($p0Pending -gt 0) {
+                $p0Ratio = [int]($p0Pending * 100 / $totalPending)
+                if ($p0Ratio -gt 20) {
+                    Add-Result -Level 'WARN' -Message "backlog P0 ratio: $p0Pending/$totalPending pending items are P0 ($p0Ratio% > 20% threshold — consider downgrading some)"
+                }
+                else {
+                    Add-Result -Level 'PASS' -Message "backlog P0 ratio: $p0Pending/$totalPending pending items are P0 ($p0Ratio%)"
+                }
+            }
+        }
+
+        # L-3: Kind distribution sanity — warn if all non-— rows share one Kind value
+        if ($totalPending -gt 9) {
+            $kindValues = @($pendingRows | ForEach-Object {
+                $cols = $_ -split '\|'
+                if ($cols.Count -gt 3) { $cols[3].Trim() }
+            } | Where-Object { $_ -ne '' -and $_ -ne '—' } | Sort-Object -Unique)
+            $kindVariety = $kindValues.Count
+            if ($kindVariety -eq 1) {
+                Add-Result -Level 'WARN' -Message 'backlog Kind diversity: all assigned pending items share the same Kind value — review-finding and hotfix-spawn entries may not be reaching the backlog'
+            }
+            else {
+                Add-Result -Level 'PASS' -Message "backlog Kind diversity: $kindVariety distinct Kind values in use"
+            }
+        }
+
+        # L-3b: schema-zero guard — L-3 silently PASSes when ALL pending items have Kind=—
+        # (kindVariety=0 ≠ 1, so falls to the PASS branch without surfacing the empty schema).
+        if ($totalPending -gt 5) {
+            $kindAssigned = @($pendingRows | ForEach-Object {
+                $cols = $_ -split '\|'
+                if ($cols.Count -gt 3) { $cols[3].Trim() }
+            } | Where-Object { $_ -ne '' -and $_ -ne '—' }).Count
+            if ($kindAssigned -eq 0) {
+                Add-Result -Level 'WARN' -Message "backlog Kind schema-zero: all $totalPending pending items have Kind=— — populate Kind column to enable cluster routing and L-3 diversity checks"
+            }
+        }
+
+        # L-2: label vocabulary drift — warn if distinct label count exceeds 15
+        $distinctLabels = @($pendingRows | ForEach-Object {
+            $cols = $_ -split '\|'
+            if ($cols.Count -gt 4) {
+                $cols[4] -split ',' | ForEach-Object { $_.Trim() }
+            }
+        } | Where-Object { $_ -ne '' -and $_ -ne '—' } | Sort-Object -Unique).Count
+        if ($distinctLabels -gt 15) {
+            Add-Result -Level 'WARN' -Message "backlog label vocabulary: $distinctLabels distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"
+        }
+        elseif ($distinctLabels -gt 0) {
+            Add-Result -Level 'PASS' -Message "backlog label vocabulary: $distinctLabels distinct labels"
+        }
+
+        # L-4: cluster-declined marker GC — warn if too many suppressions accumulated
+        $declinedCount = @($backlogLines | Where-Object { $_ -match 'cluster-declined:' }).Count
+        if ($declinedCount -gt 5) {
+            Add-Result -Level 'WARN' -Message "backlog cluster-declined: $declinedCount suppression markers (>5) — review expired/stale suppressions in _product-backlog.md ## Source Summary"
+        }
+        elseif ($declinedCount -gt 0) {
+            Add-Result -Level 'PASS' -Message "backlog cluster-declined: $declinedCount suppression marker(s)"
+        }
+    }
+    else {
+        Add-Result -Level 'WARN' -Message "backlog schema: missing column(s): $($missingCols -join ', ')"
+        Write-Output '  fix: run /spec-intake to trigger merge-guard backfill, or add columns manually'
+        Write-Output '  manual fix: add columns to Feature Inventory header row and backfill existing rows with —'
+    }
+}
+
 # Routing index governance split checks
 $routingIndex = Join-NormalPath $workflowsDir 'routing.md'
 if (Test-Path -Path $routingIndex -PathType Leaf) {
@@ -1217,6 +1331,19 @@ else {
 }
 Test-ContainsLiteral -Path $projectAgentsFile -Pattern '.agent/workflows/routing.md' -SuccessMessage 'AGENTS.md references routing index (authority handoff present)' -FailureMessage 'AGENTS.md missing routing index reference (authority handoff absent)'
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'commands.md') -Pattern '.agent/workflows/routing.md' -SuccessMessage 'commands.md points to canonical routing index' -FailureMessage 'commands.md missing canonical routing index reference'
+
+# Security scanning workflow presence check (AC-8 of ci-security-scanning spec)
+# Only relevant for repos using GitHub Actions (skip for non-Actions repos)
+$securityWorkflow = Join-NormalPath $root '.github/workflows/security.yml'
+$githubWorkflowsDir = Join-NormalPath $root '.github/workflows'
+if (Test-Path -Path $githubWorkflowsDir -PathType Container) {
+    if (Test-Path -Path $securityWorkflow -PathType Leaf) {
+        Add-Result -Level 'PASS' -Message 'security scanning workflow present at .github/workflows/security.yml'
+    }
+    else {
+        Add-Result -Level 'WARN' -Message 'security scanning workflow absent — .github/workflows/security.yml not found (add SAST + secret detection + dependency audit to protect this repo)'
+    }
+}
 
 # Document lifecycle bloat checks
 $globalLessonsMax = if ($env:GLOBAL_LESSONS_MAX) { [int]$env:GLOBAL_LESSONS_MAX } else { 20 }

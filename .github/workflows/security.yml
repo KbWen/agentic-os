@@ -1,0 +1,82 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Semgrep
+        run: pip install semgrep==1.123.0
+
+      - name: Run Semgrep
+        run: semgrep --config auto --error .
+
+  trufflehog:
+    name: Secret Detection (TruffleHog)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # On pull_request: scans base..head range automatically.
+      # On push to main: scans github.event.before..github.sha range.
+      # Requires branch protection to block force-pushes (event.before = 0000... edge case).
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@47e7b7cd74f578e1e3145d48f669f22fd1330ca6  # v3.94.3
+        with:
+          extra_args: --only-verified
+
+  dependency-audit:
+    name: Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Job-level hashFiles() is evaluated before checkout (workspace empty) — always returns ''.
+    # Gating is handled at the shell level in the run step below.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.10.0
+
+      - name: Audit Python dependencies
+        shell: bash
+        run: |
+          req_args=()
+          for f in requirements*.txt; do
+            [ -f "$f" ] && req_args+=(-r "$f")
+          done
+          if [ "${#req_args[@]}" -gt 0 ]; then
+            pip-audit "${req_args[@]}" --vulnerability-service osv --strict
+          elif [ -f pyproject.toml ] && grep -qE '^\[project\]|^\[build-system\]' pyproject.toml; then
+            pip-audit . --vulnerability-service osv --strict
+          else
+            echo "::warning::dependency-audit: no auditable Python manifests at repo root — pip-audit skipped"
+            echo "No auditable Python dependency files found in repo root — skipping audit"
+            exit 0
+          fi
