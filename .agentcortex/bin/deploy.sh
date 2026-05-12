@@ -305,11 +305,18 @@ if $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
             fi
         done
 
+        # Framework ADRs that historically lived under .agentcortex/adr/ — match
+        # by filename so a downstream project's own ADR-001 is never mistaken
+        # for the framework's. Keep in sync with .agentcortex/adr/ contents.
+        _framework_adrs="ADR-001-vnext-self-managed-architecture.md"
         for adr_file in "$TARGET/.agentcortex/adr"/*.md; do
             [ -f "$adr_file" ] || continue
             bname="$(basename "$adr_file")"
-            # ADR-001-* is the framework ADR; everything else is project-owned
-            case "$bname" in ADR-001-*) continue ;; esac
+            _is_framework=false
+            for fw in $_framework_adrs; do
+                [ "$bname" = "$fw" ] && _is_framework=true && break
+            done
+            $_is_framework && continue
             mkdir -p "$TARGET/docs/adr"
             if [ -e "$TARGET/docs/adr/$bname" ]; then
                 echo "  [SKIP] docs/adr/$bname already exists — orphaned copy left in .agentcortex/adr/$bname (resolve manually)"
