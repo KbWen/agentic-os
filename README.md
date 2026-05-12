@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Agentic OS-v1.1-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.1"/>
+  <img src="https://img.shields.io/badge/Agentic OS-v1.1.2-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.1.2"/>
 </p>
 
 <h1 align="center">Agentic OS</h1>
 
 <p align="center">
   <strong>The governance-first operating system for AI coding agents.</strong><br/>
-  Structured workflows, delivery gates, engineering guardrails, and 17 professional skills<br/>
+  Structured workflows, delivery gates, engineering guardrails, and 14 professional skills<br/>
   that work across Claude Code, Cursor, GitHub Copilot, Google Antigravity, and Codex.
 </p>
 
@@ -338,7 +338,7 @@ your-project/
 │   ├── skills/                  # Skill metadata (auto-trigger defs)
 │   └── workflows/               # Workflow definitions (35 workflows)
 │
-├── .agents/skills/              # Full skill implementations (17 skills)
+├── .agents/skills/              # Full skill implementations (14 skills)
 │   ├── test-driven-development/
 │   ├── systematic-debugging/
 │   └── ...

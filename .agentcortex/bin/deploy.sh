@@ -26,7 +26,7 @@ TARGET="${TARGET:-.}"
 TARGET="${TARGET%/}"
 
 MANIFEST_FILE="$TARGET/.agentcortex-manifest"
-ACX_VERSION="1.0.0"
+ACX_VERSION="1.1.2"
 
 # --- Self-deploy guard ---
 TARGET_ABS="$(cd "$TARGET" 2>/dev/null && pwd || echo "$TARGET")"
