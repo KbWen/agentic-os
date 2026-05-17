@@ -4,6 +4,7 @@
 > via `/ship`. You don't edit this manually; placeholders fill in as you complete work.
 
 - **Project Intent**: [Describe your project in one line]
+- **Project Name**: (set by /app-init)
 - **Core Guardrails**:
   - Correctness first: No claim of completion without evidence.
   - Small & reversible: Prioritize small, reversible changes; avoid unauthorized refactoring.

@@ -983,7 +983,8 @@ if [[ -d "$WORKLOG_DIR" ]]; then
       if [[ -n "$PYTHON_BIN" ]]; then
         gate_check="$("$PYTHON_BIN" -c "
 import sys, re
-LEGAL = {
+# quick-win / unknown: implement can go directly to ship (fast path)
+LEGAL_DEFAULT = {
     'bootstrap': ['plan'],
     'plan':      ['implement'],
     'implement': ['review','test','ship'],
@@ -992,7 +993,40 @@ LEGAL = {
     'handoff':   ['ship','retro'],
     'ship':      [],
 }
-lines = sys.stdin.read().splitlines()
+# feature / architecture-change: must go through review+test+handoff; no shortcuts
+LEGAL_STRICT = {
+    'bootstrap': ['plan'],
+    'plan':      ['implement'],
+    'implement': ['review','test'],
+    'review':    ['implement','test'],
+    'test':      ['handoff','implement'],
+    'handoff':   ['ship','retro'],
+    'ship':      [],
+}
+# hotfix: must review+test but handoff is optional (goes test->ship directly)
+LEGAL_HOTFIX = {
+    'bootstrap': ['plan','implement'],
+    'plan':      ['implement'],
+    'implement': ['review','test'],
+    'review':    ['implement','test'],
+    'test':      ['ship','implement'],
+    'handoff':   ['ship','retro'],
+    'ship':      [],
+}
+content = sys.stdin.read()
+lines = content.splitlines()
+wl_class = ''
+for l in lines:
+    m = re.match(r'^-\s+(?:\*\*)?[Cc]lassification(?:\*\*)?\s*:\s+\`?([a-zA-Z][\w-]*)\`?', l)
+    if m:
+        wl_class = m.group(1).lower()
+        break
+if wl_class in ('feature', 'architecture-change'):
+    LEGAL = LEGAL_STRICT
+elif wl_class == 'hotfix':
+    LEGAL = LEGAL_HOTFIX
+else:
+    LEGAL = LEGAL_DEFAULT
 gates = []
 for l in lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
@@ -1005,7 +1039,7 @@ for i in range(1, len(gates)):
     prev, curr = gates[i-1], gates[i]
     allowed = LEGAL.get(prev, [])
     if curr not in allowed:
-        print(f'illegal:{prev}->{curr}')
+        print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
 print('ok')
 " <<< "$wl_content" 2>/dev/null)"
@@ -1477,6 +1511,28 @@ if [[ -d "$ROOT/docs/specs" ]]; then
   done
   if [[ "$stale_raw_intake" -gt 0 ]]; then
     record_result WARN "stale _raw-intake files detected: ${stale_raw_intake} — /ship should clean these up"
+  fi
+fi
+
+# Project spec template check: if /app-init has run (at least one docs/adr/ADR-*.md
+# exists) but no project-customized spec template was created, WARN so the user
+# knows spec-intake will fall back to the generic template instead of the
+# project-specific one.
+adr_count=0
+for adr_dir in "$ROOT/docs/adr" "$ROOT/.agentcortex/adr"; do
+  if [[ -d "$adr_dir" ]]; then
+    for f in "$adr_dir"/ADR-*.md; do [[ -f "$f" ]] && adr_count=$((adr_count + 1)); done
+  fi
+done
+if [[ "$adr_count" -gt 0 ]]; then
+  has_project_template=0
+  for tmpl in "$ROOT"/.agentcortex/templates/spec-app-feature-*.md; do
+    [[ -f "$tmpl" ]] && has_project_template=1 && break
+  done
+  if [[ "$has_project_template" -eq 0 ]]; then
+    record_result WARN "project spec template missing: docs/adr/ has ADR(s) but no .agentcortex/templates/spec-app-feature-<project>.md found — run /app-init to create one, or spec-intake will use the generic template"
+  else
+    record_result PASS "project spec template present alongside ADR(s)"
   fi
 fi
 

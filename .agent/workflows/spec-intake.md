@@ -151,10 +151,11 @@ Read ONLY the relevant section of `docs/specs/_raw-intake.md` for the selected f
 
 **Fallback (if `_raw-intake.md` was deleted)**: This happens during continuation (§8a) when the original raw spec was cleaned up after the first feature. In this case, generate the feature spec from: (1) `_product-backlog.md` Feature Inventory row + Source Summary, (2) any shipped feature specs as style reference, (3) dependency specs for API/contract alignment, (4) targeted questions if critical details are missing. Mark all non-obvious fields as `[INFERRED]`.
 
-**Template Selection**: Before generating, check if an APP feature spec template exists:
-1. Check `.agentcortex/templates/spec-app-feature-<project>.md` (project-customized template from /app-init)
-2. If not found, check `.agentcortex/templates/spec-app-feature.md` (generic APP template)
-3. If neither exists, use the default format below.
+**Template Selection**: Before generating, resolve the project-customized template:
+1. **Read `Project Name` from SSoT**: If `current_state.md` contains `- **Project Name**: <value>` and the value is not `(set by /app-init)` or empty, use that value as `<project>`. Check `.agentcortex/templates/spec-app-feature-<project>.md`.
+2. **Glob fallback** (if Project Name absent or template not found): glob `.agentcortex/templates/spec-app-feature-*.md`, exclude the base `spec-app-feature.md`. If exactly one match, use it. If multiple matches, surface the filenames and ask the user which to use.
+3. If no project-customized template found, check `.agentcortex/templates/spec-app-feature.md` (generic APP template).
+4. If neither exists, use the default format below.
 
 When an APP template is found, use it as the structure — include only the sections relevant to this feature (API, DB, Frontend, Auth). Remove sections that don't apply. Read the project ADR to determine which sections are applicable.
 

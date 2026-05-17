@@ -896,8 +896,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $phaseSummaryMissing = 0
     $sentinelMarkerMissing = 0
     $testGateResultsMissing = 0
-    # Legal phase transitions for gate evidence validation
-    $legalTransitions = @{
+    # Legal phase transitions for gate evidence validation (classification-aware)
+    # quick-win / unknown: implement can go directly to ship (fast path)
+    $legalDefault = @{
         'bootstrap' = @('plan')
         'plan'      = @('implement')
         'implement' = @('review','test','ship')
@@ -906,9 +907,36 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         'handoff'   = @('ship','retro')
         'ship'      = @()
     }
+    # feature / architecture-change: must go through review+test+handoff; no shortcuts
+    $legalStrict = @{
+        'bootstrap' = @('plan')
+        'plan'      = @('implement')
+        'implement' = @('review','test')
+        'review'    = @('implement','test')
+        'test'      = @('handoff','implement')
+        'handoff'   = @('ship','retro')
+        'ship'      = @()
+    }
+    # hotfix: must review+test but handoff is optional (goes test->ship directly)
+    $legalHotfix = @{
+        'bootstrap' = @('plan','implement')
+        'plan'      = @('implement')
+        'implement' = @('review','test')
+        'review'    = @('implement','test')
+        'test'      = @('ship','implement')
+        'handoff'   = @('ship','retro')
+        'ship'      = @()
+    }
     foreach ($wl in $worklogs) {
         $content = Get-Content -Path $wl.FullName -Raw -ErrorAction SilentlyContinue
         if (-not $content) { continue }
+        # Select legal-transition dict based on classification
+        $wlClassForGates = ''
+        $wlClassForGatesMatch = [regex]::Match($content, '(?m)^-\s+(?:\*\*)?[Cc]lassification(?:\*\*)?\s*:\s+`?([a-zA-Z][\w-]*)`?')
+        if ($wlClassForGatesMatch.Success) { $wlClassForGates = $wlClassForGatesMatch.Groups[1].Value.ToLower() }
+        $legalTransitions = if ($wlClassForGates -in @('feature','architecture-change')) { $legalStrict }
+                            elseif ($wlClassForGates -eq 'hotfix') { $legalHotfix }
+                            else { $legalDefault }
         $createdDate = ''
         $createdDateMatch = [regex]::Match($content, '(?m)^- \*\*Created Date\*\*:\s*(.+)$')
         if ($createdDateMatch.Success) {
@@ -1378,6 +1406,23 @@ if (Test-Path -Path $specsDir -PathType Container) {
     $staleRawIntake = @(Get-ChildItem -Path $specsDir -Filter '_raw-intake*.md' -File -ErrorAction SilentlyContinue)
     if ($staleRawIntake.Count -gt 0) {
         Add-Result -Level 'WARN' -Message "stale _raw-intake files detected: $($staleRawIntake.Count) -- /ship should clean these up"
+    }
+}
+
+# Project spec template check (parity with validate.sh)
+$adrCount = 0
+foreach ($adrDir in @((Join-NormalPath $root 'docs/adr'), (Join-NormalPath $root '.agentcortex/adr'))) {
+    if (Test-Path -Path $adrDir -PathType Container) {
+        $adrCount += @(Get-ChildItem -Path $adrDir -Filter 'ADR-*.md' -File -ErrorAction SilentlyContinue).Count
+    }
+}
+if ($adrCount -gt 0) {
+    $projectTemplates = @(Get-ChildItem -Path (Join-NormalPath $root '.agentcortex/templates') -Filter 'spec-app-feature-*.md' -File -ErrorAction SilentlyContinue)
+    if ($projectTemplates.Count -eq 0) {
+        Add-Result -Level 'WARN' -Message "project spec template missing: docs/adr/ has ADR(s) but no .agentcortex/templates/spec-app-feature-<project>.md found -- run /app-init to create one, or spec-intake will use the generic template"
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'project spec template present alongside ADR(s)'
     }
 }
 
