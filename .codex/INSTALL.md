@@ -5,25 +5,43 @@ Goal: Enable Codex (Web / App) to quickly load the workflow-first behavior of Ag
 ## Prerequisites
 
 - **Git** (required)
-- **Bash** (required — included with Git for Windows)
+- **Bash** (required on Linux/macOS — included with Git for Windows via Git Bash)
 - **Python 3.9+** (recommended — enables full validation; not required for core functionality)
 
 ## 1) Installation (Run in target repo)
 
+**Linux / macOS / Git Bash:**
 ```bash
 git clone https://github.com/KbWen/agentic-os.git
 ./agentic-os/installers/deploy_brain.sh .
 ```
 
-> If you already have the framework deployed, run directly: `./installers/deploy_brain.sh .`
+**Windows (PowerShell or CMD):**
+```cmd
+git clone https://github.com/KbWen/agentic-os.git
+.\agentic-os\installers\deploy_brain.cmd .
+```
+
+> If you already have the framework deployed, update directly:
+> - Bash: `./installers/deploy_brain.sh .`
+> - Windows: `.\installers\deploy_brain.cmd .`
 
 ## 2) Verification
 
+**Linux / macOS / Git Bash:**
 ```bash
 .agentcortex/bin/validate.sh
 
 # Without Python (skip Python-dependent checks)
 .agentcortex/bin/validate.sh --no-python
+```
+
+**Windows (PowerShell):**
+```powershell
+.\.agentcortex\bin\validate.ps1
+
+# Without Python
+.\.agentcortex\bin\validate.ps1 -NoPython
 ```
 
 ### Optional: local SSoT guard hook

@@ -188,7 +188,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 
 ## State Update & Archival
 
-1. **Ship Guard (§11.3)**: Before writing, check if `current_state.md` has been modified since this task started. If modified by another session, warn user and request confirmation before merging. Use **additive merge**, never full overwrite.
+1. **Ship Guard (§11.1)**: Before writing, check if `current_state.md` has been modified since this task started. If modified by another session, warn user and request confirmation before merging. Use **additive merge**, never full overwrite.
 2. **SSoT Update & Ship History**:
 - Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot) via `.agentcortex/tools/guard_context_write.py`.
 - Use the helper as documented in `.agentcortex/docs/guides/guarded-context-writes.md`. In Stage 1, missing guard receipts are a validation warning, not a hard runtime block.

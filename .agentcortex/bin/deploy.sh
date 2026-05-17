@@ -677,6 +677,12 @@ for f in "$REPO_ROOT"/.github/ISSUE_TEMPLATE/*.md; do
 done
 deploy_file "$REPO_ROOT/.github/PULL_REQUEST_TEMPLATE.md" ".github/PULL_REQUEST_TEMPLATE.md"
 
+# --- Deploy: .githooks/ advisory hook samples (scaffold) ---
+if [ -f "$REPO_ROOT/.githooks/pre-commit.guard-ssot.sample" ]; then
+    mkdir -p "$TARGET/.githooks"
+    deploy_file "$REPO_ROOT/.githooks/pre-commit.guard-ssot.sample" ".githooks/pre-commit.guard-ssot.sample"
+fi
+
 # ============================================================
 # .gitignore management (special — block-managed, not file-level)
 # ============================================================

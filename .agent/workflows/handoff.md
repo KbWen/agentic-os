@@ -120,7 +120,7 @@ Thresholds are defined in `.agent/config.yaml` §worklog. If either is hit (`max
 1. Keep `## Session Info`, latest `## Resume`, latest `## Risks`, and the latest N delta entries (see `keep_recent_entries` in config).
 2. Move older details to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md`.
 3. Add one line in current log: `Compacted: [date], archive: [path]`.
-4. Protected sections MUST remain in the active Work Log and MUST NOT be summarized, folded, or rewritten: `## Skill Notes`, `## Conflict Resolution`, `## Evidence`, latest `## Resume`, `## Session Info`.
+4. Protected sections MUST remain in the active Work Log and MUST NOT be summarized, folded, or rewritten: `## Gate Evidence`, `## Skill Notes`, `## Conflict Resolution`, `## Evidence`, latest `## Resume`, `## Session Info`.
 
 ## 7. Token & Efficiency Reflection
 

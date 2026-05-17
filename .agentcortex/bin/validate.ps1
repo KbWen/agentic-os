@@ -895,6 +895,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $gateProgressionIllegal = 0
     $phaseSummaryMissing = 0
     $sentinelMarkerMissing = 0
+    $testGateResultsMissing = 0
     # Legal phase transitions for gate evidence validation
     $legalTransitions = @{
         'bootstrap' = @('plan')
@@ -953,6 +954,15 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             -and ($content -notmatch '(⚡\s?ACX|\sACX(\s|$))')) {
             $sentinelMarkerMissing++
         }
+        # Test Gate Results — engineering_guardrails.md §12.2 requires evidence under
+        # "Test Gate Results" for feature/architecture-change logs that reached implement.
+        $wlClass = ''
+        if ($content -match '(?m)^- \*?\*?Classification\*?\*?:\s*(.+?)\s*$') { $wlClass = $Matches[1].Trim() }
+        if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') `
+            -and ($content -match '(?i)Gate:\s*implement') `
+            -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {
+            $testGateResultsMissing++
+        }
     }
     if ($phaseFieldMissing -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs missing Current Phase field: $phaseFieldMissing"
@@ -986,6 +996,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "work logs missing sentinel marker (ACX) in Phase Summary: $sentinelMarkerMissing"
     } elseif ($worklogs.Count -gt 0 -and $phaseSummaryMissing -eq 0) {
         Add-Result -Level 'PASS' -Message 'all active work logs carry sentinel marker for audit trail'
+    }
+    if ($testGateResultsMissing -gt 0) {
+        Add-Result -Level 'WARN' -Message "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): $testGateResultsMissing"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'test gate results evidence present in applicable work logs'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock

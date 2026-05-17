@@ -942,6 +942,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   gate_progression_skipped=0
   phase_summary_missing=0
   sentinel_marker_missing=0
+  test_gate_results_missing=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1027,6 +1028,18 @@ print('ok')
        && ! printf '%s' "$wl_content" | grep -qE '(⚡[[:space:]]?ACX|[[:space:]]ACX([[:space:]]|$))'; then
       sentinel_marker_missing=$((sentinel_marker_missing + 1))
     fi
+    # Test Gate Results — engineering_guardrails.md §12.2 requires evidence be recorded
+    # under "Test Gate Results" for feature/architecture-change work logs that have
+    # reached the implement or later phase. WARN-only: converts §12.2 from honor-system
+    # to auditable evidence requirement.
+    wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r')"
+    if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
+      if printf '%s' "$wl_content" | grep -q 'Gate: implement'; then
+        if ! printf '%s' "$wl_content" | grep -qiE '^#+[[:space:]]+Test Gate Results'; then
+          test_gate_results_missing=$((test_gate_results_missing + 1))
+        fi
+      fi
+    fi
   done
   if [[ "$phase_field_missing" -gt 0 ]]; then
     record_result WARN "work logs missing Current Phase field: ${phase_field_missing}"
@@ -1066,6 +1079,11 @@ print('ok')
     record_result WARN "work logs missing sentinel marker (⚡ ACX) in Phase Summary: ${sentinel_marker_missing}"
   elif [[ "$worklog_count" -gt 0 ]] && [[ "$phase_summary_missing" -eq 0 ]]; then
     record_result PASS "all active work logs carry sentinel marker for audit trail"
+  fi
+  if [[ "$test_gate_results_missing" -gt 0 ]]; then
+    record_result WARN "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): ${test_gate_results_missing}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "test gate results evidence present in applicable work logs"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.

@@ -103,6 +103,13 @@ Tool exit codes:
    - **ADR Auto-Discovery** (capability-by-presence): If `docs/adr/` exists AND classification is `feature` or `architecture-change`, scan filenames only (no body reads). If any ADR files are found, output advisory: `"📋 Found [N] ADR(s) in docs/adr/. Review relevant ones before planning."` Advisory only — does not block.
 2. READ/CREATE `.agentcortex/context/work/<worklog-key>.md` (Work Log).
    - **Work Log Resolution**: Resolve a filesystem-safe `<worklog-key>` from the current branch before any path check. Store the raw git branch string in `Branch:`.
+     **Normalization algorithm** (canonical — all agents/platforms MUST use this exact rule):
+     1. Replace every character outside `[a-zA-Z0-9._-]` with `-` (covers `/`, `:`, `?`, `*`, `<`, `>`, `|`, `"`, `\`, space, and any other non-ASCII).
+     2. Collapse consecutive `-` runs into a single `-`.
+     3. Strip leading and trailing `-` and `.`.
+     4. Lowercase the result (guards against case-insensitive filesystem collisions on Windows and macOS).
+     5. Truncate to 100 characters.
+     Examples: `feature/foo` → `feature-foo`; `release/v1.2:rc` → `release-v1.2-rc`; `Fix Bug` → `fix-bug`; `feat/add-auth` → `feat-add-auth`.
    - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`. When recovering from an archived log, write this entry to the new Work Log's `## Drift Log`: `"Recovered: prior log archived at .agentcortex/context/archive/work/<prior-key>.md (session: <date>)"`. This ensures the next session knows prior work existed.
    - **Bootstrap Branch Check**: If the Work Log already exists:
      - Check metadata (`Owner`, `Branch`, `Session`). If it matches your current session → RESUME safely. (Read `## Resume` if present, output "Resuming").
