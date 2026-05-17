@@ -918,8 +918,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         'ship'      = @()
     }
     # hotfix: must review+test but handoff is optional (goes test->ship directly)
+    # plan is always required per engineering_guardrails.md §10.2 — no implement shortcut
     $legalHotfix = @{
-        'bootstrap' = @('plan','implement')
+        'bootstrap' = @('plan')
         'plan'      = @('implement')
         'implement' = @('review','test')
         'review'    = @('implement','test')
@@ -962,9 +963,18 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 $gateEvidenceMissing++
             }
         } else {
-            # Parse gate receipts and verify phase progression
-            $gates = @([regex]::Matches($content, '(?mi)^(`?- )?gate:\s*(\w+)\s*\|') | ForEach-Object { $_.Groups[2].Value })
+            # Parse gate receipts: only PASS verdicts are forward transitions;
+            # NOT READY / FAIL receipts are reverse edges and must be excluded.
+            $gateList = [System.Collections.Generic.List[string]]::new()
+            foreach ($line in ($content -split "`n")) {
+                $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
+                if ($gm.Success -and $line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
+                    $gateList.Add($gm.Groups[1].Value.ToLower())
+                }
+            }
+            $gates = @($gateList)
             if ($gates.Count -ge 2) {
+                $progressionFailed = $false
                 for ($i = 1; $i -lt $gates.Count; $i++) {
                     $prev = $gates[$i - 1]
                     $curr = $gates[$i]
@@ -972,7 +982,26 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     if ($allowed -and ($curr -notin $allowed)) {
                         Write-Output "  illegal gate progression in $($wl.Name): ${prev}->${curr}"
                         $gateProgressionIllegal++
+                        $progressionFailed = $true
                         break
+                    }
+                }
+                # Completeness: if shipped, all required phases must have PASS receipts
+                if (-not $progressionFailed) {
+                    $gateSet = @{}
+                    foreach ($g in $gates) { $gateSet[$g] = $true }
+                    if ($gateSet.ContainsKey('ship')) {
+                        $requiredPhases = @()
+                        if ($wlClassForGates -in @('feature','architecture-change')) {
+                            $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
+                        } elseif ($wlClassForGates -eq 'hotfix') {
+                            $requiredPhases = @('bootstrap','plan','implement','review','test')
+                        }
+                        $missingPhases = $requiredPhases | Where-Object { -not $gateSet.ContainsKey($_) }
+                        if ($missingPhases) {
+                            Write-Output "  incomplete gate receipts in $($wl.Name): missing $($missingPhases -join ',')"
+                            $gateProgressionIllegal++
+                        }
                     }
                 }
             }

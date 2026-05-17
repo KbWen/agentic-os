@@ -42,7 +42,7 @@ missing: []
 After outputting the gate block, append a compact gate receipt to the Work Log under `## Gate Evidence`:
 
 ```markdown
-- Gate: plan | Verdict: pass | Classification: <tier> | At: <ISO-timestamp>
+- Gate: plan | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
 ```
 
 If `verdict: fail`, the receipt records the failure and missing items. This makes gate progression auditable by `validate` without requiring a runtime hard blocker.

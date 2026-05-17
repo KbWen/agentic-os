@@ -1004,8 +1004,9 @@ LEGAL_STRICT = {
     'ship':      [],
 }
 # hotfix: must review+test but handoff is optional (goes test->ship directly)
+# plan is always required per engineering_guardrails.md §10.2 — no implement shortcut
 LEGAL_HOTFIX = {
-    'bootstrap': ['plan','implement'],
+    'bootstrap': ['plan'],
     'plan':      ['implement'],
     'implement': ['review','test'],
     'review':    ['implement','test'],
@@ -1034,7 +1035,11 @@ gates = []
 for l in lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
-        gates.append(m.group(1))
+        # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
+        v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
+        if v and v.group(1).strip().upper() != 'PASS':
+            continue
+        gates.append(m.group(1).lower())
 if len(gates) < 2:
     print('ok')
     sys.exit(0)
@@ -1044,10 +1049,26 @@ for i in range(1, len(gates)):
     if curr not in allowed:
         print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
+# Completeness: if shipped, all required phases must have PASS receipts
+gate_set = set(gates)
+if 'ship' in gate_set:
+    if wl_class in ('feature', 'architecture-change'):
+        required = {'bootstrap','plan','implement','review','test','handoff'}
+    elif wl_class == 'hotfix':
+        required = {'bootstrap','plan','implement','review','test'}
+    else:
+        required = set()
+    missing_phases = required - gate_set
+    if missing_phases:
+        print(f'incomplete:{",".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
+        sys.exit(0)
 print('ok')
 " <<< "$wl_content" 2>/dev/null)"
         if [[ "$gate_check" == illegal:* ]]; then
           printf '  illegal gate progression in %s: %s\n' "$(basename "$wl")" "${gate_check#illegal:}"
+          gate_progression_illegal=$((gate_progression_illegal + 1))
+        elif [[ "$gate_check" == incomplete:* ]]; then
+          printf '  incomplete gate receipts in %s: missing %s\n' "$(basename "$wl")" "${gate_check#incomplete:}"
           gate_progression_illegal=$((gate_progression_illegal + 1))
         fi
       else

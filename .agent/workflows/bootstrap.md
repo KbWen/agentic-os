@@ -116,8 +116,10 @@ Tool exit codes:
    - **Recoverable Missing Log**: If the active Work Log is missing, create it. If only archived logs exist for this branch, create a new follow-up Work Log and report the recovery instead of failing `/bootstrap`. When recovering from an archived log, write this entry to the new Work Log's `## Drift Log`: `"Recovered: prior log archived at .agentcortex/context/archive/work/<prior-key>.md (session: <date>)"`. This ensures the next session knows prior work existed.
    - **Bootstrap Branch Check**: If the Work Log already exists:
      - Check metadata (`Owner`, `Branch`, `Session`). If it matches your current session → RESUME safely. (Read `## Resume` if present, output "Resuming").
-     - If `Current Phase: handoff` (HANDEDOFF state — handoff completed, ship pending): output `Next: /ship` immediately. This is the only legal continuation; do NOT re-bootstrap from scratch.
+     - If `Current Phase: plan` or `implement` or `review`: output `Resuming at <phase>. Next: continue /<phase> or advance to /<legal-next-per-state-machine>`.
      - If `Current Phase: test` AND classification is `feature` or `architecture-change`: output `Next: /handoff` — the formal handoff step is required before ship.
+     - If `Current Phase: handoff` (HANDEDOFF state — handoff completed, ship pending): output `Next: /ship` immediately. This is the only legal continuation; do NOT re-bootstrap from scratch.
+     - If `Current Phase: ship`: output `Next: /ship — previously started, check Work Log ## Gate Evidence for completion status`.
      - If metadata differs (another agent/user owns it) → **WARN the user AND require confirmation before proceeding** ("⚠️ Concurrent session detected. Proceed?").
      - If metadata is missing → warn "⚠️ Legacy Work Log detected, verify ownership".
    - If Work Log has `## Lessons` block (from prior retro): acknowledge relevant patterns in your bootstrap output.
@@ -246,7 +248,7 @@ none
 - bootstrap: classified as <tier>, skills matched, context loaded.
 
 ## Gate Evidence
-- Gate: bootstrap | Verdict: pass | Classification: <tier> | At: <ISO-timestamp>
+- Gate: bootstrap | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
 
 ## Evidence
 - Pending: bootstrap only; no implementation evidence yet.

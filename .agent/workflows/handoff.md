@@ -32,8 +32,10 @@ Hard completion gate for non-`tiny-fix` tasks. Transitions `TESTED → HANDEDOFF
 
 ## 2. Platform Specialization
 
-- **Codex Web**: MUST output full summary directly in chat.
-- **Antigravity / Codex App**: Auto-write to `.agentcortex/context/work/<worklog-key>.md`.
+- **Antigravity / Codex App**: Auto-write Layer 2, Resume Block, and Gate Receipt to `.agentcortex/context/work/<worklog-key>.md`.
+- **Codex Web** (no file-write capability):
+  - Layer 1 TL;DR: output in chat (same as all platforms).
+  - Layer 2 + Resume Block + Gate Receipt: MUST output each as a separate fenced code block in chat with the instruction "Paste the block above into `.agentcortex/context/work/<worklog-key>.md` under `## Phase Summary` / `## Resume` / `## Gate Evidence` respectively." Do NOT proceed to `/ship` until the user confirms the paste is done.
 - If the active Work Log is missing, resolve or create the current `<worklog-key>` log first. If the previous log was archived after a prior ship, create a follow-up active log and note that recovery in the delta.
 
 ## 3. Required Output Blocks
@@ -107,6 +109,7 @@ MUST include ALL of the following:
 1. At least 1 docs/ file path
 2. At least 1 code file path
 3. Corresponding Work Log path (`.agentcortex/context/work/<worklog-key>.md`)
+4. Gate receipt appended to Work Log `## Gate Evidence` (written in this §, after Resume Block)
 
 If requirements unsatisfied, COMPLETION AND `/ship` ARE STRICTLY PROHIBITED.
 

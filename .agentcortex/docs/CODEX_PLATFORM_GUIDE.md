@@ -46,6 +46,21 @@ Before `/ship`, you must have a `/handoff`. Minimum reference requirements:
 
 If unsatisfied, you must reject `/ship` and list the missing items.
 
+## Gate Receipt Persistence — Codex Web
+
+On Codex Web there is no file-write capability. Gate receipts MUST still be recorded for validator compliance. Protocol:
+
+1. At each phase completion, output the gate receipt as a fenced block in chat:
+   ```
+   ## Gate Evidence
+   - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
+   ```
+2. Instruct the user: "Paste the block above into `.agentcortex/context/work/<worklog-key>.md` under `## Gate Evidence`."
+3. Do NOT proceed to the next phase until the user confirms the paste is done (or acknowledges they will do it before `/ship`).
+4. At `/ship`, the Gate Receipt Audit checks the Work Log — if receipts are missing because the user did not paste them, `/ship` MUST fail with `missing: [<phase> receipt]`.
+
+This ensures Codex Web-authored Work Logs remain validator-compliant even without direct file access.
+
 ## Web Edition Recommendations
 
 - Use one thread per requirement to avoid context pollution.

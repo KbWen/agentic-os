@@ -31,7 +31,7 @@ missing: []
 - If `verdict: fail` → output ONLY the gate block. STOP.
 - **Gate Evidence Receipt**: After outputting the gate block, append a compact gate receipt to the Work Log under `## Gate Evidence`:
   ```
-  - Gate: ship | Verdict: <pass|fail> | Classification: <tier> | At: <ISO-timestamp>
+  - Gate: ship | Verdict: <pass|fail> | Classification: <tier> | Timestamp: <ISO>
   ```
 - Resolve the active Work Log path for the current `<worklog-key>` before evaluating `worklog_exists`.
 - If no active Work Log exists but archive context for the branch exists, create a follow-up active log, warn the user, and continue gate evaluation. Missing handoff references or missing evidence still require `verdict: fail`.
