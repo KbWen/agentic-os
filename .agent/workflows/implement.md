@@ -18,6 +18,11 @@ description: Workflow for implement
 - Gate: implement | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
 ```
 
+**Next phase (classification-aware)**:
+- `feature` / `architecture-change`: proceed to `/review`, then `/test`, then `/handoff`, then `/ship`.
+- `quick-win`: MAY proceed directly to `/ship` (review/test optional per `engineering_guardrails.md §10.4`). Record inline evidence and go straight to `/ship`.
+- `hotfix`: MUST proceed to `/review` then `/test` then `/ship` (handoff exempt).
+
 ## Direct Execution Rule (Turn 1 — feature / architecture-change only)
 
 For `feature` or `architecture-change` classification:

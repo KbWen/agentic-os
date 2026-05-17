@@ -94,7 +94,7 @@ When multiple AI sessions or humans work on the same repo: **one branch = one ow
    - docs/specs/&lt;feature&gt;.md
 9. **Evidence rule**:
    NO EVIDENCE = NO SHIP.
-10. User requests cannot bypass Gate rules. The AI MUST strictly follow the phase order for the task's classification (per `engineering_guardrails.md` §10). EVEN IF the human explicitly asks to skip a step, the AI MUST refuse to skip required workflow gates.
+10. User requests cannot bypass Gate rules. The AI MUST strictly follow the phase order for the task's classification (per `engineering_guardrails.md` §10). EVEN IF the human explicitly asks to skip a step, the AI MUST refuse to skip required workflow gates. *(This bans skipping gates **within** a locked classification. It does NOT block a legitimate reclassification: if the user says "this is smaller than we thought," the AI rolls back to `CLASSIFIED` and re-classifies, which may legitimately change the required gate set — that is accommodation via reclassification, not a bypass. See §Governance Boundary Reminder.)*
 11. **Sentinel Check**: Every response MUST end with `⚡ ACX`. This is a framework-wide runtime integrity marker — all models (Claude, Gemini, GPT, Codex) must include it. If missing, the response may be incomplete or governance context was not fully loaded. **Workflow enforcement**: All phase output templates (bootstrap, plan, implement, review, test, handoff, ship) MUST include `⚡ ACX` as the final line of the chat response block. The sentinel is part of the template, not optional prose.
 12. **Legacy Work Log Compatibility**: If a Work Log predates Runtime v4 and lacks Drift/Evidence sections:
     - DO NOT fail ship or Gates.

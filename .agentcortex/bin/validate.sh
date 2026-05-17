@@ -946,6 +946,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   sentinel_marker_missing=0
   test_gate_results_missing=0
   current_phase_incoherent=0
+  shipped_not_archived=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1126,6 +1127,11 @@ for l in sys.stdin:
       if [[ -n "$cp_val" && "$cp_val" != "ship" ]]; then
         current_phase_incoherent=$((current_phase_incoherent + 1))
       fi
+      # Archival check (Item 1): if Current Phase is 'ship' and ship PASS receipt exists,
+      # this Work Log should have been archived. Presence in work/ means /ship step 3 was skipped.
+      if [[ -z "$cp_val" || "$cp_val" == "ship" ]]; then
+        shipped_not_archived=$((shipped_not_archived + 1))
+      fi
     fi
   done
   if [[ "$phase_field_missing" -gt 0 ]]; then
@@ -1176,6 +1182,11 @@ for l in sys.stdin:
     record_result WARN "work logs with ship PASS receipt but Current Phase != ship (header not updated): ${current_phase_incoherent}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "Current Phase field is consistent with last gate receipt in all work logs"
+  fi
+  if [[ "$shipped_not_archived" -gt 0 ]]; then
+    record_result WARN "shipped work logs still in active work/ directory (archival incomplete — /ship step 3 skipped?): ${shipped_not_archived}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "no shipped work logs found in active work/ directory"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.

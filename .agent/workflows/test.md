@@ -106,7 +106,10 @@ No evidence = no completion. This is non-negotiable.
 - Work Log MUST record: `Test Files: [list of test file paths]`
 - Work Log MUST contain actual test output (pass/fail), not narrative claims
 - If adversarial testing ran, record results under `## Red Team Findings`
-- State transition: task may proceed to `/review` or `/ship` only after evidence is persisted
+- State transition (classification-aware):
+  - `feature` / `architecture-change`: next is `/handoff` (MANDATORY — do NOT route to `/ship` directly; the ship gate Entry Condition requires a completed handoff receipt).
+  - `quick-win` / `hotfix`: next is `/ship` directly.
+  - Reverse edge only: if tests are still red after debugging, go back to `/implement` (record in Drift Log); `/review` is not a forward step from test.
 
 **Gate Receipt**: After evidence is persisted, append to Work Log `## Gate Evidence`:
 ```

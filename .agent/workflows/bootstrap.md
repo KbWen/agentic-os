@@ -292,9 +292,11 @@ Every non-`tiny-fix` workflow MUST maintain two header fields in the active Work
 **Phase Verification (all gated workflows)**: Before proceeding past the Gate Engine, each workflow MUST:
 
 1. Read `Current Phase` from the active Work Log header.
-2. Verify the transition is legal per `state_machine.md` (e.g., `plan` → `implement` is legal; `bootstrap` → `ship` is not).
+2. Verify the transition is legal per `state_machine.md` (e.g., `plan` → `implement` is legal; `implement` → `ship` is not for `feature` tasks).
 3. If the transition is illegal, output: `"⚠️ Phase transition [from] → [to] is not legal. Current phase is [from]. Expected: [legal-next-list]."` and STOP.
 4. Update `Current Phase` to the new phase name.
+
+**Bootstrap exemption**: `/bootstrap` itself is exempt from step 2. It is a context-loading/resume entry point, not a forward state transition. Bootstrap reads `Current Phase` to route the resume (§1 Step 2 Branch Check) but never blocks on transition legality — any `Current Phase` value is a valid starting point for a bootstrap.
 
 This costs < 10 tokens per phase entry and eliminates phase-tracking hallucination.
 

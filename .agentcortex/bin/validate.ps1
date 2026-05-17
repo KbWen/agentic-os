@@ -897,6 +897,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $sentinelMarkerMissing = 0
     $testGateResultsMissing = 0
     $currentPhaseIncoherent = 0
+    $shippedNotArchived = 0
     # Legal phase transitions for gate evidence validation (classification-aware)
     # quick-win / unknown: implement can go directly to ship (fast path)
     $legalDefault = @{
@@ -1033,6 +1034,8 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             $cpM = [regex]::Match($content, '(?m)^-\s+\*?\*?Current Phase\*?\*?:\s*`?(\w[\w-]*)')
             if (-not $cpM.Success) { $cpM = [regex]::Match($content, '(?m)^\|\s*\*?\*?Current Phase\*?\*?\s*\|\s*`?(\w[\w-]*)') }
             if ($cpM.Success -and $cpM.Groups[1].Value.ToLower() -ne 'ship') { $currentPhaseIncoherent++ }
+            # Archival check (Item 1): shipped log in active work/ means /ship step 3 (archival) was skipped
+            if (-not $cpM.Success -or $cpM.Groups[1].Value.ToLower() -eq 'ship') { $shippedNotArchived++ }
         }
     }
     if ($phaseFieldMissing -gt 0) {
@@ -1077,6 +1080,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "work logs with ship PASS receipt but Current Phase != ship (header not updated): $currentPhaseIncoherent"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'Current Phase field is consistent with last gate receipt in all work logs'
+    }
+    if ($shippedNotArchived -gt 0) {
+        Add-Result -Level 'WARN' -Message "shipped work logs still in active work/ directory (archival incomplete — /ship step 3 skipped?): $shippedNotArchived"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'no shipped work logs found in active work/ directory'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock
