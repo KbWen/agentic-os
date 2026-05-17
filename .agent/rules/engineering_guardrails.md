@@ -335,6 +335,8 @@ If a section is not applicable, write `none` instead of omitting it. This keeps 
   - `docs/specs/_product-backlog.md` — route to `/spec-intake` instead of tiny-fix
   - Any file with `status: frozen` frontmatter — frozen files require unfreeze approval (§4.2)
   - `AGENTS.md`, `.agent/rules/*.md`, `.agent/config.yaml` — framework governance files affect all agents globally
+  - `.agentcortex/templates/*` — template changes propagate to all downstream projects via `deploy.sh`
+  - `.agentcortex/bin/validate.*` — validator changes are governance-critical (affect CI gate verdicts)
 
 ### 10.4 Quick-Win Fast-Path
 
@@ -343,7 +345,7 @@ If a section is not applicable, write `none` instead of omitting it. This keeps 
 - **Exclusion**: No formal Spec required. No `/handoff` required. Work Log MUST be created (lightweight — needed for skill loading and evidence tracking).
 - **Doc Integrity (MANDATORY)**: While No *new* Spec is required, if an **existing** Spec already covers the target area, the AI MUST update that Spec to prevent "Documentation Decay." If the change is too complex for a stealth update, use the "Spec Seed" mechanism in `/retro` to flag it for formalization.
 - **Examples**: Changing an API response format, adding a config flag, fixing a single-module bug with known root cause.
-- **Security Escalation**: If a quick-win task touches auth/security code (login, password, token, session, role, permission, access control), it MUST be escalated to at least `hotfix` classification to activate review and test phases. Auth-adjacent quick-wins are not safe to ship without review.
+- **Security Escalation**: If a quick-win task touches auth/security **logic** (password hashing, token generation/validation, session management, access control enforcement, role/permission checks), it MUST be escalated to at least `hotfix` classification to activate review and test phases. Auth-adjacent quick-wins are not safe to ship without review. **Scope clarification**: This applies to files that *implement* auth logic (e.g., `auth_service.ts`, `token_provider.dart`, `session_manager.rb`) — NOT to UI components that merely render auth-related screens (e.g., a login button in a React component that dispatches to an auth service). The trigger is auth credential/token handling in the implementation layer, not the presence of the word "login" in a UI file.
 - **Root-Cause Escalation**: If a quick-win task addresses a crash, data loss, or behavioral regression (not just a new feature), the Work Log MUST include a 1-line root-cause statement explaining why the bug occurred. Missing root-cause for regression-class bugs = review warning. Format: `Root Cause: <1-line explanation>` in Work Log `## Known Risk`.
 
 ### 10.5 Handoff/Ship Hard Gate

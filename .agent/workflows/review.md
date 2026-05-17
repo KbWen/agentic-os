@@ -253,6 +253,17 @@ After review is complete, append one line to `## Phase Summary` in the Work Log:
 - review: [1-line summary — verdict, security findings count, spec compliance status]
 ```
 
+## Reverse Transition (Not Ready Verdict)
+
+If verdict = **Not Ready**, the agent MUST execute the reverse transition before closing the review session:
+
+1. Update Work Log `Current Phase: implement` (do NOT leave it as `review`).
+2. Append to `## Phase Summary`: `- review: Not Ready — [blocking issues list] — routed back to implement`.
+3. Record the reverse edge in `## Gate Evidence`: `- Gate: review | Verdict: NOT READY | Transition: REVIEWED→IMPLEMENTING | Timestamp: <ISO>`.
+4. State clearly to the user: "Route back to `/implement` to address: [list of blocking issues by severity]."
+
+This ensures the state machine correctly records the remediation loop. Leaving `Current Phase: review` on a Not Ready verdict creates a phantom REVIEWED state that blocks future phase-progression validation.
+
 ## Optional: Cloud Adversarial Review (Claude Code CLI only)
 
 When running inside Claude Code CLI and the change is high-stakes (auth, data migration, public API, security-sensitive logic), the user MAY invoke `/ultrareview` to dispatch a fleet of bug-hunting agents in Anthropic's cloud against the current branch or a PR. This is **opt-in and Claude-CLI-only** — not part of the cross-platform `/review` contract.

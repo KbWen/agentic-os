@@ -28,6 +28,9 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 | "review this", "幫我看看", "code review" | `/review` |
 | "run tests", "跑測試", "verify" | `/test` |
 | "typo", "rename variable" | tiny-fix (execute directly) |
+| "I want to add X", "我想加 X", "新增功能 X", "我要實作 X", "加一個 X", "幫我做 X" | `/bootstrap` (single feature) — if multi-feature intent detected, route to `/spec-intake` instead |
+| "review failed", "review 沒過", "review 不通過", "fix review findings", "補齊 review" | `/implement` — REVIEWED→IMPLEMENTING reverse transition |
+| "tests failed", "test 沒過", "tests are failing", "修測試", "fix test failures" | `/implement` — TESTED→IMPLEMENTING reverse transition |
 
 ### Spec & Intake
 

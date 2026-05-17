@@ -53,6 +53,22 @@ Create `docs/adr/ADR-001-project-architecture.md` using the template at `.agentc
 
 Fill in all sections from user answers. For `[TBD]` items, include a `## Open Decisions` section listing them.
 
+**SSoT Update (mandatory)**: After writing the ADR file, update `current_state.md`'s `**ADR Index**` section to include the new ADR. Use `.agentcortex/tools/guard_context_write.py` when Python is available:
+
+```bash
+python .agentcortex/tools/guard_context_write.py \
+  --file current_state.md \
+  --section "ADR Index" \
+  --append "- docs/adr/ADR-00N-project-architecture.md: Project Architecture · applies_to: **"
+```
+
+**Python-unavailable fallback**: Write the entry directly into `current_state.md` under `**ADR Index**`. Format:
+```
+- docs/adr/ADR-00N-project-architecture.md: Project Architecture · applies_to: **
+```
+
+**Why mandatory**: `validate.sh` checks ADR disk presence vs. SSoT index. Without this update, every greenfield project fails validation immediately after `/app-init` with `[FAIL] SSoT ADR Index completeness` — before the user has had a chance to run `/ship`.
+
 ---
 
 ## 3. Generate Domain Skills (Scaffolds)

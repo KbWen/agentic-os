@@ -24,6 +24,12 @@ Read-only logic. DOES NOT change state. Hard completion gate for non-`tiny-fix` 
 
 **Uncommitted WIP guard**: If `Checkpoint SHA` is `(uncommitted)`, the agent MUST commit or `git stash` the WIP before completing handoff, then record the resulting SHA or stash ref in the Resume Block. Handing off with un-anchored WIP leaves the next agent unable to scope resume work via `git diff <checkpoint>..HEAD`.
 
+**Interrupted handoff resume**: If the Work Log already contains a `## Resume` block from a prior partial handoff execution, DO NOT re-run from scratch. Instead:
+1. Read the existing `## Resume` block and the `## Phase Summary` handoff line.
+2. Identify what was already completed: Layer 1 chat output written? Layer 2 traceability appended? Resume Block present and complete?
+3. Complete ONLY the missing parts — append deltas to the Work Log.
+4. Do NOT duplicate existing content. If all three parts are present, the handoff is already complete — proceed directly to the closure recommendation (§3a).
+
 ## 2. Platform Specialization
 
 - **Codex Web**: MUST output full summary directly in chat.

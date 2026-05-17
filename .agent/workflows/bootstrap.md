@@ -38,8 +38,11 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 | Section | tiny-fix | quick-win | feature/arch | hotfix |
 |---|---|---|---|---|
 | §0 Pre-Classification Fast Check | REQUIRED | REQUIRED | REQUIRED | REQUIRED |
-| §0a App Architecture Check | SKIP | SKIP | REQUIRED | SKIP |
+| §0a App Architecture Check | SKIP | conditional¹ | REQUIRED | conditional¹ |
 | §1 Initialization & Required Reading | SKIP | REQUIRED | REQUIRED | REQUIRED |
+
+> ¹ `conditional` for quick-win/hotfix: run ONLY the `no_adr_at_all` (Exit 2) new-project check. Skip `no_covering_adr` and partial-ADR escalation — those are feature/arch-change only.
+
 | §1 Step 2a Spec Scope | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §1 Step 2b Domain Doc Context Loading | SKIP | SKIP | REQUIRED | SKIP |
 | §1 Steps 3–6 (private, migration, backlog, raw material) | SKIP | conditional | conditional | conditional |
@@ -56,21 +59,22 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 
 ## 0a. App Architecture Check (Zero-Cost Gate)
 
-> **When**: ONLY for `feature` or `architecture-change` classifications (AFTER Step 0 pre-classification).
-> **Skip for**: `tiny-fix`, `quick-win`, `hotfix` — these NEVER trigger this check. Zero extra tokens.
+> **When (new-project check)**: ALL non-tiny-fix classifications run the `no_adr_at_all` check — including `quick-win` and `hotfix`. A brand-new project needs conventions regardless of classification.
+> **When (coverage check)**: ONLY `feature` or `architecture-change` run the `no_covering_adr` and partial-ADR checks.
+> **Skip for**: `tiny-fix` ONLY — these never trigger this check.
 
-If the task is classified as `feature` or `architecture-change`, run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>`. The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code.
+Run the **ADR Coverage Check** via `.agentcortex/tools/check_adr_coverage.py --paths <task-target-files>`. The tool reads ADR frontmatter `applies_to:` glob lists; outputs cover/no-cover plus exit code.
 
-**Python-unavailable fallback** (per AGENTS.md doctrine): If `python --version` fails (no Python on this host), record `"ADR coverage check skipped: python unavailable"` in Work Log Drift Log and proceed to Step 1 with `## External References` left empty for coverage info. Do NOT fail the bootstrap. The fallback degrades to no-coverage-prompt, never to a hard-fail.
+**Python-unavailable fallback** (per AGENTS.md doctrine): If `python --version` fails (no Python on this host), fall back to a filesystem check: if `docs/adr/` is empty or absent, output the new-project prompt below. Otherwise record `"ADR coverage check skipped: python unavailable"` in Work Log Drift Log. Do NOT fail the bootstrap.
 
 Tool exit codes:
 
-- **Exit 2 — `no_adr_at_all`** (`docs/adr/` is empty):
+- **Exit 2 — `no_adr_at_all`** (`docs/adr/` is empty): **Applies to ALL non-tiny-fix classifications.**
    → Output: `"🏗️ New project detected — no architecture ADR found. Run /app-init to establish project conventions? (yes/skip)"`
    → If yes: run `/app-init` workflow, then return here.
    → If skip: record `"App-init skipped by user"` in Work Log. Detection will NOT trigger again this session.
 
-- **Exit 1 — `no_covering_adr`** (ADRs exist, but no ADR's `applies_to` glob matches the current task's target files):
+- **Exit 1 — `no_covering_adr`** (ADRs exist, but no ADR's `applies_to` glob matches the current task's target files): **`feature` / `architecture-change` ONLY** — skip for `quick-win` and `hotfix`.
    → Output: `"📐 No existing ADR covers this task's target files: [list]. Available ADRs: [list]. Run /adr to record this architectural decision before /spec? (yes/skip)"`
    → If yes: route to `/adr` workflow, then return here.
    → If skip: record `"ADR coverage skipped by user — task: <summary>"` in Work Log Drift Log. Detection will NOT re-trigger this session.
@@ -82,7 +86,7 @@ Tool exit codes:
 
 **Cost**: This check reads only the ADR frontmatter (~30 tokens × N ADRs). It does NOT read full ADR content — that happens later during /implement when skills are loaded. ADRs without `applies_to:` are reported but not blocking.
 
-**Partial-ADR escalation (preserved from prior wording)**: If a covering ADR has `[TBD]` sections relevant to the current task, surface them inline:
+**Partial-ADR escalation (feature/architecture-change only)**: If a covering ADR has `[TBD]` sections relevant to the current task, surface them inline:
    → Output: `"⚠️ Covering ADR [<name>] has [TBD] sections relevant to this task: [list]. Fill them now via /app-init --partial? (yes/skip)"`
    → If yes: run `/app-init` in partial mode (§8 of app-init.md — only ask questions for TBD sections).
    → If skip: proceed, but AI uses generic conventions (skill scaffold defaults).
