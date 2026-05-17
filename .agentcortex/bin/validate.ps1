@@ -900,6 +900,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $shippedNotArchived = 0
     $evidencePlaceholderOnly = 0
     $reviewPassWithUnproven = 0
+    $reclassifyHeaderNotReset = 0
+    $handoffResumeIncomplete = 0
+    $hotfixShipNoEvidence = 0
+    $adrCoverageUndocumented = 0
     # Legal phase transitions for gate evidence validation (classification-aware)
     # quick-win / unknown: implement can go directly to ship (fast path)
     $legalDefault = @{
@@ -1054,6 +1058,42 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 }
             }
         }
+        # Finding 9 (HIGH): Reclassification state inconsistency — Drift Log records
+        # "Reclassification:" but Classification header was never reset to CLASSIFIED.
+        if ($content -match '(?m)^## Drift Log' -and $content -match '(?im)^\s*-\s+Reclassif') {
+            $clsHdrM = [regex]::Match($content, '(?m)^-\s*\*{0,2}Classification\*{0,2}\s*:\s*`?([A-Za-z][\w-]*)')
+            if ($clsHdrM.Success -and $clsHdrM.Groups[1].Value.ToLower() -ne 'classified') {
+                $reclassifyHeaderNotReset++
+            }
+        }
+        # Finding 5 (MEDIUM): Handoff Resume Block completeness — warn when ## Resume
+        # section exists but is missing required sub-sections (handoff.md §1a).
+        if ($content -match '(?m)^## Resume') {
+            $resumeM = [regex]::Match($content, '(?ms)^## Resume\r?\n(.*?)(?=^## |\z)')
+            $resumeBody = if ($resumeM.Success) { $resumeM.Groups[1].Value } else { '' }
+            $missingSubsections = 0
+            foreach ($subsec in @('Read Map', 'Skip List', 'Context Snapshot')) {
+                if ($resumeBody -notmatch "(?im)^###\s+$subsec") { $missingSubsections++ }
+            }
+            if ($missingSubsections -gt 0) { $handoffResumeIncomplete++ }
+        }
+        # Finding 13 (MEDIUM): hotfix fast-path evidence check — hotfix is exempt from
+        # /handoff but MUST provide evidence per handoff.md §Trigger Conditions.
+        if ($wlClass -eq 'hotfix' -and ($content -match '(?i)Gate:\s*ship\s*\|.*Verdict:\s*PASS')) {
+            $hotfixEvidM = [regex]::Match($content, '(?ms)^## Evidence\r?\n(.*?)(?=^## |\z)')
+            $hotfixEvid = if ($hotfixEvidM.Success) { $hotfixEvidM.Groups[1].Value.Trim() } else { '' }
+            if ([string]::IsNullOrWhiteSpace($hotfixEvid) -or $hotfixEvid -match 'Pending:\s*bootstrap only') {
+                $hotfixShipNoEvidence++
+            }
+        }
+        # Finding 14 (MEDIUM): ADR Coverage gap — for feature/arch-change past plan phase,
+        # bootstrap should have logged ADR Coverage Check result in ## Drift Log.
+        if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') -and
+            ($content -match '(?i)Gate:\s*(plan|implement)\s*\|')) {
+            if ($content -notmatch '(?i)(ADR.*[Cc]overage|[Cc]overage.*ADR|adr.*check|no.*adr.*found)') {
+                $adrCoverageUndocumented++
+            }
+        }
     }
     if ($phaseFieldMissing -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs missing Current Phase field: $phaseFieldMissing"
@@ -1112,6 +1152,26 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "work logs with review PASS receipt but unresolved UNPROVEN rows (should be NOT READY per review.md §Burden of Proof): $reviewPassWithUnproven"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'no review PASS receipts with unresolved UNPROVEN rows detected'
+    }
+    if ($reclassifyHeaderNotReset -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs with Reclassification in Drift Log but Classification header not reset to CLASSIFIED (implement.md §Mid-Execution Guard step c incomplete): $reclassifyHeaderNotReset"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'no reclassification header inconsistency detected'
+    }
+    if ($handoffResumeIncomplete -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs with ## Resume section missing required sub-sections (handoff.md §1a — Read Map, Skip List, Context Snapshot required): $handoffResumeIncomplete"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'handoff Resume Blocks have required sub-sections where present'
+    }
+    if ($hotfixShipNoEvidence -gt 0) {
+        Add-Result -Level 'WARN' -Message "hotfix work logs shipped without ## Evidence (hotfix fast-path still requires diff + behavior verification per handoff.md §Trigger Conditions): $hotfixShipNoEvidence"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'hotfix shipped work logs carry evidence where present'
+    }
+    if ($adrCoverageUndocumented -gt 0) {
+        Add-Result -Level 'WARN' -Message "feature/architecture-change work logs past plan phase with no ADR Coverage Check record in Drift Log (bootstrap.md §ADR Coverage Check result should be logged): $adrCoverageUndocumented"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'ADR Coverage Check records present in applicable work logs'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock

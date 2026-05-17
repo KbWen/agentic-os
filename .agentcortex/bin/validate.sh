@@ -949,6 +949,10 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   shipped_not_archived=0
   evidence_placeholder_only=0
   review_pass_with_unproven=0
+  reclassify_header_not_reset=0
+  handoff_resume_incomplete=0
+  hotfix_ship_no_evidence=0
+  adr_coverage_undocumented=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1157,6 +1161,53 @@ for l in sys.stdin:
         shipped_not_archived=$((shipped_not_archived + 1))
       fi
     fi
+    # Finding 9 (HIGH): Reclassification state inconsistency — Drift Log records
+    # "Reclassification:" but Classification header was never reset to CLASSIFIED,
+    # leaving downstream agents with a stale classification tier.
+    if printf '%s' "$wl_content" | grep -q '## Drift Log' \
+       && printf '%s' "$wl_content" | grep -qiE '^\s*-\s+Reclassif'; then
+      cls_hdr="$(printf '%s' "$wl_content" | grep -m1 -iE '^-[[:space:]]*\*?\*?Classification\*?\*?:' \
+        | sed 's/.*Classification[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)"
+      if [[ -n "$cls_hdr" && "$cls_hdr" != "classified" ]]; then
+        reclassify_header_not_reset=$((reclassify_header_not_reset + 1))
+      fi
+    fi
+    # Finding 5 (MEDIUM): Handoff Resume Block completeness — prose rule (handoff.md §1a)
+    # requires all sub-sections. Warn when ## Resume section exists but is missing
+    # any of the mandatory headings: Read Map, Skip List, Context Snapshot.
+    if printf '%s' "$wl_content" | grep -q '^## Resume'; then
+      resume_body="$(printf '%s' "$wl_content" | sed -n '/^## Resume/,/^## /p')"
+      missing_subsections=0
+      for subsec in "Read Map" "Skip List" "Context Snapshot"; do
+        if ! printf '%s' "$resume_body" | grep -qiE "^###[[:space:]]+${subsec}"; then
+          missing_subsections=$((missing_subsections + 1))
+        fi
+      done
+      if [[ "$missing_subsections" -gt 0 ]]; then
+        handoff_resume_incomplete=$((handoff_resume_incomplete + 1))
+      fi
+    fi
+    # Finding 13 (MEDIUM): hotfix fast-path evidence check — hotfix is exempt from
+    # /handoff but MUST provide evidence. Warn when a hotfix reaches ship phase
+    # but ## Evidence section is missing or contains only the bootstrap placeholder.
+    if [[ "$wl_class" == "hotfix" ]]; then
+      if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
+        hotfix_evidence="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)"
+        if [[ -z "$hotfix_evidence" || "$hotfix_evidence" == *"Pending: bootstrap only"* ]]; then
+          hotfix_ship_no_evidence=$((hotfix_ship_no_evidence + 1))
+        fi
+      fi
+    fi
+    # Finding 14 (MEDIUM): ADR Coverage gap — for feature/architecture-change Work Logs,
+    # bootstrap should have run the ADR Coverage Check and recorded the result (yes/skip)
+    # in ## Drift Log. Missing record means the check was silently bypassed.
+    if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
+      if printf '%s' "$wl_content" | grep -q 'Gate: plan\|Gate: implement'; then
+        if ! printf '%s' "$wl_content" | grep -qiE 'ADR.*[Cc]overage|[Cc]overage.*ADR|adr.*check|no.*adr.*found'; then
+          adr_coverage_undocumented=$((adr_coverage_undocumented + 1))
+        fi
+      fi
+    fi
   done
   if [[ "$phase_field_missing" -gt 0 ]]; then
     record_result WARN "work logs missing Current Phase field: ${phase_field_missing}"
@@ -1221,6 +1272,26 @@ for l in sys.stdin:
     record_result WARN "work logs with review PASS receipt but unresolved UNPROVEN rows (receipt should be NOT READY per review.md §Burden of Proof): ${review_pass_with_unproven}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "no review PASS receipts with unresolved UNPROVEN rows detected"
+  fi
+  if [[ "$reclassify_header_not_reset" -gt 0 ]]; then
+    record_result WARN "work logs with Reclassification in Drift Log but Classification header not reset to CLASSIFIED (implement.md §Mid-Execution Guard step c incomplete): ${reclassify_header_not_reset}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "no reclassification header inconsistency detected"
+  fi
+  if [[ "$handoff_resume_incomplete" -gt 0 ]]; then
+    record_result WARN "work logs with ## Resume section missing required sub-sections (handoff.md §1a — Read Map, Skip List, Context Snapshot required): ${handoff_resume_incomplete}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "handoff Resume Blocks have required sub-sections where present"
+  fi
+  if [[ "$hotfix_ship_no_evidence" -gt 0 ]]; then
+    record_result WARN "hotfix work logs shipped without ## Evidence (hotfix fast-path still requires diff + behavior verification per handoff.md §Trigger Conditions): ${hotfix_ship_no_evidence}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "hotfix shipped work logs carry evidence where present"
+  fi
+  if [[ "$adr_coverage_undocumented" -gt 0 ]]; then
+    record_result WARN "feature/architecture-change work logs past plan phase with no ADR Coverage Check record in Drift Log (bootstrap.md §ADR Coverage Check result should be logged): ${adr_coverage_undocumented}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "ADR Coverage Check records present in applicable work logs"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
