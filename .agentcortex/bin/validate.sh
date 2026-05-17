@@ -1729,6 +1729,32 @@ if [[ "$adr_count" -gt 0 ]]; then
   fi
 fi
 
+# Round-16 Finding 7: Domain Decisions entry cap — spec.md §8 hard cap is 10 entries.
+# Each [DECISION], [TRADEOFF], or [CONSTRAINT] line counts toward the cap.
+domain_decisions_exceeded=0
+if [[ -d "$ROOT/docs/specs" ]]; then
+  shopt -s nullglob
+  for spec in "$ROOT/docs/specs"/*.md; do
+    [[ -f "$spec" ]] || continue
+    [[ "$(basename "$spec")" == ".gitkeep.md" ]] && continue
+    if grep -q '^## Domain Decisions' "$spec"; then
+      entry_count="$(awk '/^## Domain Decisions/{found=1;next} found && /^## /{exit} found && /\[(DECISION|TRADEOFF|CONSTRAINT)\]/{c++} END{print c+0}' "$spec")"
+      if [[ "$entry_count" -gt 10 ]]; then
+        printf '  spec Domain Decisions cap exceeded: %s (%d entries > 10)\n' "$(basename "$spec")" "$entry_count"
+        domain_decisions_exceeded=$((domain_decisions_exceeded + 1))
+      fi
+    fi
+  done
+  shopt -u nullglob
+fi
+if [[ "$domain_decisions_exceeded" -gt 0 ]]; then
+  record_result WARN "docs/specs/ files with Domain Decisions exceeding 10-entry cap (spec.md §8 — requires user acknowledgment): ${domain_decisions_exceeded}"
+else
+  spec_dd_count=0
+  for f in "$ROOT/docs/specs"/*.md; do grep -q '^## Domain Decisions' "$f" 2>/dev/null && spec_dd_count=$((spec_dd_count + 1)); done
+  [[ "$spec_dd_count" -gt 0 ]] && record_result PASS "all specs with Domain Decisions sections are within 10-entry cap"
+fi
+
 # Round-15 Finding 7: Spec frontmatter status validation — each docs/specs/*.md
 # must have YAML frontmatter with a recognized 'status:' value.
 VALID_SPEC_STATUSES="draft|frozen|shipped|cancelled|living"

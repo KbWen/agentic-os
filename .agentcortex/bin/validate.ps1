@@ -1592,6 +1592,36 @@ if ($adrCount -gt 0) {
     }
 }
 
+# Round-16 Finding 7: Domain Decisions entry cap (spec.md §8 hard cap: 10 entries)
+$domainDecisionsExceeded = 0
+if (Test-Path -Path $specsDir -PathType Container) {
+    foreach ($specFile in (Get-ChildItem -Path $specsDir -Filter '*.md' -File -ErrorAction SilentlyContinue)) {
+        if ($specFile.Name -eq '.gitkeep.md') { continue }
+        $specContent = Get-Content -Path $specFile.FullName -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
+        if ($specContent -match '(?m)^## Domain Decisions') {
+            $ddMatch = [regex]::Match($specContent, '(?ms)^## Domain Decisions\r?\n(.*?)(?=^## |\z)')
+            $ddBody = if ($ddMatch.Success) { $ddMatch.Groups[1].Value } else { '' }
+            $entryCount = ([regex]::Matches($ddBody, '\[(DECISION|TRADEOFF|CONSTRAINT)\]')).Count
+            if ($entryCount -gt 10) {
+                Write-Host "  spec Domain Decisions cap exceeded: $($specFile.Name) ($entryCount entries > 10)"
+                $domainDecisionsExceeded++
+            }
+        }
+    }
+}
+if ($domainDecisionsExceeded -gt 0) {
+    Add-Result -Level 'WARN' -Message "docs/specs/ files with Domain Decisions exceeding 10-entry cap (spec.md §8 — requires user acknowledgment): $domainDecisionsExceeded"
+} else {
+    $specDdCount = 0
+    if (Test-Path -Path $specsDir -PathType Container) {
+        foreach ($sf in (Get-ChildItem -Path $specsDir -Filter '*.md' -File -ErrorAction SilentlyContinue)) {
+            $sfContent = Get-Content -Path $sf.FullName -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
+            if ($sfContent -match '(?m)^## Domain Decisions') { $specDdCount++ }
+        }
+    }
+    if ($specDdCount -gt 0) { Add-Result -Level 'PASS' -Message 'all specs with Domain Decisions sections are within 10-entry cap' }
+}
+
 # Round-15 Finding 7: Spec frontmatter status validation
 $validStatuses = @('draft','frozen','shipped','cancelled','living')
 $specBadStatus = 0; $specMissingFrontmatter = 0; $specFileCount = 0

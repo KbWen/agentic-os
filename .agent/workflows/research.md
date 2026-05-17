@@ -19,6 +19,14 @@ Conduct autonomous exploratory research. AI investigates the codebase, external 
 
 3. **Validate assumptions where possible**: If you can verify an assumption by reading code or running a command, do it instead of listing it as an assumption. The fewer unknowns in the final report, the better.
 
+## Gate
+
+`/research` is a supporting workflow — it has no dedicated gate receipt and does not advance phase state. It can run at any point before or during planning.
+
+- **Allowed phases**: pre-bootstrap, bootstrap, plan, implement (investigation only).
+- **Not a phase substitute**: running `/research` does NOT satisfy the bootstrap or plan gate. After research concludes, return to the required phase (`/bootstrap`, `/plan`, etc.) to advance state.
+- **Work Log**: Append findings to `## Phase Summary` under a `research:` prefix. No gate receipt is emitted.
+
 ## Autonomous Decisions
 
 - If research reveals a clear path forward, recommend it directly — don't just list facts and wait.

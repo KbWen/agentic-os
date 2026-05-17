@@ -23,3 +23,5 @@ Generate multiple solution options autonomously. AI explores the design space, w
 ## When to Record Decisions
 
 If the brainstorm leads to a chosen direction, record it via `/decide` so the rationale is preserved for future sessions. If the brainstorm is purely exploratory, no decision record is needed.
+
+> **Canonical gate**: Trade-off decisions from brainstorm that affect architecture or cross-module behavior MUST be recorded via `/decide`. Ref: `.agent/rules/engineering_guardrails.md §6 (Explainability & Traceability)`.
