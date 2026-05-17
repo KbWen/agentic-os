@@ -948,6 +948,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   current_phase_incoherent=0
   shipped_not_archived=0
   evidence_placeholder_only=0
+  review_pass_with_unproven=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1120,6 +1121,18 @@ for l in sys.stdin:
         fi
       fi
     fi
+    # MEDIUM-1 (review PASS with UNPROVEN rows): check for review PASS receipt alongside
+    # unresolved UNPROVEN table rows — review.md §Burden of Proof requires NOT READY in this case.
+    if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*review[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
+      if printf '%s' "$wl_content" | grep -qE '✗ UNPROVEN' \
+         && ! printf '%s' "$wl_content" | grep -qvE '✗ UNPROVEN.*\[NEEDS_HUMAN\].*|.*\[NEEDS_HUMAN\].*✗ UNPROVEN'; then
+        # Simplified: flag if both PASS receipt and any untagged UNPROVEN row co-exist
+        unproven_untagged="$(printf '%s' "$wl_content" | grep '✗ UNPROVEN' | grep -v '\[NEEDS_HUMAN\]' | head -1)"
+        if [[ -n "$unproven_untagged" ]]; then
+          review_pass_with_unproven=$((review_pass_with_unproven + 1))
+        fi
+      fi
+    fi
     # MEDIUM-3: evidence non-empty check for shipped feature/arch-change logs.
     # The bootstrap placeholder "Pending: bootstrap only" is not real evidence.
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
@@ -1203,6 +1216,11 @@ for l in sys.stdin:
     record_result WARN "feature/arch-change shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP per AGENTS.md §Delivery Gates): ${evidence_placeholder_only}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "shipped feature/arch-change work logs have non-placeholder Evidence sections"
+  fi
+  if [[ "$review_pass_with_unproven" -gt 0 ]]; then
+    record_result WARN "work logs with review PASS receipt but unresolved UNPROVEN rows (receipt should be NOT READY per review.md §Burden of Proof): ${review_pass_with_unproven}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "no review PASS receipts with unresolved UNPROVEN rows detected"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.

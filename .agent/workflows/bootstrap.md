@@ -159,6 +159,7 @@ Tool exit codes:
      ```
 
    - If user intent matches a pending backlog feature, route to `/spec-intake` §8a (continuation) instead of fresh bootstrap.
+   - **Status advance**: If bootstrap is starting work on a backlog feature whose row is `Pending`, update that row's status to `In Progress`. This is the only valid `Pending → In Progress` transition; `Pending → Shipped` directly is invalid.
    - **Kind & Priority assignment**: When adding or updating a backlog item from this bootstrap session, set:
      - `Kind`: use the most specific origin — precedence: `review-finding` (surfaced by `/review` or `/audit`) > `hotfix-spawn` (systemic issue from hotfix) > `quick-win` (small, no spec needed, classification-derived) > `feature` (default). A quick-win that originated from a review finding MUST be marked `review-finding`, not `quick-win` — classification and origin are independent.
      - `Priority`: ask if not already set — `P0` (blocking), `P1` (high value), `P2` (nice to have), `—` (not yet prioritized, default on silence — do NOT block bootstrap waiting for an answer).

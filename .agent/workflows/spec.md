@@ -12,7 +12,7 @@ Output Format:
 3. Non-goals
 4. Constraints
 5. API / Data Contract (Optional)
-6. State Metadata: Output YAML frontmatter with `status: draft`. Transitions to `status: frozen` when user approves.
+6. State Metadata: Output YAML frontmatter with `status: draft`. Transitions to `status: frozen` when user approves. **When freezing**: also update the spec's `current_state.md` Spec Index entry tag from `[Draft]` to `[Frozen]` — this keeps `/plan`'s Frozen Spec Pre-Check accurate.
    - **Primary Domain** (AC-12, REQUIRED for feature/architecture-change): Include `primary_domain: <domain-noun>` in frontmatter. This routes knowledge consolidation to the correct Domain Doc at `/ship`.
    - **Secondary Domains** (AC-12, optional): Include `secondary_domains: [<domain>, ...]` if the spec touches multiple domains. Secondary domains receive cross-reference pointers only — no full content consolidation.
 7. File Relationship: Declare if this spec EXTENDS, REPLACES, or is INDEPENDENT from any existing `docs/specs/*.md` file.

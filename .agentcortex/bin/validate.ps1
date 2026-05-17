@@ -899,6 +899,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $currentPhaseIncoherent = 0
     $shippedNotArchived = 0
     $evidencePlaceholderOnly = 0
+    $reviewPassWithUnproven = 0
     # Legal phase transitions for gate evidence validation (classification-aware)
     # quick-win / unknown: implement can go directly to ship (fast path)
     $legalDefault = @{
@@ -1030,6 +1031,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {
             $testGateResultsMissing++
         }
+        # MEDIUM-1 (review PASS with UNPROVEN rows)
+        if ($content -match '(?i)Gate:\s*review\s*\|[^|\r\n]*Verdict:\s*PASS') {
+            $unprovenLines = [regex]::Matches($content, '✗ UNPROVEN') | Where-Object { $_.Value -and ($content.Substring([Math]::Max(0,$_.Index-200), [Math]::Min(200,$_.Index)) + $content.Substring($_.Index, [Math]::Min(100,$content.Length-$_.Index))) -notmatch '\[NEEDS_HUMAN\]' }
+            # Simpler: flag if any line has UNPROVEN but not NEEDS_HUMAN
+            $unprovenUntagged = ($content -split "`n") | Where-Object { $_ -match '✗ UNPROVEN' -and $_ -notmatch '\[NEEDS_HUMAN\]' }
+            if ($unprovenUntagged) { $reviewPassWithUnproven++ }
+        }
         # Current Phase consistency (HIGH-2): if ship PASS receipt exists, Current Phase should be 'ship'
         if ($content -match '(?i)Gate:\s*ship\s*\|[^|\r\n]*Verdict:\s*PASS') {
             $cpM = [regex]::Match($content, '(?m)^-\s+\*?\*?Current Phase\*?\*?:\s*`?(\w[\w-]*)')
@@ -1099,6 +1107,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "feature/arch-change shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP): $evidencePlaceholderOnly"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'shipped feature/arch-change work logs have non-placeholder Evidence sections'
+    }
+    if ($reviewPassWithUnproven -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs with review PASS receipt but unresolved UNPROVEN rows (should be NOT READY per review.md §Burden of Proof): $reviewPassWithUnproven"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'no review PASS receipts with unresolved UNPROVEN rows detected'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock

@@ -26,9 +26,9 @@ Hard completion gate for non-`tiny-fix` tasks. Transitions `TESTED → HANDEDOFF
 
 **Interrupted handoff resume**: If the Work Log already contains a `## Resume` block from a prior partial handoff execution, DO NOT re-run from scratch. Instead:
 1. Read the existing `## Resume` block and the `## Phase Summary` handoff line.
-2. Identify what was already completed: Layer 1 chat output written? Layer 2 traceability appended? Resume Block present and complete?
-3. Complete ONLY the missing parts — append deltas to the Work Log.
-4. Do NOT duplicate existing content. If all three parts are present, the handoff is already complete — proceed directly to the closure recommendation (§3a).
+2. Identify what was already completed. A Resume Block is **complete** only if it contains ALL of the following sub-sections (per §3 template): `State`, `Completed`, `Next`, `Context` fields AND `### Read Map`, `### Skip List`, `### Context Snapshot`, plus `### Backlog Status` if a product backlog exists. If any sub-section is missing or empty, treat the block as partial.
+3. Complete ONLY the missing sub-sections — append deltas to the Work Log.
+4. Do NOT duplicate existing content. If all required sub-sections are present and the gate receipt exists, the handoff is already complete — proceed directly to the closure recommendation (§3a).
 
 ## 2. Platform Specialization
 

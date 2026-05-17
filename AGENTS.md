@@ -51,6 +51,7 @@ When multiple AI sessions or humans work on the same repo: **one branch = one ow
 - `feature` and `architecture-change` MUST complete a handoff phase with ✅doc path + ✅code path + work log path. `quick-win` and `hotfix` are exempt from `/handoff` but MUST provide evidence.
 - `tiny-fix` MUST provide minimal evidence (diff + 1-line verification).
 - NO EVIDENCE = NO COMPLETION.
+- A `/review` phase that ends with `Verdict: NOT READY` does NOT satisfy the review gate. Ship requires a `Verdict: PASS` review receipt — NOT READY receipts are reverse edges and are excluded from gate progression by the validator.
 - **Spec Intake Gate**: When external spec input is detected (user-provided spec, document, or raw material containing multiple features), AI MUST decompose into a Feature Inventory and obtain user selection BEFORE generating any individual feature spec. Skipping decomposition for multi-feature input = Gate FAIL. Single-feature input may proceed directly. Full workflow: `.agent/workflows/spec-intake.md`.
 
 ## Agentic OS Runtime v1 (Antigravity Contract)
