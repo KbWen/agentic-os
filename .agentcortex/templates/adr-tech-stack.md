@@ -2,6 +2,7 @@
 template: true
 description: ADR template for downstream projects to define their technology stack and architectural decisions.
 usage: Used by /app-init workflow to generate project-specific ADR.
+applies_to: "**"
 ---
 
 # ADR-00N: Project Architecture & Tech Stack

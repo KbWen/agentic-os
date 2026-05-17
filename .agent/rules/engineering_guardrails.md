@@ -365,6 +365,8 @@ When AI detects a task is nearing completion (e.g., user says "done", "完成了
 
 **For `feature` / `architecture-change`**: If handoff or retro is missing, AI MUST remind: "📋 Before closing: handoff and retro haven't run yet. Want me to proceed with them now?"
 
+**For `hotfix`**: No formal handoff required (exempt per state_machine.md). AI SHOULD ask: "Hotfix done. Run a brief `/retro` to capture the root-cause lesson? (yes/skip)"
+
 **For `quick-win`**: AI SHOULD ask: "Quick task done. Run a brief retro to capture lessons? (yes/skip)"
 
 **For `tiny-fix`**: Skip entirely.

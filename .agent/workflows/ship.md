@@ -59,7 +59,7 @@ Record the warning in `## Known Risk` if the section is otherwise empty.
 Scan Work Log `## Gate Evidence` for receipts from required prior phases:
 - `feature` / `architecture-change`: bootstrap, plan, implement, review receipts required
 - `quick-win`: bootstrap, plan receipts required
-- `hotfix`: bootstrap receipt required
+- `hotfix`: bootstrap, implement, review, test receipts required (hotfix MUST reach TESTED per Entry Conditions — no implement-only shortcuts)
 
 For each missing receipt output: `"⚠️ Missing gate receipt for: [phase]. Run that phase or provide evidence before shipping."`
 User may acknowledge and proceed. Missing receipts do NOT auto-fail the gate.
@@ -216,7 +216,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
       - **Do NOT** include `prev_sha` in the `--entry` JSON yourself; the helper rejects entries that already contain it.
       - **Do NOT** call `guard_context_write.py append` for `INDEX.jsonl` — that path lacks chain awareness and will silently break the chain on next `validate.sh` (caught by `check_audit_chain.py`). The helper is the only correct path.
       - If `INDEX.jsonl` does not exist, the helper creates it. If a legacy `INDEX.md` exists, keep it as a compatibility mirror but prefer `INDEX.jsonl` for new entries.
-      - **Python-unavailable fallback**: If `python` is unavailable, write the JSONL line directly with `prev_sha: "GENESIS"` (treat as standalone entry; chain integrity becomes best-effort). Record the fallback in Work Log Drift Log.
+      - **Python-unavailable fallback**: If `python` is unavailable, **skip the INDEX.jsonl write entirely** — do NOT write a `prev_sha: "GENESIS"` entry, as that breaks the chain for every subsequent append and will cause `validate.sh check_audit_chain` to fail on the next Python-available run. Record the skip in Work Log Drift Log: `"INDEX.jsonl update skipped: python unavailable"`. Chain integrity remains intact (the entry is simply absent rather than broken).
 4. **Product Backlog Update**: If `docs/specs/_product-backlog.md` exists and this feature is listed:
    - Update feature status: `In Progress` → `Shipped`
    - Update `last_updated` in frontmatter

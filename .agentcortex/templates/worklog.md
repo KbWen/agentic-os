@@ -119,6 +119,24 @@ none
 
 ---
 
+## Design Reference
+
+> Populated by /plan for UI tasks. If not a UI task, write `none`.
+> Format: `Link: <DSoT URL or file path> | Tool: <Stitch | Figma | Pencil | other>`
+
+none
+
+---
+
+## Observability
+
+> Populated by /ship for feature/architecture-change tasks. Document the production error sink used in changed code.
+> Format: `Sink: <logger name or API> | Scope: <files> | Verified: <yes/no>`
+
+none
+
+---
+
 ## Evidence
 
 > Reproducible evidence for completed phases. Commands, outputs, versions. "It should work" is NOT evidence.

@@ -7,7 +7,7 @@ tasks:
 
 # /handoff
 
-Read-only logic. DOES NOT change state. Hard completion gate for non-`tiny-fix` tasks.
+Hard completion gate for non-`tiny-fix` tasks. Transitions `TESTED → HANDEDOFF` for `feature`/`architecture-change` (per state_machine.md). Writes `Current Phase: handoff` and a gate receipt to the Work Log.
 
 > Canonical gate: `Ref: .agent/rules/state_machine.md`
 
@@ -22,7 +22,7 @@ Read-only logic. DOES NOT change state. Hard completion gate for non-`tiny-fix` 
 
 **Phase Verification** (per bootstrap §2b): Read `Current Phase` from Work Log header. Verify transition to `handoff` is legal. If illegal, STOP. Otherwise update `Current Phase: handoff`. If a new commit was created since the last `Checkpoint SHA`, SHOULD refresh it.
 
-**Uncommitted WIP guard**: If `Checkpoint SHA` is `(uncommitted)`, the agent MUST commit or `git stash` the WIP before completing handoff, then record the resulting SHA or stash ref in the Resume Block. Handing off with un-anchored WIP leaves the next agent unable to scope resume work via `git diff <checkpoint>..HEAD`.
+**Uncommitted WIP guard**: If `Checkpoint SHA` is `none`, empty, or does not match `git rev-parse HEAD`, the agent MUST commit or `git stash` the WIP before completing handoff, then record the resulting SHA or stash ref in the Resume Block. Handing off with un-anchored WIP leaves the next agent unable to scope resume work via `git diff <checkpoint>..HEAD`.
 
 **Interrupted handoff resume**: If the Work Log already contains a `## Resume` block from a prior partial handoff execution, DO NOT re-run from scratch. Instead:
 1. Read the existing `## Resume` block and the `## Phase Summary` handoff line.

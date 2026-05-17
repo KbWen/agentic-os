@@ -53,19 +53,15 @@ Create `docs/adr/ADR-001-project-architecture.md` using the template at `.agentc
 
 Fill in all sections from user answers. For `[TBD]` items, include a `## Open Decisions` section listing them.
 
-**SSoT Update (mandatory)**: After writing the ADR file, update `current_state.md`'s `**ADR Index**` section to include the new ADR. Use `.agentcortex/tools/guard_context_write.py` when Python is available:
+**SSoT Update (mandatory)**: After writing the ADR file, insert the new ADR into `current_state.md` under the `**ADR Index**` heading. Edit the file directly — find the `**ADR Index**` line and append the new entry immediately below it:
 
-```bash
-python .agentcortex/tools/guard_context_write.py \
-  --file current_state.md \
-  --section "ADR Index" \
-  --append "- docs/adr/ADR-00N-project-architecture.md: Project Architecture · applies_to: **"
-```
-
-**Python-unavailable fallback**: Write the entry directly into `current_state.md` under `**ADR Index**`. Format:
 ```
 - docs/adr/ADR-00N-project-architecture.md: Project Architecture · applies_to: **
 ```
+
+This is an `/app-init`-specific SSoT write exception (documented alongside the `/retro` exception). It is safe to write directly because `/app-init` runs at session start before any concurrent session is active on the branch.
+
+**Do NOT use `guard_context_write.py` for this write** — that tool supports whole-file replace or end-of-file append only; it has no section-targeting capability. A direct text edit under the heading is the correct and only approach.
 
 **Why mandatory**: `validate.sh` checks ADR disk presence vs. SSoT index. Without this update, every greenfield project fails validation immediately after `/app-init` with `[FAIL] SSoT ADR Index completeness` — before the user has had a chance to run `/ship`.
 

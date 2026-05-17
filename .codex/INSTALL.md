@@ -101,6 +101,17 @@ Please run /bootstrap to classify and start this task.
 [Then describe the task — single feature, bug, or quick-win.]
 ```
 
-> **Not sure which one?** Default to A for raw ideas, C for concrete tasks.
+### D. Continue multi-feature work from an existing backlog
+
+> Use when one or more features have already shipped and you want to pick up the next item from the backlog.
+
+```text
+Please read docs/specs/_product-backlog.md and run /spec-intake §8a
+to continue with the next pending feature.
+```
+
+**Why different from C**: `/bootstrap` on an established project will surface the backlog as a side-effect, but `/spec-intake §8a` is the explicit continuation path — it reads the backlog index, skips decomposition, and feeds the next feature directly into bootstrap. This prevents re-classifying already-decomposed features.
+
+> **Not sure which one?** Default to A for raw ideas, C for concrete single tasks, D when you have a running backlog.
 > The AI's Intent Router will also auto-detect multi-feature input and
 > route to /spec-intake, but explicit beats inferred.

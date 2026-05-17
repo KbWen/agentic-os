@@ -40,9 +40,6 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 | §0 Pre-Classification Fast Check | REQUIRED | REQUIRED | REQUIRED | REQUIRED |
 | §0a App Architecture Check | SKIP | conditional¹ | REQUIRED | conditional¹ |
 | §1 Initialization & Required Reading | SKIP | REQUIRED | REQUIRED | REQUIRED |
-
-> ¹ `conditional` for quick-win/hotfix: run ONLY the `no_adr_at_all` (Exit 2) new-project check. Skip `no_covering_adr` and partial-ADR escalation — those are feature/arch-change only.
-
 | §1 Step 2a Spec Scope | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §1 Step 2b Domain Doc Context Loading | SKIP | SKIP | REQUIRED | SKIP |
 | §1 Steps 3–6 (private, migration, backlog, raw material) | SKIP | conditional | conditional | conditional |
@@ -56,6 +53,8 @@ Each classification reads ONLY the rows marked REQUIRED. Skip rows marked SKIP �
 | §5 Hard Gate | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §5b SSoT Sequence Pre-Ship Check | SKIP | REQUIRED | REQUIRED | REQUIRED |
 | §6 Antigravity Hard Stop | SKIP (auto-exit at §0) | REQUIRED | REQUIRED | REQUIRED |
+
+> ¹ `conditional` for quick-win/hotfix: run ONLY the `no_adr_at_all` (Exit 2) new-project check. Skip `no_covering_adr` and partial-ADR escalation — those are feature/arch-change only.
 
 ## 0a. App Architecture Check (Zero-Cost Gate)
 
