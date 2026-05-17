@@ -1578,6 +1578,44 @@ if ($adrCount -gt 0) {
     else {
         Add-Result -Level 'PASS' -Message 'project spec template present alongside ADR(s)'
     }
+    # Round-15 Finding 1/10: Project Name SSoT presence check
+    $csFile = Join-NormalPath $root '.agentcortex/context/current_state.md'
+    if (Test-Path -Path $csFile -PathType Leaf) {
+        $csContent15 = Get-Content -Path $csFile -Raw -Encoding UTF8
+        $projNameM = [regex]::Match($csContent15, '(?m)\*\*Project Name\*\*:\s*(.+)')
+        $projNameVal = if ($projNameM.Success) { $projNameM.Groups[1].Value.Trim() } else { '' }
+        if ([string]::IsNullOrWhiteSpace($projNameVal) -or $projNameVal -eq '(set by /app-init)') {
+            Add-Result -Level 'WARN' -Message "Project Name field absent or placeholder in current_state.md -- /app-init has run (ADRs exist) but SSoT Project Name was not set; spec-intake will fall back to glob template resolution"
+        } else {
+            Add-Result -Level 'PASS' -Message "SSoT Project Name is set: $projNameVal"
+        }
+    }
+}
+
+# Round-15 Finding 7: Spec frontmatter status validation
+$validStatuses = @('draft','frozen','shipped','cancelled','living')
+$specBadStatus = 0; $specMissingFrontmatter = 0; $specFileCount = 0
+$specsDir = Join-NormalPath $root 'docs/specs'
+if (Test-Path -Path $specsDir -PathType Container) {
+    foreach ($specFile in (Get-ChildItem -Path $specsDir -Filter '*.md' -File -ErrorAction SilentlyContinue)) {
+        if ($specFile.Name -eq '.gitkeep.md') { continue }  # skip placeholder
+        $specFileCount++
+        $specLines = Get-Content -Path $specFile.FullName -Encoding UTF8 -ErrorAction SilentlyContinue
+        if (-not $specLines -or $specLines[0].TrimEnd() -ne '---') {
+            $specMissingFrontmatter++; continue
+        }
+        $statusLine = $specLines | Select-Object -Skip 1 | Where-Object { $_ -match '^status:\s*' } | Select-Object -First 1
+        if (-not $statusLine) { $specMissingFrontmatter++; continue }
+        $statusVal = ($statusLine -replace '^status:\s*','').Trim()
+        if ($validStatuses -notcontains $statusVal) { $specBadStatus++ }
+    }
+}
+if ($specMissingFrontmatter -gt 0) {
+    Add-Result -Level 'WARN' -Message "docs/specs/ files missing YAML frontmatter or status field: $specMissingFrontmatter (engineering_guardrails.md §4.2 requires status: draft|frozen|shipped|cancelled)"
+} elseif ($specBadStatus -gt 0) {
+    Add-Result -Level 'WARN' -Message "docs/specs/ files with unrecognized status value: $specBadStatus (valid: draft, frozen, shipped, cancelled, living)"
+} elseif ($specFileCount -gt 0) {
+    Add-Result -Level 'PASS' -Message 'all docs/specs/ files have valid status frontmatter'
 }
 
 # ACX phase shim skill-existence check (parity with validate.sh)

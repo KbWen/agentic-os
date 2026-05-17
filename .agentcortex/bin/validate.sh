@@ -1716,6 +1716,55 @@ if [[ "$adr_count" -gt 0 ]]; then
   else
     record_result PASS "project spec template present alongside ADR(s)"
   fi
+  # Round-15 Finding 1/10: Project Name SSoT presence check — if /app-init ran,
+  # current_state.md must have a non-empty, non-placeholder Project Name field.
+  cs_file="$ROOT/.agentcortex/context/current_state.md"
+  if [[ -f "$cs_file" ]]; then
+    proj_name="$(grep -m1 -i '\*\*Project Name\*\*:' "$cs_file" | sed 's/.*Project Name\*\*:[[:space:]]*//' | tr -d '\r' | xargs)"
+    if [[ -z "$proj_name" || "$proj_name" == "(set by /app-init)" ]]; then
+      record_result WARN "Project Name field absent or placeholder in current_state.md — /app-init has run (ADRs exist) but SSoT Project Name was not set; spec-intake will fall back to glob template resolution"
+    else
+      record_result PASS "SSoT Project Name is set: ${proj_name}"
+    fi
+  fi
+fi
+
+# Round-15 Finding 7: Spec frontmatter status validation — each docs/specs/*.md
+# must have YAML frontmatter with a recognized 'status:' value.
+VALID_SPEC_STATUSES="draft|frozen|shipped|cancelled|living"
+spec_bad_status=0
+spec_missing_frontmatter=0
+if [[ -d "$ROOT/docs/specs" ]]; then
+  shopt -s nullglob
+  for spec in "$ROOT/docs/specs"/*.md; do
+    [[ -f "$spec" ]] || continue
+    # Skip .gitkeep.md placeholder files
+    [[ "$(basename "$spec")" == ".gitkeep.md" ]] && continue
+    # Check YAML frontmatter presence (first line must be ---)
+    first_line="$(head -n1 "$spec" 2>/dev/null | tr -d '\r')"
+    if [[ "$first_line" != "---" ]]; then
+      spec_missing_frontmatter=$((spec_missing_frontmatter + 1))
+      continue
+    fi
+    # Extract status: value from frontmatter
+    status_val="$(awk '/^---/{if(n++) exit} /^status:/{print}' "$spec" | sed 's/status:[[:space:]]*//' | tr -d '\r' | xargs)"
+    if [[ -z "$status_val" ]]; then
+      spec_missing_frontmatter=$((spec_missing_frontmatter + 1))
+    elif ! printf '%s' "$status_val" | grep -qE "^(${VALID_SPEC_STATUSES})$"; then
+      spec_bad_status=$((spec_bad_status + 1))
+    fi
+  done
+  shopt -u nullglob
+fi
+if [[ "$spec_missing_frontmatter" -gt 0 ]]; then
+  record_result WARN "docs/specs/ files missing YAML frontmatter or status field: ${spec_missing_frontmatter} (engineering_guardrails.md §4.2 requires status: draft|frozen|shipped|cancelled)"
+elif [[ "$spec_bad_status" -gt 0 ]]; then
+  record_result WARN "docs/specs/ files with unrecognized status value: ${spec_bad_status} (valid: draft, frozen, shipped, cancelled, living)"
+else
+  # Only emit PASS when specs directory has files to check
+  spec_file_count=0
+  for f in "$ROOT/docs/specs"/*.md; do [[ -f "$f" ]] && spec_file_count=$((spec_file_count + 1)); done
+  [[ "$spec_file_count" -gt 0 ]] && record_result PASS "all docs/specs/ files have valid status frontmatter"
 fi
 
 # ACX phase shim skill-existence check: for each .claude/agents/acx-*.md,
