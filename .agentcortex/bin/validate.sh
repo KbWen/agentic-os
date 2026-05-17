@@ -945,6 +945,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   phase_summary_missing=0
   sentinel_marker_missing=0
   test_gate_results_missing=0
+  current_phase_incoherent=0
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1035,21 +1036,16 @@ gates = []
 for l in lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
+        phase = m.group(1).lower()
+        # retro is out-of-band; exclude to avoid false illegal-transition flags
+        if phase == 'retro':
+            continue
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
         v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
         if v and v.group(1).strip().upper() != 'PASS':
             continue
-        gates.append(m.group(1).lower())
-if len(gates) < 2:
-    print('ok')
-    sys.exit(0)
-for i in range(1, len(gates)):
-    prev, curr = gates[i-1], gates[i]
-    allowed = LEGAL.get(prev, [])
-    if curr not in allowed:
-        print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
-        sys.exit(0)
-# Completeness: if shipped, all required phases must have PASS receipts
+        gates.append(phase)
+# Completeness check first — valid even with 1 gate (avoids early-return bypass)
 gate_set = set(gates)
 if 'ship' in gate_set:
     if wl_class in ('feature', 'architecture-change'):
@@ -1061,6 +1057,16 @@ if 'ship' in gate_set:
     missing_phases = required - gate_set
     if missing_phases:
         print(f'incomplete:{",".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
+        sys.exit(0)
+# Progression check requires 2+ gates
+if len(gates) < 2:
+    print('ok')
+    sys.exit(0)
+for i in range(1, len(gates)):
+    prev, curr = gates[i-1], gates[i]
+    allowed = LEGAL.get(prev, [])
+    if curr not in allowed:
+        print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
 print('ok')
 " <<< "$wl_content" 2>/dev/null)"
@@ -1112,6 +1118,15 @@ for l in sys.stdin:
         fi
       fi
     fi
+    # Current Phase consistency (HIGH-2): if a ship PASS receipt exists,
+    # Current Phase should be 'ship'. Divergence means the header was not updated.
+    if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
+      cp_val="$(printf '%s' "$wl_content" | grep -m1 -iE '^-[[:space:]]*\*?\*?Current Phase\*?\*?:' \
+        | sed 's/.*Current Phase[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)"
+      if [[ -n "$cp_val" && "$cp_val" != "ship" ]]; then
+        current_phase_incoherent=$((current_phase_incoherent + 1))
+      fi
+    fi
   done
   if [[ "$phase_field_missing" -gt 0 ]]; then
     record_result WARN "work logs missing Current Phase field: ${phase_field_missing}"
@@ -1156,6 +1171,11 @@ for l in sys.stdin:
     record_result WARN "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): ${test_gate_results_missing}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "test gate results evidence present in applicable work logs"
+  fi
+  if [[ "$current_phase_incoherent" -gt 0 ]]; then
+    record_result WARN "work logs with ship PASS receipt but Current Phase != ship (header not updated): ${current_phase_incoherent}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "Current Phase field is consistent with last gate receipt in all work logs"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
@@ -1402,8 +1422,18 @@ else
   record_result WARN "SSoT completeness checks skipped: current_state.md not found"
 fi
 
-# Backlog schema check: verify Kind/Labels/Priority columns present when backlog exists
+# Backlog Feature Inventory check (MEDIUM-2): spec-intake multi-feature decomposition gate
+# requires a ## Feature Inventory section per AGENTS.md §Delivery Gates.
 BACKLOG_FILE="$ROOT/docs/specs/_product-backlog.md"
+if [[ -f "$BACKLOG_FILE" ]]; then
+  if ! grep -qiE '^#+[[:space:]]+Feature Inventory' "$BACKLOG_FILE" 2>/dev/null; then
+    record_result WARN "backlog missing Feature Inventory section: _product-backlog.md exists but has no '## Feature Inventory' heading -- spec-intake multi-feature decomposition gate may have been skipped"
+  else
+    record_result PASS "backlog Feature Inventory section present"
+  fi
+fi
+
+# Backlog schema check: verify Kind/Labels/Priority columns present when backlog exists
 if [[ -f "$BACKLOG_FILE" ]]; then
   backlog_header="$(grep -m1 '|.*Feature.*|' "$BACKLOG_FILE" 2>/dev/null || true)"
   missing_cols=()

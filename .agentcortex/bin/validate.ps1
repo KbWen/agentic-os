@@ -896,6 +896,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $phaseSummaryMissing = 0
     $sentinelMarkerMissing = 0
     $testGateResultsMissing = 0
+    $currentPhaseIncoherent = 0
     # Legal phase transitions for gate evidence validation (classification-aware)
     # quick-win / unknown: implement can go directly to ship (fast path)
     $legalDefault = @{
@@ -965,16 +966,36 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         } else {
             # Parse gate receipts: only PASS verdicts are forward transitions;
             # NOT READY / FAIL receipts are reverse edges and must be excluded.
+            # retro is out-of-band — exclude to avoid false illegal-transition flags.
             $gateList = [System.Collections.Generic.List[string]]::new()
             foreach ($line in ($content -split "`n")) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
-                if ($gm.Success -and $line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
-                    $gateList.Add($gm.Groups[1].Value.ToLower())
+                if ($gm.Success) {
+                    $gPhase = $gm.Groups[1].Value.ToLower()
+                    if ($gPhase -ne 'retro' -and $line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
+                        $gateList.Add($gPhase)
+                    }
                 }
             }
             $gates = @($gateList)
+            # Completeness check first — valid even with 1 gate (avoids early-return bypass)
+            $gateSet = @{}
+            foreach ($g in $gates) { $gateSet[$g] = $true }
+            if ($gateSet.ContainsKey('ship')) {
+                $requiredPhases = @()
+                if ($wlClassForGates -in @('feature','architecture-change')) {
+                    $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
+                } elseif ($wlClassForGates -eq 'hotfix') {
+                    $requiredPhases = @('bootstrap','plan','implement','review','test')
+                }
+                $missingPhases = $requiredPhases | Where-Object { -not $gateSet.ContainsKey($_) }
+                if ($missingPhases) {
+                    Write-Output "  incomplete gate receipts in $($wl.Name): missing $($missingPhases -join ',')"
+                    $gateProgressionIllegal++
+                }
+            }
+            # Progression check requires 2+ gates
             if ($gates.Count -ge 2) {
-                $progressionFailed = $false
                 for ($i = 1; $i -lt $gates.Count; $i++) {
                     $prev = $gates[$i - 1]
                     $curr = $gates[$i]
@@ -982,26 +1003,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     if ($allowed -and ($curr -notin $allowed)) {
                         Write-Output "  illegal gate progression in $($wl.Name): ${prev}->${curr}"
                         $gateProgressionIllegal++
-                        $progressionFailed = $true
                         break
-                    }
-                }
-                # Completeness: if shipped, all required phases must have PASS receipts
-                if (-not $progressionFailed) {
-                    $gateSet = @{}
-                    foreach ($g in $gates) { $gateSet[$g] = $true }
-                    if ($gateSet.ContainsKey('ship')) {
-                        $requiredPhases = @()
-                        if ($wlClassForGates -in @('feature','architecture-change')) {
-                            $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
-                        } elseif ($wlClassForGates -eq 'hotfix') {
-                            $requiredPhases = @('bootstrap','plan','implement','review','test')
-                        }
-                        $missingPhases = $requiredPhases | Where-Object { -not $gateSet.ContainsKey($_) }
-                        if ($missingPhases) {
-                            Write-Output "  incomplete gate receipts in $($wl.Name): missing $($missingPhases -join ',')"
-                            $gateProgressionIllegal++
-                        }
                     }
                 }
             }
@@ -1025,6 +1027,12 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             -and ($content -match '(?i)Gate:\s*implement') `
             -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {
             $testGateResultsMissing++
+        }
+        # Current Phase consistency (HIGH-2): if ship PASS receipt exists, Current Phase should be 'ship'
+        if ($content -match '(?i)Gate:\s*ship\s*\|[^|\r\n]*Verdict:\s*PASS') {
+            $cpM = [regex]::Match($content, '(?m)^-\s+\*?\*?Current Phase\*?\*?:\s*`?(\w[\w-]*)')
+            if (-not $cpM.Success) { $cpM = [regex]::Match($content, '(?m)^\|\s*\*?\*?Current Phase\*?\*?\s*\|\s*`?(\w[\w-]*)') }
+            if ($cpM.Success -and $cpM.Groups[1].Value.ToLower() -ne 'ship') { $currentPhaseIncoherent++ }
         }
     }
     if ($phaseFieldMissing -gt 0) {
@@ -1064,6 +1072,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): $testGateResultsMissing"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'test gate results evidence present in applicable work logs'
+    }
+    if ($currentPhaseIncoherent -gt 0) {
+        Add-Result -Level 'WARN' -Message "work logs with ship PASS receipt but Current Phase != ship (header not updated): $currentPhaseIncoherent"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'Current Phase field is consistent with last gate receipt in all work logs'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock
@@ -1311,8 +1324,19 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
     }
 }
 
-# Backlog schema check: verify Kind/Labels/Priority columns present when backlog exists
+# Backlog Feature Inventory check (MEDIUM-2): spec-intake multi-feature decomposition gate
+# requires a ## Feature Inventory section per AGENTS.md §Delivery Gates.
 $backlogFile = Join-NormalPath $root 'docs/specs/_product-backlog.md'
+if (Test-Path -Path $backlogFile -PathType Leaf) {
+    $backlogRaw = Get-NormalizedContent -Path $backlogFile
+    if ($backlogRaw -notmatch '(?im)^#+\s+Feature Inventory') {
+        Add-Result -Level 'WARN' -Message "backlog missing Feature Inventory section: _product-backlog.md exists but has no '## Feature Inventory' heading -- spec-intake multi-feature decomposition gate may have been skipped"
+    } else {
+        Add-Result -Level 'PASS' -Message 'backlog Feature Inventory section present'
+    }
+}
+
+# Backlog schema check: verify Kind/Labels/Priority columns present when backlog exists
 if (Test-Path -Path $backlogFile -PathType Leaf) {
     $backlogLines = Get-Content -Path $backlogFile -Encoding utf8
     $backlogHeader = $backlogLines | Where-Object { $_ -match '\|.*Feature.*\|' } | Select-Object -First 1
