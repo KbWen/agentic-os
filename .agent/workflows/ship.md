@@ -145,7 +145,7 @@ Entering "Merge now" is PROHIBITED if evidence is insufficient.
 
 ## Entry Conditions (HARD)
 
-1. Current state is `TESTED` (for `quick-win`/`hotfix`: `IMPLEMENTED` with evidence is sufficient).
+1. Current state is `TESTED`. Exception: `quick-win` MAY ship from `IMPLEMENTING` when inline evidence is present (fast-path per `state_machine.md`). `hotfix` MUST reach `TESTED` first — it is NOT eligible for the implement fast-path.
 2. `feature` and `architecture-change` MUST have completed `/handoff`. `quick-win` and `hotfix` are exempt from `/handoff` (per engineering_guardrails.md §10.4).
 3. When `/handoff` is required, references MUST meet minimums (doc + code + work log).
 4. **Security Gate**: No unresolved CRITICAL/HIGH security findings in Work Log (per `.agent/rules/security_guardrails.md` §6). If found, `verdict: fail`, `missing: ["security: N unresolved CRITICAL/HIGH findings"]`.

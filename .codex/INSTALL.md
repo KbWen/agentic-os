@@ -58,7 +58,8 @@ The right first command depends on your starting point. **Always start with this
 
 ```text
 Read and follow AGENTS.md first — it is the canonical governance for this repo.
-DO NOT claim completion until /review and /test have passed.
+DO NOT claim completion without the evidence required for the task's classification
+(feature/hotfix: /review + /test required; quick-win/tiny-fix: diff + verification sufficient).
 ```
 
 Then add ONE of the three openers below:

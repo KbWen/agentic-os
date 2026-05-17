@@ -95,6 +95,7 @@ check_file_group() {
     for f in "${missing[@]}"; do
       printf '  missing: %s\n' "$f"
     done
+    printf '  fix: re-run deploy (installers/deploy_brain.sh) to restore missing framework files\n'
   else
     record_result PASS "$label"
   fi
@@ -131,6 +132,7 @@ check_dir_group() {
     for d in "${missing[@]}"; do
       printf '  missing: %s\n' "$d"
     done
+    printf '  fix: re-run deploy (installers/deploy_brain.sh) to restore missing framework directories\n'
   else
     record_result PASS "$label"
   fi
@@ -1032,7 +1034,7 @@ print('ok')
     # under "Test Gate Results" for feature/architecture-change work logs that have
     # reached the implement or later phase. WARN-only: converts §12.2 from honor-system
     # to auditable evidence requirement.
-    wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r')"
+    wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r\`')"
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
       if printf '%s' "$wl_content" | grep -q 'Gate: implement'; then
         if ! printf '%s' "$wl_content" | grep -qiE '^#+[[:space:]]+Test Gate Results'; then

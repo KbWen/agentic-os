@@ -957,7 +957,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         # Test Gate Results — engineering_guardrails.md §12.2 requires evidence under
         # "Test Gate Results" for feature/architecture-change logs that reached implement.
         $wlClass = ''
-        if ($content -match '(?m)^- \*?\*?Classification\*?\*?:\s*(.+?)\s*$') { $wlClass = $Matches[1].Trim() }
+        if ($content -match '(?m)^- \*?\*?Classification\*?\*?:\s*(.+?)\s*$') { $wlClass = $Matches[1].Trim() -replace '`', '' }
         if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') `
             -and ($content -match '(?i)Gate:\s*implement') `
             -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {

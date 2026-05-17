@@ -2,11 +2,13 @@
 name: hotfix
 description: Emergency patch workflow. Root cause analysis followed by minimal fix.
 tasks:
+  - bootstrap
   - research
   - plan
   - implement
   - review
   - test
+  - ship
 ---
 
 # Hotfix Workflow

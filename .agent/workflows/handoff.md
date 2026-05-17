@@ -13,13 +13,16 @@ Read-only logic. DOES NOT change state. Hard completion gate for non-`tiny-fix` 
 
 ## 1. Trigger Conditions
 
-- Non-`tiny-fix`, Non-`quick-win`: MUST execute before pause, end, or handoff. AI should remind the user if this step is missing (see §10.6 Completion Guard).
+- Non-`tiny-fix`, Non-`quick-win`, Non-`hotfix`: MUST execute before pause, end, or handoff. AI should remind the user if this step is missing (see §10.6 Completion Guard).
+- `hotfix`: Exempt from formal handoff (fast-path to `/ship` per `engineering_guardrails.md §10.2`); MUST provide evidence (diff + behavior verification).
 - `quick-win`: Exempt from formal handoff, but AI SHOULD offer a brief `/retro`.
 - `tiny-fix`: Exempt, but MUST retain minimal evidence.
 
 ## 1a. Phase Verification
 
 **Phase Verification** (per bootstrap §2b): Read `Current Phase` from Work Log header. Verify transition to `handoff` is legal. If illegal, STOP. Otherwise update `Current Phase: handoff`. If a new commit was created since the last `Checkpoint SHA`, SHOULD refresh it.
+
+**Uncommitted WIP guard**: If `Checkpoint SHA` is `(uncommitted)`, the agent MUST commit or `git stash` the WIP before completing handoff, then record the resulting SHA or stash ref in the Resume Block. Handing off with un-anchored WIP leaves the next agent unable to scope resume work via `git diff <checkpoint>..HEAD`.
 
 ## 2. Platform Specialization
 
@@ -110,7 +113,7 @@ Each phase appends one compact result line. Later phases (and the next agent) ca
 - Append only what changed in this turn (delta log).
 - DO NOT restate old background unless it is required for a decision or rollback.
 - If context repeats, link to the previous section instead of re-writing full paragraphs.
-- Preserve the runtime contract sections (`## Task Description`, `## Phase Sequence`, `## Evidence`, `## External References`, `## Known Risk`, `## Conflict Resolution`, `## Skill Notes`). Update them incrementally; do not delete them during compaction.
+- Preserve the runtime contract sections (`## Gate Evidence`, `## Task Description`, `## Phase Sequence`, `## Evidence`, `## External References`, `## Known Risk`, `## Conflict Resolution`, `## Skill Notes`). Update them incrementally; do not delete them during compaction.
 - For `## Skill Notes` and `## Conflict Resolution`, "update incrementally" means appending new phase notes or new conflict decisions only. Do NOT rewrite, compress, or replace existing validated entries.
 
 ## 6. Work Log Compaction Trigger
