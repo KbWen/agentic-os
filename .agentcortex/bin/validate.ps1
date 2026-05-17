@@ -898,6 +898,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $testGateResultsMissing = 0
     $currentPhaseIncoherent = 0
     $shippedNotArchived = 0
+    $evidencePlaceholderOnly = 0
     # Legal phase transitions for gate evidence validation (classification-aware)
     # quick-win / unknown: implement can go directly to ship (fast path)
     $legalDefault = @{
@@ -1036,6 +1037,14 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             if ($cpM.Success -and $cpM.Groups[1].Value.ToLower() -ne 'ship') { $currentPhaseIncoherent++ }
             # Archival check (Item 1): shipped log in active work/ means /ship step 3 (archival) was skipped
             if (-not $cpM.Success -or $cpM.Groups[1].Value.ToLower() -eq 'ship') { $shippedNotArchived++ }
+            # MEDIUM-3: evidence non-empty check for shipped feature/arch-change
+            if ($wlClass -in @('feature','architecture-change')) {
+                $evidenceMatch = [regex]::Match($content, '(?ms)^## Evidence\r?\n(.*?)(?=^## |\z)')
+                $evidenceBody = if ($evidenceMatch.Success) { $evidenceMatch.Groups[1].Value.Trim() } else { '' }
+                if ([string]::IsNullOrWhiteSpace($evidenceBody) -or $evidenceBody -match 'Pending:\s*bootstrap only') {
+                    $evidencePlaceholderOnly++
+                }
+            }
         }
     }
     if ($phaseFieldMissing -gt 0) {
@@ -1085,6 +1094,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "shipped work logs still in active work/ directory (archival incomplete — /ship step 3 skipped?): $shippedNotArchived"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'no shipped work logs found in active work/ directory'
+    }
+    if ($evidencePlaceholderOnly -gt 0) {
+        Add-Result -Level 'WARN' -Message "feature/arch-change shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP): $evidencePlaceholderOnly"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'shipped feature/arch-change work logs have non-placeholder Evidence sections'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock

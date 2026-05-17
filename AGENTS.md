@@ -36,7 +36,11 @@ Global directives for all AI agents. Loaded automatically every turn
 - **Work Log Contract**: Non-`tiny-fix` Work Logs MUST include **header fields**: `Branch`, `Classification`, `Classified by`, `Frozen`, `Created Date`, `Owner`, `Guardrails Mode`, `Current Phase`, `Checkpoint SHA`, `Recommended Skills`, `Primary Domain Snapshot`, `SSoT Sequence`; and **runtime sections**: `## Session Info`, `## Drift Log`, `## Task Description`, `## Phase Sequence`, `## Phase Summary`, `## Gate Evidence`, `## External References`, `## Known Risk`, `## Conflict Resolution`, `## Skill Notes`, `## Evidence`. Missing sections → write `none`. `Current Phase` updated by each workflow on entry (bootstrap §2b). `Checkpoint SHA` set by `/implement`, refreshed on later commits. `## Gate Evidence` records receipts (gate, verdict, classification, timestamp). Active Work Logs stay local-only. Template: `.agentcortex/templates/worklog.md`.
 
 > [!IMPORTANT]
-> `/retro` may append structured `## Global Lessons` entries to `current_state.md` via `.agentcortex/tools/guard_context_write.py`. This is the ONLY non-ship SSoT write exception. Do not generalize this precedent to `/implement`, `/review`, or any other workflow.
+> **Non-ship SSoT write exceptions (exhaustive list)**:
+> - `/retro`: may append `## Global Lessons` entries via `guard_context_write.py`.
+> - `/app-init`: writes Project Name and ADR Index entry directly (guard has no section-targeting).
+> - `/adr`: writes new ADR entry to ADR Index directly (same reason); MUST log in Work Log `## Drift Log`.
+> All three MUST be logged in Work Log `## Drift Log`. Do NOT generalize to `/implement`, `/review`, or any other workflow.
 
 ## Multi-Person / Multi-Session Collaboration
 

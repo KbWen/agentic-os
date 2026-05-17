@@ -70,7 +70,7 @@ Scan Work Log `## Phase Summary` and the plan's compact block for a `Confidence:
 
 ## Ship Checklist (mandatory — skip = ship fail)
 
-- [ ] Evidence recorded in Work Log
+- [ ] Evidence recorded in Work Log `## Evidence` section (non-empty; bootstrap placeholder `"Pending: bootstrap only"` is NOT sufficient — Ref: `engineering_guardrails.md §5.2b`)
 - [ ] `current_state.md` updated
 - [ ] Active Work Log archived to `.agentcortex/context/archive/`
 - [ ] Spec-Test trace verified (feature / architecture-change only — see §Spec-Test Traceability below)
@@ -193,7 +193,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 - Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot) via `.agentcortex/tools/guard_context_write.py`.
 - Use the helper as documented in `.agentcortex/docs/guides/guarded-context-writes.md`. In Stage 1, missing guard receipts are a validation warning, not a hard runtime block.
    - **Spec Index Cap**: Before updating Spec Index, count existing entries. If count ≥ `document_lifecycle.spec_index_max_entries` (default: 30 from `.agent/config.yaml`), move the oldest `shipped` entries to a `## Spec Index Archive` section at the bottom of `current_state.md`. Archived entries are not auto-read during bootstrap.
-   - MUST append the completion record to the bottom of the file under `## Ship History`.
+   - MUST append the completion record to the bottom of the file under `## Ship History` via `.agentcortex/tools/guard_context_write.py` (append mode). See `.agentcortex/docs/guides/guarded-context-writes.md`. **Note**: The Work Log `SSoT Sequence` header field is a bootstrap-time snapshot and is NOT incremented at ship — do not attempt to update it.
    - Use the format:
 
      ```markdown
