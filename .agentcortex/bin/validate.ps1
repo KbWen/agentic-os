@@ -930,9 +930,12 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     foreach ($wl in $worklogs) {
         $content = Get-Content -Path $wl.FullName -Raw -ErrorAction SilentlyContinue
         if (-not $content) { continue }
-        # Select legal-transition dict based on classification
+        # Select legal-transition dict based on classification (accept list and table form)
         $wlClassForGates = ''
         $wlClassForGatesMatch = [regex]::Match($content, '(?m)^-\s+(?:\*\*)?[Cc]lassification(?:\*\*)?\s*:\s+`?([a-zA-Z][\w-]*)`?')
+        if (-not $wlClassForGatesMatch.Success) {
+            $wlClassForGatesMatch = [regex]::Match($content, '(?m)^\|\s*(?:\*\*)?[Cc]lassification(?:\*\*)?\s*\|\s*`?([a-zA-Z][\w-]*)')
+        }
         if ($wlClassForGatesMatch.Success) { $wlClassForGates = $wlClassForGatesMatch.Groups[1].Value.ToLower() }
         $legalTransitions = if ($wlClassForGates -in @('feature','architecture-change')) { $legalStrict }
                             elseif ($wlClassForGates -eq 'hotfix') { $legalHotfix }
@@ -986,6 +989,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         # "Test Gate Results" for feature/architecture-change logs that reached implement.
         $wlClass = ''
         if ($content -match '(?m)^- \*?\*?Classification\*?\*?:\s*(.+?)\s*$') { $wlClass = $Matches[1].Trim() -replace '`', '' }
+        if ([string]::IsNullOrEmpty($wlClass)) {
+            if ($content -match '(?m)^\|\s*(?:\*\*)?[Cc]lassification(?:\*\*)?\s*\|\s*`?([a-zA-Z][\w-]*)') { $wlClass = $Matches[1].Trim() }
+        }
         if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') `
             -and ($content -match '(?i)Gate:\s*implement') `
             -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {

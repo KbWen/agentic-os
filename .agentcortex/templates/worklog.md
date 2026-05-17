@@ -68,7 +68,7 @@ none
 
 ## Gate Evidence
 
-> Gate receipts written by each phase. Format: `gate: <phase> | verdict: pass/fail | classification: <type> | timestamp: <ISO>`
+> Gate receipts written by each phase. Format: `- Gate: <phase> | Verdict: PASS | Classification: <type> | Timestamp: <ISO>`
 
 none
 

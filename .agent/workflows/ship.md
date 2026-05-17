@@ -57,7 +57,7 @@ Record the warning in `## Known Risk` if the section is otherwise empty.
 ### Gate Receipt Audit (/ship only)
 
 Scan Work Log `## Gate Evidence` for receipts from required prior phases:
-- `feature` / `architecture-change`: bootstrap, plan, implement, review receipts required
+- `feature` / `architecture-change`: bootstrap, plan, implement, review, test, handoff receipts required
 - `quick-win`: bootstrap, plan receipts required
 - `hotfix`: bootstrap, implement, review, test receipts required (hotfix MUST reach TESTED per Entry Conditions — no implement-only shortcuts)
 

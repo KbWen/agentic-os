@@ -1017,7 +1017,10 @@ content = sys.stdin.read()
 lines = content.splitlines()
 wl_class = ''
 for l in lines:
-    m = re.match(r'^-\s+(?:\*\*)?[Cc]lassification(?:\*\*)?\s*:\s+\`?([a-zA-Z][\w-]*)\`?', l)
+    m = re.match(r'^-\s+(?:\*\*)?[Cc]lassification(?:\*\*)?\s*:\s+\`?([a-zA-Z][\w-]*)', l)
+    if not m:
+        # table form: | Classification | `feature` |
+        m = re.match(r'^\|\s*(?:\*\*)?[Cc]lassification(?:\*\*)?\s*\|\s*\`?([a-zA-Z][\w-]*)', l)
     if m:
         wl_class = m.group(1).lower()
         break
@@ -1068,7 +1071,19 @@ print('ok')
     # under "Test Gate Results" for feature/architecture-change work logs that have
     # reached the implement or later phase. WARN-only: converts §12.2 from honor-system
     # to auditable evidence requirement.
-    wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r\`')"
+    # Parse classification from list form ("- Classification:") or table form ("| Classification |")
+    if [[ -n "$PYTHON_BIN" ]]; then
+      wl_class="$(printf '%s' "$wl_content" | "$PYTHON_BIN" -c "
+import re,sys
+for l in sys.stdin:
+    m=re.match(r'^-\s+\*{0,2}[Cc]lassification\*{0,2}\s*:\s*\x60?([a-zA-Z][\w-]*)',l)
+    if not m: m=re.match(r'^\|\s*\*{0,2}[Cc]lassification\*{0,2}\s*\|\s*\x60?([a-zA-Z][\w-]*)',l)
+    if m: print(m.group(1).lower()); break
+" 2>/dev/null)"
+    else
+      # Python unavailable: list-form-only fallback
+      wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r\`')"
+    fi
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
       if printf '%s' "$wl_content" | grep -q 'Gate: implement'; then
         if ! printf '%s' "$wl_content" | grep -qiE '^#+[[:space:]]+Test Gate Results'; then

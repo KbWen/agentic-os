@@ -310,7 +310,7 @@ Agentic OS deploys workflows and skills into downstream projects. Those projects
 | **quick-win** | bootstrap → check Spec Index → plan → implement → evidence → ship (review and test are optional when evidence is inline) | diff + before/after behavior statement |
 | **feature** | bootstrap → spec → plan → implement → review → test → handoff → ship | test output + verifiable demo steps |
 | **architecture-change** | bootstrap → ADR → spec → plan → implement → review → test → handoff → ship | migration plan + rollback verification |
-| **hotfix** | bootstrap → research → plan → implement → review → test → ship | root cause + fix verification + retro |
+| **hotfix** | bootstrap → research (advisory, no gate receipt) → plan → implement → review → test → ship | root cause + fix verification + retro |
 
 AI self-enforces the phase order above. Users may invoke phases via slash commands (as shortcuts) or natural language.
 
