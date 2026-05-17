@@ -108,6 +108,11 @@ No evidence = no completion. This is non-negotiable.
 - If adversarial testing ran, record results under `## Red Team Findings`
 - State transition: task may proceed to `/review` or `/ship` only after evidence is persisted
 
+**Gate Receipt**: After evidence is persisted, append to Work Log `## Gate Evidence`:
+```
+- Gate: test | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
+```
+
 ## Output Compression Rule
 
 Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /test`.

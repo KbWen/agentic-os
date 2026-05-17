@@ -80,6 +80,12 @@ Files the next agent can SKIP (already processed, no changes expected):
 - Next Recommended: [feature name or "user choice"]
 ```
 
+**Gate Receipt**: After the Resume Block is written, append to Work Log `## Gate Evidence`:
+```
+- Gate: handoff | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
+```
+This makes the `TESTED → HANDEDOFF → SHIPPED` chain auditable — the validator's STRICT progression check (`test → handoff → ship`) can only fire when handoff emits this receipt.
+
 > **Why Read Map + Skip List?** The biggest cross-session token waste is the next agent re-reading files the previous agent already processed. The Read Map tells it exactly where to look; the Skip List prevents redundant reads. Together they can cut handoff bootstrap tokens by 40-60%.
 
 ## 3a. Skill-Aware Handoff (Auto-Enforced)

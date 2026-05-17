@@ -9,7 +9,14 @@ description: Workflow for implement
 
 **Phase Verification** (per bootstrap §2b): Read `Current Phase` from Work Log header. Verify transition to `implement` is legal. If illegal, STOP. Otherwise update `Current Phase: implement`.
 
+**Resume-after-review**: If the prior phase was `review` (Work Log gate evidence shows a NOT READY verdict with `Transition: REVIEWED→IMPLEMENTING`), read Work Log `## Review Feedback` before writing any code. The resume scope is ONLY the UNPROVEN/blocking rows from the burden-of-proof table — do NOT re-implement already-passing items.
+
 **Checkpoint SHA**: Before any code changes, record `Checkpoint SHA: <git HEAD>` in the Work Log header. This anchors the resume point for interrupted sessions. The next agent can `git diff <checkpoint>..HEAD` to scope unfinished work.
+
+**Gate Receipt (on completion)**: After the final commit (Checkpoint SHA is current), append to Work Log `## Gate Evidence`:
+```
+- Gate: implement | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
+```
 
 ## Direct Execution Rule (Turn 1 — feature / architecture-change only)
 
