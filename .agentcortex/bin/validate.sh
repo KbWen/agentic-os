@@ -1059,14 +1059,22 @@ for l in lines:
 # T154: only the FIRST ## Gate Evidence section is authoritative;
 # subsequent duplicate headings are ignored (closes split-section bypass)
 # T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
+# T178: also covers tilde (~~~) fences
+# T181: also track HTML comment blocks (<!-- ... -->) to block injection via comment content
 in_gate_evidence_section = False
 gate_evidence_seen = False
 gate_lines = []
 in_code_fence = False
+in_html_comment = False
 for l in lines:
-    if not in_gate_evidence_section and re.match(r'^(\x60{3,}|~{3,})', l):
-        in_code_fence = not in_code_fence
-    if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen and not in_code_fence:
+    if not in_gate_evidence_section:
+        if re.match(r'^(\x60{3,}|~{3,})', l):
+            in_code_fence = not in_code_fence
+        if '<!--' in l:
+            in_html_comment = True
+        if '-->' in l:
+            in_html_comment = False
+    if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen and not in_code_fence and not in_html_comment:
         in_gate_evidence_section = True
         gate_evidence_seen = True
         continue

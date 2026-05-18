@@ -986,14 +986,20 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Prevents code blocks in other sections from injecting fake gate receipts
             # T154: only the FIRST ## Gate Evidence section is authoritative;
             # subsequent duplicate headings are ignored (closes split-section bypass)
-            # T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
+            # T175/T178: track fenced code blocks (backtick and tilde) outside Gate Evidence
+            # T181: also track HTML comment blocks (<!-- ... -->) to block injection via comment content
             $inGateEvidenceSection = $false
             $gateEvidenceSeen = $false
             $inCodeFence = $false
+            $inHtmlComment = $false
             $gateLines = [System.Collections.Generic.List[string]]::new()
             foreach ($line in ($content -split "`n")) {
-                if (-not $inGateEvidenceSection -and $line -match '^(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
-                if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
+                if (-not $inGateEvidenceSection) {
+                    if ($line -match '^(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
+                    if ($line -match '<!--') { $inHtmlComment = $true }
+                    if ($line -match '-->') { $inHtmlComment = $false }
+                }
+                if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence -and -not $inHtmlComment) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
                 if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
                 if ($inGateEvidenceSection) { $gateLines.Add($line) }
             }
