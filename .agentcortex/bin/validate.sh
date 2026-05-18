@@ -1551,6 +1551,52 @@ else
   record_result PASS "archived Work Logs gate completeness ok (or none archived yet)"
 fi
 
+# M8: Relative-link depth check for archived markdown files.
+# Content copy-pasted from current_state.md (at depth 2) into archive/ (depth 3)
+# keeps the original relative paths, which silently break one directory level deeper.
+# Scan all archive/*.md for relative links (not http/https, not anchor-only #...) and
+# verify the resolved target exists. WARN-only — historical archives are immutable.
+if [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
+  archive_broken_links=0
+  archive_broken_link_list=""
+  while IFS= read -r -d '' arch_file; do
+    broken="$("$PYTHON_BIN" -c "
+import re, sys
+from pathlib import Path
+f = Path(sys.argv[1])
+text = f.read_text(encoding='utf-8', errors='replace')
+# Match [label](target) where target is not http/https and not anchor-only
+link_re = re.compile(r'\[(?:[^\]]*)\]\(([^)]+)\)')
+count = 0
+for m in link_re.finditer(text):
+    tgt = m.group(1).strip()
+    # Skip external URLs and pure anchors
+    if tgt.startswith(('http://', 'https://')) or tgt.startswith('#'):
+        continue
+    # Strip inline anchor from path
+    path_part = tgt.split('#')[0]
+    if not path_part:
+        continue
+    resolved = (f.parent / path_part).resolve()
+    if not resolved.exists():
+        print(f'  broken relative link in {str(f)}: {tgt}')
+        count += 1
+sys.exit(count)
+" "$arch_file" 2>/dev/null)"
+    exit_code=$?
+    if [[ "$exit_code" -gt 0 ]]; then
+      archive_broken_links=$((archive_broken_links + exit_code))
+      archive_broken_link_list="${archive_broken_link_list}${broken}\n"
+    fi
+  done < <(find "$ARCHIVE_DIR" -maxdepth 2 -name '*.md' -not -name '.gitkeep*' -print0 2>/dev/null)
+  if [[ "$archive_broken_links" -gt 0 ]]; then
+    record_result WARN "archived markdown files contain broken relative links (depth mismatch — strip or fix links when archiving from current_state.md): ${archive_broken_links}"
+    printf '%b' "$archive_broken_link_list"
+  else
+    record_result PASS "archived markdown files: no broken relative links detected"
+  fi
+fi
+
 GITIGNORE="$ROOT/.gitignore"
 if [[ -f "$GITIGNORE" ]]; then
   gitignore_errors=0

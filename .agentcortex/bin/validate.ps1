@@ -1409,6 +1409,53 @@ else {
     Add-Result -Level 'PASS' -Message 'archived Work Logs gate completeness ok (or none archived yet)'
 }
 
+# M8: Relative-link depth check for archived markdown files.
+# Content copy-pasted from current_state.md (depth 2) into archive/ (depth 3)
+# keeps original relative paths which silently break one level deeper.
+if ($pythonBin -and (Test-Path -Path $archiveDir -PathType Container)) {
+    $archiveBrokenLinks = 0
+    $archiveBrokenLinkList = New-Object System.Collections.Generic.List[string]
+    $archiveMdFiles = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -Depth 1 -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '.gitkeep*' }
+    foreach ($archMd in $archiveMdFiles) {
+        $brokenRaw = & $pythonBin -c @"
+import re, sys
+from pathlib import Path
+f = Path(r'$($archMd.FullName.Replace('\','/'))')
+try:
+    text = f.read_text(encoding='utf-8', errors='replace')
+except Exception:
+    sys.exit(0)
+link_re = re.compile(r'\[(?:[^\]]*)\]\(([^)]+)\)')
+count = 0
+for m in link_re.finditer(text):
+    tgt = m.group(1).strip()
+    if tgt.startswith(('http://', 'https://')) or tgt.startswith('#'):
+        continue
+    path_part = tgt.split('#')[0]
+    if not path_part:
+        continue
+    resolved = (f.parent / path_part).resolve()
+    if not resolved.exists():
+        print(f'  broken relative link in {str(f)}: {tgt}')
+        count += 1
+sys.exit(count)
+"@ 2>$null
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -gt 0) {
+            $archiveBrokenLinks += $exitCode
+            foreach ($ln in $brokenRaw) { $archiveBrokenLinkList.Add($ln) }
+        }
+    }
+    if ($archiveBrokenLinks -gt 0) {
+        Add-Result -Level 'WARN' -Message "archived markdown files contain broken relative links (depth mismatch — strip or fix links when archiving from current_state.md): $archiveBrokenLinks"
+        foreach ($line in $archiveBrokenLinkList) { Write-Output $line }
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'archived markdown files: no broken relative links detected'
+    }
+}
+
 $gitignore = Join-NormalPath $root '.gitignore'
 if (Test-Path -Path $gitignore -PathType Leaf) {
     $gitignoreContent = Get-Content -Path $gitignore
