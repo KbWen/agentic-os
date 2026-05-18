@@ -981,7 +981,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             foreach ($line in ($content -split "\r?\n")) {
                 if ($line -match '^## Drift Log') { $inDrift = $true; continue }
                 if ($inDrift -and $line -match '^## ') { break }
-                if ($inDrift -and $line -match '\bReclassif\w*\s*[:\-].*->') { $reclassifyCount++ }
+                if ($inDrift) {
+                    $rm = [regex]::Match($line, '\bReclassif\w*\s*[:\-]\s*([\w-]+)\s*->\s*([\w-]+)')
+                    if ($rm.Success -and $rm.Groups[1].Value.ToLower() -ne $rm.Groups[2].Value.ToLower()) { $reclassifyCount++ }
+                }
             }
             $resetsUsed = 0
             # T48/T154/T175/T178/T241/T181/T242/T243: section-scoped gate parsing with full

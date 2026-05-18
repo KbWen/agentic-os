@@ -1054,8 +1054,10 @@ for l in lines:
         continue
     elif in_drift and re.match(r'^## ', l):
         break
-    elif in_drift and re.search(r'\bReclassif\w*\s*[:\-].*->', l):
-        reclassify_count += 1
+    elif in_drift:
+        _rm = re.search(r'\bReclassif\w*\s*[:\-]\s*([\w-]+)\s*->\s*([\w-]+)', l)
+        if _rm and _rm.group(1).lower() != _rm.group(2).lower():
+            reclassify_count += 1
 # T48: section-scope gate parsing to ## Gate Evidence section only
 # T154: only the FIRST ## Gate Evidence section is authoritative
 # T175/T178/T241: fenced code blocks (backtick/tilde, 0-3 space indent per CommonMark)
