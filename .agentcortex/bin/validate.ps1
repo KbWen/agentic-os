@@ -1412,13 +1412,13 @@ else {
 # M8: Relative-link depth check for archived markdown files.
 # Content copy-pasted from current_state.md (depth 2) into archive/ (depth 3)
 # keeps original relative paths which silently break one level deeper.
-if ($pythonBin -and (Test-Path -Path $archiveDir -PathType Container)) {
+if ($script:PythonCommand -and (Test-Path -Path $archiveDir -PathType Container)) {
     $archiveBrokenLinks = 0
     $archiveBrokenLinkList = New-Object System.Collections.Generic.List[string]
     $archiveMdFiles = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -Depth 1 -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -notlike '.gitkeep*' }
     foreach ($archMd in $archiveMdFiles) {
-        $brokenRaw = & $pythonBin -c @"
+        $brokenRaw = & $script:PythonCommand.Source -c @"
 import re, sys
 from pathlib import Path
 f = Path(r'$($archMd.FullName.Replace('\','/'))')
