@@ -974,16 +974,16 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Parse gate receipts: only PASS verdicts are forward transitions;
             # NOT READY / FAIL receipts are reverse edges and must be excluded.
             # supporting workflows are out-of-band — exclude to avoid false illegal-transition flags.
-            # H4: reclassification reset requires the MOST RECENT drift entry to contain 'Reclassif'
-            $hasReclassifyEntry = $false
+            # H4: count STRUCTURED reclassification records in Drift Log (count-based, not position-based)
+            # Requires: Reclassif* <sep> ... -> — rejects prose mentions like "considered but rejected"
+            $reclassifyCount = 0
             $inDrift = $false
-            $lastDriftContent = ''
             foreach ($line in ($content -split "\r?\n")) {
                 if ($line -match '^## Drift Log') { $inDrift = $true; continue }
                 if ($inDrift -and $line -match '^## ') { break }
-                if ($inDrift -and $line.Trim()) { $lastDriftContent = $line.Trim() }
+                if ($inDrift -and $line -match '\bReclassif\w*\s*[:\-].*->') { $reclassifyCount++ }
             }
-            $hasReclassifyEntry = ($lastDriftContent -match '\bReclassif')
+            $resetsUsed = 0
             # T48/T154/T175/T178/T241/T181/T242/T243: section-scoped gate parsing with full
             # fence/comment injection protection. T244: tracking runs on EVERY line (not only
             # outside the section) to prevent fenced receipts from being collected and to
@@ -1003,12 +1003,17 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 if ($inGateEvidenceSection -and $line -match '^## ' -and -not $masked) { $inGateEvidenceSection = $false; continue }
                 if ($inGateEvidenceSection -and -not $masked) { $gateLines.Add($line) }
             }
-            # Fail-closed: if ## Gate Evidence heading exists but was suppressed, emit error
+            # T243: fail-closed if heading exists but was suppressed (fence/comment blocked recognition)
             if (-not $gateEvidenceSeen) {
                 if (($content -split "\r?\n") | Where-Object { $_ -match '^## Gate Evidence' }) {
                     Write-Output 'incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)'
                     exit 0
                 }
+            }
+            # T245: fail-closed if fence/comment left unclosed INSIDE Gate Evidence
+            if ($inCodeFence -or $inHtmlComment) {
+                Write-Output 'incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)'
+                exit 0
             }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
@@ -1024,10 +1029,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     if ($line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
                         # PASS: clear pending re-review flag if this is review
                         if ($gPhase -eq 'review') { $reviewNotReady = $false }
-                        # H4: Reclassification reset — only discard prior window when Drift Log
-                        # documents a Reclassification entry; prevents window-laundering without evidence
-                        if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0 -and $hasReclassifyEntry) {
+                        # H4: Reclassification reset — one reset per structured drift record
+                        if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0 -and $reclassifyCount -gt $resetsUsed) {
                             $gateList.Clear()
+                            $resetsUsed++
                         }
                         $gateList.Add($gPhase)
                     } else {

@@ -1042,20 +1042,20 @@ else:
     # H1: fail-closed for unknown/misspelled classification — use strictest transitions
     # (mirrors the completeness check which also treats unknown as feature-level)
     LEGAL = LEGAL_STRICT
-# H4: pre-scan Drift Log — reclassification reset requires the MOST RECENT drift entry
-# to contain 'Reclassif'; an old entry followed by later entries no longer qualifies
+# H4: count STRUCTURED reclassification records in Drift Log (count-based, not position-based)
+# Requires format: Reclassif* <sep> ... <arrow> — rejects prose mentions like "considered but rejected"
+# e.g. "Reclassification: quick-win -> feature" matches; "reclassification considered" does not
+# Count-based: allows one reset per record; normal drift entries after reclassif do NOT invalidate it
 in_drift = False
-has_reclassify_entry = False
-last_drift_content = ''
+reclassify_count = 0
 for l in lines:
     if re.match(r'^## Drift Log', l):
         in_drift = True
         continue
     elif in_drift and re.match(r'^## ', l):
         break
-    elif in_drift and l.strip():
-        last_drift_content = l.strip()
-has_reclassify_entry = bool(re.search(r'\bReclassif', last_drift_content))
+    elif in_drift and re.search(r'\bReclassif\w*\s*[:\-].*->', l):
+        reclassify_count += 1
 # T48: section-scope gate parsing to ## Gate Evidence section only
 # T154: only the FIRST ## Gate Evidence section is authoritative
 # T175/T178/T241: fenced code blocks (backtick/tilde, 0-3 space indent per CommonMark)
@@ -1087,15 +1087,20 @@ for l in lines:
         continue
     if in_gate_evidence_section and not masked:
         gate_lines.append(l)
-# Fail-closed: if ## Gate Evidence heading exists in raw file but was suppressed
-# (unclosed fence or HTML comment above the section), emit error instead of silently returning ok
+# T243: fail-closed if heading exists but was suppressed (fence/comment blocked recognition)
 if not gate_evidence_seen:
     if any(re.match(r'^## Gate Evidence', l) for l in lines):
         print('incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)')
         sys.exit(0)
+# T245: fail-closed if fence/comment was left unclosed INSIDE Gate Evidence
+# (receipts inside the unclosed block are silently masked — signal rather than returning ok)
+if in_code_fence or in_html_comment:
+    print('incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)')
+    sys.exit(0)
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
+resets_used = 0  # H4: track consumed reclassification records
 for l in gate_lines:
     m = re.match(r'^(?:\x60?- )?gate:\s*(\w+)\s*\|', l, re.IGNORECASE)
     if m:
@@ -1119,10 +1124,10 @@ for l in gate_lines:
         # PASS verdict: if review PASS, clear the pending re-review flag
         if phase == 'review':
             review_not_ready = False
-        # H4: Reclassification reset — only discard prior window when Drift Log
-        # documents a Reclassification entry; prevents window-laundering without evidence
-        if phase == 'bootstrap' and gates and has_reclassify_entry:
+        # H4: Reclassification reset — one reset per structured drift record; count-based
+        if phase == 'bootstrap' and gates and reclassify_count > resets_used:
             gates = []
+            resets_used += 1
         gates.append(phase)
 # Completeness check first — valid even with 1 gate (avoids early-return bypass)
 gate_set = set(gates)
