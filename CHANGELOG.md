@@ -6,7 +6,11 @@
 
 **Validator (validate.sh / validate.ps1) — gate-injection hardening:**
 - T175–T247: 22 gate-injection scenarios closed — code-fence bypass, HTML-comment bypass, indented-receipt masking, unclosed-fence masking, multi-section masking, self-reclassification reset abuse (H4), receipts-in-fence diagnostic (T247)
-- Validator maintained 93 PASS / 5 WARN / 0 FAIL throughout 20+ commits
+- Validator maintained 80 PASS / 4 WARN / 0 FAIL throughout 20+ commits
+- ACX phase shim check (`validate.sh`): guard fixed from `-d` (directory) to `-f` (file) — `.agent/skills/<name>` stubs are flat files; `-d` made the SKILL.md existence check dead code
+- ACX phase shim check (`validate.sh`): CRLF line-ending strip added to frontmatter parser — frontmatter `---` delimiter failed to match on Windows checkouts with CRLF line endings
+- ACX phase shim check (`validate.ps1`): `-PathType Container` → `-PathType Leaf` — same dead-code fix as validate.sh
+- `routing.md §5` / `bootstrap.md §6`: stale "Runtime v5" version token corrected to "Runtime v1"
 
 **Validator — M8 archive relative-link depth check:**
 - `validate.sh` / `validate.ps1` M8: scan `archive/*.md` for relative links and WARN when target does not exist — catches depth-mismatch breakage from content copied out of `current_state.md` (depth 2) into `archive/` (depth 3)

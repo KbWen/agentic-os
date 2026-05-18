@@ -87,6 +87,9 @@ get_tier() {
         .github/ISSUE_TEMPLATE/*) echo "scaffold" ;;
         .github/PULL_REQUEST_TEMPLATE.md) echo "scaffold" ;;
 
+        # scaffold — user may customize advisory hook samples before activating
+        .githooks/*) echo "scaffold" ;;
+
         # core — everything else is framework, always overwrite
         *) echo "core" ;;
     esac
