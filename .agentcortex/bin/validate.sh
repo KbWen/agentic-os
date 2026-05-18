@@ -1042,45 +1042,50 @@ else:
     # H1: fail-closed for unknown/misspelled classification — use strictest transitions
     # (mirrors the completeness check which also treats unknown as feature-level)
     LEGAL = LEGAL_STRICT
-# H4: pre-scan Drift Log to check if reclassification was documented
+# H4: pre-scan Drift Log — reclassification reset requires the MOST RECENT drift entry
+# to contain 'Reclassif'; an old entry followed by later entries no longer qualifies
 in_drift = False
 has_reclassify_entry = False
+last_drift_content = ''
 for l in lines:
     if re.match(r'^## Drift Log', l):
         in_drift = True
+        continue
     elif in_drift and re.match(r'^## ', l):
         break
-    elif in_drift and re.search(r'\bReclassif', l):
-        has_reclassify_entry = True
-        break
+    elif in_drift and l.strip():
+        last_drift_content = l.strip()
+has_reclassify_entry = bool(re.search(r'\bReclassif', last_drift_content))
 # T48: section-scope gate parsing to ## Gate Evidence section only
-# Prevents code blocks in other sections (## Evidence, ## Known Risk, etc.)
-# from injecting fake gate receipts into the completeness/progression checks
-# T154: only the FIRST ## Gate Evidence section is authoritative;
-# subsequent duplicate headings are ignored (closes split-section bypass)
-# T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
-# T178: also covers tilde (~~~) fences; T241: 0-3 space indent per CommonMark
-# T181: also track HTML comment blocks; T242: order-aware (finditer left-to-right)
-# T243: fail-closed — if heading exists but was suppressed, emit error (not silent ok)
+# T154: only the FIRST ## Gate Evidence section is authoritative
+# T175/T178/T241: fenced code blocks (backtick/tilde, 0-3 space indent per CommonMark)
+# T181/T242: HTML comment blocks (order-aware finditer left-to-right)
+# T243: fail-closed — if heading exists but suppressed, emit error
+# T244: run fence/comment tracking on EVERY line (was: only outside section)
+#   Prevents fenced content inside ## Gate Evidence from being collected as real receipts
+#   and prevents fence-parity leakage across the section boundary (opener inside → closer outside)
 in_gate_evidence_section = False
 gate_evidence_seen = False
 gate_lines = []
 in_code_fence = False
 in_html_comment = False
 for l in lines:
-    if not in_gate_evidence_section:
-        if re.match(r'^ {0,3}(\x60{3,}|~{3,})', l):
-            in_code_fence = not in_code_fence
-        for _m in re.finditer(r'<!--|-->', l):
-            in_html_comment = (_m.group() == '<!--')
+    was_in_fence = in_code_fence
+    if re.match(r'^ {0,3}(\x60{3,}|~{3,})', l):
+        in_code_fence = not in_code_fence
+    was_in_comment = in_html_comment
+    for _m in re.finditer(r'<!--|-->', l):
+        in_html_comment = (_m.group() == '<!--')
+    # masked: line is/was inside a fence or comment (fence marker lines are also masked)
+    masked = (was_in_fence or in_code_fence) or (was_in_comment or in_html_comment)
     if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen and not in_code_fence and not in_html_comment:
         in_gate_evidence_section = True
         gate_evidence_seen = True
         continue
-    if in_gate_evidence_section and re.match(r'^## ', l):
+    if in_gate_evidence_section and re.match(r'^## ', l) and not masked:
         in_gate_evidence_section = False
         continue
-    if in_gate_evidence_section:
+    if in_gate_evidence_section and not masked:
         gate_lines.append(l)
 # Fail-closed: if ## Gate Evidence heading exists in raw file but was suppressed
 # (unclosed fence or HTML comment above the section), emit error instead of silently returning ok
@@ -1146,8 +1151,8 @@ if review_not_ready and any(g in ('test','handoff','ship') for g in gates):
     bad_next = next(g for g in gates if g in ('test','handoff','ship'))
     print(f'illegal:NOT_READY-review->{bad_next} (re-review skipped after NOT READY — implement→review required per review.md)')
     sys.exit(0)
-# Progression check requires 2+ gates
-if len(gates) < 2:
+# Progression check requires 2+ gates; tiny-fix has no required phase sequence
+if len(gates) < 2 or wl_class == 'tiny-fix':
     print('ok')
     sys.exit(0)
 for i in range(1, len(gates)):

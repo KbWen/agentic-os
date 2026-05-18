@@ -974,39 +974,38 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Parse gate receipts: only PASS verdicts are forward transitions;
             # NOT READY / FAIL receipts are reverse edges and must be excluded.
             # supporting workflows are out-of-band — exclude to avoid false illegal-transition flags.
-            # H4: pre-scan Drift Log for reclassification entries before processing gates
+            # H4: reclassification reset requires the MOST RECENT drift entry to contain 'Reclassif'
             $hasReclassifyEntry = $false
             $inDrift = $false
-            foreach ($line in ($content -split "`n")) {
+            $lastDriftContent = ''
+            foreach ($line in ($content -split "\r?\n")) {
                 if ($line -match '^## Drift Log') { $inDrift = $true; continue }
                 if ($inDrift -and $line -match '^## ') { break }
-                if ($inDrift -and $line -match '\bReclassif') { $hasReclassifyEntry = $true; break }
+                if ($inDrift -and $line.Trim()) { $lastDriftContent = $line.Trim() }
             }
-            # T48: section-scope gate parsing to ## Gate Evidence section only
-            # Prevents code blocks in other sections from injecting fake gate receipts
-            # T154: only the FIRST ## Gate Evidence section is authoritative;
-            # subsequent duplicate headings are ignored (closes split-section bypass)
-            # T175/T178/T241: track fenced code blocks (backtick/tilde, 0-3 space indent per CommonMark)
-            # T181/T242: HTML comment blocks, order-aware (left-to-right regex scan)
-            # T243: fail-closed — if heading exists but was suppressed, emit error (not silent ok)
+            $hasReclassifyEntry = ($lastDriftContent -match '\bReclassif')
+            # T48/T154/T175/T178/T241/T181/T242/T243: section-scoped gate parsing with full
+            # fence/comment injection protection. T244: tracking runs on EVERY line (not only
+            # outside the section) to prevent fenced receipts from being collected and to
+            # prevent fence-parity leakage when a fence straddles the section boundary.
             $inGateEvidenceSection = $false
             $gateEvidenceSeen = $false
             $inCodeFence = $false
             $inHtmlComment = $false
             $gateLines = [System.Collections.Generic.List[string]]::new()
-            foreach ($line in ($content -split "`n")) {
-                if (-not $inGateEvidenceSection) {
-                    if ($line -match '^ {0,3}(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
-                    foreach ($cm in [regex]::Matches($line, '<!--|-->')) { $inHtmlComment = ($cm.Value -eq '<!--') }
-                }
+            foreach ($line in ($content -split "\r?\n")) {
+                $wasInFence = $inCodeFence
+                if ($line -match '^ {0,3}(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
+                $wasInComment = $inHtmlComment
+                foreach ($cm in [regex]::Matches($line, '<!--|-->')) { $inHtmlComment = ($cm.Value -eq '<!--') }
+                $masked = ($wasInFence -or $inCodeFence) -or ($wasInComment -or $inHtmlComment)
                 if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence -and -not $inHtmlComment) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
-                if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
-                if ($inGateEvidenceSection) { $gateLines.Add($line) }
+                if ($inGateEvidenceSection -and $line -match '^## ' -and -not $masked) { $inGateEvidenceSection = $false; continue }
+                if ($inGateEvidenceSection -and -not $masked) { $gateLines.Add($line) }
             }
-            # Fail-closed: if ## Gate Evidence heading exists in raw file but was suppressed
-            # (unclosed fence or HTML comment above the section), emit error instead of silently returning ok
+            # Fail-closed: if ## Gate Evidence heading exists but was suppressed, emit error
             if (-not $gateEvidenceSeen) {
-                if (($content -split "`n") | Where-Object { $_ -match '^## Gate Evidence' }) {
+                if (($content -split "\r?\n") | Where-Object { $_ -match '^## Gate Evidence' }) {
                     Write-Output 'incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)'
                     exit 0
                 }
@@ -1072,8 +1071,8 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 Write-Output "  illegal gate progression in $($wl.Name): NOT_READY-review->$badNext (re-review skipped after NOT READY)"
                 $gateProgressionIllegal++
             }
-            # Progression check requires 2+ gates
-            if ($gates.Count -ge 2) {
+            # Progression check requires 2+ gates; tiny-fix has no required phase sequence
+            if ($gates.Count -ge 2 -and $wlClassForGates -ne 'tiny-fix') {
                 for ($i = 1; $i -lt $gates.Count; $i++) {
                     $prev = $gates[$i - 1]
                     $curr = $gates[$i]
