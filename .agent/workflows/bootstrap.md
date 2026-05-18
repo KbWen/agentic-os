@@ -395,7 +395,7 @@ These items are the AI's working notes. They live in the Work Log sections liste
 - **Next Step Recommendation** — the chat block's `Next:` field uses this map:
   - `tiny-fix` → proceed directly with inline plan
   - `quick-win` → `/plan` (then `/implement` → `/ship`)
-  - `feature` → if no frozen spec: **`/brainstorm` first** (skip = log in Drift Log), then `/spec` → `/plan`; if frozen spec exists: `/spec` or `/plan`. **Full chain** (include in `Next:` so first-timers see the journey): `[/brainstorm →] /spec → /plan → /implement → /review → /test → /handoff → /ship` (brackets = conditional on no frozen spec).
+  - `feature` → if no frozen spec: **`/brainstorm` first** (skip = log in Drift Log), then `/spec` → `/plan`; if frozen spec exists: `/spec` or `/plan`. Record full phase chain in Work Log `## Task Description` for reference: `[/brainstorm →] /spec → /plan → /implement → /review → /test → /handoff → /ship` (brackets = conditional on no frozen spec). `Next:` shows only the single immediate next command.
   - `architecture-change` → **`/brainstorm` first** (skip = log in Drift Log) → `/spec` (ADR required) → `/plan`. **Full chain**: same as `feature` above.
   - `hotfix` → `/research` (recommended for systematic debugging, not a required gate) → `/plan` → `/implement` → `/review` → `/test` → `/ship` (handoff exempt; see `engineering_guardrails.md §10.2`)
   - *(Any classification)* Design fork detected (two viable approaches, OR/Either in task description) → suggest `/decide` before committing to a direction

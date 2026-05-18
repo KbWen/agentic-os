@@ -82,14 +82,16 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
 
 **No test runner installed?**
 - **`feature` / `architecture-change`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. Feature tasks require automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`.
-- **`quick-win` / `hotfix` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience.
+- **`hotfix`**: same sign-off requirement as `feature` / `architecture-change` above (per `engineering_guardrails.md §12.2` — no exceptions). Output the same confirmation prompt and require Drift Log record before writing the PASS receipt.
+- **`quick-win` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience.
 
-  Fallback procedure (quick-win/hotfix/tiny-fix only):
+  Fallback procedure (quick-win/tiny-fix only):
   1. State explicitly: "No test runner available — using manual verification."
   2. For each AC, manually trace through the code path and record expected vs. actual behavior.
   3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
   4. Record in Work Log `## Known Risk`: `"No automated tests — manual trace only"`.
   5. Gate receipt is still written as PASS but the Work Log gap is required before `/ship`.
+  6. **→ Skip the "Run all tests" step below and proceed directly to Step 4.**
 
 Run all tests. Capture pass/fail output as evidence.
 
@@ -109,6 +111,8 @@ Skip adversarial testing entirely for `tiny-fix` and `quick-win` classifications
 IF `verification-before-completion` is active, before claiming tests are done:
 Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)).
 Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste truncated test output (pass/fail counts, command used) per AGENTS.md Gate 3; Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
+
+**Gate 2 exception — confirmed manual-trace fallback**: If the user explicitly confirmed the no-test-runner fallback in Step 3 AND a Drift Log record was written, Gate 2 ("ALL tests must pass") is satisfied by the recorded sign-off + manual-trace evidence. Proceed to Gate 3 without requiring automated test output.
 
 ## Step 5: Persist Evidence (Hard Gate)
 
