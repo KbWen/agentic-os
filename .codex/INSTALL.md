@@ -4,11 +4,12 @@ Goal: Enable Codex (Web / App) to quickly load the workflow-first behavior of Ag
 
 ## Prerequisites
 
-- **Git** (required)
-- **Bash** (required on Linux/macOS — included with Git for Windows via Git Bash)
+- **Git for Windows** (required on Windows — use the [official installer](https://git-scm.com/download/win) which includes Git Bash; standalone Git without Git Bash will not work)
+- **Git** (required on Linux/macOS)
+- **Bash** (required on all platforms — included in Git for Windows; also available via WSL on Windows)
 - **Python 3.9+** (recommended — enables full validation; not required for core functionality)
 
-## 1) Installation (Run in target repo)
+## 1) Installation (Run from your target project's root directory)
 
 **Linux / macOS / Git Bash:**
 ```bash

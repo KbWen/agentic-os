@@ -1066,9 +1066,15 @@ for l in lines:
 # T244: run fence/comment tracking on EVERY line (was: only outside section)
 #   Prevents fenced content inside ## Gate Evidence from being collected as real receipts
 #   and prevents fence-parity leakage across the section boundary (opener inside → closer outside)
+# T247: track masked receipt-format lines inside the section during the main loop
+#   (replaces post-loop raw-rescan which had false-positives and false-negatives)
+RECEIPT_RE = re.compile(r'^(?:\x60?- )?gate:\s*\w+\s*\|', re.IGNORECASE)
+# Inside fences, lines may be indented; allow leading whitespace for masked-receipt detection
+MASKED_RECEIPT_RE = re.compile(r'^\s*(?:\x60?- )?gate:\s*\w+\s*\|', re.IGNORECASE)
 in_gate_evidence_section = False
 gate_evidence_seen = False
 gate_lines = []
+masked_receipt_in_section = False  # T247: receipt-format line was present but masked
 in_code_fence = False
 in_html_comment = False
 for l in lines:
@@ -1087,8 +1093,12 @@ for l in lines:
     if in_gate_evidence_section and re.match(r'^## ', l) and not masked:
         in_gate_evidence_section = False
         continue
-    if in_gate_evidence_section and not masked:
-        gate_lines.append(l)
+    if in_gate_evidence_section:
+        if masked:
+            if MASKED_RECEIPT_RE.match(l):
+                masked_receipt_in_section = True  # T247: real receipt hidden in fence/comment
+        else:
+            gate_lines.append(l)
 # T243: fail-closed if heading exists but was suppressed (fence/comment blocked recognition)
 if not gate_evidence_seen:
     if any(re.match(r'^## Gate Evidence', l) for l in lines):
@@ -1099,22 +1109,13 @@ if not gate_evidence_seen:
 if in_code_fence or in_html_comment:
     print('incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)')
     sys.exit(0)
-# T247: receipts-in-fence diagnostic — section seen, unmasked gate_lines has no
-# receipt-format lines, but the raw section contains some (all were masked by fences
-# or HTML comments). Users who write receipts inside a code block (to show the
-# format) get a targeted error instead of a silent ok with zero collected gates.
-unmasked_receipt = any(re.match(r'^(?:\x60?- )?gate:\s*\w+\s*\|', l, re.IGNORECASE) for l in gate_lines)
-if gate_evidence_seen and not unmasked_receipt:
-    in_raw = False
-    for l in lines:
-        if re.match(r'^## Gate Evidence', l):
-            in_raw = True
-            continue
-        if in_raw and re.match(r'^## ', l):
-            break
-        if in_raw and re.match(r'^(?:\x60?- )?gate:\s*\w+\s*\|', l, re.IGNORECASE):
-            print('incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)')
-            sys.exit(0)
+# T247: no unmasked receipt collected but at least one was masked — targeted error
+# Uses main-loop masking state (no separate rescan), so it correctly respects
+# the first-section guard, fence/comment state, and masked ## headings.
+unmasked_receipt = any(RECEIPT_RE.match(l) for l in gate_lines)
+if gate_evidence_seen and not unmasked_receipt and masked_receipt_in_section:
+    print('incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)')
+    sys.exit(0)
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge

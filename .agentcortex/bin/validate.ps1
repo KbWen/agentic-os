@@ -988,11 +988,16 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
             $resetsUsed = 0
             # T48/T154/T175/T178/T241/T181/T242/T243: section-scoped gate parsing with full
-            # fence/comment injection protection. T244: tracking runs on EVERY line (not only
-            # outside the section) to prevent fenced receipts from being collected and to
-            # prevent fence-parity leakage when a fence straddles the section boundary.
+            # fence/comment injection protection. T244: tracking runs on EVERY line.
+            # T247: masked receipt tracking in main loop (replaces post-loop raw-rescan
+            # which had false-positives on lone-## inside fences and multiple-section
+            # ambiguity, and false-negatives on indented receipts inside fences).
+            $receiptRe = '(?i)^(?:`?- )?gate:\s*\w+\s*\|'
+            # Inside fences lines may be indented; allow leading whitespace for masked-receipt detection
+            $maskedReceiptRe = '(?i)^\s*(?:`?- )?gate:\s*\w+\s*\|'
             $inGateEvidenceSection = $false
             $gateEvidenceSeen = $false
+            $maskedReceiptInSection = $false  # T247
             $inCodeFence = $false
             $inHtmlComment = $false
             $gateLines = [System.Collections.Generic.List[string]]::new()
@@ -1004,7 +1009,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 $masked = ($wasInFence -or $inCodeFence) -or ($wasInComment -or $inHtmlComment)
                 if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence -and -not $inHtmlComment) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
                 if ($inGateEvidenceSection -and $line -match '^## ' -and -not $masked) { $inGateEvidenceSection = $false; continue }
-                if ($inGateEvidenceSection -and -not $masked) { $gateLines.Add($line) }
+                if ($inGateEvidenceSection) {
+                    if ($masked) {
+                        if ($line -match $maskedReceiptRe) { $maskedReceiptInSection = $true }
+                    } else {
+                        $gateLines.Add($line)
+                    }
+                }
             }
             # T243: fail-closed if heading exists but was suppressed (fence/comment blocked recognition)
             if (-not $gateEvidenceSeen) {
@@ -1018,19 +1029,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 Write-Output 'incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)'
                 exit 0
             }
-            # T247: receipts-in-fence diagnostic — section seen, unmasked gateLines has no
-            # receipt-format lines, but raw section contains some (masked by fences/comments).
-            $unmaskedReceipt = $gateLines | Where-Object { $_ -match '(?i)^(?:`?- )?gate:\s*\w+\s*\|' } | Select-Object -First 1
-            if ($gateEvidenceSeen -and -not $unmaskedReceipt) {
-                $inRawSection = $false
-                foreach ($rl in ($content -split "\r?\n")) {
-                    if ($rl -match '^## Gate Evidence') { $inRawSection = $true; continue }
-                    if ($inRawSection -and $rl -match '^## ') { break }
-                    if ($inRawSection -and $rl -match '(?i)^(?:`?- )?gate:\s*\w+\s*\|') {
-                        Write-Output 'incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)'
-                        exit 0
-                    }
-                }
+            # T247: no unmasked receipt but at least one was masked — targeted error
+            $unmaskedReceipt = $gateLines | Where-Object { $_ -match $receiptRe } | Select-Object -First 1
+            if ($gateEvidenceSeen -and -not $unmaskedReceipt -and $maskedReceiptInSection) {
+                Write-Output 'incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)'
+                exit 0
             }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict

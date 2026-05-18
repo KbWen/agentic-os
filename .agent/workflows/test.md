@@ -80,11 +80,16 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
 
-**No test runner installed?** If the project has no test framework and none can be added (e.g., Codex sandbox, read-only env), use this fallback:
-1. State explicitly: "No test runner available — using manual verification."
-2. For each AC, manually trace through the code path and record the expected vs. actual behavior.
-3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
-4. This is WARN-level — does not block gate receipt, but the Work Log MUST note the gap.
+**No test runner installed?**
+- **`feature` / `architecture-change`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. Feature tasks require automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`.
+- **`quick-win` / `hotfix` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience.
+
+  Fallback procedure (quick-win/hotfix/tiny-fix only):
+  1. State explicitly: "No test runner available — using manual verification."
+  2. For each AC, manually trace through the code path and record expected vs. actual behavior.
+  3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
+  4. Record in Work Log `## Known Risk`: `"No automated tests — manual trace only"`.
+  5. Gate receipt is still written as PASS but the Work Log gap is required before `/ship`.
 
 Run all tests. Capture pass/fail output as evidence.
 
