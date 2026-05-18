@@ -1071,7 +1071,7 @@ gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
 for l in gate_lines:
-    m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
+    m = re.match(r'^(?:\x60?- )?gate:\s*(\w+)\s*\|', l, re.IGNORECASE)
     if m:
         phase = m.group(1).lower()
         # H3: record ship presence BEFORE the verdict filter
@@ -1081,7 +1081,7 @@ for l in gate_lines:
         if phase in ('retro', 'research', 'brainstorm', 'decide', 'audit'):
             continue
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
-        v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
+        v = re.search(r'\|[^|]*verdict:\s*([A-Za-z _]+?)(\s*\||$)', l, re.IGNORECASE)
         if v and v.group(1).strip().upper() != 'PASS':
             # NOT READY / FAIL review is a reverse edge — discard the preceding
             # implement to avoid a false-positive implement→implement pair after
