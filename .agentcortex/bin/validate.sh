@@ -1058,11 +1058,15 @@ for l in lines:
 # from injecting fake gate receipts into the completeness/progression checks
 # T154: only the FIRST ## Gate Evidence section is authoritative;
 # subsequent duplicate headings are ignored (closes split-section bypass)
+# T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
 in_gate_evidence_section = False
 gate_evidence_seen = False
 gate_lines = []
+in_code_fence = False
 for l in lines:
-    if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen:
+    if not in_gate_evidence_section and re.match(r'^(\x60{3,}|~{3,})', l):
+        in_code_fence = not in_code_fence
+    if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen and not in_code_fence:
         in_gate_evidence_section = True
         gate_evidence_seen = True
         continue

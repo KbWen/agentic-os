@@ -986,11 +986,14 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Prevents code blocks in other sections from injecting fake gate receipts
             # T154: only the FIRST ## Gate Evidence section is authoritative;
             # subsequent duplicate headings are ignored (closes split-section bypass)
+            # T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
             $inGateEvidenceSection = $false
             $gateEvidenceSeen = $false
+            $inCodeFence = $false
             $gateLines = [System.Collections.Generic.List[string]]::new()
             foreach ($line in ($content -split "`n")) {
-                if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
+                if (-not $inGateEvidenceSection -and $line -match '^(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
+                if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
                 if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
                 if ($inGateEvidenceSection) { $gateLines.Add($line) }
             }
