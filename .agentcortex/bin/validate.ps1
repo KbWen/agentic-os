@@ -1412,7 +1412,11 @@ else {
 # M8: Relative-link depth check for archived markdown files.
 # Content copy-pasted from current_state.md (depth 2) into archive/ (depth 3)
 # keeps original relative paths which silently break one level deeper.
-if ($script:PythonCommand -and (Test-Path -Path $archiveDir -PathType Container)) {
+if (-not $script:PythonCommand) {
+    Add-Result -Level 'SKIP' -Message 'M8 archive relative-link check -- python unavailable'
+} elseif (-not (Test-Path -Path $archiveDir -PathType Container)) {
+    Add-Result -Level 'PASS' -Message 'archived markdown files: no archive directory yet (fresh deploy)'
+} else {
     $archiveBrokenLinks = 0
     $archiveBrokenLinkList = New-Object System.Collections.Generic.List[string]
     $archiveMdFiles = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -Depth 1 -ErrorAction SilentlyContinue |

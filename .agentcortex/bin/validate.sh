@@ -1556,7 +1556,11 @@ fi
 # keeps the original relative paths, which silently break one directory level deeper.
 # Scan all archive/*.md for relative links (not http/https, not anchor-only #...) and
 # verify the resolved target exists. WARN-only — historical archives are immutable.
-if [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
+if [[ -z "$PYTHON_BIN" ]]; then
+  record_result SKIP "M8 archive relative-link check -- python unavailable"
+elif [[ ! -d "$ARCHIVE_DIR" ]]; then
+  record_result PASS "archived markdown files: no archive directory yet (fresh deploy)"
+elif [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
   archive_broken_links=0
   archive_broken_link_list=""
   while IFS= read -r -d '' arch_file; do
