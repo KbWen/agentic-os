@@ -982,10 +982,19 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 if ($inDrift -and $line -match '^## ') { break }
                 if ($inDrift -and $line -match '\bReclassif') { $hasReclassifyEntry = $true; break }
             }
+            # T48: section-scope gate parsing to ## Gate Evidence section only
+            # Prevents code blocks in other sections from injecting fake gate receipts
+            $inGateEvidenceSection = $false
+            $gateLines = [System.Collections.Generic.List[string]]::new()
+            foreach ($line in ($content -split "`n")) {
+                if ($line -match '^## Gate Evidence') { $inGateEvidenceSection = $true; continue }
+                if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
+                if ($inGateEvidenceSection) { $gateLines.Add($line) }
+            }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
             $reviewNotReady = $false  # track pending re-review after NOT READY reverse edge
-            foreach ($line in ($content -split "`n")) {
+            foreach ($line in $gateLines) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
                 if ($gm.Success) {
                     $gPhase = $gm.Groups[1].Value.ToLower()

@@ -1053,10 +1053,24 @@ for l in lines:
     elif in_drift and re.search(r'\bReclassif', l):
         has_reclassify_entry = True
         break
+# T48: section-scope gate parsing to ## Gate Evidence section only
+# Prevents code blocks in other sections (## Evidence, ## Known Risk, etc.)
+# from injecting fake gate receipts into the completeness/progression checks
+in_gate_evidence_section = False
+gate_lines = []
+for l in lines:
+    if re.match(r'^## Gate Evidence', l):
+        in_gate_evidence_section = True
+        continue
+    if in_gate_evidence_section and re.match(r'^## ', l):
+        in_gate_evidence_section = False
+        continue
+    if in_gate_evidence_section:
+        gate_lines.append(l)
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
-for l in lines:
+for l in gate_lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
         phase = m.group(1).lower()
