@@ -1564,7 +1564,11 @@ if [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
 import re, sys
 from pathlib import Path
 f = Path(sys.argv[1])
-text = f.read_text(encoding='utf-8', errors='replace')
+try:
+    text = f.read_text(encoding='utf-8', errors='replace')
+except Exception:
+    print(0)
+    sys.exit(0)
 # Match [label](target) where target is not http/https and not anchor-only
 link_re = re.compile(r'\[(?:[^\]]*)\]\(([^)]+)\)')
 count = 0
@@ -1586,7 +1590,7 @@ print(count)
 " "$arch_file" 2>/dev/null)"
     file_count=$(printf '%s\n' "$broken_output" | tail -1)
     file_count=${file_count:-0}
-    if [[ "$file_count" -gt 0 ]]; then
+    if [[ "$file_count" =~ ^[0-9]+$ ]] && [[ "$file_count" -gt 0 ]]; then
       archive_broken_links=$((archive_broken_links + file_count))
       diagnostic=$(printf '%s\n' "$broken_output" | head -n -1)
       [[ -n "$diagnostic" ]] && archive_broken_link_list="${archive_broken_link_list}${diagnostic}\n"
