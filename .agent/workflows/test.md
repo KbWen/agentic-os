@@ -89,7 +89,9 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
   2. For each AC, manually trace through the code path and record expected vs. actual behavior.
   3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
   4. Record in Work Log `## Known Risk`: `"No automated tests — manual trace only"`.
-  5. Gate receipt is still written as PASS but the Work Log gap is required before `/ship`.
+  5. Gate receipt:
+     - **`quick-win` / `tiny-fix`**: write `Verdict: PASS` (Gate 2 satisfied by sign-off per Step 4b exception).
+     - **`feature` / `architecture-change` / `hotfix`**: do NOT write a PASS test-gate receipt — Gate 2 is unsatisfied; record manual-trace output as partial evidence in `## Evidence` and the gap in `## Known Risk`. Receipt and `/ship` eligibility must be resolved before proceeding.
   6. **→ Skip the "Run all tests" step below and proceed directly to Step 4.**
 
 Run all tests. Capture pass/fail output as evidence.
