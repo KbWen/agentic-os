@@ -1091,6 +1091,9 @@ if has_ship_receipt or 'ship' in gate_set:
     elif wl_class == 'quick-win':
         # H1: quick-win has real required phases — not an empty set
         required = {'bootstrap','plan','implement'}
+    elif wl_class == 'tiny-fix':
+        # tiny-fix is exempt from gate ceremony (AGENTS.md §tiny-fix fast path)
+        required = set()
     else:
         # H1: fail-closed for unknown/misspelled classification — treat as feature
         required = {'bootstrap','plan','implement','review','test','handoff'}

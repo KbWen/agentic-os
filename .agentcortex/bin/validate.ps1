@@ -1023,6 +1023,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 } elseif ($wlClassForGates -eq 'quick-win') {
                     # H1: quick-win has real required phases — not an empty set
                     $requiredPhases = @('bootstrap','plan','implement')
+                } elseif ($wlClassForGates -eq 'tiny-fix') {
+                    # tiny-fix is exempt from gate ceremony (AGENTS.md §tiny-fix fast path)
+                    $requiredPhases = @()
                 } else {
                     # H1: fail-closed for unknown/misspelled classification — treat as feature
                     $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
