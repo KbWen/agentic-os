@@ -1056,11 +1056,15 @@ for l in lines:
 # T48: section-scope gate parsing to ## Gate Evidence section only
 # Prevents code blocks in other sections (## Evidence, ## Known Risk, etc.)
 # from injecting fake gate receipts into the completeness/progression checks
+# T154: only the FIRST ## Gate Evidence section is authoritative;
+# subsequent duplicate headings are ignored (closes split-section bypass)
 in_gate_evidence_section = False
+gate_evidence_seen = False
 gate_lines = []
 for l in lines:
-    if re.match(r'^## Gate Evidence', l):
+    if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen:
         in_gate_evidence_section = True
+        gate_evidence_seen = True
         continue
     if in_gate_evidence_section and re.match(r'^## ', l):
         in_gate_evidence_section = False

@@ -984,10 +984,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
             # T48: section-scope gate parsing to ## Gate Evidence section only
             # Prevents code blocks in other sections from injecting fake gate receipts
+            # T154: only the FIRST ## Gate Evidence section is authoritative;
+            # subsequent duplicate headings are ignored (closes split-section bypass)
             $inGateEvidenceSection = $false
+            $gateEvidenceSeen = $false
             $gateLines = [System.Collections.Generic.List[string]]::new()
             foreach ($line in ($content -split "`n")) {
-                if ($line -match '^## Gate Evidence') { $inGateEvidenceSection = $true; continue }
+                if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
                 if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
                 if ($inGateEvidenceSection) { $gateLines.Add($line) }
             }
