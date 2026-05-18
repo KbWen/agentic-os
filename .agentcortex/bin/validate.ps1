@@ -1021,19 +1021,19 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             if (-not $gateEvidenceSeen) {
                 if (($content -split "\r?\n") | Where-Object { $_ -match '^## Gate Evidence' }) {
                     Write-Output 'incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)'
-                    exit 0
+                    $gateProgressionIllegal++; continue
                 }
             }
             # T245: fail-closed if fence/comment left unclosed INSIDE Gate Evidence
             if ($inCodeFence -or $inHtmlComment) {
                 Write-Output 'incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)'
-                exit 0
+                $gateProgressionIllegal++; continue
             }
             # T247: no unmasked receipt but at least one was masked — targeted error
             $unmaskedReceipt = $gateLines | Where-Object { $_ -match $receiptRe } | Select-Object -First 1
             if ($gateEvidenceSeen -and -not $unmaskedReceipt -and $maskedReceiptInSection) {
                 Write-Output 'incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)'
-                exit 0
+                $gateProgressionIllegal++; continue
             }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict

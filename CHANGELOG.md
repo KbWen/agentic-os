@@ -18,6 +18,10 @@
 - `validate.sh` M8 parity-hardened: `try/except` file-read guard + `^\d+$` numeric pre-check (matches `validate.ps1`)
 - `ship.md §2 State Update`: prose warning about relative-link depth hazard when archiving Ship History
 
+**Validator — validate.ps1 loop-termination parity fix (T243/T245/T247):**
+- `validate.ps1` T243/T245/T247 fail-closed branches used bare `exit 0` inside the `foreach ($wl in $worklogs)` loop — in PowerShell this terminates the entire script (not just the current iteration), silently skipping ~60 downstream checks and never printing a Summary line; Windows CI falsely reported exit 0 while `validate.sh` on Linux correctly reported exit 1
+- Fix: replaced `exit 0` with `$gateProgressionIllegal++; continue` in all three branches — mirrors `validate.sh` behavior where `sys.exit(0)` exits only the Python subprocess and bash continues the outer loop
+
 **test.md — no-test-runner fallback path:**
 - `hotfix` moved to sign-off-required group (`engineering_guardrails.md §12.2 no-exceptions`)
 - Gate 2 exception (5-Gate Contract) scoped to `quick-win`/`tiny-fix` only

@@ -177,6 +177,8 @@ none
   - H4b: Reclassif as last entry → reset triggered ✓; H4c/H4d: edge cases ✓
   - tiny-fix bootstrap→implement → ok (exempt) ✓; feature same → still illegal ✓
   - Baseline: 93 PASS / 5 WARN / 0 FAIL
+- Post-ship round 20 implement (commit TBD→post-commit): validate.ps1 T243/T245/T247 `exit 0` → `$gateProgressionIllegal++; continue` (CRITICAL-1 found by Round 19 Opus parity audit). Round 19: NOT READY. Round 20 = implement.
+- Post-ship rounds 18–19: Round 18 Opus PASS (1/2). Round 19 Opus NOT READY — CRITICAL-1 validate.ps1 loop-termination bypass. Consecutive-PASS counter reset to 0.
 - Post-ship rounds 15–17 (commits b6738f7 → 2cd6acd): deploy.sh .githooks scaffold tier; CHANGELOG validator entries; worklog template Resume alignment; adr.md path-prefix + section ref fix; adr-tech-stack.md applies_to list syntax; AGENTS.md tiny-fix HANDEDOFF clause; compact index rehash. Round 17 Opus: PASS.
 - Post-ship rounds 12–14 (commits be02c42 → 48f7b28): ACX shim check was vacuous PASS (validate.sh -d→-f, validate.ps1 Container→Leaf, CRLF strip); routing.md §5 + bootstrap.md §6 v5→v1; test.md L117 xref; behavioral test confirmed FAIL path live. Round 14 Opus: PASS (no findings).
 - Implement round 11 — 5 downstream simulation agents + 3 Opus adversarial review rounds (commits f63c5e6 → af9d911):
