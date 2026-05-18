@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased] - 2026-05-18
+
+### Adversarial Governance Audit + Downstream UX Hardening (PR #104)
+
+**Validator (validate.sh / validate.ps1) — gate-injection hardening:**
+- T175–T247: 22 gate-injection scenarios closed — code-fence bypass, HTML-comment bypass, indented-receipt masking, unclosed-fence masking, multi-section masking, self-reclassification reset abuse (H4), receipts-in-fence diagnostic (T247)
+- Validator maintained 93 PASS / 5 WARN / 0 FAIL throughout 20+ commits
+
+**test.md — no-test-runner fallback path:**
+- `hotfix` moved to sign-off-required group (`engineering_guardrails.md §12.2 no-exceptions`)
+- Gate 2 exception (5-Gate Contract) scoped to `quick-win`/`tiny-fix` only
+- Fallback procedure step 5 tier-scoped: `quick-win`/`tiny-fix` write PASS; `feature`/`arch-change`/`hotfix` do not write PASS receipt when Gate 2 unsatisfied
+- Terminal step 6 added to fallback procedure (skip "Run all tests" step)
+
+**bootstrap.md §3.7 — Next: field overflow fix:**
+- Feature full-phase chain (`[/brainstorm →] /spec → ... → /ship`) removed from `Next:` field to prevent 8-line Response Budget breach; chain now recorded in Work Log `## Task Description` only
+
+**`.codex/INSTALL.md` — bash dependency clarified:**
+- Bash required on ALL platforms (Windows PS1 installer wraps bash internally)
+- Git for Windows prerequisite explicit; PS1 commands include `-ExecutionPolicy Bypass`
+
 ## [1.1.2] - 2026-04-17
 
 ### Polish Batch 2: Governance Depth
