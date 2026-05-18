@@ -394,10 +394,10 @@ These items are the AI's working notes. They live in the Work Log sections liste
 - **Read Plan** (→ Work Log `## Task Description` or header): Classification, Guardrails Mode (Full|Quick|Lite), Files to read (with sections), Files explicitly skipped (with reason), Estimated governance reads.
 - **Next Step Recommendation** — the chat block's `Next:` field uses this map:
   - `tiny-fix` → proceed directly with inline plan
-  - `quick-win` → `/plan`
-  - `feature` → if no frozen spec: **`/brainstorm` first** (skip = log in Drift Log), then `/spec` → `/plan`; if frozen spec exists: `/spec` or `/plan`
-  - `architecture-change` → **`/brainstorm` first** (skip = log in Drift Log) → `/spec` (ADR required) → `/plan`
-  - `hotfix` → `/research` (systematic debugging)
+  - `quick-win` → `/plan` (then `/implement` → `/ship`)
+  - `feature` → if no frozen spec: **`/brainstorm` first** (skip = log in Drift Log), then `/spec` → `/plan`; if frozen spec exists: `/spec` or `/plan`. **Full chain**: `/spec` → `/plan` → `/implement` → `/review` → `/test` → `/handoff` → `/ship` — include this one-liner in the `Next:` field so first-time users see the complete journey.
+  - `architecture-change` → **`/brainstorm` first** (skip = log in Drift Log) → `/spec` (ADR required) → `/plan`. **Full chain**: same as `feature` above.
+  - `hotfix` → `/research` (systematic debugging) → `/plan` → `/implement` → `/review` → `/test` → `/ship`
   - *(Any classification)* Design fork detected (two viable approaches, OR/Either in task description) → suggest `/decide` before committing to a direction
 
 ## 4. Hard Checkpoints
