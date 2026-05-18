@@ -1099,11 +1099,12 @@ if not gate_evidence_seen:
 if in_code_fence or in_html_comment:
     print('incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)')
     sys.exit(0)
-# T247: receipts-in-fence diagnostic — section seen, no lines collected, but section
-# contains receipt-format lines (all were inside fences/comments). Users who wrote
-# receipts inside a code block (e.g. to show the format) get a targeted error instead
-# of a silent ok with zero gates.
-if gate_evidence_seen and not gate_lines:
+# T247: receipts-in-fence diagnostic — section seen, unmasked gate_lines has no
+# receipt-format lines, but the raw section contains some (all were masked by fences
+# or HTML comments). Users who write receipts inside a code block (to show the
+# format) get a targeted error instead of a silent ok with zero collected gates.
+unmasked_receipt = any(re.match(r'^(?:\x60?- )?gate:\s*\w+\s*\|', l, re.IGNORECASE) for l in gate_lines)
+if gate_evidence_seen and not unmasked_receipt:
     in_raw = False
     for l in lines:
         if re.match(r'^## Gate Evidence', l):

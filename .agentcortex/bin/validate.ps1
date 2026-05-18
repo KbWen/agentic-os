@@ -1018,9 +1018,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 Write-Output 'incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)'
                 exit 0
             }
-            # T247: receipts-in-fence diagnostic — section seen, no lines collected, but section
-            # contains receipt-format lines (all masked by fences/comments). Emit targeted error.
-            if ($gateEvidenceSeen -and $gateLines.Count -eq 0) {
+            # T247: receipts-in-fence diagnostic — section seen, unmasked gateLines has no
+            # receipt-format lines, but raw section contains some (masked by fences/comments).
+            $unmaskedReceipt = $gateLines | Where-Object { $_ -match '(?i)^(?:`?- )?gate:\s*\w+\s*\|' } | Select-Object -First 1
+            if ($gateEvidenceSeen -and -not $unmaskedReceipt) {
                 $inRawSection = $false
                 foreach ($rl in ($content -split "\r?\n")) {
                     if ($rl -match '^## Gate Evidence') { $inRawSection = $true; continue }
