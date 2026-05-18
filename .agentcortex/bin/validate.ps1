@@ -983,6 +983,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
+            $reviewNotReady = $false  # track pending re-review after NOT READY reverse edge
             foreach ($line in ($content -split "`n")) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
                 if ($gm.Success) {
@@ -992,12 +993,20 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     # supporting workflows are out-of-band
                     if ($gPhase -in @('retro','research','brainstorm','decide','audit')) { continue }
                     if ($line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
+                        # PASS: clear pending re-review flag if this is review
+                        if ($gPhase -eq 'review') { $reviewNotReady = $false }
                         # H4: Reclassification reset — only discard prior window when Drift Log
                         # documents a Reclassification entry; prevents window-laundering without evidence
                         if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0 -and $hasReclassifyEntry) {
                             $gateList.Clear()
                         }
                         $gateList.Add($gPhase)
+                    } else {
+                        # NOT READY / FAIL review: discard preceding implement (reverse-edge pop)
+                        if ($gPhase -eq 'review' -and $gateList.Count -gt 0 -and $gateList[$gateList.Count - 1] -eq 'implement') {
+                            $gateList.RemoveAt($gateList.Count - 1)
+                            $reviewNotReady = $true
+                        }
                     }
                 }
             }
@@ -1023,6 +1032,12 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     Write-Output "  incomplete gate receipts in $($wl.Name): missing $($missingPhases -join ',')"
                     $gateProgressionIllegal++
                 }
+            }
+            # NOT READY reverse-edge check: re-review was skipped after NOT READY
+            if ($reviewNotReady -and ($gates | Where-Object { $_ -in @('test','handoff','ship') })) {
+                $badNext = ($gates | Where-Object { $_ -in @('test','handoff','ship') } | Select-Object -First 1)
+                Write-Output "  illegal gate progression in $($wl.Name): NOT_READY-review->$badNext (re-review skipped after NOT READY)"
+                $gateProgressionIllegal++
             }
             # Progression check requires 2+ gates
             if ($gates.Count -ge 2) {

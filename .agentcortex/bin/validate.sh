@@ -1051,6 +1051,7 @@ for l in lines:
         break
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
+review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
 for l in lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
@@ -1064,7 +1065,16 @@ for l in lines:
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
         v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
         if v and v.group(1).strip().upper() != 'PASS':
+            # NOT READY / FAIL review is a reverse edge — discard the preceding
+            # implement to avoid a false-positive implement→implement pair after
+            # re-implementation (test.md §Step 5 reverse-edge; review.md §NOT READY)
+            if phase == 'review' and gates and gates[-1] == 'implement':
+                gates.pop()
+                review_not_ready = True  # flag: re-review required before test/ship
             continue
+        # PASS verdict: if review PASS, clear the pending re-review flag
+        if phase == 'review':
+            review_not_ready = False
         # H4: Reclassification reset — only discard prior window when Drift Log
         # documents a Reclassification entry; prevents window-laundering without evidence
         if phase == 'bootstrap' and gates and has_reclassify_entry:
@@ -1088,6 +1098,12 @@ if has_ship_receipt or 'ship' in gate_set:
     if missing_phases:
         print(f'incomplete:{\",\".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
+# NOT READY reverse-edge check: if review_not_ready is still set (no subsequent review
+# PASS cleared it), any test/handoff/ship in gates = re-review was skipped
+if review_not_ready and any(g in ('test','handoff','ship') for g in gates):
+    bad_next = next(g for g in gates if g in ('test','handoff','ship'))
+    print(f'illegal:NOT_READY-review->{bad_next} (re-review skipped after NOT READY — implement→review required per review.md)')
+    sys.exit(0)
 # Progression check requires 2+ gates
 if len(gates) < 2:
     print('ok')
