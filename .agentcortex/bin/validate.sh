@@ -1142,9 +1142,9 @@ for i in range(1, len(gates)):
 # M10: stale-review check — if most recent implement follows most recent review,
 # then test/handoff/ship without a new review = stale review violation
 # (test.md §Step 5 reverse edge: implement-after-review MUST re-review before test)
-# Scoped to classifications where re-review is MANDATORY (feature, architecture-change, hotfix).
 # quick-win and tiny-fix treat review as optional — re-review is NOT required.
-if wl_class in ('feature', 'architecture-change', 'hotfix'):
+# Unknown/H1 fail-closed classifications follow feature rules, so M10 applies.
+if wl_class not in ('quick-win', 'tiny-fix'):
     last_review_idx = max((i for i, g in enumerate(gates) if g == 'review'), default=-1)
     last_impl_idx   = max((i for i, g in enumerate(gates) if g == 'implement'), default=-1)
     if last_review_idx >= 0 and last_impl_idx > last_review_idx:

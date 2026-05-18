@@ -1070,9 +1070,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             }
             # M10: stale-review — if most recent implement follows most recent review,
             # test/handoff/ship without re-review = governance gap (test.md §reverse-edge)
-            # Scoped to feature, architecture-change, hotfix only (re-review mandatory).
             # quick-win and tiny-fix treat review as optional — no re-review required.
-            if ($wlClassForGates -in @('feature','architecture-change','hotfix')) {
+            # Unknown/H1 fail-closed classifications follow feature rules, so M10 applies.
+            if ($wlClassForGates -notin @('quick-win','tiny-fix')) {
                 $lastReviewIdx = -1
                 $lastImplIdx   = -1
                 for ($i = 0; $i -lt $gates.Count; $i++) {
