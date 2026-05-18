@@ -1086,7 +1086,7 @@ if has_ship_receipt or 'ship' in gate_set:
         required = {'bootstrap','plan','implement','review','test','handoff'}
     missing_phases = required - gate_set
     if missing_phases:
-        print(f'incomplete:{",".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
+        print(f'incomplete:{\",\".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
 # Progression check requires 2+ gates
 if len(gates) < 2:
