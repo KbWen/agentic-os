@@ -10,7 +10,7 @@
 - Owner: `KbWen`
 - Guardrails Mode: `Full`
 - Current Phase: `handoff`
-- Checkpoint SHA: `48f7b28`
+- Checkpoint SHA: `2cd6acd`
 - Recommended Skills: `systematic-debugging, verification-before-completion`
 - Primary Domain Snapshot: `governance`
 - SSoT Sequence: `0`
@@ -177,6 +177,7 @@ none
   - H4b: Reclassif as last entry → reset triggered ✓; H4c/H4d: edge cases ✓
   - tiny-fix bootstrap→implement → ok (exempt) ✓; feature same → still illegal ✓
   - Baseline: 93 PASS / 5 WARN / 0 FAIL
+- Post-ship rounds 15–17 (commits b6738f7 → 2cd6acd): deploy.sh .githooks scaffold tier; CHANGELOG validator entries; worklog template Resume alignment; adr.md path-prefix + section ref fix; adr-tech-stack.md applies_to list syntax; AGENTS.md tiny-fix HANDEDOFF clause; compact index rehash. Round 17 Opus: PASS.
 - Post-ship rounds 12–14 (commits be02c42 → 48f7b28): ACX shim check was vacuous PASS (validate.sh -d→-f, validate.ps1 Container→Leaf, CRLF strip); routing.md §5 + bootstrap.md §6 v5→v1; test.md L117 xref; behavioral test confirmed FAIL path live. Round 14 Opus: PASS (no findings).
 - Implement round 11 — 5 downstream simulation agents + 3 Opus adversarial review rounds (commits f63c5e6 → af9d911):
   - Fixed: INSTALL.md Windows bash dependency clarified, T247 receipts-in-fence diagnostic (2 full rewrites: backtick fix, unmasked_receipt/masked_receipt logic, in-loop tracking)
