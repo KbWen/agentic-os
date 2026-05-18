@@ -79,7 +79,7 @@
   - `validate.sh`/`validate.ps1` M8: archive relative-link depth check; `ship.md §2`: depth-hazard warning.
   - M8 counter overflow fix: switched from `sys.exit(count)` to stdout count read (avoids mod-256 wrap on >255 broken links).
   - 7 Opus adversarial review rounds; 93 PASS / 5 WARN / 0 FAIL throughout.
-- Tests: validate 93/5/0. HEAD: `ee5f854`. PR: https://github.com/KbWen/agentic-os/pull/104
+- Tests: validate 80/4/0. HEAD: `9145956`. PR: https://github.com/KbWen/agentic-os/pull/104
 
 ### Ship-claude-peaceful-aryabhata-fe5644-2026-05-12-pass3
 - **PR #103** (squash `e732349`) — README/cross-doc broken-link fix, expert-reviewed (Plan subagent). The framework README is dual-purpose (GitHub face + downstream reference); a multi-angle audit found 6 broken `.md` links (33% of internal links) in the deployed README. Per-link triage:

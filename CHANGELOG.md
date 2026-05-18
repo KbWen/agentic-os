@@ -8,11 +8,18 @@
 - T175–T247: 22 gate-injection scenarios closed — code-fence bypass, HTML-comment bypass, indented-receipt masking, unclosed-fence masking, multi-section masking, self-reclassification reset abuse (H4), receipts-in-fence diagnostic (T247)
 - Validator maintained 93 PASS / 5 WARN / 0 FAIL throughout 20+ commits
 
+**Validator — M8 archive relative-link depth check:**
+- `validate.sh` / `validate.ps1` M8: scan `archive/*.md` for relative links and WARN when target does not exist — catches depth-mismatch breakage from content copied out of `current_state.md` (depth 2) into `archive/` (depth 3)
+- M8 link counter uses stdout read (not `sys.exit(count)`) to avoid mod-256 silent-PASS on ≥256 broken links
+- `validate.sh` M8 parity-hardened: `try/except` file-read guard + `^\d+$` numeric pre-check (matches `validate.ps1`)
+- `ship.md §2 State Update`: prose warning about relative-link depth hazard when archiving Ship History
+
 **test.md — no-test-runner fallback path:**
 - `hotfix` moved to sign-off-required group (`engineering_guardrails.md §12.2 no-exceptions`)
 - Gate 2 exception (5-Gate Contract) scoped to `quick-win`/`tiny-fix` only
 - Fallback procedure step 5 tier-scoped: `quick-win`/`tiny-fix` write PASS; `feature`/`arch-change`/`hotfix` do not write PASS receipt when Gate 2 unsatisfied
-- Terminal step 6 added to fallback procedure (skip "Run all tests" step)
+- Step 6 tier-scoped: `quick-win`/`tiny-fix` → skip "Run all tests" and proceed to Step 4b; `feature`/`arch-change`/`hotfix` → step 5 terminal, do not proceed
+- `quick-win`/`tiny-fix` fallback trigger now writes a Drift Log entry, satisfying Step 4b Gate 2 exception precondition from both paths
 
 **bootstrap.md §3.7 — Next: field overflow fix:**
 - Feature full-phase chain (`[/brainstorm →] /spec → ... → /ship`) removed from `Next:` field to prevent 8-line Response Budget breach; chain now recorded in Work Log `## Task Description` only
