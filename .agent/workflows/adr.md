@@ -30,8 +30,8 @@ For smaller decisions, `/decide` is sufficient — don't create ADRs for every c
 
 4. **Link from affected code**: Add references in relevant specs, code comments, or the Work Log. An unlinked ADR is an invisible ADR.
 
-5. **Update SSoT ADR Index (mandatory)**: Always insert the new ADR into the `**ADR Index**` heading of `current_state.md`. Find the `## ADR Index` section and add a line:
+5. **Update SSoT ADR Index (mandatory)**: Always insert the new ADR into `current_state.md`. Find the `**ADR Index**` line and append the new entry immediately below it:
    ```
-   - ADR-NNN: <title> | Status: proposed | applies_to: <glob-or-module>
+   - docs/adr/ADR-NNN-<slug>.md: <title> · applies_to: <glob-or-module>
    ```
    Write directly to the file (do NOT use `guard_context_write.py` — the tool has no section-targeting capability). This is an approved `/adr`-phase SSoT write exception; document the edit in the Work Log `## Drift Log` as `"ADR Index update: ADR-NNN added"`. **Failure to update leaves disk ADRs unindexed, causing the `SSoT ADR Index completeness` validator check to FAIL on the next run.**
