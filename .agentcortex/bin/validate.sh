@@ -2015,8 +2015,8 @@ fi
 
 # ACX phase shim skill-existence check: for each .claude/agents/acx-*.md,
 # verify that any skill name listed under skills: which maps to a .agent/skills/
-# directory actually has a SKILL.md body. Claude Code built-in skills (no
-# corresponding directory) are silently skipped.
+# stub file actually has a SKILL.md body in .agents/skills/. Claude Code
+# built-in skills (no corresponding stub file) are silently skipped.
 AGENTS_DIR="$ROOT/.claude/agents"
 if [[ -d "$AGENTS_DIR" ]]; then
   shim_skill_errors=0
