@@ -986,8 +986,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Prevents code blocks in other sections from injecting fake gate receipts
             # T154: only the FIRST ## Gate Evidence section is authoritative;
             # subsequent duplicate headings are ignored (closes split-section bypass)
-            # T175/T178: track fenced code blocks (backtick and tilde) outside Gate Evidence
-            # T181: also track HTML comment blocks (<!-- ... -->) to block injection via comment content
+            # T175/T178/T241: track fenced code blocks (backtick/tilde, 0-3 space indent per CommonMark)
+            # T181/T242: HTML comment blocks, order-aware (left-to-right regex scan)
+            # T243: fail-closed — if heading exists but was suppressed, emit error (not silent ok)
             $inGateEvidenceSection = $false
             $gateEvidenceSeen = $false
             $inCodeFence = $false
@@ -995,13 +996,20 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             $gateLines = [System.Collections.Generic.List[string]]::new()
             foreach ($line in ($content -split "`n")) {
                 if (-not $inGateEvidenceSection) {
-                    if ($line -match '^(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
-                    if ($line -match '<!--') { $inHtmlComment = $true }
-                    if ($line -match '-->') { $inHtmlComment = $false }
+                    if ($line -match '^ {0,3}(`{3,}|~{3,})') { $inCodeFence = -not $inCodeFence }
+                    foreach ($cm in [regex]::Matches($line, '<!--|-->')) { $inHtmlComment = ($cm.Value -eq '<!--') }
                 }
                 if ($line -match '^## Gate Evidence' -and -not $gateEvidenceSeen -and -not $inCodeFence -and -not $inHtmlComment) { $inGateEvidenceSection = $true; $gateEvidenceSeen = $true; continue }
                 if ($inGateEvidenceSection -and $line -match '^## ') { $inGateEvidenceSection = $false; continue }
                 if ($inGateEvidenceSection) { $gateLines.Add($line) }
+            }
+            # Fail-closed: if ## Gate Evidence heading exists in raw file but was suppressed
+            # (unclosed fence or HTML comment above the section), emit error instead of silently returning ok
+            if (-not $gateEvidenceSeen) {
+                if (($content -split "`n") | Where-Object { $_ -match '^## Gate Evidence' }) {
+                    Write-Output 'incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)'
+                    exit 0
+                }
             }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict

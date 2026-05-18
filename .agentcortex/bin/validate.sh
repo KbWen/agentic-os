@@ -1059,8 +1059,9 @@ for l in lines:
 # T154: only the FIRST ## Gate Evidence section is authoritative;
 # subsequent duplicate headings are ignored (closes split-section bypass)
 # T175: track fenced code blocks outside Gate Evidence; block entry if heading is inside a fence
-# T178: also covers tilde (~~~) fences
-# T181: also track HTML comment blocks (<!-- ... -->) to block injection via comment content
+# T178: also covers tilde (~~~) fences; T241: 0-3 space indent per CommonMark
+# T181: also track HTML comment blocks; T242: order-aware (finditer left-to-right)
+# T243: fail-closed — if heading exists but was suppressed, emit error (not silent ok)
 in_gate_evidence_section = False
 gate_evidence_seen = False
 gate_lines = []
@@ -1068,12 +1069,10 @@ in_code_fence = False
 in_html_comment = False
 for l in lines:
     if not in_gate_evidence_section:
-        if re.match(r'^(\x60{3,}|~{3,})', l):
+        if re.match(r'^ {0,3}(\x60{3,}|~{3,})', l):
             in_code_fence = not in_code_fence
-        if '<!--' in l:
-            in_html_comment = True
-        if '-->' in l:
-            in_html_comment = False
+        for _m in re.finditer(r'<!--|-->', l):
+            in_html_comment = (_m.group() == '<!--')
     if re.match(r'^## Gate Evidence', l) and not gate_evidence_seen and not in_code_fence and not in_html_comment:
         in_gate_evidence_section = True
         gate_evidence_seen = True
@@ -1083,6 +1082,12 @@ for l in lines:
         continue
     if in_gate_evidence_section:
         gate_lines.append(l)
+# Fail-closed: if ## Gate Evidence heading exists in raw file but was suppressed
+# (unclosed fence or HTML comment above the section), emit error instead of silently returning ok
+if not gate_evidence_seen:
+    if any(re.match(r'^## Gate Evidence', l) for l in lines):
+        print('incomplete:gate-evidence-suppressed (unclosed fence or HTML comment above ## Gate Evidence -- validate manually)')
+        sys.exit(0)
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
