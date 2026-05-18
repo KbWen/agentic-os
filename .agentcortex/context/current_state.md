@@ -73,11 +73,13 @@
 ### Ship-claude-blissful-jemison-27dfb2-2026-05-18
 - **PR #104** — Multi-round adversarial governance audit: validator gate-injection hardening + downstream UX gaps (feature).
   - `validate.sh`/`validate.ps1`: T175–T247 (22 gate-injection scenarios closed) — code-fence bypass, HTML-comment bypass, indented-receipt masking, unclosed-fence masking, multi-section masking, self-reclassification reset abuse (H4), receipts-in-fence diagnostic (T247).
-  - `test.md` no-test-runner fallback path hardened: hotfix moved to sign-off-required group (§12.2); Gate 2 exception scoped to quick-win/tiny-fix only; fallback procedure tier-scoped receipt (step 5); STOP+surface prompt for unsatisfied Gate 2; terminal step 6.
+  - `test.md` no-test-runner fallback path hardened: hotfix moved to sign-off-required group (§12.2); Gate 2 exception scoped to quick-win/tiny-fix; fallback step 5 tier-scoped receipt; step 6 scoped to quick-win/tiny-fix only (terminal for feature/hotfix); Drift Log write added to quick-win/tiny-fix trigger; Step 4b Gate-2 exception now satisfiable from both paths.
   - `bootstrap.md §3.7`: feature full-chain removed from `Next:` field (8-line budget breach); chain recorded in Work Log Task Description only.
   - `.codex/INSTALL.md`: bash required on ALL platforms; Windows Git Bash prerequisite explicit; PS1 -ExecutionPolicy Bypass.
-  - 6 Opus adversarial review rounds; 93 PASS / 5 WARN / 0 FAIL throughout.
-- Tests: validate 93/5/0. HEAD: `af9d911`. PR: https://github.com/KbWen/agentic-os/pull/104
+  - `validate.sh`/`validate.ps1` M8: archive relative-link depth check; `ship.md §2`: depth-hazard warning.
+  - M8 counter overflow fix: switched from `sys.exit(count)` to stdout count read (avoids mod-256 wrap on >255 broken links).
+  - 7 Opus adversarial review rounds; 93 PASS / 5 WARN / 0 FAIL throughout.
+- Tests: validate 93/5/0. HEAD: `ee5f854`. PR: https://github.com/KbWen/agentic-os/pull/104
 
 ### Ship-claude-peaceful-aryabhata-fe5644-2026-05-12-pass3
 - **PR #103** (squash `e732349`) — README/cross-doc broken-link fix, expert-reviewed (Plan subagent). The framework README is dual-purpose (GitHub face + downstream reference); a multi-angle audit found 6 broken `.md` links (33% of internal links) in the deployed README. Per-link triage:

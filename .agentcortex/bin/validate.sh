@@ -1560,7 +1560,7 @@ if [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
   archive_broken_links=0
   archive_broken_link_list=""
   while IFS= read -r -d '' arch_file; do
-    broken="$("$PYTHON_BIN" -c "
+    broken_output="$("$PYTHON_BIN" -c "
 import re, sys
 from pathlib import Path
 f = Path(sys.argv[1])
@@ -1581,12 +1581,15 @@ for m in link_re.finditer(text):
     if not resolved.exists():
         print(f'  broken relative link in {str(f)}: {tgt}')
         count += 1
-sys.exit(count)
+# Print count as last line so caller reads from stdout (exit-code wraps at 256)
+print(count)
 " "$arch_file" 2>/dev/null)"
-    exit_code=$?
-    if [[ "$exit_code" -gt 0 ]]; then
-      archive_broken_links=$((archive_broken_links + exit_code))
-      archive_broken_link_list="${archive_broken_link_list}${broken}\n"
+    file_count=$(printf '%s\n' "$broken_output" | tail -1)
+    file_count=${file_count:-0}
+    if [[ "$file_count" -gt 0 ]]; then
+      archive_broken_links=$((archive_broken_links + file_count))
+      diagnostic=$(printf '%s\n' "$broken_output" | head -n -1)
+      [[ -n "$diagnostic" ]] && archive_broken_link_list="${archive_broken_link_list}${diagnostic}\n"
     fi
   done < <(find "$ARCHIVE_DIR" -maxdepth 2 -name '*.md' -not -name '.gitkeep*' -print0 2>/dev/null)
   if [[ "$archive_broken_links" -gt 0 ]]; then

@@ -1418,13 +1418,14 @@ if ($script:PythonCommand -and (Test-Path -Path $archiveDir -PathType Container)
     $archiveMdFiles = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -Depth 1 -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -notlike '.gitkeep*' }
     foreach ($archMd in $archiveMdFiles) {
-        $brokenRaw = & $script:PythonCommand.Source -c @"
+        $brokenOutput = & $script:PythonCommand.Source -c @"
 import re, sys
 from pathlib import Path
 f = Path(r'$($archMd.FullName.Replace('\','/'))')
 try:
     text = f.read_text(encoding='utf-8', errors='replace')
 except Exception:
+    print(0)
     sys.exit(0)
 link_re = re.compile(r'\[(?:[^\]]*)\]\(([^)]+)\)')
 count = 0
@@ -1439,12 +1440,18 @@ for m in link_re.finditer(text):
     if not resolved.exists():
         print(f'  broken relative link in {str(f)}: {tgt}')
         count += 1
-sys.exit(count)
+# Print count as last line so caller reads from stdout (exit-code wraps at 256)
+print(count)
 "@ 2>$null
-        $exitCode = $LASTEXITCODE
-        if ($exitCode -gt 0) {
-            $archiveBrokenLinks += $exitCode
-            foreach ($ln in $brokenRaw) { $archiveBrokenLinkList.Add($ln) }
+        $lines = @($brokenOutput)
+        $fileCount = 0
+        if ($lines.Count -gt 0) {
+            $lastLine = $lines[-1]
+            if ($lastLine -match '^\d+$') { $fileCount = [int]$lastLine }
+        }
+        if ($fileCount -gt 0) {
+            $archiveBrokenLinks += $fileCount
+            foreach ($ln in $lines | Select-Object -SkipLast 1) { $archiveBrokenLinkList.Add($ln) }
         }
     }
     if ($archiveBrokenLinks -gt 0) {

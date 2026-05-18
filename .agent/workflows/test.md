@@ -82,7 +82,7 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
 
 **No test runner installed?**
 - **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below to produce manual-trace evidence. **Note (`hotfix`)**: the sign-off authorizes the manual-trace *attempt* only — `engineering_guardrails.md §12.2` still governs the ship gate and has no exceptions for hotfix; Gate 2 of the 5-Gate Contract is NOT waived for hotfix even with sign-off.
-- **`quick-win` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience.
+- **`quick-win` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience. Record in Work Log `## Drift Log`: `"No-test-runner fallback: quick-win/tiny-fix — <reason> — <ISO-date>"`.
 
   Fallback procedure (all tiers — sign-off already obtained above for feature/arch-change/hotfix):
   1. State explicitly: "No test runner available — using manual verification."
@@ -91,8 +91,8 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
   4. Record in Work Log `## Known Risk`: `"No automated tests — manual trace only"`.
   5. Gate receipt:
      - **`quick-win` / `tiny-fix`**: write `Verdict: PASS` (Gate 2 satisfied by sign-off per Step 4b exception).
-     - **`feature` / `architecture-change` / `hotfix`**: do NOT write a PASS test-gate receipt — Gate 2 is unsatisfied; record manual-trace output as partial evidence in `## Evidence` and the gap in `## Known Risk`. STOP and surface to the user: "⚠️ Test gate unsatisfied — no automated tests. Do not enter /handoff or /ship until you either provide a test runner or explicitly accept the manual-trace gap."
-  6. **→ Skip the "Run all tests" step below and proceed directly to Step 4.**
+     - **`feature` / `architecture-change` / `hotfix`**: do NOT write a PASS test-gate receipt — Gate 2 is unsatisfied (see Step 4b). Record manual-trace output as partial evidence in `## Evidence` and the gap in `## Known Risk`. STOP and surface to the user: "⚠️ Test gate unsatisfied — no automated tests. Provide a test runner or explicitly accept the manual-trace gap before /ship."
+  6. **`quick-win` / `tiny-fix` only**: skip the "Run all tests" line below and proceed directly to **Step 4b**. (`feature` / `architecture-change` / `hotfix`: step 5 is terminal — do not proceed further.)
 
 Run all tests. Capture pass/fail output as evidence.
 
