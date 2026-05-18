@@ -936,7 +936,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         'ship'      = @()
     }
     foreach ($wl in $worklogs) {
-        $content = Get-Content -Path $wl.FullName -Raw -ErrorAction SilentlyContinue
+        $content = Get-Content -Path $wl.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
         if (-not $content) { continue }
         # Select legal-transition dict based on classification (accept list and table form)
         $wlClassForGates = ''
@@ -1285,6 +1285,36 @@ if ($phaseSummaryViolations -gt 0) {
 }
 else {
     Add-Result -Level 'PASS' -Message 'archived Work Logs have non-empty Phase Summary (or none archived yet)'
+}
+
+# M7: Gate completeness audit for archived Work Logs (WARN — historical records).
+$archiveGateViolations = 0
+$archiveGateViolationList = New-Object System.Collections.Generic.List[string]
+if (Test-Path -Path $archiveDir -PathType Container) {
+    $archivedLogsM7 = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '.gitkeep*' }
+    foreach ($wl in $archivedLogsM7) {
+        $arcContent = Get-Content -Path $wl.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+        if (-not $arcContent) { continue }
+        $arcClassM = [regex]::Match($arcContent, '(?m)^- \*?\*?[Cc]lassification\*?\*?:\s*`?([a-zA-Z][\w-]*)`?')
+        $arcClass = if ($arcClassM.Success) { $arcClassM.Groups[1].Value.ToLower() } else { '' }
+        if ($arcClass -eq 'tiny-fix') { continue }
+        if ($arcContent -match '(?i)Gate:\s*ship\s*\|[^|]*Verdict:\s*PASS') {
+            $arcHasPlan = [regex]::Matches($arcContent, '(?i)Gate:\s*plan\s*\|[^|]*Verdict:\s*PASS').Count
+            $arcHasImpl = [regex]::Matches($arcContent, '(?i)Gate:\s*implement\s*\|[^|]*Verdict:\s*PASS').Count
+            if ($arcHasPlan -eq 0 -or $arcHasImpl -eq 0) {
+                $archiveGateViolations++
+                $archiveGateViolationList.Add("  archived gate bypass: $($wl.FullName.Substring($root.Length).TrimStart('/','\'))")
+            }
+        }
+    }
+}
+if ($archiveGateViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "archived Work Logs with ship receipt but missing plan/implement gates (historical governance gap): $archiveGateViolations"
+    foreach ($line in $archiveGateViolationList) { Write-Output $line }
+}
+else {
+    Add-Result -Level 'PASS' -Message 'archived Work Logs gate completeness ok (or none archived yet)'
 }
 
 $gitignore = Join-NormalPath $root '.gitignore'

@@ -1109,6 +1109,18 @@ print('ok')
         fi
       else
         gate_progression_skipped=1
+        # Bash-only fallback (M9): even without Python, catch ship receipts missing
+        # minimum prerequisite gates (plan + implement). Cannot verify legal ordering
+        # but can detect obvious bypasses. Increments gate_progression_illegal so FAIL
+        # is recorded — a shipped log without plan/implement is always a violation.
+        if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS'; then
+          has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+          has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+          if [[ "$has_plan" -eq 0 ]] || [[ "$has_impl" -eq 0 ]]; then
+            printf '  [bash-fallback] shipped without plan/implement gate in %s\n' "$(basename "$wl")"
+            gate_progression_illegal=$((gate_progression_illegal + 1))
+          fi
+        fi
       fi
     fi
     # Runtime section: ## Phase Summary
@@ -1150,14 +1162,13 @@ for l in sys.stdin:
     fi
     # MEDIUM-1 (review PASS with UNPROVEN rows): check for review PASS receipt alongside
     # unresolved UNPROVEN table rows — review.md §Burden of Proof requires NOT READY in this case.
+    # Direct approach: flag if review PASS co-exists with any UNPROVEN row not tagged [NEEDS_HUMAN].
+    # (The prior ! grep -qvE condition was always false because header/gate lines don't match
+    # the UNPROVEN pattern, causing grep -qvE to succeed and the check to be permanently skipped.)
     if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*review[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
-      if printf '%s' "$wl_content" | grep -qE '✗ UNPROVEN' \
-         && ! printf '%s' "$wl_content" | grep -qvE '✗ UNPROVEN.*\[NEEDS_HUMAN\].*|.*\[NEEDS_HUMAN\].*✗ UNPROVEN'; then
-        # Simplified: flag if both PASS receipt and any untagged UNPROVEN row co-exist
-        unproven_untagged="$(printf '%s' "$wl_content" | grep '✗ UNPROVEN' | grep -v '\[NEEDS_HUMAN\]' | head -1)"
-        if [[ -n "$unproven_untagged" ]]; then
-          review_pass_with_unproven=$((review_pass_with_unproven + 1))
-        fi
+      unproven_untagged="$(printf '%s' "$wl_content" | grep '✗ UNPROVEN' | grep -v '\[NEEDS_HUMAN\]' | head -1)"
+      if [[ -n "$unproven_untagged" ]]; then
+        review_pass_with_unproven=$((review_pass_with_unproven + 1))
       fi
     fi
     # MEDIUM-3 (M5): evidence non-empty check for shipped feature/arch-change/quick-win logs.
@@ -1409,6 +1420,34 @@ if [[ "$phase_summary_violations" -gt 0 ]]; then
   printf '%b' "$phase_summary_violation_list"
 else
   record_result PASS "archived Work Logs have non-empty Phase Summary (or none archived yet)"
+fi
+
+# M7: Gate completeness audit for archived Work Logs (bash-only, WARN — historical records).
+# Checks that ship receipts are preceded by minimum required gates. WARN not FAIL
+# because archives are immutable historical records; violations indicate past governance gaps.
+archive_gate_violations=0
+archive_gate_violation_list=""
+if [[ -d "$ARCHIVE_DIR" ]]; then
+  while IFS= read -r -d '' wl; do
+    wl_content="$(cat "$wl" 2>/dev/null)"
+    [[ -z "$wl_content" ]] && continue
+    arc_class="$(printf '%s' "$wl_content" | grep -m1 -E '^- \*?\*?[Cc]lassification\*?\*?:' | sed -E 's/.*[Cc]lassification[^:]*:\s*`?//; s/`.*//; s/\s*$//' | tr '[:upper:]' '[:lower:]')"
+    [[ "$arc_class" == "tiny-fix" ]] && continue
+    if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS'; then
+      arc_has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+      arc_has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+      if [[ "$arc_has_plan" -eq 0 ]] || [[ "$arc_has_impl" -eq 0 ]]; then
+        archive_gate_violations=$((archive_gate_violations + 1))
+        archive_gate_violation_list="${archive_gate_violation_list}  archived gate bypass: ${wl#$ROOT/}\n"
+      fi
+    fi
+  done < <(find "$ARCHIVE_DIR" -name '*.md' -not -name '.gitkeep*' -print0 2>/dev/null || true)
+fi
+if [[ "$archive_gate_violations" -gt 0 ]]; then
+  record_result WARN "archived Work Logs with ship receipt but missing plan/implement gates (historical governance gap): ${archive_gate_violations}"
+  printf '%b' "$archive_gate_violation_list"
+else
+  record_result PASS "archived Work Logs gate completeness ok (or none archived yet)"
 fi
 
 GITIGNORE="$ROOT/.gitignore"
