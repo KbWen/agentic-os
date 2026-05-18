@@ -81,11 +81,10 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
 
 **No test runner installed?**
-- **`feature` / `architecture-change`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. Feature tasks require automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`.
-- **`hotfix`**: same sign-off requirement as `feature` / `architecture-change` above (per `engineering_guardrails.md §12.2` — no exceptions). Output the same confirmation prompt and require Drift Log record before writing the PASS receipt.
+- **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below to produce manual-trace evidence. **Note (`hotfix`)**: the sign-off authorizes the manual-trace *attempt* only — `engineering_guardrails.md §12.2` still governs the ship gate and has no exceptions for hotfix; Gate 2 of the 5-Gate Contract is NOT waived for hotfix even with sign-off.
 - **`quick-win` / `tiny-fix`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience.
 
-  Fallback procedure (quick-win/tiny-fix only):
+  Fallback procedure (all tiers — sign-off already obtained above for feature/arch-change/hotfix):
   1. State explicitly: "No test runner available — using manual verification."
   2. For each AC, manually trace through the code path and record expected vs. actual behavior.
   3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
@@ -112,7 +111,7 @@ IF `verification-before-completion` is active, before claiming tests are done:
 Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)).
 Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste truncated test output (pass/fail counts, command used) per AGENTS.md Gate 3; Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
 
-**Gate 2 exception — confirmed manual-trace fallback**: If the user explicitly confirmed the no-test-runner fallback in Step 3 AND a Drift Log record was written, Gate 2 ("ALL tests must pass") is satisfied by the recorded sign-off + manual-trace evidence. Proceed to Gate 3 without requiring automated test output.
+**Gate 2 exception — `quick-win` / `tiny-fix` confirmed manual-trace fallback only**: If the classification is `quick-win` or `tiny-fix`, AND the no-test-runner fallback was invoked in Step 3 AND a Drift Log record was written, Gate 2 ("ALL tests must pass") is satisfied by the recorded sign-off + manual-trace evidence. Proceed to Gate 3 without requiring automated test output. **This exception does NOT apply to `feature`, `architecture-change`, or `hotfix`** — for those tiers the sign-off authorizes the manual-trace attempt, but Gate 2 remains unsatisfied; use the manual-trace output as partial evidence and flag in Known Risk before ship.
 
 ## Step 5: Persist Evidence (Hard Gate)
 
