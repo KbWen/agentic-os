@@ -10,7 +10,7 @@
 - Owner: `KbWen`
 - Guardrails Mode: `Full`
 - Current Phase: `handoff`
-- Checkpoint SHA: `af9d911`
+- Checkpoint SHA: `48f7b28`
 - Recommended Skills: `systematic-debugging, verification-before-completion`
 - Primary Domain Snapshot: `governance`
 - SSoT Sequence: `0`
@@ -177,6 +177,7 @@ none
   - H4b: Reclassif as last entry → reset triggered ✓; H4c/H4d: edge cases ✓
   - tiny-fix bootstrap→implement → ok (exempt) ✓; feature same → still illegal ✓
   - Baseline: 93 PASS / 5 WARN / 0 FAIL
+- Post-ship rounds 12–14 (commits be02c42 → 48f7b28): ACX shim check was vacuous PASS (validate.sh -d→-f, validate.ps1 Container→Leaf, CRLF strip); routing.md §5 + bootstrap.md §6 v5→v1; test.md L117 xref; behavioral test confirmed FAIL path live. Round 14 Opus: PASS (no findings).
 - Implement round 11 — 5 downstream simulation agents + 3 Opus adversarial review rounds (commits f63c5e6 → af9d911):
   - Fixed: INSTALL.md Windows bash dependency clarified, T247 receipts-in-fence diagnostic (2 full rewrites: backtick fix, unmasked_receipt/masked_receipt logic, in-loop tracking)
   - test.md no-test-runner fallback: hotfix → sign-off-required group, fallback terminal step 6, Gate 2 exception (quick-win/tiny-fix only), step 5 tier-scoped receipt, STOP+surface prompt
@@ -186,7 +187,8 @@ none
 
 ## Test Gate Results
 
-- Validator: `bash .agentcortex/bin/validate.sh` → 93 PASS / 5 WARN / 0 FAIL (maintained throughout all 20+ commits)
+- Validator: `bash .agentcortex/bin/validate.sh` → 80 PASS / 4 WARN / 0 FAIL (post-ship state; WARN count dropped from 5→4 after routing/template fixes)
+- Behavioral test: injected fake-test-skill stub (no SKILL.md) → FAIL confirmed; restored → PASS 80/4/0 confirmed
 - Test type: governance-only change — no executable unit tests; validator is the sole automated test suite
 - AC coverage: all validator scenarios T175–T247 confirmed passing; test.md/bootstrap.md behavioral changes validated via 3 Opus adversarial review passes
 - Gate receipt: `- Gate: test | Verdict: PASS | Classification: feature | Timestamp: 2026-05-18T23:45:00Z`
