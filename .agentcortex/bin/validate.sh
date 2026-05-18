@@ -2035,7 +2035,7 @@ if [[ -d "$AGENTS_DIR" ]]; then
         if [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
           skill_name="${BASH_REMATCH[1]}"
           skill_dir="$ROOT/.agent/skills/$skill_name"
-          if [[ -d "$skill_dir" ]]; then
+          if [[ -f "$skill_dir" ]]; then
             if [[ ! -f "$ROOT/.agents/skills/$skill_name/SKILL.md" ]]; then
               printf '  shim skill missing SKILL.md: %s (referenced in %s)\n' "$skill_name" "$(basename "$shim")"
               shim_skill_errors=$((shim_skill_errors + 1))

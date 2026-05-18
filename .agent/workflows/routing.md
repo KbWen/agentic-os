@@ -152,7 +152,7 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 
 ## 5. Command Discovery Notes
 
-All commands are dispatched per `AGENTS.md §Agentic OS Runtime v5` and execute canonical workflows from `.agent/workflows/<command>.md`. For the Claude platform, dispatcher stubs live in `.claude/commands/<command>.md`.
+All commands are dispatched per `AGENTS.md §Agentic OS Runtime v1` and execute canonical workflows from `.agent/workflows/<command>.md`. For the Claude platform, dispatcher stubs live in `.claude/commands/<command>.md`.
 
 > **Note**: `.agent/workflows/commands.md` is a compatibility alias. This routing index is the canonical source for command discovery.
 
