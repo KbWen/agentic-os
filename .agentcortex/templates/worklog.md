@@ -140,7 +140,7 @@ none
 
 ## Resume
 
-> Populated by /handoff for feature/architecture-change tasks. Required sub-sections: Read Map, Skip List, Context Snapshot, and optionally Backlog Status. Leave as `none` until /handoff runs.
+> Populated by /handoff for feature/architecture-change tasks. Required: `State`, `Completed`, `Next`, `Context` fields; then `### Read Map`, `### Skip List`, `### Context Snapshot`; optionally `### Backlog Status`. validate.sh enforces the three `###` headings. Leave as `none` until /handoff runs.
 
 none
 
