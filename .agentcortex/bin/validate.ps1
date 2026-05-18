@@ -911,7 +911,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         'plan'      = @('implement')
         'implement' = @('review','test','ship')
         'review'    = @('implement','test','ship')
-        'test'      = @('handoff','ship','implement')
+        'test'      = @('ship','implement')
         'handoff'   = @('ship','retro')
         'ship'      = @()
     }
@@ -933,7 +933,6 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         'implement' = @('review','test')
         'review'    = @('implement','test')
         'test'      = @('ship','implement')
-        'handoff'   = @('ship','retro')
         'ship'      = @()
     }
     foreach ($wl in $worklogs) {
@@ -980,6 +979,12 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 if ($gm.Success) {
                     $gPhase = $gm.Groups[1].Value.ToLower()
                     if ($gPhase -ne 'retro' -and $line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
+                        # Reclassification reset (state_machine.md T19 IMPLEMENTING→CLASSIFIED):
+                        # A second bootstrap receipt means scope was escalated; discard the
+                        # pre-escalation window to avoid false illegal:implement→bootstrap flags.
+                        if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0) {
+                            $gateList.Clear()
+                        }
                         $gateList.Add($gPhase)
                     }
                 }

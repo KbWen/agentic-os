@@ -29,9 +29,9 @@ missing: []
 ```
 
 - If `verdict: fail` → output ONLY the gate block. STOP.
-- **Gate Evidence Receipt**: After outputting the gate block, append a compact gate receipt to the Work Log under `## Gate Evidence`:
+- **Gate Receipt**: After outputting the gate block, append a compact gate receipt to the Work Log under `## Gate Evidence`:
   ```
-  - Gate: ship | Verdict: <pass|fail> | Classification: <tier> | Timestamp: <ISO>
+  - Gate: ship | Verdict: <PASS|FAIL> | Classification: <tier> | Timestamp: <ISO>
   ```
 - Resolve the active Work Log path for the current `<worklog-key>` before evaluating `worklog_exists`.
 - If no active Work Log exists but archive context for the branch exists, create a follow-up active log, warn the user, and continue gate evaluation. Missing handoff references or missing evidence still require `verdict: fail`.
@@ -58,8 +58,8 @@ Record the warning in `## Known Risk` if the section is otherwise empty.
 
 Scan Work Log `## Gate Evidence` for receipts from required prior phases:
 - `feature` / `architecture-change`: bootstrap, plan, implement, review, test, handoff receipts required
-- `quick-win`: bootstrap, plan receipts required
-- `hotfix`: bootstrap, implement, review, test receipts required (hotfix MUST reach TESTED per Entry Conditions — no implement-only shortcuts)
+- `quick-win`: bootstrap, plan, implement receipts required (implement receipt always present — no plan→ship edge exists)
+- `hotfix`: bootstrap, plan, implement, review, test receipts required (hotfix MUST reach TESTED; plan is mandatory per §10.2 — no implement-only shortcuts)
 
 For each missing receipt output: `"⚠️ Missing gate receipt for: [phase]. Run that phase or provide evidence before shipping."`
 User may acknowledge and proceed. Missing receipts do NOT auto-fail the gate.

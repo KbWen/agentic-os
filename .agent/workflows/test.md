@@ -109,7 +109,7 @@ No evidence = no completion. This is non-negotiable.
 - State transition (classification-aware):
   - `feature` / `architecture-change`: next is `/handoff` (MANDATORY — do NOT route to `/ship` directly; the ship gate Entry Condition requires a completed handoff receipt).
   - `quick-win` / `hotfix`: next is `/ship` directly.
-  - Reverse edge only: if tests are still red after debugging, go back to `/implement` (record in Drift Log); `/review` is not a forward step from test.
+  - Reverse edge only: if tests are still red after debugging, go back to `/implement` (record in Drift Log). After implement completes, **`/review` MUST run again** before returning to `/test` — a test-triggered implement loop resets the REVIEWED state, so the prior review receipt is stale. Do not skip re-review.
 
 **Gate Receipt**: After evidence is persisted, append to Work Log `## Gate Evidence`:
 ```

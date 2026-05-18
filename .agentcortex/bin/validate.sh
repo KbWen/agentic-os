@@ -997,7 +997,7 @@ LEGAL_DEFAULT = {
     'plan':      ['implement'],
     'implement': ['review','test','ship'],
     'review':    ['implement','test','ship'],
-    'test':      ['handoff','ship','implement'],
+    'test':      ['ship','implement'],
     'handoff':   ['ship','retro'],
     'ship':      [],
 }
@@ -1019,7 +1019,6 @@ LEGAL_HOTFIX = {
     'implement': ['review','test'],
     'review':    ['implement','test'],
     'test':      ['ship','implement'],
-    'handoff':   ['ship','retro'],
     'ship':      [],
 }
 content = sys.stdin.read()
@@ -1051,6 +1050,12 @@ for l in lines:
         v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
         if v and v.group(1).strip().upper() != 'PASS':
             continue
+        # Reclassification reset (state_machine.md T19 IMPLEMENTING→CLASSIFIED):
+        # A second bootstrap receipt means scope was escalated and the agent re-bootstrapped.
+        # Discard the pre-escalation window to avoid false illegal:implement→bootstrap flags.
+        # Only the LAST bootstrap window's progression is validated.
+        if phase == 'bootstrap' and gates:
+            gates = []
         gates.append(phase)
 # Completeness check first — valid even with 1 gate (avoids early-return bypass)
 gate_set = set(gates)
