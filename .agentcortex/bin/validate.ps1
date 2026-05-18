@@ -1037,6 +1037,22 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     }
                 }
             }
+            # M10: stale-review — if most recent implement follows most recent review,
+            # test/handoff/ship without re-review = governance gap (test.md §reverse-edge)
+            $lastReviewIdx = -1
+            $lastImplIdx   = -1
+            for ($i = 0; $i -lt $gates.Count; $i++) {
+                if ($gates[$i] -eq 'review')    { $lastReviewIdx = $i }
+                if ($gates[$i] -eq 'implement') { $lastImplIdx   = $i }
+            }
+            if ($lastReviewIdx -ge 0 -and $lastImplIdx -gt $lastReviewIdx) {
+                $postImpl = if ($lastImplIdx + 1 -lt $gates.Count) { $gates[($lastImplIdx + 1)..($gates.Count - 1)] } else { @() }
+                $badNext = $postImpl | Where-Object { $_ -in @('test','handoff','ship') } | Select-Object -First 1
+                if ($badNext) {
+                    Write-Output "  illegal gate progression in $($wl.Name): implement-after-review->$badNext (stale review — re-review required)"
+                    $gateProgressionIllegal++
+                }
+            }
         }
         if ($content -notmatch '(?m)^## Phase Summary') { $phaseSummaryMissing++ }
         # Sentinel marker discoverability — Work Log Phase Summary SHOULD carry

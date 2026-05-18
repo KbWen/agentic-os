@@ -1098,6 +1098,17 @@ for i in range(1, len(gates)):
     if curr not in allowed:
         print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
         sys.exit(0)
+# M10: stale-review check — if most recent implement follows most recent review,
+# then test/handoff/ship without a new review = stale review violation
+# (test.md §Step 5 reverse edge: implement-after-review MUST re-review before test)
+last_review_idx = max((i for i, g in enumerate(gates) if g == 'review'), default=-1)
+last_impl_idx   = max((i for i, g in enumerate(gates) if g == 'implement'), default=-1)
+if last_review_idx >= 0 and last_impl_idx > last_review_idx:
+    post_impl = gates[last_impl_idx + 1:]
+    if any(g in ('test', 'handoff', 'ship') for g in post_impl):
+        bad_next = next(g for g in post_impl if g in ('test', 'handoff', 'ship'))
+        print(f'illegal:implement-after-review->{bad_next} (stale review: implement occurred after last review PASS; re-review required)')
+        sys.exit(0)
 print('ok')
 " <<< "$wl_content" 2>/dev/null)"
         if [[ "$gate_check" == illegal:* ]]; then
