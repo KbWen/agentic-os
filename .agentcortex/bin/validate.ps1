@@ -972,17 +972,29 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         } else {
             # Parse gate receipts: only PASS verdicts are forward transitions;
             # NOT READY / FAIL receipts are reverse edges and must be excluded.
-            # retro is out-of-band — exclude to avoid false illegal-transition flags.
+            # supporting workflows are out-of-band — exclude to avoid false illegal-transition flags.
+            # H4: pre-scan Drift Log for reclassification entries before processing gates
+            $hasReclassifyEntry = $false
+            $inDrift = $false
+            foreach ($line in ($content -split "`n")) {
+                if ($line -match '^## Drift Log') { $inDrift = $true; continue }
+                if ($inDrift -and $line -match '^## ') { break }
+                if ($inDrift -and $line -match '\bReclassif') { $hasReclassifyEntry = $true; break }
+            }
             $gateList = [System.Collections.Generic.List[string]]::new()
+            $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
             foreach ($line in ($content -split "`n")) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
                 if ($gm.Success) {
                     $gPhase = $gm.Groups[1].Value.ToLower()
-                    if ($gPhase -ne 'retro' -and $line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
-                        # Reclassification reset (state_machine.md T19 IMPLEMENTING→CLASSIFIED):
-                        # A second bootstrap receipt means scope was escalated; discard the
-                        # pre-escalation window to avoid false illegal:implement→bootstrap flags.
-                        if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0) {
+                    # H3: record ship presence BEFORE verdict filter
+                    if ($gPhase -eq 'ship') { $hasShipReceipt = $true }
+                    # supporting workflows are out-of-band
+                    if ($gPhase -in @('retro','research','brainstorm','decide','audit')) { continue }
+                    if ($line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
+                        # H4: Reclassification reset — only discard prior window when Drift Log
+                        # documents a Reclassification entry; prevents window-laundering without evidence
+                        if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0 -and $hasReclassifyEntry) {
                             $gateList.Clear()
                         }
                         $gateList.Add($gPhase)
@@ -993,12 +1005,18 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             # Completeness check first — valid even with 1 gate (avoids early-return bypass)
             $gateSet = @{}
             foreach ($g in $gates) { $gateSet[$g] = $true }
-            if ($gateSet.ContainsKey('ship')) {
-                $requiredPhases = @()
+            # H3: completeness triggers on ANY ship receipt, not just PASS ones
+            if ($hasShipReceipt -or $gateSet.ContainsKey('ship')) {
                 if ($wlClassForGates -in @('feature','architecture-change')) {
                     $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
                 } elseif ($wlClassForGates -eq 'hotfix') {
                     $requiredPhases = @('bootstrap','plan','implement','review','test')
+                } elseif ($wlClassForGates -eq 'quick-win') {
+                    # H1: quick-win has real required phases — not an empty set
+                    $requiredPhases = @('bootstrap','plan','implement')
+                } else {
+                    # H1: fail-closed for unknown/misspelled classification — treat as feature
+                    $requiredPhases = @('bootstrap','plan','implement','review','test','handoff')
                 }
                 $missingPhases = $requiredPhases | Where-Object { -not $gateSet.ContainsKey($_) }
                 if ($missingPhases) {
@@ -1054,8 +1072,8 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             if ($cpM.Success -and $cpM.Groups[1].Value.ToLower() -ne 'ship') { $currentPhaseIncoherent++ }
             # Archival check (Item 1): shipped log in active work/ means /ship step 3 (archival) was skipped
             if (-not $cpM.Success -or $cpM.Groups[1].Value.ToLower() -eq 'ship') { $shippedNotArchived++ }
-            # MEDIUM-3: evidence non-empty check for shipped feature/arch-change
-            if ($wlClass -in @('feature','architecture-change')) {
+            # MEDIUM-3 (M5): evidence non-empty check for shipped feature/arch-change/quick-win
+            if ($wlClass -in @('feature','architecture-change','quick-win')) {
                 $evidenceMatch = [regex]::Match($content, '(?ms)^## Evidence\r?\n(.*?)(?=^## |\z)')
                 $evidenceBody = if ($evidenceMatch.Success) { $evidenceMatch.Groups[1].Value.Trim() } else { '' }
                 if ([string]::IsNullOrWhiteSpace($evidenceBody) -or $evidenceBody -match 'Pending:\s*bootstrap only') {
@@ -1149,9 +1167,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'PASS' -Message 'no shipped work logs found in active work/ directory'
     }
     if ($evidencePlaceholderOnly -gt 0) {
-        Add-Result -Level 'WARN' -Message "feature/arch-change shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP): $evidencePlaceholderOnly"
+        Add-Result -Level 'FAIL' -Message "feature/arch-change/quick-win shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP per AGENTS.md §Delivery Gates): $evidencePlaceholderOnly"
     } elseif ($worklogs.Count -gt 0) {
-        Add-Result -Level 'PASS' -Message 'shipped feature/arch-change work logs have non-placeholder Evidence sections'
+        Add-Result -Level 'PASS' -Message 'shipped feature/arch-change/quick-win work logs have non-placeholder Evidence sections'
     }
     if ($reviewPassWithUnproven -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs with review PASS receipt but unresolved UNPROVEN rows (should be NOT READY per review.md §Burden of Proof): $reviewPassWithUnproven"

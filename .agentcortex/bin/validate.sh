@@ -1038,34 +1038,52 @@ elif wl_class == 'hotfix':
     LEGAL = LEGAL_HOTFIX
 else:
     LEGAL = LEGAL_DEFAULT
+# H4: pre-scan Drift Log to check if reclassification was documented
+in_drift = False
+has_reclassify_entry = False
+for l in lines:
+    if re.match(r'^## Drift Log', l):
+        in_drift = True
+    elif in_drift and re.match(r'^## ', l):
+        break
+    elif in_drift and re.search(r'\bReclassif', l):
+        has_reclassify_entry = True
+        break
 gates = []
+has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 for l in lines:
     m = re.match(r'^(?:\x60?- )?[Gg]ate:\s*(\w+)\s*\|', l)
     if m:
         phase = m.group(1).lower()
-        # retro is out-of-band; exclude to avoid false illegal-transition flags
-        if phase == 'retro':
+        # H3: record ship presence BEFORE the verdict filter
+        if phase == 'ship':
+            has_ship_receipt = True
+        # supporting workflows are out-of-band; exclude to avoid false illegal-transition flags
+        if phase in ('retro', 'research', 'brainstorm', 'decide', 'audit'):
             continue
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
         v = re.search(r'\|[^|]*[Vv]erdict:\s*([A-Za-z _]+?)(\s*\||$)', l)
         if v and v.group(1).strip().upper() != 'PASS':
             continue
-        # Reclassification reset (state_machine.md T19 IMPLEMENTING→CLASSIFIED):
-        # A second bootstrap receipt means scope was escalated and the agent re-bootstrapped.
-        # Discard the pre-escalation window to avoid false illegal:implement→bootstrap flags.
-        # Only the LAST bootstrap window's progression is validated.
-        if phase == 'bootstrap' and gates:
+        # H4: Reclassification reset — only discard prior window when Drift Log
+        # documents a Reclassification entry; prevents window-laundering without evidence
+        if phase == 'bootstrap' and gates and has_reclassify_entry:
             gates = []
         gates.append(phase)
 # Completeness check first — valid even with 1 gate (avoids early-return bypass)
 gate_set = set(gates)
-if 'ship' in gate_set:
+# H3: completeness triggers on ANY ship receipt, not just PASS ones
+if has_ship_receipt or 'ship' in gate_set:
     if wl_class in ('feature', 'architecture-change'):
         required = {'bootstrap','plan','implement','review','test','handoff'}
     elif wl_class == 'hotfix':
         required = {'bootstrap','plan','implement','review','test'}
+    elif wl_class == 'quick-win':
+        # H1: quick-win has real required phases — not an empty set
+        required = {'bootstrap','plan','implement'}
     else:
-        required = set()
+        # H1: fail-closed for unknown/misspelled classification — treat as feature
+        required = {'bootstrap','plan','implement','review','test','handoff'}
     missing_phases = required - gate_set
     if missing_phases:
         print(f'incomplete:{",".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
@@ -1142,9 +1160,9 @@ for l in sys.stdin:
         fi
       fi
     fi
-    # MEDIUM-3: evidence non-empty check for shipped feature/arch-change logs.
+    # MEDIUM-3 (M5): evidence non-empty check for shipped feature/arch-change/quick-win logs.
     # The bootstrap placeholder "Pending: bootstrap only" is not real evidence.
-    if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
+    if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" || "$wl_class" == "quick-win" ]]; then
       if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
         evidence_body="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)"
         if [[ -z "$evidence_body" || "$evidence_body" == *"Pending: bootstrap only"* ]]; then
@@ -1269,7 +1287,7 @@ for l in sys.stdin:
     record_result PASS "no shipped work logs found in active work/ directory"
   fi
   if [[ "$evidence_placeholder_only" -gt 0 ]]; then
-    record_result WARN "feature/arch-change shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP per AGENTS.md §Delivery Gates): ${evidence_placeholder_only}"
+    record_result FAIL "feature/arch-change/quick-win shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP per AGENTS.md §Delivery Gates): ${evidence_placeholder_only}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "shipped feature/arch-change work logs have non-placeholder Evidence sections"
   fi
