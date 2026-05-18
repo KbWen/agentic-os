@@ -1018,6 +1018,19 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 Write-Output 'incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)'
                 exit 0
             }
+            # T247: receipts-in-fence diagnostic — section seen, no lines collected, but section
+            # contains receipt-format lines (all masked by fences/comments). Emit targeted error.
+            if ($gateEvidenceSeen -and $gateLines.Count -eq 0) {
+                $inRawSection = $false
+                foreach ($rl in ($content -split "\r?\n")) {
+                    if ($rl -match '^## Gate Evidence') { $inRawSection = $true; continue }
+                    if ($inRawSection -and $rl -match '^## ') { break }
+                    if ($inRawSection -and $rl -match '(?i)^(?:`?- )?gate:\s*\w+\s*\|') {
+                        Write-Output 'incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)'
+                        exit 0
+                    }
+                }
+            }
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
             $reviewNotReady = $false  # track pending re-review after NOT READY reverse edge

@@ -16,7 +16,13 @@ git clone https://github.com/KbWen/agentic-os.git
 ./agentic-os/installers/deploy_brain.sh .
 ```
 
-**Windows (PowerShell or CMD):**
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/KbWen/agentic-os.git
+powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 .
+```
+
+**Windows (CMD):**
 ```cmd
 git clone https://github.com/KbWen/agentic-os.git
 .\agentic-os\installers\deploy_brain.cmd .
@@ -24,7 +30,8 @@ git clone https://github.com/KbWen/agentic-os.git
 
 > If you already have the framework deployed, update directly:
 > - Bash: `./installers/deploy_brain.sh .`
-> - Windows: `.\installers\deploy_brain.cmd .`
+> - Windows (PowerShell): `powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .`
+> - Windows (CMD): `.\installers\deploy_brain.cmd .`
 
 ## 2) Verification
 
@@ -38,10 +45,10 @@ git clone https://github.com/KbWen/agentic-os.git
 
 **Windows (PowerShell):**
 ```powershell
-.\.agentcortex\bin\validate.ps1
+powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1
 
 # Without Python
-.\.agentcortex\bin\validate.ps1 -NoPython
+powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1 -NoPython
 ```
 
 ### Optional: local SSoT guard hook

@@ -1099,6 +1099,21 @@ if not gate_evidence_seen:
 if in_code_fence or in_html_comment:
     print('incomplete:unterminated-fence-or-comment (unclosed code fence or HTML comment in ## Gate Evidence -- validate manually)')
     sys.exit(0)
+# T247: receipts-in-fence diagnostic — section seen, no lines collected, but section
+# contains receipt-format lines (all were inside fences/comments). Users who wrote
+# receipts inside a code block (e.g. to show the format) get a targeted error instead
+# of a silent ok with zero gates.
+if gate_evidence_seen and not gate_lines:
+    in_raw = False
+    for l in lines:
+        if re.match(r'^## Gate Evidence', l):
+            in_raw = True
+            continue
+        if in_raw and re.match(r'^## ', l):
+            break
+        if in_raw and re.match(r'^(?:\x60?- )?gate:\s*\w+\s*\|', l, re.IGNORECASE):
+            print('incomplete:receipts-in-fence (Gate Evidence has receipt-format lines but all are inside code fences or HTML comments -- move receipts out of code blocks)')
+            sys.exit(0)
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge

@@ -80,6 +80,12 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
 
+**No test runner installed?** If the project has no test framework and none can be added (e.g., Codex sandbox, read-only env), use this fallback:
+1. State explicitly: "No test runner available — using manual verification."
+2. For each AC, manually trace through the code path and record the expected vs. actual behavior.
+3. Record as evidence: `Manual trace: AC-N — input: <X>, expected: <Y>, code path: <file:line>`.
+4. This is WARN-level — does not block gate receipt, but the Work Log MUST note the gap.
+
 Run all tests. Capture pass/fail output as evidence.
 
 ## Step 4: Adversarial Test Cases (Auto-Triggered)
