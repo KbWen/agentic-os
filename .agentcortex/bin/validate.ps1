@@ -1868,7 +1868,7 @@ if (Test-Path -Path $agentsDir -PathType Container) {
                 if ($line -match '^\s+-\s+(.+)$') {
                     $skillName = $Matches[1].Trim()
                     $skillDir = Join-NormalPath $root ".agent/skills/$skillName"
-                    if (Test-Path -Path $skillDir -PathType Container) {
+                    if (Test-Path -Path $skillDir -PathType Leaf) {
                         $skillBody = Join-NormalPath $root ".agents/skills/$skillName/SKILL.md"
                         if (-not (Test-Path -Path $skillBody -PathType Leaf)) {
                             Write-Output "  shim skill missing SKILL.md: $skillName (referenced in $($shim.Name))"

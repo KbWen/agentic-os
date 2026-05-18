@@ -420,7 +420,7 @@ If the values differ: output advisory warning:
 
 This is advisory — it warns but does not hard-block. The user may proceed after acknowledging.
 
-## 6. Antigravity Hard Stop (Runtime v5)
+## 6. Antigravity Hard Stop (Runtime v1)
 
 - After outputting the bootstrap report, check whether the user explicitly requested a downstream phase in the same message.
   - **Yes** (e.g., "bootstrap then plan", "start this and plan it"): proceed to that phase per AGENTS.md §6 — do NOT add an extra confirmation turn. The bootstrap report was already output, so the user has visibility into classification.

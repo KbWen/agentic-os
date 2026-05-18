@@ -2028,12 +2028,13 @@ if [[ -d "$AGENTS_DIR" ]]; then
     in_frontmatter=0
     in_skills=0
     while IFS= read -r line; do
+      line="${line%$'\r'}"
       [[ "$line" == "---" ]] && { in_frontmatter=$(( 1 - in_frontmatter )); in_skills=0; continue; }
       [[ "$in_frontmatter" -eq 0 ]] && break
       if [[ "$line" =~ ^skills: ]]; then in_skills=1; continue; fi
       if [[ "$in_skills" -eq 1 ]]; then
         if [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.+)$ ]]; then
-          skill_name="${BASH_REMATCH[1]}"
+          skill_name="${BASH_REMATCH[1]%$'\r'}"
           skill_dir="$ROOT/.agent/skills/$skill_name"
           if [[ -f "$skill_dir" ]]; then
             if [[ ! -f "$ROOT/.agents/skills/$skill_name/SKILL.md" ]]; then
