@@ -1058,7 +1058,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     $prev = $gates[$i - 1]
                     $curr = $gates[$i]
                     $allowed = $legalTransitions[$prev]
-                    if ($allowed -and ($curr -notin $allowed)) {
+                    if (($null -ne $allowed) -and ($curr -notin $allowed)) {
                         Write-Output "  illegal gate progression in $($wl.Name): ${prev}->${curr}"
                         $gateProgressionIllegal++
                         break
