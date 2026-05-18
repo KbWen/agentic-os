@@ -947,7 +947,8 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         if ($wlClassForGatesMatch.Success) { $wlClassForGates = $wlClassForGatesMatch.Groups[1].Value.ToLower() }
         $legalTransitions = if ($wlClassForGates -in @('feature','architecture-change')) { $legalStrict }
                             elseif ($wlClassForGates -eq 'hotfix') { $legalHotfix }
-                            else { $legalDefault }
+                            elseif ($wlClassForGates -in @('quick-win','tiny-fix')) { $legalDefault }
+                            else { $legalStrict }  # H1 fail-closed: unknown → strictest transitions
         $createdDate = ''
         $createdDateMatch = [regex]::Match($content, '(?m)^- \*\*Created Date\*\*:\s*(.+)$')
         if ($createdDateMatch.Success) {

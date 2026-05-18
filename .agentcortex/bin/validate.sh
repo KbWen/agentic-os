@@ -1036,8 +1036,12 @@ if wl_class in ('feature', 'architecture-change'):
     LEGAL = LEGAL_STRICT
 elif wl_class == 'hotfix':
     LEGAL = LEGAL_HOTFIX
-else:
+elif wl_class in ('quick-win', 'tiny-fix'):
     LEGAL = LEGAL_DEFAULT
+else:
+    # H1: fail-closed for unknown/misspelled classification — use strictest transitions
+    # (mirrors the completeness check which also treats unknown as feature-level)
+    LEGAL = LEGAL_STRICT
 # H4: pre-scan Drift Log to check if reclassification was documented
 in_drift = False
 has_reclassify_entry = False
