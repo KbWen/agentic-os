@@ -145,7 +145,7 @@ entries:
     runtime_anchor:
       - "AGENTS.md#Skill Activation Triggers"
       - ".agent/workflows/hotfix.md#1"
-      - ".agent/workflows/implement.md#systematic-debugging"
+      - ".agent/workflows/implement.md#Skill Execution Overrides"
       - ".agent/workflows/test.md#Step 3"
     block_if_missed: false
     fallback_behavior: >

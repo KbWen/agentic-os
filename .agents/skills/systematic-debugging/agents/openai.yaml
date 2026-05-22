@@ -10,7 +10,7 @@ agentcortex:
   load_policy: on-failure
   cost_type: execution
   cost_risk: high
-  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/hotfix.md#1", ".agent/workflows/implement.md#systematic-debugging", ".agent/workflows/test.md#Step 3"]
+  runtime_anchor: ["AGENTS.md#Skill Activation Triggers", ".agent/workflows/hotfix.md#1", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 3"]
   detect_by:
     classification: ["quick-win", "feature", "architecture-change", "hotfix"]
     intent_patterns: ["debug", "除錯", "找 bug"]
