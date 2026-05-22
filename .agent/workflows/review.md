@@ -68,8 +68,7 @@ Plus:
 - Scope enforcement: MUST skip any file with `status: frozen` or `Finalized` metadata. Review scope is limited to current task's changed files only.
 - External dependency discipline: if dependency manifests changed or repo-external APIs/platform features were used, verify `## External References` cites official sources and that implementation matches them.
 - Known risk traceability: if `## Known Risk` is populated, confirm each listed mitigation is actually present in the code or evidence.
-- PR-visible evidence contract: active Work Logs remain local-only. In framework/upstream repos, refresh a tracked review mirror at `.agentcortex/context/review/<worklog-key>.md` before opening or updating a PR so `agentcortex-verify.yml` can inspect the current evidence. Downstream repos may leave this path absent unless they opt into PR-visible evidence checks.
-- Review mirror scope: `.agentcortex/context/review/<worklog-key>.md` may reflect an in-progress PR. CI validates legal phase progression up to the current checkpoint; `/ship` still enforces the full completion gate before SSoT updates.
+- Work Log visibility: active Work Logs remain local-only (gitignored) and are NOT mirrored into the repo for review. Review evidence lives in the PR description and the Work Log itself; `/ship` enforces the full completion gate before any SSoT update.
 - ACX shim enforcement: if the phase being reviewed has a corresponding `.claude/agents/acx-<phase>.md` shim AND the implementation dispatched subagents, verify that `subagent_type` used the correct `acx-*` shim name. Subagents spawned without the shim will NOT receive native skill injection — flag as **MEDIUM** defect requiring a follow-up fix in the calling workflow.
 
 ## Error Observability Compliance (§5.2a)

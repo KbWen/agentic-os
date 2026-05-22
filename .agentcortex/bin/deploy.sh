@@ -386,7 +386,7 @@ if $DRY_RUN; then
         ".codex" "codex/rules" ".github/ISSUE_TEMPLATE" \
         ".agentcortex/bin" ".agentcortex/metadata" ".agentcortex/tools" \
         ".agentcortex/docs/guides" ".agentcortex/context/work" \
-        ".agentcortex/context/review" ".agentcortex/context/archive" \
+        ".agentcortex/context/archive" \
         ".agentcortex/templates" ".agentcortex/adr" ".agentcortex/specs" \
         "docs/specs" "docs/adr"; do
         [ -d "$TARGET/$d" ] || echo "  [NEW DIR] $d"
@@ -474,7 +474,6 @@ mkdir -p "$TARGET/.agentcortex/metadata"
 mkdir -p "$TARGET/.agentcortex/tools"
 mkdir -p "$TARGET/.agentcortex/docs/guides"
 mkdir -p "$TARGET/.agentcortex/context/work"
-mkdir -p "$TARGET/.agentcortex/context/review"
 mkdir -p "$TARGET/.agentcortex/context/archive"
 mkdir -p "$TARGET/.agentcortex/context/archive/work"
 mkdir -p "$TARGET/.agentcortex/templates"
@@ -931,7 +930,6 @@ echo ""
 echo "Git:"
 echo "   Framework files are git-tracked (available in worktrees and branches)."
 echo "   Only work logs and private state are gitignored."
-echo "   PR review mirrors under .agentcortex/context/review/ are optional; upstream repos may track them, downstream repos can opt in."
 echo "   .agentcortex-manifest tracks deployed files — commit this to your repo."
 echo ""
 echo "Next steps:"
