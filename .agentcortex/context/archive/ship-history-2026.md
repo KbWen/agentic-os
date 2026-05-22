@@ -1,6 +1,31 @@
-# Ship History Archive — 2026 (Entries 11–14)
+# Ship History Archive — 2026
 
-Archived from `current_state.md ## Ship History` to stay within the 10-entry cap.
+Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
+
+### Ship-feat-epic-spec-hierarchy-governance-2026-05-06
+- Feature shipped: Label-based cluster grouping system for `_product-backlog.md` — resolves downstream backlog fragmentation.
+- Edits:
+  - `.agent/workflows/spec-intake.md` — §2b single-feature label & cluster check; §2a Feature Inventory 7-col (Kind/Labels/Priority replace Finding); §8c Reprioritize with P0 push-back; merge-guard backfill on all 3 new cols
+  - `.agent/workflows/bootstrap.md` — §5 Active Backlog: Kind/Priority assignment + cluster check with suppression
+  - `.agent/workflows/review.md` — Backlog Finding Registration section (review-finding auto-log)
+  - `.agent/workflows/hotfix.md` — §5 Evidence: hotfix-spawn systemic issue auto-log
+  - `.agent/workflows/routing.md` — Reprioritize trigger phrases + P-tier tiebreaker
+  - `.agent/config.yaml` — `cluster:` section (threshold/label-cap/p0-pct/marker-cap/suppression-TTL)
+  - `.agentcortex/bin/validate.sh` — backlog schema check + L-1 P0 ratio + L-2 label count + L-3 Kind diversity + L-4 declined markers
+  - `.githooks/pre-commit.guard-ssot.sample` — new advisory git hook sample
+  - `docs/specs/_product-backlog.md` — Kind/Labels/Priority columns backfilled (merge-guard)
+- Tests: validate 81 PASS / 0 WARN / 0 FAIL (sha: 2760428).
+- PR: https://github.com/KbWen/agentic-os/pull/89 (feat/epic-spec-hierarchy-governance → main)
+- Backlog rows shipped: label-cluster system (framework-level; no row numbers — this is the system that manages rows).
+
+### Ship-feat-optimization-batch2-2026-05-04
+- Feature shipped: 4 follow-up quick-wins on `feat/optimization-hooks-2026-05-04` branch (PR #87 same-PR addition).
+- Edits:
+  - `.agentcortex/bin/validate.{sh,ps1}` — graduated active-work-log threshold: WARN at >8, FAIL at >12 (was WARN-only); plus `ARCHIVE_SIZE_WARN_KB` (default 10 MB) WARN check on `.agentcortex/context/archive/`.
+  - `.agentcortex/templates/worklog.md` — optional `Files Read: N` field in `## Session Info` for token-budget instrumentation; `## Evidence` section now references `engineering_guardrails.md §5.2b Evidence Truncation Rule` (3-line success / 10-line failure caps).
+- Tests: validate 73 PASS / 7 WARN / 0 FAIL (archive 74 KB, 8/8 active logs).
+- Backlog rows shipped: #10, #12, #23, #28. Pending count 20 → 16.
+- Commits: `c0f63c3`; merged via `30e6fcc` (PR #87).
 
 ### Ship-feat-optimization-hooks-2026-05-04
 - Feature shipped: Closing the Claude-platform half of backlog #30 — PreCompact hook + framework receipt integration. Stop hook (`check-sentinel.py`) was previously shipped under CC-2/L4 but its violations.jsonl was never read by validate; this ship closes that loop. PreToolUse + UserPromptSubmit deferred (risk > ROI per design review).

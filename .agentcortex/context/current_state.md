@@ -12,8 +12,8 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-05-18
-- **Last Verified**: 2026-05-18
+- **Last Updated**: 2026-05-22
+- **Last Verified**: 2026-05-22
 - **Update Sequence**: 20
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
@@ -69,6 +69,13 @@
 - [Category: spec-factual-claims][Severity: MEDIUM][Trigger: domain-decision-tool-behavior-claim][prev: eea362e5] Domain Decisions that make factual claims about tool behavior (e.g., 'no external API call', 'language-agnostic') MUST be verified against tool documentation before the spec is frozen. Factual errors in Domain Decisions survive implementation and review phases because reviewers check AC compliance, not rationale accuracy. Self-check at spec-write: for each [DECISION] that asserts tool behavior, find one authoritative source confirming the claim.
 - [Category: scope-expansion][Severity: HIGH][Trigger: procedure-header-scope-change][prev: 95082304] When expanding a procedure's tier scope (e.g., "quick-win only" → "all tiers"), MUST audit every step inside the procedure body for correctness under the new scope BEFORE committing. Changing only the header/trigger misses procedure-body invariants — e.g., a receipt-writing step that was safe for quick-win becomes a governance hole for feature/hotfix. Self-check: for each step N in the procedure, ask "does this step still hold correctly for every new tier I just added?"
 ## Ship History
+
+### Ship-fix-downstream-path-consistency-2026-05-22
+- **PR #106** (squash `40d3462`) — Cross-session doc write/read path alignment for zero-Python downstream (quick-win).
+  - Archive paths: `/ship` final-archives to dated root `archive/<worklog-key>-<YYYYMMDD>.md` (collision-safe on reused branches like a downstream working only on `main`); `handoff §6` clarified as compaction overflow (`archive/work/`); `bootstrap` recovery breadcrumb resolves the root of `archive/` + resumes multi-person `<owner>-` logs; `deploy.sh` scaffolds `archive/work`.
+  - Skill anchor: `systematic-debugging` `runtime_anchor` realigned to `implement.md#Skill Execution Overrides` across stub + `trigger-registry.yaml` + `openai.yaml` mirror.
+  - Review mirror: removed dead producer instruction + downstream scaffolding (no downstream consumer; dropped phantom `agentcortex-verify.yml` reference). Upstream-only verify tool + 14 tests left intact.
+- Tests: validate 93/6/0; `verify_agent_evidence` 14/14; `deploy.sh bash -n` OK. CI 11/11 green.
 
 ### Ship-claude-blissful-jemison-27dfb2-2026-05-18
 - **PR #104** — Multi-round adversarial governance audit: validator gate-injection hardening + downstream UX gaps (feature).
@@ -151,30 +158,5 @@
 - Tests: validate 74 PASS / 0 WARN / 0 FAIL / 2 SKIP (consistent across all 4 commits) + CI 7/7 green (Markdown Links, Deploy Smoke Test, Deploy Smoke Test (No Python), Framework Validation, Framework Validation Python 3.9, Framework Validation Windows, ShellCheck — run 25484303443).
 - Commits: `aec35d6`, `d3d6e67`, `9c23982`, `f3d97fc`.
 - PR: https://github.com/KbWen/agentic-os/pull/91
-
-### Ship-feat-epic-spec-hierarchy-governance-2026-05-06
-- Feature shipped: Label-based cluster grouping system for `_product-backlog.md` — resolves downstream backlog fragmentation.
-- Edits:
-  - `.agent/workflows/spec-intake.md` — §2b single-feature label & cluster check; §2a Feature Inventory 7-col (Kind/Labels/Priority replace Finding); §8c Reprioritize with P0 push-back; merge-guard backfill on all 3 new cols
-  - `.agent/workflows/bootstrap.md` — §5 Active Backlog: Kind/Priority assignment + cluster check with suppression
-  - `.agent/workflows/review.md` — Backlog Finding Registration section (review-finding auto-log)
-  - `.agent/workflows/hotfix.md` — §5 Evidence: hotfix-spawn systemic issue auto-log
-  - `.agent/workflows/routing.md` — Reprioritize trigger phrases + P-tier tiebreaker
-  - `.agent/config.yaml` — `cluster:` section (threshold/label-cap/p0-pct/marker-cap/suppression-TTL)
-  - `.agentcortex/bin/validate.sh` — backlog schema check + L-1 P0 ratio + L-2 label count + L-3 Kind diversity + L-4 declined markers
-  - `.githooks/pre-commit.guard-ssot.sample` — new advisory git hook sample
-  - `docs/specs/_product-backlog.md` — Kind/Labels/Priority columns backfilled (merge-guard)
-- Tests: validate 81 PASS / 0 WARN / 0 FAIL (sha: 2760428).
-- PR: https://github.com/KbWen/agentic-os/pull/89 (feat/epic-spec-hierarchy-governance → main)
-- Backlog rows shipped: label-cluster system (framework-level; no row numbers — this is the system that manages rows).
-
-### Ship-feat-optimization-batch2-2026-05-04
-- Feature shipped: 4 follow-up quick-wins on `feat/optimization-hooks-2026-05-04` branch (PR #87 same-PR addition).
-- Edits:
-  - `.agentcortex/bin/validate.{sh,ps1}` — graduated active-work-log threshold: WARN at >8, FAIL at >12 (was WARN-only); plus `ARCHIVE_SIZE_WARN_KB` (default 10 MB) WARN check on `.agentcortex/context/archive/`.
-  - `.agentcortex/templates/worklog.md` — optional `Files Read: N` field in `## Session Info` for token-budget instrumentation; `## Evidence` section now references `engineering_guardrails.md §5.2b Evidence Truncation Rule` (3-line success / 10-line failure caps).
-- Tests: validate 73 PASS / 7 WARN / 0 FAIL (archive 74 KB, 8/8 active logs).
-- Backlog rows shipped: #10, #12, #23, #28. Pending count 20 → 16.
-- Commits: `c0f63c3`; merged via `30e6fcc` (PR #87).
 
 *(Older entries archived to `.agentcortex/context/archive/ship-history-2026.md`)*
