@@ -136,7 +136,7 @@ Each phase appends one compact result line. Later phases (and the next agent) ca
 Thresholds are defined in `.agent/config.yaml` §worklog. If either is hit (`max_lines` or `max_kb`), MUST compact the Work Log:
 
 1. Keep `## Session Info`, latest `## Resume`, latest `## Risks`, and the latest N delta entries (see `keep_recent_entries` in config).
-2. Move older details to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md`.
+2. Move older details to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md` (create the `archive/work/` subdir first if it does not exist). This is **compaction overflow** of a still-active log — NOT final archival. A *completed* log is archived by `/ship §3` to the **root** of `archive/` (`<worklog-key>-<YYYYMMDD>.md`); the recovery breadcrumb in `bootstrap.md` resolves that root location, not this subdir.
 3. Add one line in current log: `Compacted: [date], archive: [path]`.
 4. Protected sections MUST remain in the active Work Log and MUST NOT be summarized, folded, or rewritten: `## Gate Evidence`, `## Skill Notes`, `## Conflict Resolution`, `## Evidence`, latest `## Resume`, `## Session Info`.
 
