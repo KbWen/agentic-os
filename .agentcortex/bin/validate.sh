@@ -1840,6 +1840,66 @@ if [[ -f "$BACKLOG_FILE" ]]; then
   fi
 fi
 
+# Backlog structure validation (#18): frontmatter fields, structural columns, Status enum, spec links.
+# Catches structural corruption that would break /spec-intake feature matching but is invisible
+# to the existence-only checks above.
+if [[ -f "$BACKLOG_FILE" ]]; then
+  # (1) YAML frontmatter required fields: title, created, status
+  backlog_fm="$(awk 'NR==1 && /^---[[:space:]]*$/ {infm=1; next} infm && /^---[[:space:]]*$/ {exit} infm {print}' "$BACKLOG_FILE")"
+  fm_missing=()
+  printf '%s\n' "$backlog_fm" | grep -qE '^title:'   || fm_missing+=("title")
+  printf '%s\n' "$backlog_fm" | grep -qE '^created:' || fm_missing+=("created")
+  printf '%s\n' "$backlog_fm" | grep -qE '^status:'  || fm_missing+=("status")
+  if [[ ${#fm_missing[@]} -eq 0 ]]; then
+    record_result PASS "backlog frontmatter: required fields (title, created, status) present"
+  else
+    record_result FAIL "backlog frontmatter: missing required field(s): ${fm_missing[*]}"
+    echo "  fix: add the missing field(s) to the YAML frontmatter of _product-backlog.md"
+  fi
+
+  # (2) Feature Inventory structural columns: #, Status, Tier (complements Kind/Labels/Priority above)
+  backlog_hdr="$(grep -m1 '|.*Feature.*|' "$BACKLOG_FILE" 2>/dev/null || true)"
+  struct_missing=()
+  echo "$backlog_hdr" | grep -qE '\|[[:space:]]*#[[:space:]]*\|' || struct_missing+=("#")
+  echo "$backlog_hdr" | grep -q 'Status' || struct_missing+=("Status")
+  echo "$backlog_hdr" | grep -q 'Tier'   || struct_missing+=("Tier")
+  if [[ ${#struct_missing[@]} -eq 0 ]]; then
+    record_result PASS "backlog structure: #/Status/Tier columns present"
+  else
+    record_result WARN "backlog structure: missing column(s): ${struct_missing[*]}"
+  fi
+
+  # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value
+  bad_status=""
+  while IFS= read -r brow; do
+    echo "$brow" | grep -qE '^\|[[:space:]]*[0-9]+[[:space:]]*\|' || continue
+    if ! echo "$brow" | grep -qE '\|[[:space:]]*(Pending|In Progress|Shipped|Deferred|Cancelled)[[:space:]]*\|'; then
+      bnum="$(echo "$brow" | sed -E 's/^\|[[:space:]]*([0-9]+).*/\1/')"
+      bad_status="${bad_status} #${bnum}"
+    fi
+  done < "$BACKLOG_FILE"
+  if [[ -n "$bad_status" ]]; then
+    record_result FAIL "backlog Status enum: row(s)${bad_status} have a Status not in {Pending, In Progress, Shipped, Deferred, Cancelled}"
+    echo "  fix: correct the Status cell to a valid enum value in _product-backlog.md"
+  else
+    record_result PASS "backlog Status enum: all Feature Inventory rows use valid Status values"
+  fi
+
+  # (4) Spec link existence: referenced docs/specs/*.md files should exist on disk
+  missing_specs=""
+  while IFS= read -r sref; do
+    [[ -z "$sref" ]] && continue
+    if [[ ! -f "$ROOT/$sref" ]]; then
+      case " $missing_specs " in *" $sref "*) ;; *) missing_specs="${missing_specs} $sref";; esac
+    fi
+  done < <(grep -oE 'docs/specs/[A-Za-z0-9._/-]+\.md' "$BACKLOG_FILE" 2>/dev/null | sort -u)
+  if [[ -n "$missing_specs" ]]; then
+    record_result WARN "backlog spec links: referenced spec file(s) not found:${missing_specs} (pending features may not have specs yet)"
+  else
+    record_result PASS "backlog spec links: all referenced spec files exist"
+  fi
+fi
+
 # Routing index governance split checks
 ROUTING_INDEX="$WORKFLOWS_DIR/routing.md"
 if [[ -f "$ROUTING_INDEX" ]]; then

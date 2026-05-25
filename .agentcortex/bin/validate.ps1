@@ -1719,6 +1719,78 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
     }
 }
 
+# Backlog structure validation (#18): frontmatter fields, structural columns, Status enum, spec links.
+# Catches structural corruption that would break /spec-intake feature matching but is invisible
+# to the existence-only checks above.
+if (Test-Path -Path $backlogFile -PathType Leaf) {
+    $backlogText = Get-NormalizedContent -Path $backlogFile
+    $backlogStructLines = Get-Content -Path $backlogFile -Encoding utf8
+
+    # (1) YAML frontmatter required fields: title, created, status
+    $fmMissing = @()
+    if ($backlogText -match '(?s)^---\s*\r?\n(.*?)\r?\n---\s*\r?\n') {
+        $fm = $Matches[1]
+        if ($fm -notmatch '(?m)^title:')   { $fmMissing += 'title' }
+        if ($fm -notmatch '(?m)^created:') { $fmMissing += 'created' }
+        if ($fm -notmatch '(?m)^status:')  { $fmMissing += 'status' }
+    }
+    else {
+        $fmMissing = @('title', 'created', 'status')
+    }
+    if ($fmMissing.Count -eq 0) {
+        Add-Result -Level 'PASS' -Message 'backlog frontmatter: required fields (title, created, status) present'
+    }
+    else {
+        Add-Result -Level 'FAIL' -Message "backlog frontmatter: missing required field(s): $($fmMissing -join ', ')"
+        Write-Output '  fix: add the missing field(s) to the YAML frontmatter of _product-backlog.md'
+    }
+
+    # (2) Feature Inventory structural columns: #, Status, Tier (complements Kind/Labels/Priority above)
+    $structHeader = $backlogStructLines | Where-Object { $_ -match '\|.*Feature.*\|' } | Select-Object -First 1
+    $structMissing = @()
+    if ($structHeader -notmatch '\|\s*#\s*\|') { $structMissing += '#' }
+    if ($structHeader -notmatch 'Status')      { $structMissing += 'Status' }
+    if ($structHeader -notmatch 'Tier')        { $structMissing += 'Tier' }
+    if ($structMissing.Count -eq 0) {
+        Add-Result -Level 'PASS' -Message 'backlog structure: #/Status/Tier columns present'
+    }
+    else {
+        Add-Result -Level 'WARN' -Message "backlog structure: missing column(s): $($structMissing -join ', ')"
+    }
+
+    # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value
+    $badStatus = @()
+    foreach ($brow in $backlogStructLines) {
+        if ($brow -notmatch '^\|\s*[0-9]+\s*\|') { continue }
+        if ($brow -notmatch '\|\s*(Pending|In Progress|Shipped|Deferred|Cancelled)\s*\|') {
+            $bnum = ([regex]'^\|\s*([0-9]+)').Match($brow).Groups[1].Value
+            $badStatus += "#$bnum"
+        }
+    }
+    if ($badStatus.Count -gt 0) {
+        Add-Result -Level 'FAIL' -Message "backlog Status enum: row(s) $($badStatus -join ' ') have a Status not in {Pending, In Progress, Shipped, Deferred, Cancelled}"
+        Write-Output '  fix: correct the Status cell to a valid enum value in _product-backlog.md'
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'backlog Status enum: all Feature Inventory rows use valid Status values'
+    }
+
+    # (4) Spec link existence: referenced docs/specs/*.md files should exist on disk
+    $specRefs = [regex]::Matches($backlogText, 'docs/specs/[A-Za-z0-9._/-]+\.md') | ForEach-Object { $_.Value } | Sort-Object -Unique
+    $missingSpecs = @()
+    foreach ($sref in $specRefs) {
+        if (-not (Test-Path -Path (Join-NormalPath $root $sref) -PathType Leaf)) {
+            $missingSpecs += $sref
+        }
+    }
+    if ($missingSpecs.Count -gt 0) {
+        Add-Result -Level 'WARN' -Message "backlog spec links: referenced spec file(s) not found: $($missingSpecs -join ' ') (pending features may not have specs yet)"
+    }
+    else {
+        Add-Result -Level 'PASS' -Message 'backlog spec links: all referenced spec files exist'
+    }
+}
+
 # Routing index governance split checks
 $routingIndex = Join-NormalPath $workflowsDir 'routing.md'
 if (Test-Path -Path $routingIndex -PathType Leaf) {
