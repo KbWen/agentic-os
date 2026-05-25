@@ -989,7 +989,12 @@ if [[ -d "$WORKLOG_DIR" ]]; then
       # run_python_check — silent skips here previously produced PASS by
       # accident when Python was unavailable.
       if [[ -n "$PYTHON_BIN" ]]; then
-        gate_check="$("$PYTHON_BIN" -c "
+        # Python source passed via single-quoted heredoc → variable so that
+        # shell-special characters in the code (", `, $, ->) are NOT interpreted
+        # by bash. Previously this was an inline -c "..." double-quoted string;
+        # the embedded `"` and `->` leaked to the shell (created a stray file and
+        # corrupted the -c argument), silently disabling this entire check.
+        _acx_gate_py=$(cat <<'PYEOF'
 import sys, re
 # quick-win / unknown: implement can go directly to ship (fast path)
 LEGAL_DEFAULT = {
@@ -1167,7 +1172,7 @@ if has_ship_receipt or 'ship' in gate_set:
         required = {'bootstrap','plan','implement','review','test','handoff'}
     missing_phases = required - gate_set
     if missing_phases:
-        print(f'incomplete:{\",\".join(sorted(missing_phases))} (classification:{wl_class or \"unknown\"})')
+        print(f'incomplete:{",".join(sorted(missing_phases))} (classification:{wl_class or "unknown"})')
         sys.exit(0)
 # NOT READY reverse-edge check: if review_not_ready is still set (no subsequent review
 # PASS cleared it), any test/handoff/ship in gates = re-review was skipped
@@ -1183,7 +1188,7 @@ for i in range(1, len(gates)):
     prev, curr = gates[i-1], gates[i]
     allowed = LEGAL.get(prev, [])
     if curr not in allowed:
-        print(f'illegal:{prev}->{curr} (classification:{wl_class or \"unknown\"})')
+        print(f'illegal:{prev}->{curr} (classification:{wl_class or "unknown"})')
         sys.exit(0)
 # M10: stale-review check — if most recent implement follows most recent review,
 # then test/handoff/ship without a new review = stale review violation
@@ -1200,7 +1205,9 @@ if wl_class not in ('quick-win', 'tiny-fix'):
             print(f'illegal:implement-after-review->{bad_next} (stale review: implement occurred after last review PASS; re-review required)')
             sys.exit(0)
 print('ok')
-" <<< "$wl_content" 2>/dev/null)"
+PYEOF
+)
+        gate_check="$("$PYTHON_BIN" -c "$_acx_gate_py" <<< "$wl_content" 2>/dev/null)"
         if [[ "$gate_check" == illegal:* ]]; then
           printf '  illegal gate progression in %s: %s\n' "$(basename "$wl")" "${gate_check#illegal:}"
           gate_progression_illegal=$((gate_progression_illegal + 1))

@@ -8,6 +8,11 @@
 .agentcortex/context/.guard_locks/
 .agentcortex/context/private/
 .agent/private/
+# Governance hook telemetry (sentinel / precompact violation logs)
+.agentcortex/context/*-violations.jsonl
+
+# Claude Code local state
+.claude/scheduled_tasks.lock
 
 # Deploy artifacts
 .agentcortex-src/
