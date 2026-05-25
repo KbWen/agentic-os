@@ -1243,13 +1243,16 @@ print('ok')
     # to auditable evidence requirement.
     # Parse classification from list form ("- Classification:") or table form ("| Classification |")
     if [[ -n "$PYTHON_BIN" ]]; then
-      wl_class="$(printf '%s' "$wl_content" | "$PYTHON_BIN" -c "
+      # Python via single-quoted heredoc -> variable (verbatim; no bash metachar parsing)
+      _acx_wlclass_py=$(cat <<'PYEOF'
 import re,sys
 for l in sys.stdin:
     m=re.match(r'^-\s+\*{0,2}[Cc]lassification\*{0,2}\s*:\s*\x60?([a-zA-Z][\w-]*)',l)
     if not m: m=re.match(r'^\|\s*\*{0,2}[Cc]lassification\*{0,2}\s*\|\s*\x60?([a-zA-Z][\w-]*)',l)
     if m: print(m.group(1).lower()); break
-" 2>/dev/null)"
+PYEOF
+)
+      wl_class="$(printf '%s' "$wl_content" | "$PYTHON_BIN" -c "$_acx_wlclass_py" 2>/dev/null)"
     else
       # Python unavailable: list-form-only fallback
       wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r\`')"
@@ -1436,7 +1439,8 @@ for l in sys.stdin:
     [[ -f "$lockf" ]] || continue
     lock_files_present=1
     if [[ -n "$PYTHON_BIN" ]]; then
-      stale_verdict="$("$PYTHON_BIN" -c "
+      # Python via single-quoted heredoc -> variable (verbatim; no bash metachar parsing)
+      _acx_stale_py=$(cat <<'PYEOF'
 import json, sys, datetime
 try:
     with open(sys.argv[1]) as f:
@@ -1452,7 +1456,9 @@ try:
     print('stale' if age_min > tm else 'fresh')
 except Exception:
     print('unreadable')
-" "$lockf" 2>/dev/null)"
+PYEOF
+)
+      stale_verdict="$("$PYTHON_BIN" -c "$_acx_stale_py" "$lockf" 2>/dev/null)"
       case "$stale_verdict" in
         stale)
           printf '  stale advisory lock: %s\n' "$(basename "$lockf")"
@@ -1564,7 +1570,8 @@ elif [[ -n "$PYTHON_BIN" ]] && [[ -d "$ARCHIVE_DIR" ]]; then
   archive_broken_links=0
   archive_broken_link_list=""
   while IFS= read -r -d '' arch_file; do
-    broken_output="$("$PYTHON_BIN" -c "
+    # Python via single-quoted heredoc -> variable (verbatim; no bash metachar parsing)
+    _acx_brokenlink_py=$(cat <<'PYEOF'
 import re, sys
 from pathlib import Path
 f = Path(sys.argv[1])
@@ -1591,7 +1598,9 @@ for m in link_re.finditer(text):
         count += 1
 # Print count as last line so caller reads from stdout (exit-code wraps at 256)
 print(count)
-" "$arch_file" 2>/dev/null)"
+PYEOF
+)
+    broken_output="$("$PYTHON_BIN" -c "$_acx_brokenlink_py" "$arch_file" 2>/dev/null)"
     file_count=$(printf '%s\n' "$broken_output" | tail -1)
     file_count=${file_count:-0}
     if [[ "$file_count" =~ ^[0-9]+$ ]] && [[ "$file_count" -gt 0 ]]; then
