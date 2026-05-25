@@ -1869,7 +1869,10 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     record_result WARN "backlog structure: missing column(s): ${struct_missing[*]}"
   fi
 
-  # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value
+  # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value.
+  # The enum token is matched as an isolated `| <status> |` cell anywhere in the row rather than
+  # by fixed column index — safe because no other column holds a bare enum word as an isolated
+  # cell (Dependencies use —/#N/dates, Spec File holds paths, Feature holds prose).
   bad_status=""
   while IFS= read -r brow; do
     echo "$brow" | grep -qE '^\|[[:space:]]*[0-9]+[[:space:]]*\|' || continue

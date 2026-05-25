@@ -1758,7 +1758,10 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
         Add-Result -Level 'WARN' -Message "backlog structure: missing column(s): $($structMissing -join ', ')"
     }
 
-    # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value
+    # (3) Status enum compliance: every numbered Feature Inventory row uses a known Status value.
+    # The enum token is matched as an isolated `| <status> |` cell anywhere in the row rather than
+    # by fixed column index — safe because no other column holds a bare enum word as an isolated
+    # cell (Dependencies use --/#N/dates, Spec File holds paths, Feature holds prose).
     $badStatus = @()
     foreach ($brow in $backlogStructLines) {
         if ($brow -notmatch '^\|\s*[0-9]+\s*\|') { continue }
