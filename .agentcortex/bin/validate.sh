@@ -3,9 +3,11 @@ set -euo pipefail
 
 # --- CLI flags ---
 ACX_NO_PYTHON=0
+LIST_CHECKS_ONLY=0
 for _arg in "$@"; do
   case "$_arg" in
     --no-python) ACX_NO_PYTHON=1 ;;
+    --list-checks|-l) LIST_CHECKS_ONLY=1 ;;
   esac
 done
 
@@ -196,9 +198,6 @@ run_python_check() {
 required_files=(
   "$WORKFLOWS_DIR/hotfix.md"
   "$WORKFLOWS_DIR/worktree-first.md"
-  "$WORKFLOWS_DIR/new-feature.md"
-  "$WORKFLOWS_DIR/medium-feature.md"
-  "$WORKFLOWS_DIR/small-fix.md"
   "$WORKFLOWS_DIR/govern-docs.md"
   "$WORKFLOWS_DIR/handoff.md"
   "$WORKFLOWS_DIR/bootstrap.md"
@@ -277,12 +276,31 @@ else
   PYTHON_BIN=
 fi
 
+if [[ "$LIST_CHECKS_ONLY" -eq 1 ]]; then
+  grep -oE 'record_result (PASS|FAIL|WARN|SKIP) "[^"]*"' "$0" \
+    | sed 's/record_result [A-Z]* "//; s/"$//' \
+    | grep -v '^\$' \
+    | sort -u
+  exit 0
+fi
+
 check_file_group "required framework files present" "${required_files[@]}"
 
 check_optional_file_group "optional module workflow files present" \
   "$WORKFLOWS_DIR/ask-openrouter.md" \
   "$WORKFLOWS_DIR/codex-cli.md" \
   "$WORKFLOWS_DIR/claude-cli.md"
+
+deprecated_files=("$WORKFLOWS_DIR/new-feature.md" "$WORKFLOWS_DIR/medium-feature.md" "$WORKFLOWS_DIR/small-fix.md")
+deprecated_found=()
+for f in "${deprecated_files[@]}"; do
+  [[ -f "$f" ]] && deprecated_found+=("$(basename "$f")")
+done
+if [[ ${#deprecated_found[@]} -gt 0 ]]; then
+  record_result FAIL "deprecated workflow files still present (remove them): ${deprecated_found[*]}"
+else
+  record_result PASS "deprecated workflow files absent (new-feature, medium-feature, small-fix)"
+fi
 
 if [[ "$IS_SOURCE_REPO" -eq 1 ]]; then
   record_result SKIP "claude adapter files -- source repo (created by deploy in downstream)"
