@@ -1457,6 +1457,36 @@ PYEOF
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "ADR Coverage Check records present in applicable work logs"
   fi
+  # Gate receipt schema validation (§4.5 structural check) — every pipe-format gate
+  # receipt in ## Gate Evidence must include Verdict: and Classification: fields.
+  # WARN not FAIL: archived Work Logs may predate this check; active logs with partial
+  # receipts are a process gap, not a ship-blocking error.
+  gate_schema_violations=0
+  gate_schema_violation_list=""
+  for wl in "$WORKLOG_DIR"/*.md; do
+    [[ -f "$wl" ]] || continue
+    wl_name="$(basename "$wl")"
+    # Extract gate evidence section lines (pipe-format receipts starting with "- Gate:")
+    while IFS= read -r receipt_line; do
+      # Each receipt must contain Verdict: (case-insensitive) and Classification: (case-insensitive)
+      if ! printf '%s' "$receipt_line" | grep -qiE '[Vv]erdict[[:space:]]*:'; then
+        gate_schema_violations=$((gate_schema_violations + 1))
+        gate_schema_violation_list="${gate_schema_violation_list}  malformed gate receipt (missing Verdict:) in ${wl_name}\n"
+        break
+      fi
+      if ! printf '%s' "$receipt_line" | grep -qiE '[Cc]lassification[[:space:]]*:'; then
+        gate_schema_violations=$((gate_schema_violations + 1))
+        gate_schema_violation_list="${gate_schema_violation_list}  malformed gate receipt (missing Classification:) in ${wl_name}\n"
+        break
+      fi
+    done < <(grep -iE '^\-[[:space:]]+[Gg]ate[[:space:]]*:' "$wl" 2>/dev/null || true)
+  done
+  if [[ "$gate_schema_violations" -gt 0 ]]; then
+    record_result WARN "active work log gate receipts missing required fields (Verdict/Classification): ${gate_schema_violations}"
+    printf '%b' "$gate_schema_violation_list"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "all active work log gate receipts have required fields (gate/verdict/classification)"
+  fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
   stale_locks=0
@@ -1581,6 +1611,34 @@ if [[ "$archive_gate_violations" -gt 0 ]]; then
   printf '%b' "$archive_gate_violation_list"
 else
   record_result PASS "archived Work Logs gate completeness ok (or none archived yet)"
+fi
+
+# Gate receipt schema validation for archived Work Logs — same §4.5 structural check.
+# WARN only: archives are immutable historical records.
+archive_gate_schema_violations=0
+archive_gate_schema_violation_list=""
+if [[ -d "$ARCHIVE_DIR" ]]; then
+  while IFS= read -r -d '' wl; do
+    wl_name="$(basename "$wl")"
+    while IFS= read -r receipt_line; do
+      if ! printf '%s' "$receipt_line" | grep -qiE '[Vv]erdict[[:space:]]*:'; then
+        archive_gate_schema_violations=$((archive_gate_schema_violations + 1))
+        archive_gate_schema_violation_list="${archive_gate_schema_violation_list}  malformed gate receipt (missing Verdict:) in ${wl_name}\n"
+        break
+      fi
+      if ! printf '%s' "$receipt_line" | grep -qiE '[Cc]lassification[[:space:]]*:'; then
+        archive_gate_schema_violations=$((archive_gate_schema_violations + 1))
+        archive_gate_schema_violation_list="${archive_gate_schema_violation_list}  malformed gate receipt (missing Classification:) in ${wl_name}\n"
+        break
+      fi
+    done < <(grep -iE '^\-[[:space:]]+[Gg]ate[[:space:]]*:' "$wl" 2>/dev/null || true)
+  done < <(find "$ARCHIVE_DIR" -name '*.md' -not -name '.gitkeep*' -print0 2>/dev/null || true)
+fi
+if [[ "$archive_gate_schema_violations" -gt 0 ]]; then
+  record_result WARN "archived Work Log gate receipts missing required fields (Verdict/Classification): ${archive_gate_schema_violations}"
+  printf '%b' "$archive_gate_schema_violation_list"
+else
+  record_result PASS "archived Work Log gate receipts have required fields (or none archived yet)"
 fi
 
 # M8: Relative-link depth check for archived markdown files.
