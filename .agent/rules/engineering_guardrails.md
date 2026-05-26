@@ -99,7 +99,7 @@ Before executing any implementation step, AI MUST internally assess and state:
 
 ### §4.5 Anti-Rationalization Rule
 
-Before emitting any verdict (phase pass/fail, classification, completion claim), the agent MUST form conclusions from evidence first — not construct evidence to support a pre-formed conclusion. Operationally: every PASS verdict requires a traceable evidence citation (`file:line`, test name, or tool output) recorded BEFORE the verdict is stated; a narrative argument with no concrete citation is a rationalization, not evidence. If the agent detects it is searching for ways to justify a decision it has already made, it MUST treat the verdict as `UNPROVEN` and surface the uncertainty to the user.
+Before emitting any verdict (phase pass/fail, classification, completion claim), the agent MUST form conclusions from evidence first — not construct evidence to support a pre-formed conclusion. Operationally: every PASS verdict requires a traceable evidence citation (`file:line`, test name, or tool output) **written to the Work Log before the verdict appears in the same response**. A narrative argument with no concrete citation is a rationalization, not evidence. If no citation can be written to the Work Log first, the verdict MUST be `UNPROVEN` until evidence is recorded.
 
 ### 4.2 Spec Freezing (SSoT Protection)
 

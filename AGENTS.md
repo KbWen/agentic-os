@@ -77,7 +77,7 @@ Match the user's input language (English → English; 繁體中文 → 繁體中
 2. **Workflow Precedence Rule**: If conflict arises, workflows take precedence. Order: `AGENTS.md` > `.agent/workflows/` > `.agent/skills/`.
 3. Skill steps MUST execute exclusively **within the active workflow phase**.
 4. **Dual Activation Model**: Auto (bootstrap §3.6 rule table — recommend ALL matching skills) or Manual (user explicit request — still respects `Skip when` rules). Manual activation blocked if rule table says skip for current classification.
-5–9. Skill loading algorithm, conflict resolution, Skill Notes, user preferences, and 5-Gate contract: see `bootstrap.md §3.6`, `routing.md §3`, and `shared-contracts.md`.
+5–9. (Skill Loading algorithm · Conflict Resolution · Skill Notes · User Preferences · 5-Gate Contract ref): see `bootstrap.md §3.6`, `routing.md §3`, and `shared-contracts.md`. These are operational algorithms, not governance rules — the governance rules are items 1–4 above.
 
 ## Shared Phase Contracts
 
