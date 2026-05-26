@@ -1286,7 +1286,7 @@ PYEOF
     # The bootstrap placeholder "Pending: bootstrap only" is not real evidence.
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" || "$wl_class" == "quick-win" ]]; then
       if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
-        evidence_body="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)"
+        evidence_body="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)" || true
         if [[ -z "$evidence_body" || "$evidence_body" == *"Pending: bootstrap only"* ]]; then
           evidence_placeholder_only=$((evidence_placeholder_only + 1))
         fi
@@ -1296,7 +1296,7 @@ PYEOF
     # Current Phase should be 'ship'. Divergence means the header was not updated.
     if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
       cp_val="$(printf '%s' "$wl_content" | grep -m1 -iE '^-[[:space:]]*\*?\*?Current Phase\*?\*?:' \
-        | sed 's/.*Current Phase[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)"
+        | sed 's/.*Current Phase[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)" || true
       if [[ -n "$cp_val" && "$cp_val" != "ship" ]]; then
         current_phase_incoherent=$((current_phase_incoherent + 1))
       fi
@@ -1312,7 +1312,7 @@ PYEOF
     if printf '%s' "$wl_content" | grep -q '## Drift Log' \
        && printf '%s' "$wl_content" | grep -qiE '^\s*-\s+Reclassif'; then
       cls_hdr="$(printf '%s' "$wl_content" | grep -m1 -iE '^-[[:space:]]*\*?\*?Classification\*?\*?:' \
-        | sed 's/.*Classification[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)"
+        | sed 's/.*Classification[^:]*:[[:space:]]*//' | tr -d '`\r' | tr '[:upper:]' '[:lower:]' | xargs)" || true
       if [[ -n "$cls_hdr" && "$cls_hdr" != "classified" ]]; then
         reclassify_header_not_reset=$((reclassify_header_not_reset + 1))
       fi
@@ -1337,7 +1337,7 @@ PYEOF
     # but ## Evidence section is missing or contains only the bootstrap placeholder.
     if [[ "$wl_class" == "hotfix" ]]; then
       if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
-        hotfix_evidence="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)"
+        hotfix_evidence="$(printf '%s' "$wl_content" | sed -n '/^## Evidence/,/^## /p' | tail -n +2 | grep -v '^## ' | grep -v '^$' | head -5)" || true
         if [[ -z "$hotfix_evidence" || "$hotfix_evidence" == *"Pending: bootstrap only"* ]]; then
           hotfix_ship_no_evidence=$((hotfix_ship_no_evidence + 1))
         fi
@@ -1520,7 +1520,7 @@ phase_summary_violations=0
 phase_summary_violation_list=""
 if [[ -d "$ARCHIVE_DIR" ]]; then
   while IFS= read -r -d '' wl; do
-    classification="$(grep -m1 -E '^- \*\*Classification\*\*:' "$wl" 2>/dev/null | sed -E 's/.*\*\*Classification\*\*:\s*//; s/\s*$//')"
+    classification="$(grep -m1 -E '^- \*?\*?Classification\*?\*?:' "$wl" 2>/dev/null | sed -E 's/.*Classification[^:]*:\s*`?//; s/`.*//; s/\s*$//')" || true
     [[ "$classification" == "tiny-fix" ]] && continue
     summary_body="$(awk '/^## Phase Summary/{found=1; next} found && /^## /{exit} found{print}' "$wl" 2>/dev/null | tr -d '[:space:]')"
     if [[ -z "$summary_body" || "$summary_body" == "none" ]]; then
@@ -1545,7 +1545,7 @@ if [[ -d "$ARCHIVE_DIR" ]]; then
   while IFS= read -r -d '' wl; do
     wl_content="$(cat "$wl" 2>/dev/null)"
     [[ -z "$wl_content" ]] && continue
-    arc_class="$(printf '%s' "$wl_content" | grep -m1 -E '^- \*?\*?[Cc]lassification\*?\*?:' | sed -E 's/.*[Cc]lassification[^:]*:\s*`?//; s/`.*//; s/\s*$//' | tr '[:upper:]' '[:lower:]')"
+    arc_class="$(printf '%s' "$wl_content" | grep -m1 -E '^- \*?\*?[Cc]lassification\*?\*?:' | sed -E 's/.*[Cc]lassification[^:]*:\s*`?//; s/`.*//; s/\s*$//' | tr '[:upper:]' '[:lower:]')" || true
     [[ "$arc_class" == "tiny-fix" ]] && continue
     if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS'; then
       arc_has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS') || true
@@ -2019,7 +2019,7 @@ if [[ "$adr_count" -gt 0 ]]; then
   # current_state.md must have a non-empty, non-placeholder Project Name field.
   cs_file="$ROOT/.agentcortex/context/current_state.md"
   if [[ -f "$cs_file" ]]; then
-    proj_name="$(grep -m1 -i '\*\*Project Name\*\*:' "$cs_file" | sed 's/.*Project Name\*\*:[[:space:]]*//' | tr -d '\r' | xargs)"
+    proj_name="$(grep -m1 -i '\*\*Project Name\*\*:' "$cs_file" | sed 's/.*Project Name\*\*:[[:space:]]*//' | tr -d '\r' | xargs)" || true
     if [[ -z "$proj_name" || "$proj_name" == "(set by /app-init)" ]]; then
       record_result WARN "Project Name field absent or placeholder in current_state.md — /app-init has run (ADRs exist) but SSoT Project Name was not set; spec-intake will fall back to glob template resolution"
     else
