@@ -59,6 +59,7 @@ Apply the **5-Axis Quality Standard** across ALL changed files (block on any axi
 **Feedback categorization**: Blocking (correctness/security/stability) → must fix before merge. Non-blocking → advisory. Question → needs design context.
 
 **Common rationalizations to reject**: "It works, that's good enough" / "Tests pass, so it's good" / "AI-generated is probably fine" / "We'll clean it up later". All four are review-bypassing patterns; the review IS the quality gate.
+  - See also: `engineering_guardrails.md §4.5` Anti-Rationalization Rule — evidence citation required before verdict, not after.
 
 Plus:
 
