@@ -251,9 +251,6 @@ $optionalGuardHook = Join-NormalPath $root '.githooks/pre-commit.guard-ssot.samp
 $requiredFiles = @(
     (Join-NormalPath $workflowsDir 'hotfix.md'),
     (Join-NormalPath $workflowsDir 'worktree-first.md'),
-    (Join-NormalPath $workflowsDir 'new-feature.md'),
-    (Join-NormalPath $workflowsDir 'medium-feature.md'),
-    (Join-NormalPath $workflowsDir 'small-fix.md'),
     (Join-NormalPath $workflowsDir 'govern-docs.md'),
     (Join-NormalPath $workflowsDir 'handoff.md'),
     (Join-NormalPath $workflowsDir 'bootstrap.md'),
@@ -337,6 +334,17 @@ $optionalModuleFiles = @(
     (Join-NormalPath $workflowsDir 'codex-cli.md'),
     (Join-NormalPath $workflowsDir 'claude-cli.md')
 )
+
+$deprecatedWorkflowFiles = @(
+    (Join-NormalPath $workflowsDir 'new-feature.md'),
+    (Join-NormalPath $workflowsDir 'medium-feature.md'),
+    (Join-NormalPath $workflowsDir 'small-fix.md')
+)
+foreach ($df in $deprecatedWorkflowFiles) {
+    if (Test-Path -Path $df -PathType Leaf) {
+        Add-Result -Level 'FAIL' -Message "deprecated workflow file still present: $df -- remove with git rm"
+    }
+}
 
 if ($isSourceRepo) {
     Add-Result -Level 'SKIP' -Message 'claude adapter files -- source repo (created by deploy in downstream)'
