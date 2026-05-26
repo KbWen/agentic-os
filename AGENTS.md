@@ -17,7 +17,7 @@ Match the user's input language (English → English; 繁體中文 → 繁體中
 - Small, reversible changes. UNAUTHORIZED REFACTORING STRICTLY PROHIBITED.
 - **No Bypass Rule**: MUST NOT skip Gate/Evidence checks — unknown status = FAIL. Bans skipping gates within a classification's phase list. Does NOT override `quick-win`/`hotfix` fast-paths in `engineering_guardrails.md §10.3/§10.4`.
 - **Learning Propagation Rule**: Only repeatable process mistakes MUST be recorded as reusable lessons and included in handoff; minor one-off mistakes stay local, and behavior-boundary changes MUST escalate to Spec/ADR.
-- **Read-Once Discipline**: Read governance files once at session start; do NOT re-read in later turns. **Safety Valve**: On genuine rule uncertainty, re-read ONE `##`-section only — MUST log in `## Drift Log` as `- Re-read: <file> §<section> — reason: <1-line>`. Un-logged re-reads = Token Leak violation.
+- **Read-Once Discipline**: Read governance files once at session start; do NOT re-read in later turns. **Safety Valve**: On genuine rule uncertainty, re-read ONE `##`-section only — MUST log in `## Drift Log` as `- Re-read: <file> §<section> — reason: <1-line>`. Un-logged re-reads = Token Leak violation. *(Exemption: `shared-contracts.md` is exempt from Read-Once — it is a phase-operational doc loaded fresh at each phase entry, not a session-init doc.)*
 - **Context Pruning**: At 8+ turns on the same task, proactively suggest handoff + new conversation. Do NOT wait for the user.
 - **Response Brevity & Budget**: Short, information-dense output. No preamble/postamble. Expand only for gate blocks, plan artifacts, or ship evidence. Hard cap: ≤8 lines prose + required structured blocks. Phase output fields are a ceiling — omit `none`/`n/a`/unchanged fields. Full rule: `.agentcortex/docs/guides/token-governance.md §8`.
 
@@ -81,7 +81,7 @@ Match the user's input language (English → English; 繁體中文 → 繁體中
 
 ## Shared Phase Contracts
 
-Canonical contracts for phase-entry skill loading, 5-Gate verification, and output compression. MUST read `.agent/workflows/shared-contracts.md` at each phase entry for `/plan`, `/implement`, `/review`, `/test`, `/handoff`, `/ship`.
+At every non-`tiny-fix` phase entry (`/plan`, `/implement`, `/review`, `/test`, `/handoff`, `/ship`), the agent MUST load `.agent/workflows/shared-contracts.md`. This load is **unconditional** — it does NOT depend on skill presence, Work Log Recommended Skills, or task classification above tiny-fix. Skipping this load = Gate FAIL (same severity as skipping `engineering_guardrails.md`). Contains: Phase-Entry Skill Loading · 5-Gate Verification Before Completion · Phase Output Compression.
 
 ## Context-Bound Confirmation
 
