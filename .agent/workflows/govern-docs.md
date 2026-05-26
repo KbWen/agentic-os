@@ -77,7 +77,7 @@ Restructure threshold is configurable via `.agent/config.yaml` `domain_doc.restr
 
 ### Output Summary
 
-Apply `AGENTS.md §Phase Output Compression`. Chat response is the compact block below; the full diff preview (shown pre-apply per Execution Steps §5) is not repeated in the post-apply summary.
+Apply `shared-contracts.md §Phase Output Compression`. Chat response is the compact block below; the full diff preview (shown pre-apply per Execution Steps §5) is not repeated in the post-apply summary.
 
 ```
 Restructure: <domain>

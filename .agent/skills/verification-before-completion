@@ -7,7 +7,7 @@ trigger_priority: hard
 load_policy: phase-entry
 cost_type: output
 cost_risk: medium
-runtime_anchor: ["AGENTS.md#Verification Before Completion (5-Gate Sequence)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 4b", ".agent/workflows/ship.md#Skill-Aware Ship Checks"]
+runtime_anchor: [".agent/workflows/shared-contracts.md#Verification Before Completion (5-Gate Sequence)", ".agent/workflows/implement.md#Skill Execution Overrides", ".agent/workflows/test.md#Step 4b", ".agent/workflows/ship.md#Skill-Aware Ship Checks"]
 ---
 
 # Verification Before Completion

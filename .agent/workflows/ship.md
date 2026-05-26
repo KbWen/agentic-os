@@ -120,10 +120,10 @@ This is an advisory check in this batch — missing trace produces a warning, no
 
 ## Skill-Aware Ship Checks (Auto-Enforced)
 
-Before evaluating entry conditions, apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading). Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then enforce:
+Before evaluating entry conditions, apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading). Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then enforce:
 
 **IF `verification-before-completion` is active (MANDATORY for non-tiny-fix):**
-Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)). If ANY gate fails → `verdict: fail`. Do NOT proceed to Entry Conditions.
+Apply the Verification-Before-Completion 5-Gate Contract (shared-contracts.md §Verification Before Completion (5-Gate Sequence)). If ANY gate fails → `verdict: fail`. Do NOT proceed to Entry Conditions.
 Phase-specific: Evidence = specific commands, outputs, versions; Communication Gate = include constraints that remain.
 
 **Pre-merge / pre-PR closure (always applies before /ship):**
@@ -154,7 +154,7 @@ If ANY condition fails, MUST reject `/ship` and output missing list.
 
 ## Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /ship`.
+Apply the shared `Phase Output Compression` contract from `shared-contracts.md §Phase Output Compression → /ship`.
 
 **Chat response is the compact block below. Do NOT replay full implementation, review, or test narratives — they are in the Work Log. Do NOT paste the full commit message body when the title line is enough.**
 

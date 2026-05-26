@@ -40,7 +40,7 @@ Hard completion gate for non-`tiny-fix` tasks. Transitions `TESTED → HANDEDOFF
 
 ## 3. Required Output Blocks
 
-Apply `AGENTS.md §Phase Output Compression → /handoff`.
+Apply `shared-contracts.md §Phase Output Compression → /handoff`.
 
 **Chat response is Layer 1 ONLY (≤ 10 lines). Layer 2 and the Resume Block are written to the Work Log file — do NOT emit them in chat.**
 
@@ -92,7 +92,7 @@ This makes the `TESTED → HANDEDOFF → SHIPPED` chain auditable — the valida
 
 ## 3a. Skill-Aware Handoff (Auto-Enforced)
 
-Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading) for all skills listing `/handoff` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's handoff-specific expectations as additional summary requirements. Explicitly state: "Applying [skill-name] strategy for handoff."
+Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/handoff` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's handoff-specific expectations as additional summary requirements. Explicitly state: "Applying [skill-name] strategy for handoff."
 
 **Reviewer-facing handoff (always applies for review-bound handoff):**
 - Include reviewer-facing risk focus and any high-attention files in Layer 2.

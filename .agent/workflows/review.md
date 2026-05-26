@@ -15,7 +15,7 @@ Before review, check the active Work Log size. If it exceeds compaction threshol
 
 ## Skill-Aware Review (Pre-Check)
 
-Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading) for all skills listing `/review` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's **"During /review:"** checklist items as additional review criteria. Explicitly state: "Reviewing with [skill-name] checklist applied."
+Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/review` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's **"During /review:"** checklist items as additional review criteria. Explicitly state: "Reviewing with [skill-name] checklist applied."
 
 This ensures domain-specific review criteria (API conventions, frontend patterns, DB safety, auth compliance) are enforced — not just generic code review.
 
@@ -211,7 +211,7 @@ AI MUST verify its own review before outputting:
 
 ## Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /review`.
+Apply the shared `Phase Output Compression` contract from `shared-contracts.md §Phase Output Compression → /review`.
 
 **Chat response leads with the Burden of Proof table. Everything else is terse.**
 

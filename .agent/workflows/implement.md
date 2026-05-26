@@ -42,7 +42,7 @@ Before implementation, check the active Work Log size. If it exceeds compaction 
 Before ANY code change, AI MUST:
 
 1. Review active `## Global Lessons` entries from `.agentcortex/context/current_state.md`. If any HIGH-severity lesson trigger matches the current step, record the risk + mitigation in `## Known Risk` before changing code.
-2. IF Work Log contains a `Recommended Skills` entry: apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading). Then enforce skill-specific execution rules (see §Skill Execution Overrides below). Reuse `## Conflict Resolution` from bootstrap if multiple skills need precedence or scoping boundaries.
+2. IF Work Log contains a `Recommended Skills` entry: apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading). Then enforce skill-specific execution rules (see §Skill Execution Overrides below). Reuse `## Conflict Resolution` from bootstrap if multiple skills need precedence or scoping boundaries.
 3. *(Advisory — feature / architecture-change only)* If a step appears to conflict with a Spec Non-goal, surface: "⚠️ Step [N] may touch Non-goal: [item]. Proceed? (yes/no)"
 4. **Confidence Gate** (per `engineering_guardrails.md` §4.1): Re-assess confidence for THIS implementation step (not the overall plan). If `<80%`, STOP and clarify. If `80–90%`, state the assumption on the step before proceeding. If `>90%`, proceed — but when recording the step in `## Phase Summary` at end of phase, include `Confidence: <N>% — high` so the gate is auditable even for smooth-running steps.
 5. **Plan-Derived Skill Check** *(feature / architecture-change — advisory)*: Scan the approved plan in the Work Log for structural signals. Zero additional file reads — plan is already loaded.
@@ -145,7 +145,7 @@ When a skill is loaded, it **changes how you implement** — not just what you s
 - If no isolated worktree exists yet and parallel branch isolation is required, STOP and create/use the worktree first
 
 **IF `verification-before-completion` is active (when claiming /implement is done):**
-- Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)).
+- Apply the Verification-Before-Completion 5-Gate Contract (shared-contracts.md §Verification Before Completion (5-Gate Sequence)).
 - Phase-specific criteria: Scope = diff actual files vs. planned target files; Evidence = paste terminal output.
 
 ## Mid-Execution Guard
@@ -174,7 +174,7 @@ After implementation is complete and evidence is recorded, append one line to `#
 
 ## Post-Execution Report
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /implement`.
+Apply the shared `Phase Output Compression` contract from `shared-contracts.md §Phase Output Compression → /implement`.
 
 **Chat response is the compact block below. Do NOT re-narrate what each file changed — the diff is the evidence. Do NOT paste code that was just written.**
 

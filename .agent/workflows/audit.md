@@ -25,7 +25,7 @@ tasks:
 
 ## Expected Output Format
 
-Apply `AGENTS.md §Phase Output Compression`. Chat response is the compact block below; full multi-section detail (system_map breakdown, per-module dependency graph, full file inventory) is written to an audit report file at `docs/reviews/<date>-audit.md` and referenced by path.
+Apply `shared-contracts.md §Phase Output Compression`. Chat response is the compact block below; full multi-section detail (system_map breakdown, per-module dependency graph, full file inventory) is written to an audit report file at `docs/reviews/<date>-audit.md` and referenced by path.
 
 ```
 Files: <count> files across <N> top-level dirs

@@ -97,7 +97,7 @@ If the plan depends on a repo-external library, external API, package manager ch
 
 ## Skill-Aware Planning (Auto-Enforced)
 
-Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading) for all skills listing `/plan` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply planning-specific constraints from those skills when shaping steps, verification, and rollback.
+Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/plan` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply planning-specific constraints from those skills when shaping steps, verification, and rollback.
 
 **Plan structure (always applies during /plan):**
 - Required fields: Goals & Non-goals, Blast Radius (files/modules), Step-by-step (2–5 minute granularity), Verification commands + expected results, Risks & Rollback plans.
@@ -111,7 +111,7 @@ Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Load
 
 ## Expected Output Format
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /plan`.
+Apply the shared `Phase Output Compression` contract from `shared-contracts.md §Phase Output Compression → /plan`.
 
 **Chat response is the compact block below. NO section headers when the whole plan is < 15 lines. NO re-narration of the spec or task description.**
 

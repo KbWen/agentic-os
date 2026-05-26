@@ -39,7 +39,7 @@ When generating test skeletons for `feature` or `architecture-change` tasks:
 
 ## Step 3: Skill-Aware Test Implementation (Auto-Enforced)
 
-Apply the Phase-Entry Skill-Loading Protocol (AGENTS.md §Phase-Entry Skill Loading) for all skills listing `/test` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's test-phase rules:
+Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/test` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's test-phase rules:
 
 **IF `test-driven-development` is active:**
 - Verify every piece of production code written during /implement has a corresponding test
@@ -111,7 +111,7 @@ Skip adversarial testing entirely for `tiny-fix` and `quick-win` classifications
 ## Step 4b: Verification Before Completion (Auto-Enforced)
 
 IF `verification-before-completion` is active, before claiming tests are done:
-Apply the Verification-Before-Completion 5-Gate Contract (AGENTS.md §Verification Before Completion (5-Gate Sequence)).
+Apply the Verification-Before-Completion 5-Gate Contract (shared-contracts.md §Verification Before Completion (5-Gate Sequence)).
 Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste truncated test output (pass/fail counts, command used) per AGENTS.md Gate 3; Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
 
 **Gate 2 exception — `quick-win` confirmed manual-trace fallback only**: If the classification is `quick-win`, AND the no-test-runner fallback was invoked in Step 3 AND a Drift Log record was written, Gate 2 ("ALL tests must pass") is satisfied by the recorded Drift Log entry + manual-trace evidence. Proceed to Gate 3 without requiring automated test output. (`tiny-fix` with no test runner must escalate to `quick-win` before reaching this step — see the `tiny-fix` bullet under *No test runner installed?* above.) **This exception does NOT apply to `feature`, `architecture-change`, or `hotfix`** — for those tiers the sign-off authorizes the manual-trace attempt, but Gate 2 remains unsatisfied; use the manual-trace output as partial evidence and flag in Known Risk before ship.
@@ -135,7 +135,7 @@ No evidence = no completion. This is non-negotiable.
 
 ## Output Compression Rule
 
-Apply the shared `Phase Output Compression` contract from `AGENTS.md §Phase Output Compression → /test`.
+Apply the shared `Phase Output Compression` contract from `shared-contracts.md §Phase Output Compression → /test`.
 
 **Chat response is the compact block below. NO full test log pasted in chat — the log lives in the Work Log `## Evidence` section.**
 

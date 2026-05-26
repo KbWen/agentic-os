@@ -305,7 +305,7 @@ This costs < 10 tokens per phase entry and eliminates phase-tracking hallucinati
 
 ## 3. Expected Output Format
 
-> **Compact block, not a dashboard.** Apply `AGENTS.md §Phase Output Compression → /bootstrap`. The chat response is a summary pointer; the full record lives in the Work Log file. Do NOT reprint `Constraints`, `AC`, `Non-goals`, `Known Risk`, or `Read Plan` detail in chat — write them to the Work Log and reference by section name.
+> **Compact block, not a dashboard.** Apply `shared-contracts.md §Phase Output Compression → /bootstrap`. The chat response is a summary pointer; the full record lives in the Work Log file. Do NOT reprint `Constraints`, `AC`, `Non-goals`, `Known Risk`, or `Read Plan` detail in chat — write them to the Work Log and reference by section name.
 
 Chat response template (≤ 10 lines for quick-win, ≤ 15 for feature/architecture):
 

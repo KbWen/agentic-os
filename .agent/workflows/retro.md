@@ -7,7 +7,7 @@ Conduct a retrospective for the current task.
 
 Output Format:
 
-Apply `AGENTS.md §Phase Output Compression`. Chat response is the compact KPT block below (≤ 6 lines). Everything under items 4–7 is Work Log content — do NOT emit it in chat unless the user asks.
+Apply `shared-contracts.md §Phase Output Compression`. Chat response is the compact KPT block below (≤ 6 lines). Everything under items 4–7 is Work Log content — do NOT emit it in chat unless the user asks.
 
 ```
 Keep: <1-line — what went well>

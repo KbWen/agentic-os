@@ -1222,8 +1222,8 @@ PYEOF
         # but can detect obvious bypasses. Increments gate_progression_illegal so FAIL
         # is recorded — a shipped log without plan/implement is always a violation.
         if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS'; then
-          has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
-          has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+          has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS') || true
+          has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS') || true
           if [[ "$has_plan" -eq 0 ]] || [[ "$has_impl" -eq 0 ]]; then
             printf '  [bash-fallback] shipped without plan/implement gate in %s\n' "$(basename "$wl")"
             gate_progression_illegal=$((gate_progression_illegal + 1))
@@ -1277,7 +1277,7 @@ PYEOF
     # (The prior ! grep -qvE condition was always false because header/gate lines don't match
     # the UNPROVEN pattern, causing grep -qvE to succeed and the check to be permanently skipped.)
     if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*review[[:space:]]*\|.*Verdict:[[:space:]]*PASS'; then
-      unproven_untagged="$(printf '%s' "$wl_content" | grep '✗ UNPROVEN' | grep -v '\[NEEDS_HUMAN\]' | head -1)"
+      unproven_untagged="$(printf '%s' "$wl_content" | grep '✗ UNPROVEN' | grep -v '\[NEEDS_HUMAN\]' | head -1)" || true
       if [[ -n "$unproven_untagged" ]]; then
         review_pass_with_unproven=$((review_pass_with_unproven + 1))
       fi
@@ -1548,8 +1548,8 @@ if [[ -d "$ARCHIVE_DIR" ]]; then
     arc_class="$(printf '%s' "$wl_content" | grep -m1 -E '^- \*?\*?[Cc]lassification\*?\*?:' | sed -E 's/.*[Cc]lassification[^:]*:\s*`?//; s/`.*//; s/\s*$//' | tr '[:upper:]' '[:lower:]')"
     [[ "$arc_class" == "tiny-fix" ]] && continue
     if printf '%s' "$wl_content" | grep -qiE 'Gate:[[:space:]]*ship[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS'; then
-      arc_has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
-      arc_has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS')
+      arc_has_plan=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*plan[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS') || true
+      arc_has_impl=$(printf '%s' "$wl_content" | grep -ciE 'Gate:[[:space:]]*implement[[:space:]]*\|[^|]*Verdict:[[:space:]]*PASS') || true
       if [[ "$arc_has_plan" -eq 0 ]] || [[ "$arc_has_impl" -eq 0 ]]; then
         archive_gate_violations=$((archive_gate_violations + 1))
         archive_gate_violation_list="${archive_gate_violation_list}  archived gate bypass: ${wl#$ROOT/}\n"
@@ -1842,7 +1842,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     fi
 
     # L-4: cluster-declined marker GC — warn if too many suppressions accumulated
-    declined_count=$(grep -c 'cluster-declined:' "$BACKLOG_FILE" 2>/dev/null | tr -d '[:space:]')
+    declined_count=$(grep -c 'cluster-declined:' "$BACKLOG_FILE" 2>/dev/null | tr -d '[:space:]') || true
     declined_count=${declined_count:-0}
     if [[ "$declined_count" -gt 5 ]]; then
       record_result WARN "backlog cluster-declined: ${declined_count} suppression markers (>5) — review expired/stale suppressions in _product-backlog.md ## Source Summary"
