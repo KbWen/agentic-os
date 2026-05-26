@@ -414,16 +414,42 @@ def lock_group(paths: Sequence[str | Path], *, root: Path | None = None, policy:
         yield
 
 
+def cleanup_stale_tmps(path: Path) -> None:
+    """Remove stale pid-named temp files left by crashed previous writers.
+
+    Matches ``<target>.tmp.<pid>`` files. Silently ignores permission errors
+    (another live process may be mid-write on the same target).
+    """
+    import glob as _glob
+    pattern = str(path) + ".tmp.*"
+    for stale in _glob.glob(pattern):
+        stale_path = Path(stale)
+        # Skip if the pid in the suffix belongs to a live process.
+        suffix = stale_path.suffix  # e.g. ".12345"
+        try:
+            pid = int(suffix.lstrip("."))
+            if pid_alive(pid):
+                continue
+        except ValueError:
+            pass  # suffix is not a plain pid — treat as stale
+        try:
+            stale_path.unlink()
+        except OSError:
+            pass
+
+
 def atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=path.parent)
-    tmp_path = Path(tmp_name)
+    # Clean up any stale pid-named temps from crashed previous runs.
+    cleanup_stale_tmps(path)
+    # Use a pid-named temp so cleanup_stale_tmps can identify abandoned files.
+    tmp_path = Path(str(path) + f".tmp.{os.getpid()}")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+        with open(tmp_path, "w", encoding="utf-8", newline="") as handle:
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(tmp_path, path)
+        os.replace(tmp_path, path)  # atomic on POSIX and Windows NTFS
     finally:
         if tmp_path.exists():
             tmp_path.unlink()

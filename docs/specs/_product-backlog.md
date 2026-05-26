@@ -34,7 +34,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 16 | Skill Validation Pipeline (meta-governance) | framework | skills | P2 | docs/specs/skill-research-integration.md | feature | Pending | #14 |
 | 17 | Hard Work Log lock (advisory → blocking) | framework | concurrency | P1 | — | feature | Pending | — |
 | 18 | Lightweight routing heuristics (decision tree in config.yaml, not a DSL) | framework | routing | P2 | — | quick-win | Pending | — |
-| 19 | SSoT atomic writes (guard_context_write: CAS or transactional store) | framework | concurrency | P1 | — | feature | Pending | — |
+| 19 | SSoT atomic writes (guard_context_write: CAS or transactional store) | framework | concurrency | P1 | — | feature | Shipped | 2026-05-26 |
 | 20 | CI security scanning (Semgrep + TruffleHog + dependency audit) | security | ci | P1 | — | feature | Shipped | 2026-05-11 |
 | 21 | Skill cache timestamp + staleness invalidation | framework | skills | P2 | — | quick-win | Pending | — |
 | 22 | Rollback plan existence check in /ship (advisory, feature/arch-change only) | — | — | — | — | quick-win | Shipped | — |
