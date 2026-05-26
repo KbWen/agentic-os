@@ -884,8 +884,9 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     worklog_count=$((worklog_count + 1))
-    wl_lines="$(wc -l < "$wl")"
-    wl_kb="$(( $(wc -c < "$wl") / 1024 ))"
+    wl_lines="$(wc -l < "$wl" 2>/dev/null)" || true
+    wl_bytes="$(wc -c < "$wl" 2>/dev/null)" || true
+    wl_kb=$(( ${wl_bytes:-0} / 1024 ))
     if [[ "$wl_lines" -gt "$WORKLOG_MAX_LINES" ]] || [[ "$wl_kb" -gt "$WORKLOG_MAX_KB" ]]; then
       printf '  work log needs compaction: %s (%s lines, %sKB)\n' "$(basename "$wl")" "$wl_lines" "$wl_kb"
       worklog_warnings=$((worklog_warnings + 1))
@@ -907,7 +908,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   # ingestion-time hazard. WARN-only; opt-out via ARCHIVE_SIZE_WARN_KB=0.
   ARCHIVE_DIR="$ROOT/.agentcortex/context/archive"
   if [[ -d "$ARCHIVE_DIR" ]] && [[ "$ARCHIVE_SIZE_WARN_KB" -gt 0 ]]; then
-    archive_kb="$(du -sk "$ARCHIVE_DIR" 2>/dev/null | awk '{print $1}')"
+    archive_kb="$(du -sk "$ARCHIVE_DIR" 2>/dev/null | awk '{print $1}')" || true
     if [[ -n "$archive_kb" ]] && [[ "$archive_kb" -gt "$ARCHIVE_SIZE_WARN_KB" ]]; then
       record_result WARN "archive size ${archive_kb}KB exceeds threshold ${ARCHIVE_SIZE_WARN_KB}KB; consider /retro-driven cold-tier rotation"
     else
@@ -1653,7 +1654,7 @@ fi
 # (bootstrap allows skipping /app-init) but still own specs and backlog entries.
 CURRENT_STATE="$ROOT/.agentcortex/context/current_state.md"
 if [[ -f "$CURRENT_STATE" ]]; then
-  cs_content="$(cat "$CURRENT_STATE")"
+  cs_content="$(cat "$CURRENT_STATE" 2>/dev/null)" || { record_result WARN "cannot read current_state.md — skipping state checks"; }
 
   # ADR Index completeness
   adr_index_section="$(printf '%s' "$cs_content" | awk '/\*\*ADR Index\*\*:/{found=1; next} found && /^- \*\*/{exit} found{print}')"
