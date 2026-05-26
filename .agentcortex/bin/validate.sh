@@ -183,8 +183,8 @@ run_python_check() {
   fi
 
   local output
-  output="$("$PYTHON_BIN" "$script" "$@" 2>&1)"
-  local status=$?
+  local status=0
+  output="$("$PYTHON_BIN" "$script" "$@" 2>&1)" || status=$?
   if [[ $status -eq 0 ]]; then
     record_result PASS "$label"
   else
