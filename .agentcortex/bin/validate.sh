@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 # --- CLI flags ---
 ACX_NO_PYTHON=0
