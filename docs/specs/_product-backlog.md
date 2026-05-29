@@ -57,7 +57,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 39 | /recap workflow pointer to Work Log Phase Summary (no new doc) | — | — | — | — | tiny-fix | Shipped | — |
 | 40 | review.md /ultrareview callout + hotfix.md /autofix-pr callout (Claude-CLI-only doc hook-in) | — | — | — | — | tiny-fix | Shipped | — |
 | 41 | Framework self-test integrity: restore tests/guard collection (orphaned hook tests) + gate tests/guard in CI | framework | testing | P1 | — | quick-win | Shipped | — |
-| 42 | Audit-chain tamper-evidence hardening: tail-truncation detection (head/length anchor) + guard `migrate` against re-blessing forged history [audit C1+C2] | framework | governance | P1 | — | feature | Pending | — |
+| 42 | Audit-chain tamper-evidence hardening: tail-truncation detection (git append-only witness) + guard `migrate` against re-blessing forged history [audit C1+C2] | framework | governance | P1 | docs/specs/audit-chain-tamper-evidence.md | feature | Shipped | — |
 | 43 | Guard write lock unification: replace-mode and append-mode take disjoint locks on same target → lost-update risk on current_state.md [audit C3] | framework | concurrency | P1 | — | feature | Pending | #17 |
 | 44 | validate.sh ↔ validate.ps1 parity backfill (gate-receipt schema, sentinel emoji, spec-template checks) — VERIFY each gap first [audit D] | framework | tooling | P2 | — | quick-win | Pending | — |
 

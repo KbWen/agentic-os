@@ -14,16 +14,16 @@
 - **Project Name**: (set by /app-init)
 - **Last Updated**: 2026-05-29
 - **Last Verified**: 2026-05-29
-- **Update Sequence**: 22
+- **Update Sequence**: 23
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
-  - docs/adr/ADR-003-hash-chained-audit-log.md — ADR-003: Hash-Chained Tamper-Evident Audit Log (INDEX.jsonl), proposed 2026-04-25
+  - docs/adr/ADR-003-hash-chained-audit-log.md — ADR-003: Hash-Chained Tamper-Evident Audit Log (INDEX.jsonl), accepted 2026-04-25 (amended 2026-05-29: tail-truncation witness + migrate fail-closed)
 - **Active Backlog**: docs/specs/_product-backlog.md (40 items; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (project specs at `docs/specs/`):
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20)
-  - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Frozen] (ADR-003 amendment, backlog #42)
+  - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -70,6 +70,17 @@
 - [Category: spec-factual-claims][Severity: MEDIUM][Trigger: domain-decision-tool-behavior-claim][prev: eea362e5] Domain Decisions that make factual claims about tool behavior (e.g., 'no external API call', 'language-agnostic') MUST be verified against tool documentation before the spec is frozen. Factual errors in Domain Decisions survive implementation and review phases because reviewers check AC compliance, not rationale accuracy. Self-check at spec-write: for each [DECISION] that asserts tool behavior, find one authoritative source confirming the claim.
 - [Category: scope-expansion][Severity: HIGH][Trigger: procedure-header-scope-change][prev: 95082304] When expanding a procedure's tier scope (e.g., "quick-win only" → "all tiers"), MUST audit every step inside the procedure body for correctness under the new scope BEFORE committing. Changing only the header/trigger misses procedure-body invariants — e.g., a receipt-writing step that was safe for quick-win becomes a governance hole for feature/hotfix. Self-check: for each step N in the procedure, ask "does this step still hold correctly for every new tier I just added?"
 ## Ship History
+
+### Ship-feat-audit-chain-tamper-evidence-2026-05-29
+- **Commits `d4240f8` + `9c03588`** (feature, backlog #42) — Hardened ADR-003 hash-chained audit log against two verified tamper paths (2026-05-29 self-audit C1+C2). ADR-003 amended proposed→accepted with an honest tamper-evidence boundary.
+  - **C1 (tail-truncation)**: the back-linked chain has no head/length anchor, so deleting the most recent entry still validated (reproduced). Added a git append-only **witness** to `validate.sh` + `validate.ps1`: the INDEX.jsonl committed at `merge-base origin/main HEAD` must be a line-prefix of the working copy (CR- + blank-normalized for Windows/parity; WARN-degrades offline; FAIL on truncation/edit of a published entry).
+  - **C2 (migrate laundering)**: `append_chain_entry.migrate` re-blessed any mismatch; now fills only genuinely-missing prev_sha and **fails closed** (exit 2, no writes) on an existing-but-mismatched prev_sha — matching ADR-003's documented intent.
+  - Design (Work Log D-1/D-2): rejected a forgeable in-repo anchor as false-confidence theatre per the [enforcement][HIGH] Global Lesson; git origin/main is the external append-only witness. Tamper-EVIDENCE not prevention, stated honestly in the ADR.
+  - Tests: `tests/guard/test_audit_chain.py` +3 (C2 AC-1/2/3); `tests/ci/test_audit_witness.py` NEW (witness structural + cross-platform parity, AC-4/5/6). 126 passed. Witness sims (both validators): real→PASS, truncate-below-baseline→FAIL, edit-published→FAIL, blank-line→PASS.
+  - CRLF bug found & fixed during impl (working copy CRLF vs `git show` LF false-FAILed every line → `tr -d '
+'`).
+- **Follow-ups still queued** (same audit): #43 guard replace/append lock unification (C3); #44 validate.sh↔validate.ps1 parity backfill (D).
+- Stacked on PR #116 (A+B test/CI fix).
 
 ### Ship-fix-guard-test-ci-coverage-2026-05-29
 - **Commit `8001ef5`** (quick-win) — Framework self-test integrity: restored `tests/guard/` collection + gated it in CI (audit items A+B, 2026-05-29 self-audit).

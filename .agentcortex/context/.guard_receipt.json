@@ -1,6 +1,7 @@
 {
-  "expected_sha": "5752add93e414f663917796e52f696ee3206f830dfa5b9293b43ceec2de74498",
-  "new_sha": "5752add93e414f663917796e52f696ee3206f830dfa5b9293b43ceec2de74498",
+  "expected_sha": "7dbec98f36e39cf8921d7665617397b5902ef9c1ba00a2f65a3f14c0d99aa94e",
+  "mode": "replace",
+  "new_sha": "73351ebcd9153b931ce85aedeec46802b53b55093360c0ac0b795ca5a7faa2ff",
   "target": ".agentcortex/context/current_state.md",
-  "timestamp": 1776396311
+  "timestamp": 1780066016
 }

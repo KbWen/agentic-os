@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 title: Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate)
 created: 2026-05-29
 source: self-audit-2026-05-29

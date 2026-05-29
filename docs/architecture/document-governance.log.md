@@ -30,3 +30,17 @@ source_sha: <ship-commit-sha>
 [CONSTRAINT] `lock_group()` reserved API — single-path implementation in this ADR; multi-path `NotImplementedError` placeholder for ADR-003 D3 reverse-transition multi-file atomicity needs. Prevents future ADR from reinventing the lock primitive.
 
 [CONSTRAINT] Capability-by-presence enforcement. Python checks (`lint_governed_writes.py`, `check_lifecycle_frontmatter.py`) gated by `run_python_check` in validate.sh — downstream projects without Python installed degrade to SKIP/WARN, never blocking CI.
+
+### [document-governance][2026-05-29][feat/audit-chain-tamper-evidence]
+source_spec: docs/specs/audit-chain-tamper-evidence.md
+source_sha: 9c035887c83dad2e8095c1b2ae8cb49828642960
+
+[DECISION] C1 tail-truncation detection uses git `origin/main` (merge-base) as an EXTERNAL append-only witness in validate.sh/.ps1, chosen over a forgeable in-repo anchor file — a same-commit-forgeable anchor is false-confidence theatre per the [enforcement][HIGH] Global Lesson.
+
+[DECISION] C2 `migrate` fails closed (exit 2, no writes) on an existing-but-mismatched prev_sha, only filling genuinely-missing fields — removing the "run migrate to launder forged history" attack and aligning with ADR-003's documented migration intent.
+
+[TRADEOFF] The git witness is tamper-EVIDENCE, not prevention: an attacker can still truncate + commit, but the removal of published audit lines becomes a visible diff against the merge-base baseline that must survive PR review. Accepted as the strongest dependency-free guarantee absent an external transparency log.
+
+[CONSTRAINT] Future INDEX rotation (backlog #3) MUST re-anchor the witness baseline as a deliberate reviewed operation; until then origin/main's merge-base is a valid monotonic lower bound and the strict-prefix invariant holds.
+
+[CONSTRAINT] The witness MUST degrade to WARN (never silent PASS) when git/origin/baseline is unavailable; and MUST CR-normalize + drop blank lines identically in bash (`tr -d '\r'` + `grep '.'`) and PowerShell (string-array read + `-ne ''`) so the two validators cannot disagree (Windows CRLF parity).
