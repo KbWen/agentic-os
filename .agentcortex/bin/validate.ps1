@@ -418,6 +418,51 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     Add-Result -Level 'SKIP' -Message 'audit chain integrity -- archive INDEX.jsonl not present'
 }
 
+# C1: git append-only WITNESS for INDEX.jsonl (ADR-003 amendment; spec
+# audit-chain-tamper-evidence AC-4/5/6). Mirror of validate.sh. The back-linked
+# chain cannot detect TAIL-TRUNCATION; git's merge-base with origin/main is used
+# as an EXTERNAL append-only witness (committed baseline must be a line-prefix of
+# the working copy). Tamper-EVIDENCE, not prevention. Degrades to WARN (never
+# silent PASS) when git / origin/main / baseline is unavailable. PowerShell reads
+# `git show` / Get-Content as string arrays, so CRLF is stripped naturally.
+$indexRel = '.agentcortex/context/archive/INDEX.jsonl'
+if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
+    $gitPresent = [bool](Get-Command git -ErrorAction SilentlyContinue)
+    $isRepo = $false
+    if ($gitPresent) { git -C $root rev-parse --git-dir *> $null; $isRepo = ($LASTEXITCODE -eq 0) }
+    if (-not $gitPresent -or -not $isRepo) {
+        Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- git unavailable or not a git repo'
+    } else {
+        git -C $root rev-parse --verify -q origin/main *> $null
+        if ($LASTEXITCODE -ne 0) { git -C $root fetch -q --depth=1 origin main *> $null }
+        $witnessBase = (git -C $root merge-base origin/main HEAD 2>$null | Select-Object -First 1)
+        if (-not $witnessBase) {
+            Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- no merge-base with origin/main (offline, no remote, or unrelated history)'
+        } else {
+            git -C $root cat-file -e "${witnessBase}:$indexRel" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- not present at merge-base (new log surface)'
+            } else {
+                $baseLines = @(git -C $root show "${witnessBase}:$indexRel" 2>$null | Where-Object { $_ -ne '' })
+                $localLines = @(Get-Content -LiteralPath $archiveIndexJsonl | Where-Object { $_ -ne '' })
+                if ($localLines.Count -lt $baseLines.Count) {
+                    Add-Result -Level 'FAIL' -Message "INDEX.jsonl append-only witness -- local has $($localLines.Count) entries, fewer than baseline $($baseLines.Count) at merge-base (tail-truncation?)"
+                } else {
+                    $prefixOk = $true
+                    for ($i = 0; $i -lt $baseLines.Count; $i++) {
+                        if ($localLines[$i] -ne $baseLines[$i]) { $prefixOk = $false; break }
+                    }
+                    if (-not $prefixOk) {
+                        Add-Result -Level 'FAIL' -Message 'INDEX.jsonl append-only witness -- committed baseline is not a prefix of local (a previously-published audit entry was edited or deleted)'
+                    } else {
+                        Add-Result -Level 'PASS' -Message 'INDEX.jsonl append-only witness -- baseline is a prefix of local (append-only invariant holds)'
+                    }
+                }
+            }
+        }
+    }
+}
+
 # Global Lessons chain (mirror of validate.sh integration).
 if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
     Invoke-PythonCheck -Label 'lesson chain integrity (Global Lessons)' -MissingPythonLevel 'FAIL' -ScriptPath $lessonChainCheck -Arguments @('--path', $ssotCurrentState, '--quiet')

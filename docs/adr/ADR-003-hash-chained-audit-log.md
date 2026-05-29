@@ -1,6 +1,7 @@
 ---
-status: proposed
+status: accepted
 date: 2026-04-25
+amended: 2026-05-29
 classification: architecture-change
 primary_domain: document-governance
 deciders: "@kbwen + Claude Opus 4.7 (1M context) + 3-expert roundtable (Red Team / Subtraction / External Critic with WebFetch citations)"
@@ -76,7 +77,7 @@ The chain is the simplest tamper-evident primitive that:
 
 ### Positive
 
-- **Tamper-evidence**: any retroactive edit to `INDEX.jsonl` breaks the chain at the edited line forward. CI catches it.
+- **Tamper-evidence**: any retroactive edit to an *interior* `INDEX.jsonl` entry breaks the chain at the edited line forward; CI catches it. **(Corrected 2026-05-29 — see Amendment below: this does NOT cover tail-truncation, which the back-linked chain alone cannot detect. The git append-only witness added in the amendment closes that gap.)**
 - **Composable primitive**: same `append_chain_entry.py` will retro-fit Drift Log, Gate Evidence, Global Lessons in follow-up PRs without re-inventing the chain.
 - **External-source-grounded**: addresses the External Critic's "most embarrassing gap" — closes a 17-year-old known pattern that this framework had ignored.
 
@@ -112,8 +113,47 @@ Follows `architecture-change` flow. Single decision, so no D3.1/D3.2/D3.3 sub-de
 - **Merkle tree upgrade** — defer until INDEX entry count > 10K.
 - **Validate.sh check that violations.jsonl (Sentinel hook output) is empty** — orthogonal; that's PR #75's follow-up.
 
+## Amendment 2026-05-29: Tamper-Evidence Boundary (C1 truncation + C2 migrate)
+
+A 2026-05-29 self-audit reproduced two gaps between this ADR's *stated* guarantee and the *actual* behavior. Spec: `docs/specs/audit-chain-tamper-evidence.md`.
+
+### C1 — Tail-truncation was undetectable (the original overclaim)
+
+The original Consequences claimed "any retroactive edit … breaks the chain … CI catches it." This is **false for tail-truncation**: a back-linked chain (each entry names its predecessor) has no head/length commitment, so deleting the most recent entry/entries leaves a shorter chain that still validates as intact. Reproduced: a 3-entry chain truncated to 2 passes `check_audit_chain.py`. The threat ("silent rewriting") explicitly includes erasing the newest record, so this was a real hole.
+
+**Decision**: add a **git append-only witness** to `validate.sh` + `validate.ps1`. The witness asserts that the `INDEX.jsonl` committed at the **merge-base with `origin/main`** is a line-prefix of the working copy. Truncating or editing any entry that existed at the merge-base → FAIL.
+
+- **merge-base, not the origin tip** — comparing to the tip would false-FAIL on stale feature branches; the merge-base enforces exactly "this branch did not delete/edit any audit entry that existed when it diverged," while still allowing legitimate appends (and legitimate removal of entries this branch itself added).
+- **Why git as witness is consistent with this ADR's "reject Git as audit log".** That rejection was about coupling INDEX's *existence/storage* to git history (circular deps on rebase). Using `git show <merge-base>:INDEX` as a read-only **external append-only oracle** is different: INDEX.jsonl remains the authority; git is only the published baseline we diff against.
+- **CR-normalization required**: the working copy may be CRLF (git autocrlf on Windows) while `git show` emits LF — the comparison strips CR (`tr -d '\r'` in bash; PowerShell reads as string arrays) or it false-FAILs every line. (This bug was caught during implementation.)
+
+### C2 — `migrate` could launder forged history
+
+`append_chain_entry.migrate` recomputed `prev_sha` for *any* mismatch, so editing an interior entry then running `migrate` produced a chain that re-validates — defeating the chain. The documented intent (this ADR §Migration + the tool docstring) is narrower: fill `prev_sha` only for entries that **lack** it (pre-ADR data).
+
+**Decision**: `migrate` now fills only genuinely-missing `prev_sha` and **fails closed** (exit 2, no writes) when an entry has a present-but-mismatched `prev_sha` (tampering). A `--force` escape hatch was rejected — an adversarial agent would just pass it; fail-closed matches the documented intent.
+
+### Honest threat boundary (per the [enforcement][HIGH] Global Lesson)
+
+This is tamper-**evidence**, not tamper-**prevention**. An agent with write access can still truncate `INDEX.jsonl` *and* commit it — but the deletion of published audit lines now becomes a visible removed-lines diff against the baseline that must survive PR review, and CI FAILs whenever the merge-base baseline is available. An in-repo anchor file (recording count/head-sha) was **rejected** as false-confidence theatre: it is forgeable in the same commit and would imply a guarantee the framework cannot keep. The witness raises truncation from a one-line silent delete to a reviewed history rewrite — the strongest dependency-free bound absent an external transparency log.
+
+**Degradation (never silent PASS)**: when git, `origin/main`, or the baseline INDEX is unavailable (offline, no remote, fresh downstream, first commit), the witness emits **WARN**, so the absence of the oracle is visible rather than masked.
+
+**Constraint for future INDEX rotation (backlog #3)**: rotation removes old entries and therefore breaks the strict-prefix invariant. When rotation ships it MUST **re-anchor** the witness baseline as a deliberate, reviewed operation (e.g., a recorded rotation checkpoint). Until then, `origin/main`'s merge-base is a valid monotonic lower bound and the strict-prefix check holds.
+
+### Amendment — Affected Files
+
+| File | Change |
+|---|---|
+| `.agentcortex/tools/append_chain_entry.py` | `migrate` fill-missing-only + fail-on-tamper (C2) |
+| `.agentcortex/bin/validate.sh` | git append-only witness block (C1) |
+| `.agentcortex/bin/validate.ps1` | witness mirror (C1, parity) |
+| `tests/guard/test_audit_chain.py` | C2 migrate tests (AC-1/2/3) |
+| `tests/ci/test_audit_witness.py` | NEW — witness structural + parity tests (AC-4/5/6) |
+
 ## References
 
+- Audit-chain tamper-evidence hardening spec (2026-05-29): `docs/specs/audit-chain-tamper-evidence.md`
 - Phase A audit: `docs/audit/governance-lifecycle-2026-04-25.md` §0.1 (External Critic Insight #3)
 - Retro Lesson L4: `current_state.md` §Global Lessons 2026-04-25 (honor-system rules without external observer = theatre)
 - Precedent ADRs: ADR-001 (friction tuning), ADR-002 (concurrent-write locking — this ADR is the retroactive-write counterpart)

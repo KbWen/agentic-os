@@ -377,6 +377,48 @@ else
   record_result SKIP "audit chain integrity -- archive INDEX.jsonl not present"
 fi
 
+# C1: git append-only WITNESS for INDEX.jsonl (ADR-003 amendment; spec
+# audit-chain-tamper-evidence AC-4/5/6). The back-linked chain above cannot
+# detect TAIL-TRUNCATION (deleting the most recent entries leaves a chain that
+# still validates). Git is used as an EXTERNAL append-only witness: the
+# INDEX.jsonl committed at the merge-base with origin/main MUST be a line-prefix
+# of the working copy. merge-base (not the origin tip) avoids false FAILs on
+# stale feature branches while still catching any deletion/edit of an entry that
+# existed when this branch diverged. Tamper-EVIDENCE, not prevention: a truncation
+# becomes a visible removed-lines diff that must survive PR review. Degrades to
+# WARN (never silent PASS) when git / origin/main / baseline is unavailable.
+INDEX_REL=".agentcortex/context/archive/INDEX.jsonl"
+if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
+  if ! command -v git >/dev/null 2>&1 || ! git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    record_result WARN "INDEX.jsonl append-only witness -- git unavailable or not a git repo"
+  else
+    # Best-effort: make origin/main available (no-op when offline / no remote).
+    if ! git -C "$ROOT" rev-parse --verify -q origin/main >/dev/null 2>&1; then
+      git -C "$ROOT" fetch -q --depth=1 origin main >/dev/null 2>&1 || true
+    fi
+    witness_base="$(git -C "$ROOT" merge-base origin/main HEAD 2>/dev/null || true)"
+    if [[ -z "$witness_base" ]]; then
+      record_result WARN "INDEX.jsonl append-only witness -- no merge-base with origin/main (offline, no remote, or unrelated history)"
+    elif ! git -C "$ROOT" cat-file -e "$witness_base:$INDEX_REL" 2>/dev/null; then
+      record_result WARN "INDEX.jsonl append-only witness -- not present at merge-base (new log surface)"
+    else
+      # CR-normalize both sides: the working copy may be CRLF (git autocrlf on
+      # Windows) while `git show` always emits LF; without this the line diff
+      # spuriously fails on every line. `tr -d '\r'` is portable (diff
+      # --strip-trailing-cr is GNU-only, absent on BSD/macOS).
+      witness_base_count="$(git -C "$ROOT" show "$witness_base:$INDEX_REL" | grep -c '' || true)"
+      witness_local_count="$(grep -c '' "$ARCHIVE_INDEX_JSONL" || true)"
+      if [[ "$witness_local_count" -lt "$witness_base_count" ]]; then
+        record_result FAIL "INDEX.jsonl append-only witness -- local has $witness_local_count entries, fewer than baseline $witness_base_count at merge-base (tail-truncation?)"
+      elif ! diff -q <(git -C "$ROOT" show "$witness_base:$INDEX_REL" | tr -d '\r') <(head -n "$witness_base_count" "$ARCHIVE_INDEX_JSONL" | tr -d '\r') >/dev/null 2>&1; then
+        record_result FAIL "INDEX.jsonl append-only witness -- committed baseline is not a prefix of local (a previously-published audit entry was edited or deleted)"
+      else
+        record_result PASS "INDEX.jsonl append-only witness -- baseline is a prefix of local (append-only invariant holds)"
+      fi
+    fi
+  fi
+fi
+
 # Global Lessons hash chain. Without a chain, an agent could silently delete
 # an inconvenient lesson that constrains its own future behaviour. Tamper-
 # evident chain on §Global Lessons closes that gap.

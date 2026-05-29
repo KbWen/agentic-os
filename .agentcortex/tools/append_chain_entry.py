@@ -100,10 +100,22 @@ def append_chained(path: Path, entry: dict) -> dict:
 
 
 def migrate(path: Path) -> int:
-    """Forward-compute prev_sha for any existing entries missing it.
+    """Fill prev_sha for existing entries that LACK it. Never re-bless tampering.
 
-    Returns the number of entries updated. Pre-migration tampering is
-    undetectable (we accept the existing data as the trust anchor).
+    Migration is scoped (per ADR-003 §Migration) to entries that have no
+    prev_sha at all — i.e. pre-ADR data. An entry that already carries a
+    prev_sha whose value does NOT match the recomputed value is tampering,
+    not un-migrated data: migrate raises ValueError and writes nothing, so it
+    cannot be used to launder a forged chain (audit C2 / Work Log D-2).
+
+    Returns the number of entries updated (prev_sha added). Pre-migration
+    tampering of an entry that lacks prev_sha is still undetectable; the
+    guarantee here is only that migrate will not overwrite a present-but-wrong
+    prev_sha.
+
+    Raises:
+        ValueError: an entry has a prev_sha that mismatches the recomputed
+            value (possible tampering). No write occurs.
     """
     if not path.is_file():
         return 0
@@ -111,9 +123,19 @@ def migrate(path: Path) -> int:
     updated_count = 0
     for i, obj in enumerate(entries):
         expected_prev = GENESIS if i == 0 else chain_sha(entries[i - 1])
-        if obj.get(PREV_SHA_FIELD) != expected_prev:
+        current = obj.get(PREV_SHA_FIELD)
+        if current is None:
+            # genuinely un-migrated entry → fill it
             obj[PREV_SHA_FIELD] = expected_prev
             updated_count += 1
+        elif current != expected_prev:
+            # present but wrong → tampering. Refuse before any write.
+            raise ValueError(
+                f"line {i + 1}: existing {PREV_SHA_FIELD}={current!r} != expected "
+                f"{expected_prev!r}; refusing to re-bless (possible tampering). "
+                f"Use check_audit_chain.py to inspect; migrate only fills missing prev_sha."
+            )
+        # else: present and correct → leave unchanged
     if updated_count == 0:
         return 0
     # Atomic-replace whole file with migrated entries

@@ -95,6 +95,62 @@ class TestMigrate(unittest.TestCase):
             n = ace.migrate(path)
             self.assertEqual(n, 0)
 
+    # --- C2 hardening (spec audit-chain-tamper-evidence AC-1/2/3, Work Log D-2) ---
+
+    def test_migrate_fills_only_missing_then_idempotent(self) -> None:
+        """AC-1: migrate adds prev_sha only to entries lacking it; re-run = no-op."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "log.jsonl"
+            path.write_text(
+                json.dumps({"i": 1}, sort_keys=True) + "\n"
+                + json.dumps({"i": 2}, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(ace.migrate(path), 2)
+            self.assertEqual(ace.migrate(path), 0)  # idempotent
+            intact, _ = cac.check_chain(path)
+            self.assertTrue(intact)
+
+    def test_migrate_refuses_to_rebless_tampered_entry(self) -> None:
+        """AC-2: an existing-but-mismatched prev_sha (tampering) → no write, exit-level error.
+
+        This is the C2 anti-laundering guarantee: editing a middle entry then
+        running migrate MUST NOT silently recompute the chain over forged content.
+        """
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "log.jsonl"
+            ace.append_chained(path, {"i": 1, "decision": "real"})
+            ace.append_chained(path, {"i": 2, "decision": "real"})
+            ace.append_chained(path, {"i": 3, "decision": "real"})
+            # Attacker edits the middle entry's content (breaks entry-3's prev_sha link)
+            lines = path.read_text(encoding="utf-8").splitlines()
+            obj1 = json.loads(lines[1])
+            obj1["decision"] = "FORGED"
+            lines[1] = json.dumps(obj1, sort_keys=True, ensure_ascii=False)
+            tampered = "\n".join(lines) + "\n"
+            path.write_text(tampered, encoding="utf-8")
+            # migrate MUST refuse (raise) and leave the file byte-for-byte unchanged
+            with self.assertRaises(ValueError):
+                ace.migrate(path)
+            self.assertEqual(path.read_text(encoding="utf-8"), tampered)
+            # And the chain remains BROKEN (forgery not laundered)
+            intact, _ = cac.check_chain(path)
+            self.assertFalse(intact)
+
+    def test_migrate_mixed_missing_and_tampered_no_partial_write(self) -> None:
+        """AC-3: missing prev_sha on some entries + a tampered prev_sha later → refuse, no partial write."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "log.jsonl"
+            # entry 0: missing prev_sha; entry 1: present but WRONG (tampered)
+            content = (
+                json.dumps({"i": 1}, sort_keys=True) + "\n"
+                + json.dumps({"i": 2, "prev_sha": "deadbeef"}, sort_keys=True) + "\n"
+            )
+            path.write_text(content, encoding="utf-8")
+            with self.assertRaises(ValueError):
+                ace.migrate(path)
+            self.assertEqual(path.read_text(encoding="utf-8"), content)  # no partial write
+
 
 class TestCheckChain(unittest.TestCase):
     def test_intact_chain(self) -> None:
