@@ -22,16 +22,19 @@ QUICK_WIN_FORBIDDEN_REQUIRED = {"review", "test", "handoff"}
 class LifecycleContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.scenarios = json.loads(SCENARIOS_PATH.read_text(encoding="utf-8"))["scenarios"]
-        self.agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.agents_text = (
+            (ROOT / "AGENTS.md").read_text(encoding="utf-8") +
+            (ROOT / ".agent" / "workflows" / "shared-contracts.md").read_text(encoding="utf-8")
+        )
 
     def test_agents_supports_direct_phase_execution_on_explicit_intent(self) -> None:
         """Explicit phase requests should execute in the same turn after gate pass."""
         self.assertIn("Direct phase execution on explicit user intent", self.agents_text)
-        self.assertIn("A passing gate MUST NOT introduce a second", self.agents_text)
+        self.assertIn("no second confirmation pause", self.agents_text)
 
     def test_phase_output_compression_contract_is_canonical(self) -> None:
-        """AGENTS.md should define the shared compression contract used by phase workflows."""
-        self.assertIn("### Phase Output Compression", self.agents_text)
+        """shared-contracts.md should define the shared compression contract used by phase workflows."""
+        self.assertIn("## Phase Output Compression", self.agents_text)
         self.assertIn("`/plan` \u2192 gate + plan", self.agents_text)
         self.assertIn("`/review` \u2192 burden-of-proof table", self.agents_text)
         self.assertIn("`/test` \u2192 commands + pass/fail + coverage delta", self.agents_text)

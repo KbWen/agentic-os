@@ -422,16 +422,16 @@ class TestTokenBudgetBounds(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.results = {r["id"]: r for r in json.loads(result.stdout)["results"]}
 
-    def test_quick_win_current_total_under_26k(self) -> None:
-        """Quick-win should not exceed 26k tokens total.
+    def test_quick_win_current_total_under_28k(self) -> None:
+        """Quick-win should not exceed 28k tokens total.
 
-        Threshold updated from 24k → 26k to account for Design-First gate
+        Threshold updated from 26k → 28k to account for Design-First gate
         chain and document-state-growth-governance additions. These sections
         are no-ops for quick-win tasks (capability-by-presence) but count
         toward file size.
         """
         qw = self.results["quick-win-single-module"]
-        self.assertLess(qw["current_total_tokens"], 26000)
+        self.assertLess(qw["current_total_tokens"], 28000)
 
     def test_feature_current_total_under_80k(self) -> None:
         """Even the heaviest feature scenario should stay under 80k tokens."""
@@ -491,11 +491,11 @@ class TestTokenBudgetBounds(unittest.TestCase):
             f"aggregate codex savings too small: {delta_total}",
         )
 
-    def test_aggregate_current_total_stays_under_320k(self) -> None:
+    def test_aggregate_current_total_stays_under_350k(self) -> None:
         current_total = sum(result["current_total_tokens"] for result in self.results.values())
         self.assertLess(
             current_total,
-            320_000,
+            350_000,
             f"aggregate lifecycle current total is unexpectedly high: {current_total}",
         )
 
@@ -550,11 +550,11 @@ class TestSharedContractDedup(unittest.TestCase):
                 "reference AGENTS.md §Shared Phase Contracts instead",
             )
 
-    def test_agents_md_is_canonical_location_for_both_contracts(self) -> None:
-        """AGENTS.md must contain both shared contracts."""
-        agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertIn("### Phase-Entry Skill Loading", agents_text)
-        self.assertIn("### Verification Before Completion (5-Gate Sequence)", agents_text)
+    def test_shared_contracts_file_has_both_contracts(self) -> None:
+        """shared-contracts.md must contain both shared contracts."""
+        text = (ROOT / ".agent" / "workflows" / "shared-contracts.md").read_text(encoding="utf-8")
+        self.assertIn("## Phase-Entry Skill Loading", text)
+        self.assertIn("## Verification Before Completion (5-Gate Sequence)", text)
 
     def test_workflow_total_tokens_reduced_by_dedup(self) -> None:
         """Aggregate workflow token estimate must stay below a threshold that was

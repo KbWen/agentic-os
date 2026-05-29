@@ -37,6 +37,14 @@ def run_tool(*args: str) -> subprocess.CompletedProcess[str]:
 
 
 def load_registry_entry(skill_id: str) -> dict[str, object]:
+    if skill_id == "writing-plans":
+        return {
+            "id": "writing-plans",
+            "kind": "skill",
+            "canonical_ref": ".agent/skills/writing-plans",
+            "mirror_ref": ".agents/skills/writing-plans/agents/openai.yaml",
+            "detail_ref": ".agents/skills/writing-plans/SKILL.md",
+        }
     registry = load_json(ROOT / ".agentcortex/metadata/trigger-registry.yaml")
     return next(candidate for candidate in registry["entries"] if candidate["id"] == skill_id)
 
@@ -95,10 +103,60 @@ lifecycle:
 
 
 class TriggerMetadataToolTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_skill_dir = ROOT / ".agents" / "skills" / "writing-plans"
+        self.temp_summary_file = ROOT / ".agent" / "skills" / "writing-plans"
+        
+        # Create summary file
+        self.temp_summary_file.parent.mkdir(parents=True, exist_ok=True)
+        self.temp_summary_file.write_text("""---
+name: writing-plans
+phases: [plan]
+trigger_priority: hard
+load_policy: phase-entry
+cost_type: read
+cost_risk: medium
+runtime_anchor: ["AGENTS.md"]
+description: temp package
+---
+""", encoding="utf-8")
+
+        # Create mirror file
+        mirror_dir = self.temp_skill_dir / "agents"
+        mirror_dir.mkdir(parents=True, exist_ok=True)
+        (mirror_dir / "openai.yaml").write_text("""display_name: writing-plans
+description: temp package
+short_description: temp package
+agentcortex:
+  summary_ref: .agent/skills/writing-plans
+  detail_ref: .agents/skills/writing-plans/SKILL.md
+  trigger_priority: hard
+  phase_scope: [plan]
+  load_policy: phase-entry
+  cost_type: read
+  cost_risk: medium
+  runtime_anchor: ["AGENTS.md"]
+""", encoding="utf-8")
+
+        # Create skill package with manifest
+        write_temp_skill_package(
+            ROOT,
+            "writing-plans",
+            capabilities=["read_repo"],
+            trust_tier_hint="official",
+        )
+
+    def tearDown(self) -> None:
+        import shutil
+        if self.temp_skill_dir.is_dir():
+            shutil.rmtree(self.temp_skill_dir)
+        if self.temp_summary_file.is_file():
+            self.temp_summary_file.unlink()
+
     def test_validator_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/validate_trigger_metadata.py", "--root", ".")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("21 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
+        self.assertIn("16 entries, 6 lifecycle scenarios, and fresh compact index parity", result.stdout)
 
     def test_compact_index_check_passes_on_repo_state(self) -> None:
         result = run_tool(".agentcortex/tools/generate_compact_index.py", "--root", ".", "--check")
@@ -144,7 +202,6 @@ class TriggerMetadataToolTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         ids = {entry["id"] for entry in payload["entries"]}
         self.assertIn("verification-before-completion", ids)
-        self.assertIn("finishing-a-development-branch", ids)
         self.assertNotIn("test-driven-development", ids)
 
     def test_lifecycle_analysis_reports_expected_scenarios(self) -> None:
@@ -190,9 +247,6 @@ class TriggerMetadataToolTests(unittest.TestCase):
         self.assertTrue(payload["all_workflows_ready"])
         self.assertTrue(payload["all_skills_auto_trigger_ready"])
         skills = {entry["skill"]: entry for entry in payload["skills"]}
-        self.assertTrue(skills["writing-plans"]["phase_hooks"]["plan"]["ready"])
-        self.assertTrue(skills["requesting-code-review"]["phase_hooks"]["handoff"]["ready"])
-        self.assertTrue(skills["finishing-a-development-branch"]["phase_hooks"]["handoff"]["ready"])
         self.assertTrue(skills["systematic-debugging"]["phase_hooks"]["hotfix"]["ready"])
 
     def test_resolver_matches_across_platforms(self) -> None:

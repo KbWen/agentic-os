@@ -119,10 +119,10 @@ class SkillNotesContractTests(unittest.TestCase):
         self.assertFalse(skill_phase_note_is_valid(skill_notes, "executing-plans", "implement"))
 
     def test_phase_entry_contract_is_capability_by_presence(self) -> None:
-        """Capability-by-presence: AGENTS.md §Shared Phase Contracts keeps the detailed
+        """Capability-by-presence: shared-contracts.md keeps the detailed
         conditional. Phase workflows reference AGENTS.md instead of repeating the prose."""
-        # AGENTS.md retains the detailed conditional text in §Shared Phase Contracts
-        agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        # AGENTS.md retains the pointer, shared-contracts.md has the detailed conditional text
+        agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8") + (ROOT / ".agent/workflows/shared-contracts.md").read_text(encoding="utf-8")
         # Capability-by-presence: metadata is checked first, with an explicit
         # fallback clause so missing metadata files MUST NOT block skill loading.
         self.assertIn(
@@ -159,10 +159,9 @@ class SkillNotesContractTests(unittest.TestCase):
         ]
         for path in phase_workflows:
             text = path.read_text(encoding="utf-8")
-            self.assertIn(
-                "AGENTS.md",
-                text,
-                f"{path.name}: should reference AGENTS.md shared contract instead of repeating skill-loading prose",
+            self.assertTrue(
+                "AGENTS.md" in text or "shared-contracts.md" in text,
+                f"{path.name}: should reference AGENTS.md or shared-contracts.md instead of repeating skill-loading prose",
             )
 
     def test_bootstrap_keeps_embedded_rule_table_as_canonical_trigger_source(self) -> None:

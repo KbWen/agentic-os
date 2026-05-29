@@ -75,7 +75,7 @@ class GuardContextWriteTests(unittest.TestCase):
         self.assertTrue(receipt.is_file())
         receipt_payload = json.loads(receipt.read_text(encoding="utf-8"))
         self.assertEqual(receipt_payload["target"], ".agentcortex/context/current_state.md")
-        self.assertEqual(payload["receipt"], ".agentcortex/context/.guard_receipt.json")
+        self.assertTrue(payload["receipt"].startswith(".agentcortex/context/.guard_receipts/"))
 
     def test_stale_sha_fails_without_partial_write(self) -> None:
         self.target.write_text("old state\n", encoding="utf-8")

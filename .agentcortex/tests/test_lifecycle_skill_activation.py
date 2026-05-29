@@ -24,8 +24,6 @@ ROOT = Path(__file__).resolve().parents[2]
 # --- Bootstrap §3.6 rule table encoded as test expectations ---
 
 MANDATORY_SKILLS = {
-    "writing-plans": {"phases": ["plan"], "skip": ["tiny-fix"]},
-    "executing-plans": {"phases": ["implement"], "skip": []},
     "verification-before-completion": {"phases": ["implement", "test", "ship"], "skip": ["tiny-fix"]},
     "systematic-debugging": {"phases": ["implement", "review", "test", "hotfix"], "skip": []},
     "red-team-adversarial": {"phases": ["review", "test"], "skip": ["tiny-fix", "quick-win"]},
@@ -39,11 +37,7 @@ SCOPE_DETECTED_SKILLS = {
     "auth-security": {"phases": ["implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix", "quick-win", "tiny-fix"]},
 }
 
-PHASE_TRIGGERED_SKILLS = {
-    "finishing-a-development-branch": {"phases": ["ship", "handoff"]},
-    "receiving-code-review": {"phases": ["review"]},
-    "requesting-code-review": {"phases": ["review", "handoff"]},
-}
+PHASE_TRIGGERED_SKILLS = {}
 
 COMPLEXITY_CONDITIONAL_SKILLS = {
     "dispatching-parallel-agents": {"phases": ["implement"], "classifications": ["feature", "architecture-change"]},
@@ -64,50 +58,34 @@ LOAD_POLICY_VALID = {"always", "phase-entry", "on-match", "on-failure"}
 EXPECTED_SCENARIO_SKILLS = {
     "quick-win-single-module": {
         "candidate": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "systematic-debugging",
-            "finishing-a-development-branch",
             "karpathy-principles",
         },
         "triggered": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
-            "finishing-a-development-branch",
             "karpathy-principles",
         },
     },
     "feature-core-logic-tdd": {
         "candidate": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "test-driven-development",
             "systematic-debugging",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
         "triggered": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "test-driven-development",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
     },
     "feature-api-auth-db": {
         "candidate": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "test-driven-development",
             "api-design",
@@ -116,14 +94,10 @@ EXPECTED_SCENARIO_SKILLS = {
             "doc-lookup",
             "systematic-debugging",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
         "triggered": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "test-driven-development",
             "api-design",
@@ -131,36 +105,26 @@ EXPECTED_SCENARIO_SKILLS = {
             "auth-security",
             "doc-lookup",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
     },
     "hotfix-debug-loop": {
         "candidate": {
-            "executing-plans",
             "verification-before-completion",
             "systematic-debugging",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "karpathy-principles",
         },
         "triggered": {
-            "executing-plans",
             "verification-before-completion",
             "systematic-debugging",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "karpathy-principles",
         },
     },
     "architecture-multi-agent": {
         "candidate": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "api-design",
             "database-design",
@@ -172,14 +136,10 @@ EXPECTED_SCENARIO_SKILLS = {
             "using-git-worktrees",
             "systematic-debugging",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
         "triggered": {
-            "writing-plans",
-            "executing-plans",
             "verification-before-completion",
             "api-design",
             "database-design",
@@ -190,31 +150,21 @@ EXPECTED_SCENARIO_SKILLS = {
             "subagent-driven-development",
             "using-git-worktrees",
             "red-team-adversarial",
-            "requesting-code-review",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
     },
     "post-review-feedback-loop": {
         "candidate": {
-            "receiving-code-review",
-            "requesting-code-review",
-            "executing-plans",
             "verification-before-completion",
             "systematic-debugging",
             "red-team-adversarial",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
         "triggered": {
-            "receiving-code-review",
-            "requesting-code-review",
-            "executing-plans",
             "verification-before-completion",
             "red-team-adversarial",
-            "finishing-a-development-branch",
             "production-readiness",
             "karpathy-principles",
         },
@@ -393,11 +343,6 @@ class TestSkillActivationPerClassification(unittest.TestCase):
         self.assertIn("systematic-debugging", triggered)
         # verification-before-completion should be triggered (non-tiny-fix)
         self.assertIn("verification-before-completion", triggered)
-        # executing-plans should be triggered (never skipped)
-        self.assertIn("executing-plans", triggered)
-        # writing-plans is only for /plan phase — hotfix scenario has no plan, so not expected
-        if "plan" not in hotfix_scenario["phases"]:
-            self.assertNotIn("writing-plans", triggered)
 
     def test_red_team_skipped_for_quick_win(self) -> None:
         """Quick-win must NOT activate red-team-adversarial (per skip rule)."""
@@ -438,15 +383,7 @@ class TestPhaseEntrySkillLoading(unittest.TestCase):
         self.registry_entries = {e["id"]: e for e in self.registry["entries"]}
         self.skill_metadata = load_skill_metadata()
 
-    def test_writing_plans_only_relevant_in_plan_phase(self) -> None:
-        entry = self.registry_entries["writing-plans"]
-        self.assertEqual(entry["phase_scope"], ["plan"])
-        self.assertEqual(entry["load_policy"], "phase-entry")
 
-    def test_executing_plans_only_relevant_in_implement_phase(self) -> None:
-        entry = self.registry_entries["executing-plans"]
-        self.assertEqual(entry["phase_scope"], ["implement"])
-        self.assertEqual(entry["load_policy"], "phase-entry")
 
     def test_verification_loads_at_phase_entry(self) -> None:
         entry = self.registry_entries["verification-before-completion"]
@@ -712,14 +649,14 @@ class TestWorkflowPhaseHooks(unittest.TestCase):
     def test_implement_has_skill_overrides_section(self) -> None:
         text = self._read_workflow("implement")
         self.assertIn("Skill Execution Overrides", text)
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        self.assertIn("AGENTS.md", text)
+        # Skill Notes cache contract is canonical in AGENTS.md / shared-contracts.md
+        self.assertTrue("AGENTS.md" in text or "shared-contracts.md" in text)
 
     def test_test_has_skill_aware_section(self) -> None:
         text = self._read_workflow("test")
         self.assertIn("Skill-Aware", text)
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        self.assertIn("AGENTS.md", text)
+        # Skill Notes cache contract is canonical in AGENTS.md / shared-contracts.md
+        self.assertTrue("AGENTS.md" in text or "shared-contracts.md" in text)
 
     def test_ship_has_skill_aware_checks(self) -> None:
         text = self._read_workflow("ship")
@@ -745,39 +682,19 @@ class TestWorkflowPhaseHooks(unittest.TestCase):
         text = self._read_workflow("ship")
         self.assertIn("verification-before-completion", text)
 
-    def test_ship_mentions_finishing_branch(self) -> None:
-        text = self._read_workflow("ship")
-        self.assertIn("finishing-a-development-branch", text)
-
     def test_review_mentions_red_team(self) -> None:
         text = self._read_workflow("review")
         self.assertIn("red-team", text.lower())
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        self.assertIn("AGENTS.md", text)
-
-    def test_plan_mentions_writing_plans(self) -> None:
-        text = self._read_workflow("plan")
-        self.assertIn("writing-plans", text)
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        self.assertIn("AGENTS.md", text)
-
-    def test_handoff_mentions_requesting_code_review(self) -> None:
-        text = self._read_workflow("handoff")
-        self.assertIn("requesting-code-review", text)
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        self.assertIn("AGENTS.md", text)
-
-    def test_handoff_mentions_finishing_branch(self) -> None:
-        text = self._read_workflow("handoff")
-        self.assertIn("finishing-a-development-branch", text)
+        # Skill Notes cache contract is canonical in AGENTS.md / shared-contracts.md
+        self.assertTrue("AGENTS.md" in text or "shared-contracts.md" in text)
 
     def test_ship_mentions_skill_notes_cache(self) -> None:
-        # Skill Notes cache contract is canonical in AGENTS.md §Shared Phase Contracts
-        agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        # Skill Notes cache contract is canonical in AGENTS.md / shared-contracts.md
+        agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8") + (ROOT / ".agent/workflows/shared-contracts.md").read_text(encoding="utf-8")
         self.assertIn("Skill Notes", agents_text)
-        # Ship workflow references AGENTS.md for the shared contract
+        # Ship workflow references AGENTS.md or shared-contracts.md for the shared contract
         ship_text = self._read_workflow("ship")
-        self.assertIn("AGENTS.md", ship_text)
+        self.assertTrue("AGENTS.md" in ship_text or "shared-contracts.md" in ship_text)
 
 
 class TestSharedPhaseContracts(unittest.TestCase):
@@ -785,7 +702,7 @@ class TestSharedPhaseContracts(unittest.TestCase):
     workflows reference AGENTS.md instead of repeating the prose."""
 
     def setUp(self) -> None:
-        self.agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8") + (ROOT / ".agent/workflows/shared-contracts.md").read_text(encoding="utf-8")
         self.workflow_dir = ROOT / ".agent" / "workflows"
 
     def _read_workflow(self, name: str) -> str:
@@ -796,23 +713,23 @@ class TestSharedPhaseContracts(unittest.TestCase):
         self.assertIn("## Shared Phase Contracts", self.agents_text)
 
     def test_agents_md_has_phase_entry_skill_loading_contract(self) -> None:
-        self.assertIn("### Phase-Entry Skill Loading", self.agents_text)
+        self.assertIn("## Phase-Entry Skill Loading", self.agents_text)
         self.assertIn("Skill Notes", self.agents_text)
         self.assertIn("config.yaml", self.agents_text)
 
     def test_agents_md_has_verification_before_completion_gates(self) -> None:
-        self.assertIn("### Verification Before Completion (5-Gate Sequence)", self.agents_text)
+        self.assertIn("## Verification Before Completion (5-Gate Sequence)", self.agents_text)
         # The 5 gate labels must be present
         for label in ("Scope", "Quality", "Evidence", "Risk", "Communication"):
             self.assertIn(label, self.agents_text, f"5-gate sequence missing gate: {label}")
 
     def test_all_six_workflows_reference_agents_md(self) -> None:
-        """After dedup, all phase workflows must reference AGENTS.md."""
+        """After dedup, all phase workflows must reference AGENTS.md or shared-contracts.md."""
         for phase in ("plan", "implement", "review", "test", "handoff", "ship"):
             text = self._read_workflow(phase)
-            self.assertIn(
-                "AGENTS.md", text,
-                f"{phase}.md should reference AGENTS.md shared contracts",
+            self.assertTrue(
+                "AGENTS.md" in text or "shared-contracts.md" in text,
+                f"{phase}.md should reference AGENTS.md or shared-contracts.md shared contracts",
             )
 
     def test_shared_contract_replaces_duplicate_workflow_prose(self) -> None:
