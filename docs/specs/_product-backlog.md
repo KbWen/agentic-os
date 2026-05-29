@@ -58,8 +58,8 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 40 | review.md /ultrareview callout + hotfix.md /autofix-pr callout (Claude-CLI-only doc hook-in) | — | — | — | — | tiny-fix | Shipped | — |
 | 41 | Framework self-test integrity: restore tests/guard collection (orphaned hook tests) + gate tests/guard in CI | framework | testing | P1 | — | quick-win | Shipped | — |
 | 42 | Audit-chain tamper-evidence hardening: tail-truncation detection (git append-only witness) + guard `migrate` against re-blessing forged history [audit C1+C2] | framework | governance | P1 | docs/specs/audit-chain-tamper-evidence.md | feature | Shipped | — |
-| 43 | Guard write lock unification: replace-mode and append-mode take disjoint locks on same target → lost-update risk on current_state.md [audit C3] | framework | concurrency | P1 | — | feature | Pending | #17 |
-| 44 | validate.sh ↔ validate.ps1 parity backfill (gate-receipt schema, sentinel emoji, spec-template checks) — VERIFY each gap first [audit D] | framework | tooling | P2 | — | quick-win | Pending | — |
+| 43 | ~~Guard write lock unification [audit C3]~~ — **Cancelled (verified not-a-bug 2026-05-29)**: cmd_write wraps BOTH replace & append in `file_lock(lock_path_for_target)`; append_write's sidecar is a redundant nested lock and has no direct callers. No disjoint-lock path. Defensive docstrings added to prevent the latent direct-call footgun. | framework | concurrency | P1 | — | — | Cancelled | — |
+| 44 | validate.sh ↔ validate.ps1 parity backfill [audit D] — verified: only gate-receipt-schema check was a real PS1 gap (others already at parity); backfilled into validate.ps1 | framework | tooling | P2 | — | quick-win | Shipped | — |
 
 ## Status Key
 

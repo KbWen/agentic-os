@@ -439,6 +439,14 @@ def cleanup_stale_tmps(path: Path) -> None:
 
 
 def atomic_write(path: Path, content: str) -> None:
+    """Whole-file atomic replace via os.replace.
+
+    INTERNAL — call ONLY from within ``cmd_write``'s ``file_lock(lock_path_for_target)``
+    context. This function takes NO lock of its own; the compare-and-swap
+    (read_text_and_sha -> compare -> atomic_write) is only safe because cmd_write
+    holds the per-target lock around it. Do not call directly (a direct caller
+    would bypass the CAS and could lose a concurrent write).
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     # Clean up any stale pid-named temps from crashed previous runs.
     cleanup_stale_tmps(path)
@@ -462,6 +470,15 @@ def append_write(path: Path, content: str, *, policy: dict | None = None) -> Non
     POSIX provides atomic O_APPEND for writes <= PIPE_BUF, but Windows/Git Bash
     can lose writes under concurrent FDs. Per Lock Designer roundtable Q2 we
     serialize via a per-target sidecar lock for cross-platform portability.
+
+    INTERNAL — call ONLY from within ``cmd_write``'s ``file_lock(lock_path_for_target)``
+    context. cmd_write already holds the per-target outer lock, so the sidecar
+    lock here is a redundant nested lock when called via the CLI (the only
+    supported path). It is retained as defence-in-depth, NOT as a substitute for
+    the outer lock: a direct caller would serialize append-vs-append on the
+    sidecar but would NOT serialize against a concurrent replace (which locks
+    lock_path_for_target), risking a lost update. Audit 2026-05-29 (C3) confirmed
+    no such direct caller exists; this note prevents introducing one.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     sidecar = path.with_suffix(path.suffix + ".guard.lock")

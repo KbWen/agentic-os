@@ -1342,6 +1342,34 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'PASS' -Message 'ADR Coverage Check records present in applicable work logs'
     }
 
+    # Gate receipt schema validation (§4.5 structural check) — parity with validate.sh.
+    # Every pipe-format gate receipt in ## Gate Evidence must include Verdict: and
+    # Classification: fields. WARN not FAIL (partial receipts are a process gap).
+    $gateSchemaViolations = 0
+    $gateSchemaViolationList = New-Object System.Collections.Generic.List[string]
+    foreach ($wl in $worklogs) {
+        $wlContent = Get-Content -Path $wl.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+        if (-not $wlContent) { continue }
+        foreach ($receiptLine in ([regex]::Matches($wlContent, '(?im)^-\s+Gate\s*:.*$') | ForEach-Object { $_.Value })) {
+            if ($receiptLine -notmatch '(?i)Verdict\s*:') {
+                $gateSchemaViolations++
+                $gateSchemaViolationList.Add("  malformed gate receipt (missing Verdict:) in $($wl.Name)")
+                break
+            }
+            if ($receiptLine -notmatch '(?i)Classification\s*:') {
+                $gateSchemaViolations++
+                $gateSchemaViolationList.Add("  malformed gate receipt (missing Classification:) in $($wl.Name)")
+                break
+            }
+        }
+    }
+    if ($gateSchemaViolations -gt 0) {
+        Add-Result -Level 'WARN' -Message "active work log gate receipts missing required fields (Verdict/Classification): $gateSchemaViolations"
+        foreach ($line in $gateSchemaViolationList) { Write-Output $line }
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'all active work log gate receipts have required fields (gate/verdict/classification)'
+    }
+
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock
     $staleLocks = 0
     $lockFiles = Get-ChildItem -Path $worklogDir -Filter '*.lock.json' -ErrorAction SilentlyContinue
@@ -1460,6 +1488,38 @@ if ($archiveGateViolations -gt 0) {
 }
 else {
     Add-Result -Level 'PASS' -Message 'archived Work Logs gate completeness ok (or none archived yet)'
+}
+
+# Gate receipt schema validation for archived Work Logs — parity with validate.sh.
+# WARN only: archives are immutable historical records.
+$archiveGateSchemaViolations = 0
+$archiveGateSchemaViolationList = New-Object System.Collections.Generic.List[string]
+if (Test-Path -Path $archiveDir -PathType Container) {
+    $archivedLogsSchema = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '.gitkeep*' }
+    foreach ($wl in $archivedLogsSchema) {
+        $arcContent = Get-Content -Path $wl.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+        if (-not $arcContent) { continue }
+        foreach ($receiptLine in ([regex]::Matches($arcContent, '(?im)^-\s+Gate\s*:.*$') | ForEach-Object { $_.Value })) {
+            if ($receiptLine -notmatch '(?i)Verdict\s*:') {
+                $archiveGateSchemaViolations++
+                $archiveGateSchemaViolationList.Add("  malformed gate receipt (missing Verdict:) in $($wl.Name)")
+                break
+            }
+            if ($receiptLine -notmatch '(?i)Classification\s*:') {
+                $archiveGateSchemaViolations++
+                $archiveGateSchemaViolationList.Add("  malformed gate receipt (missing Classification:) in $($wl.Name)")
+                break
+            }
+        }
+    }
+}
+if ($archiveGateSchemaViolations -gt 0) {
+    Add-Result -Level 'WARN' -Message "archived Work Log gate receipts missing required fields (Verdict/Classification): $archiveGateSchemaViolations"
+    foreach ($line in $archiveGateSchemaViolationList) { Write-Output $line }
+}
+else {
+    Add-Result -Level 'PASS' -Message 'archived Work Log gate receipts have required fields (or none archived yet)'
 }
 
 # M8: Relative-link depth check for archived markdown files.
