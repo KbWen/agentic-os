@@ -402,15 +402,19 @@ if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
     elif ! git -C "$ROOT" cat-file -e "$witness_base:$INDEX_REL" 2>/dev/null; then
       record_result WARN "INDEX.jsonl append-only witness -- not present at merge-base (new log surface)"
     else
-      # CR-normalize both sides: the working copy may be CRLF (git autocrlf on
-      # Windows) while `git show` always emits LF; without this the line diff
-      # spuriously fails on every line. `tr -d '\r'` is portable (diff
-      # --strip-trailing-cr is GNU-only, absent on BSD/macOS).
-      witness_base_count="$(git -C "$ROOT" show "$witness_base:$INDEX_REL" | grep -c '' || true)"
-      witness_local_count="$(grep -c '' "$ARCHIVE_INDEX_JSONL" || true)"
+      # Normalize both sides identically before comparing, so this check is
+      # byte-for-byte equivalent to the validate.ps1 mirror (parity, spec AC-6):
+      #   1. tr -d '\r' — the working copy may be CRLF (git autocrlf on Windows)
+      #      while `git show` emits LF; an un-normalized diff false-FAILs every
+      #      line. (`tr` is portable; diff --strip-trailing-cr is GNU-only.)
+      #   2. grep '.' — drop blank lines, matching the PowerShell mirror's
+      #      `Where-Object { $_ -ne '' }`, so a stray blank line cannot make the
+      #      two validators disagree.
+      witness_base_count="$(git -C "$ROOT" show "$witness_base:$INDEX_REL" | tr -d '\r' | grep -c '.' || true)"
+      witness_local_count="$(tr -d '\r' < "$ARCHIVE_INDEX_JSONL" | grep -c '.' || true)"
       if [[ "$witness_local_count" -lt "$witness_base_count" ]]; then
         record_result FAIL "INDEX.jsonl append-only witness -- local has $witness_local_count entries, fewer than baseline $witness_base_count at merge-base (tail-truncation?)"
-      elif ! diff -q <(git -C "$ROOT" show "$witness_base:$INDEX_REL" | tr -d '\r') <(head -n "$witness_base_count" "$ARCHIVE_INDEX_JSONL" | tr -d '\r') >/dev/null 2>&1; then
+      elif ! diff -q <(git -C "$ROOT" show "$witness_base:$INDEX_REL" | tr -d '\r' | grep '.') <(tr -d '\r' < "$ARCHIVE_INDEX_JSONL" | grep '.' | head -n "$witness_base_count") >/dev/null 2>&1; then
         record_result FAIL "INDEX.jsonl append-only witness -- committed baseline is not a prefix of local (a previously-published audit entry was edited or deleted)"
       else
         record_result PASS "INDEX.jsonl append-only witness -- baseline is a prefix of local (append-only invariant holds)"

@@ -78,6 +78,15 @@ def test_bash_witness_normalizes_cr() -> None:
     assert "tr -d '\\r'" in s
 
 
+def test_witness_blank_line_parity() -> None:
+    """Both validators MUST drop blank lines before comparing, or a stray blank
+    line would make bash and PowerShell disagree (spec AC-6 parity). bash uses
+    `grep '.'` / `grep -c '.'`; PowerShell uses Where-Object { $_ -ne '' }."""
+    s, p = _sh(), _ps1()
+    assert "grep -c '.'" in s and "grep '.'" in s
+    assert "-ne ''" in p
+
+
 # --- AC-6: cross-platform parity — same verdict messages in both validators ---
 
 def test_witness_verdict_parity() -> None:
