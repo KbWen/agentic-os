@@ -276,7 +276,7 @@ Docs:
 
 To avoid the model “choosing tiny-fix because it’s easiest,” add this deterministic boundary:
 
-* `< 5 lines` and **no logic change** → `tiny-fix`
+* `< 3 files` and **no semantic change** → `tiny-fix` (canonical threshold — see `AGENTS.md §Agentic OS Runtime v1` rule 2 / `engineering_guardrails.md §10.1, §10.3`)
 * **bug fix** isolated to one area/module → `hotfix`
 * **new behavior** / cross-file / new module → `feature`
 

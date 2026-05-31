@@ -17,7 +17,7 @@ Define the **maximum read scope** per task classification to prevent agents from
 | MUST | Target file(s) | Full read |
 | SKIP | `current_state.md`, `engineering_guardrails.md`, Work Logs, Specs, ADRs, all guides | — |
 
-> **Why skip guardrails?** AGENTS.md §Core Directives already provides: scope discipline ("UNAUTHORIZED REFACTORING STRICTLY PROHIBITED"), evidence requirement, and tiny-fix fast-path rules (< 5 lines, no logic change). Reading the full 14KB guardrails file for a typo fix wastes ~3,500 tokens. If the task turns out to be larger than tiny-fix, the agent must escalate and load guardrails at that point.
+> **Why skip guardrails?** AGENTS.md §Core Directives already provides: scope discipline ("UNAUTHORIZED REFACTORING STRICTLY PROHIBITED"), evidence requirement, and tiny-fix fast-path rules (< 3 files, no semantic change). Reading the full 14KB guardrails file for a typo fix wastes ~3,500 tokens. If the task turns out to be larger than tiny-fix, the agent must escalate and load guardrails at that point.
 > **Prompt Caching Note**: If this is a mixed-task session and guardrails were already read in a previous turn, **MUST NOT skip**. Continuing to read guardrails preserves the prefix cache and is cheaper than causing a cache miss.
 
 **Max file reads: 1-2** (governance + target files)
