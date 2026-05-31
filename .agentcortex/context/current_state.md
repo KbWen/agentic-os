@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-05-29
-- **Last Verified**: 2026-05-29
-- **Update Sequence**: 24
+- **Last Updated**: 2026-05-31
+- **Last Verified**: 2026-05-31
+- **Update Sequence**: 25
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -73,6 +73,14 @@
 - [Category: pr-workflow][Severity: MEDIUM][Trigger: stacked-pr-on-unmerged-base][prev: 704be7cc] When a PR is stacked on another unmerged PR's branch, SQUASH-merging the base orphans the stack: git no longer recognizes the base commits as merged, so the child PR's diff re-shows the base changes and squash-merging the child conflicts. Use a MERGE-COMMIT for the base PR (preserves commit identity → child diff stays base-free after retargeting to main), OR rebase the child onto main and force-push. Also: retargeting a PR's base via `gh pr edit --base` does NOT fire a pull_request CI trigger — push a sync commit (merge main in) to make CI run. Confirmed 2026-05-29 shipping stacked PRs #116→#117.
 - [Category: audit-verification][Severity: HIGH][Trigger: subagent-deep-audit-finding][prev: ad985879] Same-vendor sub-agent deep-audit findings have a HIGH false-alarm rate — independently verify each by READING THE ACTUAL CODE PATH before committing to a fix. 2026-05-29: of 3 deep findings, C3 (claimed P1 'disjoint-lock lost-update' in guard_context_write) was entirely false (cmd_write holds the outer lock for both modes; the sub-agent saw two lock files but missed the wrapping lock), and 3 of 4 D parity gaps were false (validate.ps1 already had the checks the agent reported missing). Only 1 of D was real. The agents even 'reproduced' the false claims. Verifying first turned a claimed feature (C3 lock unification) into a 2-line docstring no-op and avoided 3 phantom validate.ps1 edits. Reinforces 4faa557a (same-vendor roundtables share blind spots): a sub-agent 'reproduction' is a hypothesis, not evidence — re-trace it.
 ## Ship History
+
+### Ship-fix-win-cmd-dispatch-readme-counts-2026-05-31
+- **Branch `fix/win-cmd-dispatch-readme-counts`** (quick-win) - Fixed a dead Windows `.cmd` install/update path + corrected stale README skill/workflow counts.
+  - **Install bug**: `installers/deploy_brain.cmd` dispatched to canonical `.agentcortex/bin/deploy.*` whenever present (always, post-install), bypassing the wrapper's NVM-style install-vs-update routing. `deploy_brain.cmd .` from an installed root -> canonical `deploy.sh .` with REPO_ROOT==TARGET -> self-deploy guard error. Fix: cmd now ALWAYS delegates to the sibling wrapper (deploy_brain.ps1 preferred -> deploy_brain.sh), never canonical; added cmd->PS1 typed-arg mapping. Caught + fixed a `%0`/`shift` clobber the expert design missed (capture `%~dp0` into `SCRIPT_DIR` before shift). Rewrote ASCII+CRLF per `.gitattributes`.
+  - **Docs**: README "17 Professional Skills" -> 14 (removed 5 phantom rows that are workflows, added real karpathy-principles + production-readiness with verified metadata); workflow count 35->33; added Windows `--dry-run` parity line. zh-TW: 17->14 + removed inaccurate versioned model string.
+  - Verified offline via real `cmd.exe`: first-install dry-run (exit 0) + update-from-installed-root (Cloning -> .agentcortex-src -> "182 updated", exit 0, no self-deploy error). validate.sh & validate.ps1 fail=0 both.
+  - Note: `deploy_brain.cmd` is wrapper-tier -> deployed as an update it sidecars (.acx-incoming) over locally-modified downstream copies; downstream must merge to receive the fix.
+  - Closes issue #32 (skill-subdir deploy - verified already fixed by c7d9ade; nested agents/openai.yaml all deploy).
 
 ### Ship-fix-validator-parity-and-audit-closure-2026-05-29
 - **Commit `55ed8ea`** (quick-win, backlog #44 Shipped / #43 Cancelled) — Closed the final two 2026-05-29 self-audit items after INDEPENDENT verification.

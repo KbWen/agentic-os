@@ -97,7 +97,7 @@ A constitution for AI behavior — loaded automatically, enforced at every phase
 - **OWASP Top 10 Auto-Scan** — security checks run during `/implement` and `/review`
 - **Confidence Gate** — AI must declare confidence level; low confidence triggers escalation
 
-### ⚡ 17 Professional Skills
+### ⚡ 14 Professional Skills
 
 Skills auto-activate based on task classification and workflow phase:
 
@@ -112,13 +112,10 @@ Skills auto-activate based on task classification and workflow phase:
 | Frontend Patterns | UI components | Component and state management patterns |
 | Parallel Agent Dispatching | complex tasks | Coordinated subagent execution |
 | Subagent-Driven Development | multi-module tasks | Multi-agent coordination |
-| Writing Plans | /plan | Plan structuring and validation |
-| Executing Plans | /implement | Plan execution with checkpoints |
-| Requesting Code Review | /review | Code review request protocol |
-| Receiving Code Review | post-review | How to integrate feedback |
+| Karpathy Principles | all coding tasks | Behavioral guardrails against common LLM coding mistakes |
+| Production Readiness | feature, architecture-change | Pre-ship observability: error sinks, log strategy, rollback telemetry |
 | Verification Before Completion | /ship | 5-gate check: Scope → Quality → Evidence → Risk → Communication |
 | Git Worktrees | parallel branches | Worktree isolation workflows |
-| Finishing a Branch | pre-merge | Mainline re-sync and closure |
 | Doc Lookup | documentation needed | Documentation retrieval strategy |
 
 ### 🧠 Single Source of Truth (SSoT)
@@ -214,6 +211,9 @@ bash installers/deploy_brain.sh .
 ```powershell
 # Clone Agentic OS (first time)
 git clone https://github.com/KbWen/agentic-os.git
+
+# Preview what will be deployed (no changes made)
+powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 --dry-run C:\path\to\your-project
 
 # Deploy into your project
 powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 C:\path\to\your-project
@@ -336,7 +336,7 @@ your-project/
 │   ├── config.yaml              # Governance constants
 │   ├── rules/                   # Engineering & security guardrails
 │   ├── skills/                  # Skill metadata (auto-trigger defs)
-│   └── workflows/               # Workflow definitions (35 workflows)
+│   └── workflows/               # Workflow definitions (33 workflows)
 │
 ├── .agents/skills/              # Full skill implementations (14 skills)
 │   ├── test-driven-development/

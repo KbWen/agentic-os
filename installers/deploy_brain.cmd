@@ -1,39 +1,57 @@
 @echo off
 setlocal
+set "SCRIPT_DIR=%~dp0"
 
-:: When deployed to installers\, canonical deploy is one level up.
-:: Prefer the PowerShell wrapper on Windows because it resolves a real Git Bash
-:: path and avoids the WindowsApps bash.exe WSL placeholder.
-if exist "%~dp0..\.agentcortex\bin\deploy.ps1" goto run_canonical_ps1
+:: deploy_brain.cmd - Windows wrapper dispatcher.
+::
+:: DESIGN: The WRAPPER (deploy_brain.ps1 / deploy_brain.sh) owns install-vs-update
+:: (NVM-style) routing. The canonical .agentcortex\bin\deploy.* is the IMPLEMENTATION
+:: that the wrapper calls - it has NO install-vs-update dispatch and an aggressive
+:: self-deploy guard. Therefore this .cmd MUST ALWAYS delegate to its sibling wrapper
+:: and MUST NOT jump to canonical deploy.* directly (doing so trips the self-deploy
+:: guard on `deploy_brain.cmd .` from an installed project root).
+::
+:: Prefer deploy_brain.ps1: it resolves a real Git Bash and skips the WindowsApps
+:: bash.exe WSL placeholder. Fall back to deploy_brain.sh via bash only when the
+:: PowerShell wrapper is unavailable.
+::
+:: NOTE: %~dp0 is captured into SCRIPT_DIR up front because the arg-parse loop below
+:: uses SHIFT, and SHIFT rewrites %0 - so %~dp0 would no longer point at this script.
 
-:: Try canonical deploy via bash
-if exist "%~dp0..\.agentcortex\bin\deploy.sh" goto run_canonical_bash
+if exist "%SCRIPT_DIR%deploy_brain.ps1" goto run_wrapper_ps1
+if exist "%SCRIPT_DIR%deploy_brain.sh" goto run_wrapper_bash
 
-:: Bootstrap: canonical not found, prefer the PowerShell wrapper first.
-if exist "%~dp0deploy_brain.ps1" goto run_bootstrap_ps1
-if exist "%~dp0deploy_brain.sh" goto run_bootstrap_bash
-
-echo [ERROR] Canonical deploy implementation not found and cannot bootstrap.
+echo [ERROR] No deploy wrapper found alongside this script (expected deploy_brain.ps1 or deploy_brain.sh).
 exit /b 1
 
-:run_canonical_ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\.agentcortex\bin\deploy.ps1" %*
+:run_wrapper_ps1
+:: PowerShell -File binds unrecognized --flags to the first positional [string]$Target,
+:: which would corrupt --dry-run / --source. Translate the cmd-style args into the
+:: PS1 wrapper's typed parameters so all invocation forms route correctly.
+set "ACX_DRYRUN="
+set "ACX_SOURCE_ARG="
+set "ACX_TARGET="
+:parse_args
+if "%~1"=="" goto run_ps1_invoke
+if /i "%~1"=="--dry-run" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
+if /i "%~1"=="-DryRun" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
+if /i "%~1"=="--no-python" (set "ACX_DRYRUN=%ACX_DRYRUN% -NoPython" & shift & goto parse_args)
+if /i "%~1"=="-NoPython" (set "ACX_DRYRUN=%ACX_DRYRUN% -NoPython" & shift & goto parse_args)
+if /i "%~1"=="--source" (set "ACX_SOURCE_ARG=-Source ""%~2""" & shift & shift & goto parse_args)
+if /i "%~1"=="-Source" (set "ACX_SOURCE_ARG=-Source ""%~2""" & shift & shift & goto parse_args)
+set "ACX_TARGET=%~1"
+shift
+goto parse_args
+
+:run_ps1_invoke
+if not defined ACX_TARGET set "ACX_TARGET=."
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%deploy_brain.ps1" -Target "%ACX_TARGET%" %ACX_SOURCE_ARG% %ACX_DRYRUN%
 exit /b %errorlevel%
 
-:run_canonical_bash
+:run_wrapper_bash
 where bash >nul 2>nul
 if errorlevel 1 goto no_bash
-bash "%~dp0..\.agentcortex\bin\deploy.sh" %*
-exit /b %errorlevel%
-
-:run_bootstrap_bash
-where bash >nul 2>nul
-if errorlevel 1 goto run_bootstrap_ps1
-bash "%~dp0deploy_brain.sh" %*
-exit /b %errorlevel%
-
-:run_bootstrap_ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0deploy_brain.ps1" %*
+bash "%SCRIPT_DIR%deploy_brain.sh" %*
 exit /b %errorlevel%
 
 :no_bash

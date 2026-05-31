@@ -6,7 +6,7 @@
 
 ## 🎯 專案定位
 
-**Agentic OS** 是一個專為頂尖開發者（使用 Gemini 3.1 Pro / 3.1 Flash, Claude Opus 4.6, 或 GPT-5.4）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
+**Agentic OS** 是一個專為頂尖開發者（使用 Gemini、Claude、或 GPT 等主流模型）設計的高效能**結構化認知框架**。它能幫助 AI Agent 深度理解代碼庫、嚴格遵守工程護欄，並以極高的 Token 效率執行複雜任務。
 
 我們對齊並優化了 Google Antigravity / Codex Web / Codex App 的使用情境：
 
@@ -17,7 +17,7 @@
 - **Command-first**：用標準化指令觸發 Agent 能力，確保行為一致性。
 - **10 不可違反原則**：[設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md)定義 P1-P10 核心信條 — AI 主導、不跳步驟、憲法高於任務、無證據不完成、跨模型合規。
 - **命名空間隔離**：下游專案可自由添加自定義 skill 和 workflow，框架用 `.agentcortex-manifest` 區分管理範圍，用戶指令永遠優先。
-- **17 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
+- **14 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
 
 ## 🚀 三條起點路徑
 
