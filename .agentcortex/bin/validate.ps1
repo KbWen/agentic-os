@@ -470,6 +470,26 @@ if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
     Add-Result -Level 'SKIP' -Message 'lesson chain integrity -- current_state.md not present'
 }
 
+# Unresolved merge-conflict markers in tracked files (mirror of validate.sh).
+# See validate.sh for rationale. Matches only the unambiguous "<<<<<<< " /
+# ">>>>>>> " opening/closing forms; bare "=======" is excluded (markdown setext
+# H2 collision). git grep -I skips binary; the verdict is byte-identical to the
+# bash check. The validator pair self-excludes.
+$gitPresentMarkers = [bool](Get-Command git -ErrorAction SilentlyContinue)
+$isRepoMarkers = $false
+if ($gitPresentMarkers) { git -C $root rev-parse --git-dir *> $null; $isRepoMarkers = ($LASTEXITCODE -eq 0) }
+if (-not $gitPresentMarkers -or -not $isRepoMarkers) {
+    Add-Result -Level 'WARN' -Message 'merge-conflict marker scan -- git unavailable or not a git repo'
+} else {
+    $conflictMarkerHits = git -C $root grep -I -n -E '^(<<<<<<< |>>>>>>> )' -- . ':(exclude).agentcortex/bin/validate.sh' ':(exclude).agentcortex/bin/validate.ps1' ':(exclude)tests/guard/test_conflict_markers.py' 2>$null
+    if ($conflictMarkerHits) {
+        Add-Result -Level 'FAIL' -Message 'unresolved merge-conflict markers in tracked files'
+        Show-IndentedOutput -Text ($conflictMarkerHits | Out-String)
+    } else {
+        Add-Result -Level 'PASS' -Message 'no unresolved merge-conflict markers in tracked files'
+    }
+}
+
 $legacyAuditHelper = Join-NormalPath $root 'tools/audit_ai_paths.sh'
 if (Test-Path -Path $legacyAuditHelper -PathType Leaf) {
     Add-Result -Level 'FAIL' -Message "legacy audit helper should move under .agentcortex/tools/: $legacyAuditHelper"

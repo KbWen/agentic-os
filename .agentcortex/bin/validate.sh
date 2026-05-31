@@ -432,6 +432,30 @@ else
   record_result SKIP "lesson chain integrity -- current_state.md not present"
 fi
 
+# Unresolved merge-conflict markers in tracked files. A squash-merge collision
+# between two PRs that both edit the same section (e.g. SSoT Ship History) can
+# leave conflict markers committed to a tracked file -- git's own merge blocks
+# this, but GitHub squash-merge does not (current_state.md reached main this way
+# on 2026-05-31; fixed in PR #130). Match only the unambiguous opening/closing
+# marker forms ("<<<<<<< " / ">>>>>>> " at line start); a bare "=======" is
+# deliberately NOT matched because it collides with markdown setext H2 underlines.
+# The validator pair self-excludes (it contains the pattern literally). git grep
+# -I skips binary; the verdict is byte-identical to the validate.ps1 mirror.
+if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  conflict_marker_hits="$(git -C "$ROOT" grep -I -n -E '^(<<<<<<< |>>>>>>> )' -- . \
+    ':(exclude).agentcortex/bin/validate.sh' \
+    ':(exclude).agentcortex/bin/validate.ps1' \
+    ':(exclude)tests/guard/test_conflict_markers.py' 2>/dev/null || true)"
+  if [[ -n "$conflict_marker_hits" ]]; then
+    record_result FAIL "unresolved merge-conflict markers in tracked files"
+    print_indented_output "$conflict_marker_hits"
+  else
+    record_result PASS "no unresolved merge-conflict markers in tracked files"
+  fi
+else
+  record_result WARN "merge-conflict marker scan -- git unavailable or not a git repo"
+fi
+
 if [[ -f "$ROOT/tools/audit_ai_paths.sh" ]]; then
   record_result FAIL "legacy audit helper should move under .agentcortex/tools/: $ROOT/tools/audit_ai_paths.sh"
 else
