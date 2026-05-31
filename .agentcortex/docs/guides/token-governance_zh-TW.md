@@ -21,6 +21,7 @@
 - `feature` / `architecture-change`：建議 3–6 回合完成。
 
 > 回合數是上限提醒，不是硬性失敗條件。
+> **僅為啟發式 — 不是 handoff 訊號。** 任務不會因為「到了某個輪數」就該 handoff。正本 handoff 觸發是 **context 佔用率 + 階段邊界**（見 `AGENTS.md §Context Pruning` 與英文版 §6.1）；輪數只是無法估計佔用率時的粗略 fallback。（英文版為準）
 
 ## 2. 超標處置（Cost Fallback）
 

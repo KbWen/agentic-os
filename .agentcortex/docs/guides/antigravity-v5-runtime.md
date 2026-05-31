@@ -15,6 +15,7 @@ Agentic OS already enforces strong process gates via workflows:
 * `/implement` has a hard gate `state >= IMPLEMENTABLE` and scope escalation checks
 * `/ship` requires state TESTED and handoff for non-tiny-fix, then updates SSoT via guarded writes. `/retro` is the only non-ship SSoT write exception, and only for structured Global Lessons.
 * AGENTS.md is injected every turn and already defines write isolation + evidence requirements
+* Handoff timing follows the cross-platform SSoT `AGENTS.md §Context Pruning` (context occupancy + phase boundary, NOT turn-count); per-platform caching/compaction detail in `.agentcortex/docs/guides/token-governance.md §6.1`. Antigravity/Gemini's large window (1M–2M) + implicit caching means fewer handoffs — reason in occupancy %, not absolute turns.
 
 **Remaining issue:** Antigravity sometimes “continues anyway” even when a workflow says STOP (because STOP is still text).
 Runtime v5 adds **hard generation-path checkpoints** that are short, deterministic, and token-cheap.

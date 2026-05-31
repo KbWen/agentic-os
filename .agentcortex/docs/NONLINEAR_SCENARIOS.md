@@ -6,7 +6,7 @@
 
 ## Rule 1: Auto-Checkpoint (Prevents Session Crash Data Loss)
 
-**Trigger**: AI detects it has completed **3+ turns of implementation work** without a Work Log update.
+**Trigger**: AI detects it has completed **3+ turns of implementation work** without a Work Log update. *(This is a cheap in-place Work-Log checkpoint — NOT a handoff or new conversation. Handoff timing follows Rule 6 / `AGENTS.md §Context Pruning`: occupancy + phase boundary.)*
 
 **AI MUST**:
 
@@ -123,19 +123,19 @@
 
 ---
 
-## Rule 6: Turn Count Auto-Handoff (Existing Rule Enhancement)
+## Rule 6: Auto-Handoff Timing (Occupancy + Phase Boundary)
 
-**Enhancement to AGENTS.md §Context Pruning**:
+**Canonical rule: `AGENTS.md §Context Pruning`** (handoff-timing SSoT). Handoff timing is driven by **context occupancy + phase boundary**, NOT turn count — see `.agentcortex/docs/guides/token-governance.md §6.1` for the cross-platform caching/compaction rationale. This rule adds the escalation behavior layered on that signal:
 
-When turn count exceeds 8, the existing rule says _suggest_ handoff. This enhancement makes it stronger:
+**AI SHOULD** (advisory — not an enforced gate):
 
-**AI MUST**:
+1. **High occupancy OR at a phase boundary** (after a review PASS / ship / between work units): suggest `/handoff` + a fresh conversation.
+2. **If a long session keeps going with no clean boundary**: write a `## Checkpoint` to the Work Log automatically (cheap insurance), even if the human ignored the suggestion.
+3. **If context quality is visibly degrading** (repetition, lost detail, contradictory state): escalate — "⚠️ Context quality is degrading — strongly recommend `/handoff` now."
 
-1. At turn 8: suggest handoff (existing behavior).
-2. At turn 12: write `## Checkpoint` automatically, even if human ignored the suggestion.
-3. At turn 15: escalate warning: "⚠️ We're at 15 turns. Context quality is degrading. Strongly recommend `/handoff` now."
+**Turn-count fallback (heuristic only)**: where occupancy genuinely can't be estimated, use the coarse ladder ~8 (suggest) → ~12 (checkpoint) → ~15 (escalate) as a proxy.
 
-**Rationale**: Humans ignore warnings. The AI protects against context degradation by writing checkpoints regardless.
+**Rationale**: Humans ignore warnings; the AI protects context quality by checkpointing regardless. But a premature handoff resets the warm prompt cache (`token-governance.md §6.1`), so trigger on occupancy/boundary — not a turn timer.
 
 ---
 
@@ -148,7 +148,7 @@ When turn count exceeds 8, the existing rule says _suggest_ handoff. This enhanc
 | Session crashed | **Just start `/bootstrap`** | Auto-detects Work Log + orphaned git changes, auto-resumes |
 | Plan is wrong mid-implementation | **Nothing** (or just say "計畫有問題") | Auto-rolls back state, re-plans, logs justification |
 | Blocker discovered | **Answer one yes/no** | Manages task parking and switching automatically |
-| Long session (8+ turns) | **Nothing** | Auto-checkpoints at 12 turns, escalates at 15 |
+| Context filling up / at a phase boundary | **Nothing** | Suggests handoff on occupancy + phase boundary (turn-count ~8/12/15 only as a fallback proxy) |
 
 > **Design Principle**: The human's cognitive load is near-zero. The AI is the process manager.
 

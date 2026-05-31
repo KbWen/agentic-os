@@ -8,6 +8,10 @@ This guide adds a minimal Claude-compatible entry while keeping Agentic OS gover
 - `.agent/rules/*.md`
 - `.agent/workflows/*.md`
 
+## Handoff Timing
+
+Handoff timing is governed by the cross-platform SSoT — `AGENTS.md §Context Pruning` (context occupancy + phase boundary, not turn-count), with Claude-specific caching/compaction nuance in `.agentcortex/docs/guides/token-governance.md §6.1` (Claude: prefix cache 0.1×, 5-min default TTL, compaction reuses prefix).
+
 ## Design Principle
 
 - Do not fork core rules for Claude.

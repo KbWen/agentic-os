@@ -14,7 +14,7 @@
 - **Project Name**: (set by /app-init)
 - **Last Updated**: 2026-05-31
 - **Last Verified**: 2026-05-31
-- **Update Sequence**: 25
+- **Update Sequence**: 26
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -24,6 +24,7 @@
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20)
   - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
+  - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -74,6 +75,14 @@
 - [Category: audit-verification][Severity: HIGH][Trigger: subagent-deep-audit-finding][prev: ad985879] Same-vendor sub-agent deep-audit findings have a HIGH false-alarm rate — independently verify each by READING THE ACTUAL CODE PATH before committing to a fix. 2026-05-29: of 3 deep findings, C3 (claimed P1 'disjoint-lock lost-update' in guard_context_write) was entirely false (cmd_write holds the outer lock for both modes; the sub-agent saw two lock files but missed the wrapping lock), and 3 of 4 D parity gaps were false (validate.ps1 already had the checks the agent reported missing). Only 1 of D was real. The agents even 'reproduced' the false claims. Verifying first turned a claimed feature (C3 lock unification) into a 2-line docstring no-op and avoided 3 phantom validate.ps1 edits. Reinforces 4faa557a (same-vendor roundtables share blind spots): a sub-agent 'reproduction' is a hypothesis, not evidence — re-trace it.
 - [Category: cross-platform-cli][Severity: MEDIUM][Trigger: powershell-switch-flag-binding][prev: 935ac89f] PowerShell scripts that expose options as `[switch]$Foo` params bind ONLY `-Foo`, NOT `--foo`. A `--foo` token is taken as a positional value and silently binds to the first positional param (e.g. $Target), so the switch is OFF and the target is corrupted. Confirmed 2026-05-31 (PR #120): a README 'preview' line `deploy_brain.ps1 --dry-run <path>` ran a REAL deploy instead of a dry-run because `--dry-run` did not bind `[switch]$DryRun`. Discipline: when documenting or invoking a .ps1 directly, use `-Switch`; reserve `--flag` only for the bash/cmd wrappers that translate them. Cross-wrapper arg parity (sh uses --flag, ps1 uses -Flag) MUST be verified by actually running each entry point, not by reading — same family as [audit-verification]: a sub-agent's 'handled' is a hypothesis.
 ## Ship History
+
+### Ship-feat-handoff-trigger-occupancy-2026-05-31
+- **Branch `feat/handoff-trigger-occupancy`** (feature, spec `docs/specs/handoff-trigger-policy.md`, ADR-001 domain) — Handoff-timing trigger overhauled from **turn-count** to **context-occupancy + phase-boundary** (advisory), converging four scattered/contradictory turn constants into one SSoT and making the model cross-platform-consistent for 2026.
+  - **SSoT**: `AGENTS.md §Context Pruning` — occupancy + phase-boundary primary; turn-count (~8+) demoted to a labelled coarse fallback; rationale = premature handoff resets the warm prompt cache (all majors cache prefix ~0.1× + auto-compact at high fill). Stays **advisory** (grep-confirmed no validator enforces it; no fake MUST added, per Lesson [enforcement]).
+  - **Reconciled**: `NONLINEAR_SCENARIOS.md` Rule 6 (8/12/15 ladder → labelled fallback) + Rule 1 clarified (Work-Log checkpoint ≠ handoff); `token-governance.md` §1 turn-budget reframed soft, §6 stale "becomes available" fixed, new **§6.1 cross-platform table** (Claude 5-min-TTL/1M; Codex auto-cache + ~95% compaction/24h GPT-5.1; Gemini implicit-cache/1M–2M). Bilingual zh-TW mirrors. 1-line handoff-timing pointers added to CLAUDE/CODEX (+zh) platform guides + antigravity-v5-runtime.
+  - **Cross-platform facts source-verified 2026-05-31** (Anthropic / OpenAI / Google docs). Self-audit retracted two hallucinated claims after full-repo grep (Lesson [audit-verification]).
+  - **Evidence**: spec-index FAIL resolved by this entry; no NEW validate failures vs baseline (4 pre-existing FAILs untouched — see follow-ups). Doc-only advisory change; rollback = revert branch.
+  - **Pre-existing follow-ups surfaced (NOT this PR)**: stale active worklog `fix-win-cmd-dispatch-readme-counts.md` (PR #120 leftover, never archived → compaction + illegal-progression FAILs); `trigger-compact-index.json` staleness (metadata deep-validation + compact-index-freshness FAILs). Both red at base `070e210`.
 
 ### Ship-fix-win-cmd-dispatch-readme-counts-2026-05-31
 - **Commit `554377e`** (squash, PR #120, quick-win) - Fixed a dead Windows `.cmd` install/update path + corrected stale README skill/workflow counts.

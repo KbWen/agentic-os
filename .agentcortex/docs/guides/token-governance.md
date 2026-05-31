@@ -26,6 +26,7 @@ Lowering token usage must maintain the "Engineering Constitution":
 - `feature` / `architecture-change`: Recommended 3–6 turns to complete.
 
 > Turn counts are upper-limit reminders, not hard failure conditions.
+> **Soft heuristic only — not the handoff signal.** A task is NOT "due for handoff" because it hit a turn number. The canonical handoff trigger is **context-occupancy + phase boundary** (see `AGENTS.md §Context Pruning` and §6.1 below); turn-count is a coarse fallback used only when occupancy can't be estimated.
 
 ## 2. Budget Overflow Handling (Cost Fallback)
 
@@ -72,7 +73,7 @@ Modern LLM providers support **context caching** — reusing attention computati
 ### Human Action
 
 - **Nothing required.** Context caching is provider-side (Gemini, Claude, etc.) and activated automatically when the prompt structure is consistent.
-- When Gemini's explicit cache API (`cachedContent`) or Claude's prompt caching becomes available in your platform, consider pinning `engineering_guardrails.md` + `AGENTS.md` as cached content.
+- Prompt caching is **already active by default on all major platforms today** (Claude, OpenAI/Codex, Google/Gemini) — see §6.1. Where an explicit cache API exists (Gemini `cachedContent`; Claude 1-hour-TTL opt-in `ENABLE_PROMPT_CACHING_1H`), you MAY pin `engineering_guardrails.md` + `AGENTS.md` for guaranteed retention.
 
 ### Cost Impact Estimate
 
@@ -82,6 +83,23 @@ Modern LLM providers support **context caching** — reusing attention computati
 | `/bootstrap` re-read on resume | full cost | cache hit if same session window |
 
 > This optimization requires ZERO framework changes. It only requires awareness of read ordering.
+
+### 6.1 Cross-Platform Handoff Timing & Caching (canonical detail for `AGENTS.md §Context Pruning`)
+
+The handoff trigger is **context-occupancy + phase boundary**, not turn-count — because the underlying facts are now uniform across platforms: each auto-caches the prompt prefix at ~0.1× read AND auto-compacts when the window fills. Two consequences:
+
+1. A **premature handoff throws away a warm cache** and pays full price to re-prime a new session — so handing off "early" just to keep a session short is now a net cost, not a saving.
+2. The crash/overflow risk that turn-based auto-checkpointing once guarded against is largely handled by the platform's own compaction.
+
+So: hand off for **quality**, at a natural **phase boundary**, when occupancy is high — not on a turn counter. Turn-count survives only as a coarse fallback when occupancy can't be estimated.
+
+| Platform | Prompt caching (2026) | Auto-compaction | Context window | Handoff nuance |
+|---|---|---|---|---|
+| Claude / Claude Code | automatic, read 0.1×; default TTL **5 min** (1 h opt-in `ENABLE_PROMPT_CACHING_1H`); compaction reuses prefix cache | when window fills | Opus 4.6–4.8 = **1M** | 5-min TTL makes mid-work warm-cache fragile → prefer phase-boundary handoff |
+| OpenAI / Codex | automatic, no code/fee, 0.1×, prefix ≥1024 tok; **24 h extended on GPT-5.1** | server-side / local; **~95% capacity** | large (GPT-5.1-codex) | ~95% auto-compact is late & can derail mid-task → hand off at a boundary before that |
+| Google / Gemini / Antigravity | **implicit caching default-on** (2.5+, 0.1×) + explicit `cachedContent` | large window absorbs more | **1M–2M** | big window → fewer handoffs; reason in occupancy %, not absolute turns |
+
+> Sources (verified 2026-05-31): [Claude prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) · [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching) + [compaction](https://developers.openai.com/api/docs/guides/compaction) · [Gemini caching](https://ai.google.dev/gemini-api/docs/caching). Re-verify before quoting — platform facts drift.
 
 ## 7. Portable Work Log Compaction Policy (Minimal Kit)
 
