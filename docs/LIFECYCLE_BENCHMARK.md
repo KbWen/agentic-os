@@ -1,28 +1,31 @@
 # Lifecycle Benchmark & Token Consumption Report
 
-> **Generated**: 2026-04-12 | **Framework**: Agentic OS v1.1 | **Test suite**: 170 passed / 178 total
+> **Framework**: Agentic OS v1.2.0 | **CI-gated suite**: 126 passing | **Token figures**: illustrative (measured 2026-04-12, not re-run per release)
 
-This report documents real lifecycle scenario test results with token consumption measurements.
+This report documents lifecycle scenario coverage and token-consumption measurements.
 It helps teams evaluate Agentic OS governance overhead before adoption.
 
 ---
 
 ## Test Suite Summary
 
-| Category | Tests | Passed | Failed | Notes |
-|:---|:---:|:---:|:---:|:---|
-| Guard context write | 6 | 6 | 0 | SSoT write safety |
-| Lifecycle contract | 10 | 10 | 0 | Phase order enforcement |
-| Skill activation | 14 | 12 | 2 | `production-readiness` not yet in registry |
-| Token consumption | 42 | 41 | 1 | Compact index ratio threshold |
-| SSoT completeness | 7 | 3 | 4 | Deployment template tests |
-| Trigger metadata tools | 16 | 15 | 1 | Command sync check |
-| Agent evidence | 11 | 11 | 0 | Evidence validation |
-| Skill notes contract | 14 | 14 | 0 | Skill caching validation |
-| Trigger registry format | 6 | 6 | 0 | Registry schema compliance |
-| **Total** | **178** | **170** | **8** | **95.5% pass rate** |
+Two suites exist; they serve different purposes:
 
-All 8 failures are pre-existing structural issues (not regressions). Core governance, lifecycle, and token optimization tests are 100% green.
+- **CI-gated validation suite** — `python -m pytest tests/ci/ tests/guard/` — **126 tests, all passing** (verified 2026-05-31). This is what GitHub Actions enforces on every PR and is the authoritative "is the framework healthy?" signal.
+
+| Category | Tests | File |
+|:---|:---:|:---|
+| Security scanning (Semgrep + TruffleHog + pip-audit) | 32 | `tests/ci/test_security_workflow.py` |
+| Audit-chain witness | 9 | `tests/ci/test_audit_witness.py` |
+| Guard write (unit) | 24 | `tests/guard/test_d2_1_guard_unit.py` |
+| Audit-chain tamper-evidence | 17 | `tests/guard/test_audit_chain.py` |
+| Governed-write lint | 16 | `tests/guard/test_d2_2_lint.py` |
+| Doc-lifecycle contract | 14 | `tests/guard/test_d2_3_lifecycle.py` |
+| ADR coverage | 12 | `tests/guard/test_adr_coverage.py` |
+| Guard write (race) | 2 | `tests/guard/test_d2_1_guard_race.py` |
+| **Total (CI-gated)** | **126** | all passing |
+
+- **Dev-time analysis suite** — `.agentcortex/tests/` — generates the token-consumption figures below via `analyze_token_lifecycle.py`. It includes live-repo invariant checks (SSoT sequence monotonicity, backlog/ship-history resolvability) that intentionally track the evolving repository, so it is **not** part of release gating.
 
 ---
 
@@ -243,7 +246,11 @@ This graduated approach lets your team experience governance incrementally rathe
 ## Running the Benchmarks Yourself
 
 ```bash
-# Run the full test suite
+# CI-gated validation suite (the authoritative pass/fail signal — what GitHub Actions runs)
+python -m pytest tests/ci/ tests/guard/ -v
+
+# Dev-time analysis suite that produces the token figures below
+# (includes live-repo invariant checks that track the evolving repo)
 python -m pytest .agentcortex/tests/ -v
 
 # Generate token analysis report

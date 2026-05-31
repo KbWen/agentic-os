@@ -1,28 +1,30 @@
 # 生命週期基準測試 & Token 消耗報告
 
-> **生成日期**: 2026-04-12 | **框架**: Agentic OS v1.1 | **測試套件**: 170 通過 / 178 總計
+> **框架**: Agentic OS v1.2.0 | **CI 把關套件**: 126 全數通過 | **Token 數字**: 示意性質（2026-04-12 量測，非每次發版重跑）
 
-本報告記錄了真實生命週期場景測試結果及 token 消耗量測數據。
-幫助團隊在導入 Agentic OS 前評估治理成本。
+本報告記錄生命週期場景覆蓋與 token 消耗量測，協助團隊在導入 Agentic OS 前評估治理成本。
 
 ---
 
 ## 測試套件摘要
 
-| 類別 | 測試數 | 通過 | 失敗 | 備註 |
-|:---|:---:|:---:|:---:|:---|
-| Context 寫入防護 | 6 | 6 | 0 | SSoT 寫入安全 |
-| 生命週期合約 | 10 | 10 | 0 | 階段順序強制 |
-| 技能啟動 | 14 | 12 | 2 | `production-readiness` 尚未加入 registry |
-| Token 消耗 | 42 | 41 | 1 | Compact index 比值門檻 |
-| SSoT 完整性 | 7 | 3 | 4 | 部署模板測試 |
-| Trigger 元數據工具 | 16 | 15 | 1 | 命令同步檢查 |
-| Agent 證據驗證 | 11 | 11 | 0 | 證據格式驗證 |
-| 技能筆記合約 | 14 | 14 | 0 | 技能快取驗證 |
-| Trigger registry 格式 | 6 | 6 | 0 | Registry schema 合規 |
-| **總計** | **178** | **170** | **8** | **95.5% 通過率** |
+存在兩套測試，用途不同：
 
-8 個失敗皆為既有結構問題（非回歸）。核心治理、生命週期、token 優化測試全數通過。
+- **CI 把關驗證套件** — `python -m pytest tests/ci/ tests/guard/` — **126 個測試，全數通過**（2026-05-31 驗證）。這是 GitHub Actions 在每個 PR 強制執行的套件，也是「框架是否健康」的權威訊號。
+
+| 類別 | 測試數 | 檔案 |
+|:---|:---:|:---|
+| 安全掃描（Semgrep + TruffleHog + pip-audit） | 32 | `tests/ci/test_security_workflow.py` |
+| 稽核鏈見證 | 9 | `tests/ci/test_audit_witness.py` |
+| 受控寫入（單元） | 24 | `tests/guard/test_d2_1_guard_unit.py` |
+| 稽核鏈防竄改 | 17 | `tests/guard/test_audit_chain.py` |
+| 受控寫入 lint | 16 | `tests/guard/test_d2_2_lint.py` |
+| 文件生命週期契約 | 14 | `tests/guard/test_d2_3_lifecycle.py` |
+| ADR 覆蓋 | 12 | `tests/guard/test_adr_coverage.py` |
+| 受控寫入（競態） | 2 | `tests/guard/test_d2_1_guard_race.py` |
+| **總計（CI 把關）** | **126** | 全數通過 |
+
+- **開發期分析套件** — `.agentcortex/tests/` — 透過 `analyze_token_lifecycle.py` 產生下方的 token 消耗數字。它包含追蹤倉庫演進的即時不變量檢查（SSoT 序列單調性、backlog／ship-history 可解析性），因此**不**納入發版把關。
 
 ---
 
@@ -243,7 +245,11 @@
 ## 自己跑基準測試
 
 ```bash
-# 跑完整測試套件
+# CI 把關驗證套件（權威的通過/失敗訊號 — GitHub Actions 執行的就是這個）
+python -m pytest tests/ci/ tests/guard/ -v
+
+# 開發期分析套件，產生下方的 token 數字
+#（包含追蹤倉庫演進的即時不變量檢查）
 python -m pytest .agentcortex/tests/ -v
 
 # 產生 token 分析報告
