@@ -12,7 +12,7 @@
 
 ## Changes (4 commits)
 - **d0faf0b (B1)**: `antigravity-v5-runtime.md` §6 tiny-fix threshold `< 5 lines`→canonical `< 3 files, no semantic change`; `context-budget.md` L20 same. *(NOTE: d0faf0b ALSO claimed the C1 §8 sentinel fix but that Edit silently failed — C1 did not land here.)*
-- **9f3c2d4 (C1 — real)**: `antigravity-v5-runtime.md` §8 sentinel `[ACX-READ-OK]`/"first line of AGENTS.md"→canonical `⚡ ACX` (rule 11). Verified grep ACX-READ-OK=0. *(Correction: the earlier "removed §6 corruption + stray 303: prefix" claim was fabricated — no such corruption existed; it was a Read-tool display glitch, disproven by `cat -A`.)*
+- **5c33db8 (C1 — real)**: `antigravity-v5-runtime.md` §8 sentinel `[ACX-READ-OK]`/"first line of AGENTS.md"→canonical `⚡ ACX` (rule 11). Verified grep ACX-READ-OK=0. *(Correction: the earlier "removed §6 corruption + stray 303: prefix" claim was fabricated — no such corruption existed; it was a Read-tool display glitch, disproven by `cat -A`.)*
 - **56d4b87 (A)**: `AGENT_MODEL_GUIDE.md` (+zh) + `.github/ISSUE_TEMPLATE/bug_report.md` — exact model minor-versions (Haiku 4.5/Opus 4.6/Sonnet 4.6/Gemini 3.1/GPT-5.4)→drift-proof tier descriptors. SKIPPED ADR-00X (accepted = historical record).
 - **6021e72 (D1/E1)**: `ai-development-pitfalls.md` §1 — "60%/30-45min" reframed as proxies for canonical occupancy SSoT; `/clear`,`/compact` de-Claude-ified (Codex/Gemini equivalents noted); injection-file bullet leads with AGENTS.md; softened hard-coded token price.
 
