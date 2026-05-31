@@ -277,7 +277,7 @@ Docs:
 
 To avoid the model “choosing tiny-fix because it’s easiest,” add this deterministic boundary:
 
-* `< 5 lines` and **no logic change** → `tiny-fix`
+* `< 3 files` and **no semantic change** → `tiny-fix` (canonical threshold — see `AGENTS.md §Agentic OS Runtime v1` rule 2 / `engineering_guardrails.md §10.1, §10.3`)
 * **bug fix** isolated to one area/module → `hotfix`
 * **new behavior** / cross-file / new module → `feature`
 
@@ -297,11 +297,9 @@ Runtime v5 clarifies the minimum:
 
 ## 8) Sentinel Check (Injection Diagnostic)
 
-**SENTINEL: ACX-READ-OK**
+**Canonical sentinel: `⚡ ACX`** (defined in `AGENTS.md §Agentic OS Runtime v1` rule 11).
 
-Add this to the first line of `AGENTS.md`.
-Every response MUST end with `[ACX-READ-OK]`.
-If this token is missing, it signifies the prompt injection is broken or truncated.
+Every response MUST end with `⚡ ACX`. If this marker is missing, the prompt injection is broken or truncated. `validate.sh`/`validate.ps1` accept the emoji form `⚡ ACX` or the plain `ACX` tag when auditing Work Log Phase Summaries.
 
 ---
 

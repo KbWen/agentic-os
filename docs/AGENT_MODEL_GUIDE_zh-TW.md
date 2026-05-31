@@ -16,7 +16,7 @@ Agentic OS 會對每個任務分類。用分類結果來選模型：
 
 ## Fast 模型（預設選擇）
 
-*Claude Haiku 4.5、Gemini 3.1 Flash、GPT-5.4-mini*
+*快速層 — 例如 Claude Haiku、Gemini Flash、GPT mini 級（使用各廠商當前的快速模型）。*
 
 適合「做什麼」已經很明確、AI 只需執行的任務：
 
@@ -29,7 +29,7 @@ Agentic OS 會對每個任務分類。用分類結果來選模型：
 
 ## Pro / Advanced 模型（需要判斷力時）
 
-*Claude Opus 4.6 / Sonnet 4.6、Gemini 3.1 Pro、GPT-5.4*
+*Pro／進階層 — 例如 Claude Opus／Sonnet、Gemini Pro、GPT 旗艦（使用各廠商當前的進階模型）。*
 
 當任務需要「權衡取捨的推理」時切換：
 

@@ -30,7 +30,7 @@
 - Coding conventions established at the start of the session are ignored later on
 - AI proposes solution A early, then proposes solution B for the same problem dozens of messages later
 - Session locks up at context limit ("Prompt is too long" error)
-- Token cost spikes in the late session (150k tokens ≈ $0.45/turn vs 30k tokens ≈ $0.09)
+- Token cost spikes in the late session (a near-full context window can cost several× more per turn than an early, lean one)
 - Output quality degrades noticeably in late-session: more hallucinations, fewer accurate references to earlier decisions
 
 ### Root Cause
@@ -40,12 +40,11 @@ The transformer attention mechanism assigns decreasing effective weight to earli
 *Document here: does this project use a session handoff convention? Is there a CLAUDE.md? What is the context budget policy?*
 
 ### General Mitigations
-- **Use `/clear` proactively**: reset context after completing each feature; start the next task fresh
-- **Use `/compact <instructions>`**: manually control what context survives compaction
-- **60% rule**: do not let context exceed 60% capacity — output quality measurably degrades after 20–40% fill
-- **Session length discipline**: aim for 30–45 minute sessions; keep context precise
+- **Reset context proactively** (Claude Code `/clear`; Codex / Gemini / others: start a fresh session): reset after completing each feature; start the next task fresh
+- **Compact deliberately** (Claude Code `/compact <instructions>`; other platforms: trigger their summarize / handoff equivalent): manually control what context survives compaction
+- **Occupancy-first handoff** (canonical rule: `AGENTS.md §Context Pruning` — hand off on **context-occupancy + phase boundary**, not a turn counter): as a rule of thumb keep context well under high fill; output quality measurably degrades as the window fills. The "~60% capacity" and "30–45 min session" figures are illustrative proxies for that same occupancy signal — not separate thresholds.
 - **Handoff docs**: before ending each session, have the AI write a `session-handoff.md` summarising decisions; inject it at the start of the next session
-- **CLAUDE.md / .cursor/rules**: put non-negotiable architectural constraints in version control so they are injected automatically every session (recommended: < 200 lines, < 2,000 tokens)
+- **AGENTS.md (cross-platform) / CLAUDE.md / .cursor/rules**: put non-negotiable architectural constraints in version control so they are injected automatically every session (recommended: < 200 lines, < 2,000 tokens)
 - **Task decomposition**: break large tasks into small ones; run each subtask in its own short session
 
 ### Reference Cases

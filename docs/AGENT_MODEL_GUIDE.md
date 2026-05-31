@@ -16,7 +16,7 @@ Agentic OS classifies every task. Use that classification to pick your model:
 
 ## Fast Models (Default Choice)
 
-*Claude Haiku 4.5, Gemini 3.1 Flash, GPT-5.4-mini*
+*Fast tier — e.g. Claude Haiku, Gemini Flash, GPT mini-class (use each vendor's current fast model).*
 
 Best for tasks where the **what** is clear and the AI just needs to execute:
 
@@ -29,7 +29,7 @@ Best for tasks where the **what** is clear and the AI just needs to execute:
 
 ## Pro / Advanced Models (When Judgment Matters)
 
-*Claude Opus 4.6 / Sonnet 4.6, Gemini 3.1 Pro, GPT-5.4*
+*Pro / advanced tier — e.g. Claude Opus / Sonnet, Gemini Pro, GPT flagship (use each vendor's current advanced model).*
 
 Switch when the task requires **reasoning about tradeoffs**:
 
