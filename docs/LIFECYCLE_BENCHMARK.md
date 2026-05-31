@@ -45,7 +45,7 @@ Two suites exist; they serve different purposes:
 | Feature + TDD loop | `feature` | 56,139 | 38,739 | 17,400 (31.0%) |
 | Feature (API + Auth + DB) | `feature` | 70,177 | 39,532 | 30,645 (43.7%) |
 | Hotfix + debug loop | `hotfix` | 44,662 | 30,740 | 13,922 (31.2%) |
-| Architecture-change + multi-agent | `architecture-change` | 82,665 | 44,130 | 38,535 (46.0%) |
+| Architecture-change + multi-agent | `architecture-change` | 82,665 | 44,130 | 38,535 (46.6%) |
 | Post-review feedback loop | `feature` | 55,336 | 30,390 | 24,946 (45.1%) |
 | **All 6 combined** | — | **335,728** | **205,608** | **130,120 (38.8%)** |
 
