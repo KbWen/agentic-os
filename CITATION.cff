@@ -4,10 +4,10 @@ authors:
   - family-names: Wen
     given-names: Kb
 title: "Agentic OS: Governance-First OS for AI Coding Agents"
-version: 1.1.0
-date-released: 2026-04-16
+version: 1.2.0
+date-released: 2026-05-31
 url: "https://github.com/KbWen/agentic-os"
-abstract: "A governance-first framework for AI coding agents. Structured workflows, delivery gates, engineering guardrails, and 17 professional skills for Claude Code, Cursor, Copilot, Antigravity, and Codex."
+abstract: "A governance-first framework for AI coding agents. Structured workflows, delivery gates, engineering guardrails, and 14 professional skills for Claude Code, Cursor, Copilot, Antigravity, and Codex."
 keywords:
   - ai-agent
   - agent-framework
