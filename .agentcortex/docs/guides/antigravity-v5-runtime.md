@@ -2,7 +2,7 @@
 
 ## Antigravity Hard-Path Enforcement Overlay
 
-Version: v1.1.2
+Version: v1.2.0
 Date: 2026-04-17
 Scope: **Antigravity environments** (token-generation agents where shell exit codes don’t halt execution)
 

@@ -1,6 +1,24 @@
 # Changelog
 
-## [Unreleased] - 2026-05-18
+## [1.2.0] - 2026-05-31
+
+Consolidated release covering PRs #98–#122 since v1.1.2. Highlights:
+
+**Governance model**
+- **Handoff-trigger overhaul (#121)**: replaced the turn-count handoff trigger with a **context-occupancy + phase-boundary** advisory model, converged four scattered/contradictory turn constants into one SSoT (`AGENTS.md §Context Pruning`), and added a cross-platform caching/compaction reference (`token-governance.md §6.1`) for Claude / OpenAI Codex / Google Gemini. Stays advisory — no enforced gate added.
+- **Doc-consistency cleanup (#122)**: unified the tiny-fix threshold (`< 5 lines` → canonical `< 3 files, no semantic change`), unified the runtime sentinel (`[ACX-READ-OK]` → `⚡ ACX`), genericized stale exact model-version strings to drift-proof tier descriptors (EN + zh-TW + bug-report template), and aligned `ai-development-pitfalls.md` with the occupancy model + platform-neutral wording.
+
+**Security & integrity**
+- **CI security scanning (#20)**: Semgrep SAST + TruffleHog secret detection + pip-audit dependency audit, all tools pinned.
+- **Audit-chain tamper-evidence hardening (#117, ADR-003)**: git append-only witness for tail-truncation detection + `migrate` fail-closed against re-blessing forged history.
+- **Framework self-test integrity (#116)**: restored `tests/guard` collection and gated 82 governance-tool tests in CI.
+
+**Tooling & reliability**
+- validate.sh / validate.ps1: gate-injection hardening (#104), gate-progression repair (#110), inline-python hardening (#111), PS1↔SH parity backfill (#119), `--list-checks`, SSoT atomic writes, gate-receipt schema (#114).
+- Downstream/install: cross-session path alignment for zero-Python downstream (#106), scaffold-tier sidecar preservation (#101), framework-ADR filename matching (#100), Windows `.cmd` install/update repair (#120).
+
+**Docs**
+- README/cross-doc links work in both GitHub and deployed contexts (#103); version banners + skill count (17→14) corrected (#102); framework-internal refs removed from downstream guidance (#99).
 
 ### Adversarial Governance Audit + Downstream UX Hardening (PR #104)
 
