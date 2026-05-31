@@ -14,7 +14,7 @@
 - **Project Name**: (set by /app-init)
 - **Last Updated**: 2026-05-31
 - **Last Verified**: 2026-05-31
-- **Update Sequence**: 26
+- **Update Sequence**: 27
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
