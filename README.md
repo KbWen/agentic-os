@@ -213,7 +213,7 @@ bash installers/deploy_brain.sh .
 git clone https://github.com/KbWen/agentic-os.git
 
 # Preview what will be deployed (no changes made)
-powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 --dry-run C:\path\to\your-project
+powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 -DryRun C:\path\to\your-project
 
 # Deploy into your project
 powershell -ExecutionPolicy Bypass -File .\agentic-os\installers\deploy_brain.ps1 C:\path\to\your-project

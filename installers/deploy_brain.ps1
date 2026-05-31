@@ -1,8 +1,7 @@
 param(
     [string]$Target = '.',
     [string]$Source = '',
-    [switch]$DryRun,
-    [switch]$NoPython
+    [switch]$DryRun
 )
 
 Set-StrictMode -Version Latest

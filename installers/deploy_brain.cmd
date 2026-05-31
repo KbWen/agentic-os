@@ -26,8 +26,10 @@ exit /b 1
 
 :run_wrapper_ps1
 :: PowerShell -File binds unrecognized --flags to the first positional [string]$Target,
-:: which would corrupt --dry-run / --source. Translate the cmd-style args into the
-:: PS1 wrapper's typed parameters so all invocation forms route correctly.
+:: which would corrupt --dry-run / --source, so translate cmd-style args into the PS1
+:: wrapper's typed parameters. deploy supports only --dry-run and --source; any other
+:: token (incl. the validate-only --no-python) falls through to the target, matching
+:: deploy_brain.sh / deploy.sh behavior.
 set "ACX_DRYRUN="
 set "ACX_SOURCE_ARG="
 set "ACX_TARGET="
@@ -35,11 +37,16 @@ set "ACX_TARGET="
 if "%~1"=="" goto run_ps1_invoke
 if /i "%~1"=="--dry-run" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
 if /i "%~1"=="-DryRun" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
-if /i "%~1"=="--no-python" (set "ACX_DRYRUN=%ACX_DRYRUN% -NoPython" & shift & goto parse_args)
-if /i "%~1"=="-NoPython" (set "ACX_DRYRUN=%ACX_DRYRUN% -NoPython" & shift & goto parse_args)
-if /i "%~1"=="--source" (set "ACX_SOURCE_ARG=-Source ""%~2""" & shift & shift & goto parse_args)
-if /i "%~1"=="-Source" (set "ACX_SOURCE_ARG=-Source ""%~2""" & shift & shift & goto parse_args)
+if /i "%~1"=="--source" goto take_source
+if /i "%~1"=="-Source" goto take_source
 set "ACX_TARGET=%~1"
+shift
+goto parse_args
+
+:take_source
+if "%~2"=="" (echo [ERROR] --source requires a value. & exit /b 1)
+set "ACX_SOURCE_ARG=-Source ""%~2"""
+shift
 shift
 goto parse_args
 

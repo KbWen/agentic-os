@@ -531,9 +531,9 @@ check_contains_literal \
   "deploy_brain.ps1 missing canonical deploy reference"
 check_contains_literal \
   "$ROOT_DEPLOY_CMD" \
-  'agentcortex\bin\deploy' \
-  "deploy_brain.cmd references canonical deploy entrypoint" \
-  "deploy_brain.cmd missing canonical deploy reference"
+  'deploy_brain.ps1' \
+  "deploy_brain.cmd delegates to sibling wrapper" \
+  "deploy_brain.cmd missing sibling-wrapper delegation"
 
 worklog_contract_files=(
   "$ROOT/AGENTS.md"
