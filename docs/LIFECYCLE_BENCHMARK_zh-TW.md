@@ -1,6 +1,6 @@
 # 生命週期基準測試 & Token 消耗報告
 
-> **框架**: Agentic OS v1.2.0 | **CI 把關套件**: 126 全數通過 | **Token 數字**: 示意性質（2026-04-12 量測，非每次發版重跑）
+> **框架**: Agentic OS v1.2.0 | **CI 把關套件**: 126 全數通過 | **Token 快照**: 2026-05-31 重新產生（下方數字由工具產生 — 見「重新產生本報告」）
 
 本報告記錄生命週期場景覆蓋與 token 消耗量測，協助團隊在導入 Agentic OS 前評估治理成本。
 
@@ -28,176 +28,69 @@
 
 ---
 
-## 6 個真實開發場景
+## Token 消耗快照
 
-### 場景 1：Quick-Win 單模組修改
+> **下方數字是工具產生的，非手動維護。** 隨時可用
+> `python .agentcortex/tools/analyze_token_lifecycle.py --root . --format text` 重新產生 —
+> 數字會隨 workflow 與 skill 演進而變動，請當作有日期的快照，而非固定契約。
+>
+> **快照日期**: 2026-05-31 · **公式**: `字元數 / 4`（與你模型的 tokenizer 有 ±10% 差異）· **基準**: registry 4,838 tok、compact index 2,664 tok。
 
-> **範例**：「修正匯出 CSV 的日期格式」
+「當前」= 天真的每次完整讀取。「優化」= compact-index 探測 + heading-scoped workflow 讀取 + skill heading-scope。
 
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `quick-win` |
-| **階段** | Bootstrap → Plan → Implement → Ship |
-| **啟動技能** | 4 個（writing-plans、executing-plans、verification-before-completion、finishing-a-development-branch） |
-| **階段重複** | 無 |
-
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 14,336 |
-| 技能探測（候選評估） | 1,550 |
-| 技能執行細節 | 1,155 |
-| **當前總計** | **17,041** |
-| 預期（優化後） | 15,315 |
-| **節省** | **1,726 (10.1%)** |
-
-**結論**：最輕量的生命週期。治理開銷約 17K tokens — 大致等同一個中等長度的對話回合。32K+ context 的模型即可應付。
+| 場景 | 分類 | 當前 | 優化 | 節省 |
+|:---|:---|---:|---:|---:|
+| Quick-Win（單模組） | `quick-win` | 26,749 | 22,077 | 4,672 (17.5%) |
+| Feature + TDD 循環 | `feature` | 56,139 | 38,739 | 17,400 (31.0%) |
+| Feature（API + Auth + DB） | `feature` | 70,177 | 39,532 | 30,645 (43.7%) |
+| Hotfix + 除錯循環 | `hotfix` | 44,662 | 30,740 | 13,922 (31.2%) |
+| 架構變更 + 多 Agent | `architecture-change` | 82,665 | 44,130 | 38,535 (46.0%) |
+| Review 反饋循環 | `feature` | 55,336 | 30,390 | 24,946 (45.1%) |
+| **6 場景合計** | — | **335,728** | **205,608** | **130,120 (38.8%)** |
 
 ---
 
-### 場景 2：Feature + TDD 循環
+## 場景輪廓
 
-> **範例**：「新增使用者 Email 驗證功能（OTP 流程）」
+各場景的定性樣貌（成本來源）。Token 數字見上方快照；下方技能名稱反映目前的 14 技能集。
 
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `feature` |
-| **階段** | Bootstrap → Plan → Implement (x3) → Review → Test (x2) → Handoff → Ship |
-| **啟動技能** | 7 個（含 test-driven-development、red-team-adversarial） |
-| **階段重複** | implement x3（紅→綠→重構）、test x2（回歸測試） |
+### 1. Quick-Win — 單模組
+> *「修正匯出 CSV 的日期格式」*
+- **階段**: Bootstrap → Plan → Implement → Ship
+- **技能**: verification-before-completion、karpathy-principles
+- **成本來源**: 最輕量的生命週期 — 只有治理開銷；無 review/test/handoff。32K+ context 模型即可應付。
 
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 28,141 |
-| 技能探測 | 3,839 |
-| 技能執行細節 | 4,982 |
-| **當前總計** | **36,962** |
-| 預期（優化後） | 29,340 |
-| **節省** | **7,622 (20.6%)** |
+### 2. Feature + TDD 循環
+> *「新增使用者 Email 驗證功能（OTP 流程）」*
+- **階段**: Bootstrap → Spec → Plan → Implement (×3) → Review → Test (×2) → Handoff → Ship
+- **技能**: test-driven-development、verification-before-completion、red-team-adversarial、karpathy-principles
+- **成本來源**: 紅→綠→重構的 implement 重複 + 回歸 test 重複；continuation 模型（首次讀取 + 快取筆記）吸收大部分重複成本。
 
-**結論**：TDD 循環會膨脹 implement/test 成本，但 continuation 模型（首次讀取 + 快取）將執行細節成本降低約 53%。
+### 3. Feature 涉及 API、Auth 與資料庫
+> *「為管理後台新增角色權限控制，含新資料表」*
+- **階段**: Bootstrap → Spec → Plan → Implement (×2) → Review → Test (×2) → Handoff → Ship
+- **技能**: api-design、database-design、auth-security、doc-lookup、test-driven-development、red-team-adversarial、production-readiness
+- **成本來源**: 跨領域功能啟動最多技能 → 探測成本上升；compact-index 探測是主要節省來源。
 
----
+### 4. Hotfix + 除錯循環
+> *「線上訂單重複建立 — 緊急修復」*
+- **階段**: Bootstrap → Research → Plan → Implement (×2) → Review → Test (×2) → Ship
+- **技能**: systematic-debugging、verification-before-completion、red-team-adversarial
+- **成本來源**: hotfix 仍強制 review/test，但 `systematic-debugging` 採 on-failure 載入，使除錯循環成本適中。
 
-### 場景 3：Feature 涉及 API、Auth 與資料庫
+### 5. 架構變更 + 多 Agent
+> *「從單體架構遷移到微服務 — 拆分 auth、catalog、order 服務」*
+- **階段**: Bootstrap → ADR → Spec → Plan → Implement (×2) → Review (×2) → Test (×2) → Handoff → Ship
+- **技能**: 全部領域技能 + using-git-worktrees + dispatching-parallel-agents + subagent-driven-development
+- **成本來源**: 最重的生命週期 — 啟動完整技能集與平行 agent 協調；優化在此省下最多絕對 token。
 
-> **範例**：「為管理後台新增角色權限控制，含新資料表」
-
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `feature` |
-| **階段** | Bootstrap → Plan → Implement (x2) → Review → Test (x2) → Handoff → Ship |
-| **啟動技能** | 11 個（含 api-design、database-design、auth-security、doc-lookup） |
-| **階段重複** | implement x2、test x2 |
-
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 25,406 |
-| 技能探測 | 9,838 |
-| 技能執行細節 | 15,731 |
-| **當前總計** | **50,975** |
-| 預期（優化後） | 38,544 |
-| **節省** | **12,431 (24.4%)** |
-
-**結論**：跨領域功能啟動更多技能（11 vs 7），探測成本增加。Compact index 探測比讀取完整 SKILL.md 省下約 8.4K tokens。
+### 6. Review 反饋循環
+> *「處理 reviewer 的 5 條意見、重新實作、通過複審」*
+- **階段**: Review (×4) → Implement (×2) → Test (×2) → Handoff → Ship
+- **技能**: red-team-adversarial、verification-before-completion、karpathy-principles
+- **成本來源**: 最多階段重複；heading-scoped workflow 讀取（再進入時只重讀核心章節）帶來最高的優化百分比。
 
 ---
-
-### 場景 4：Hotfix + 除錯循環
-
-> **範例**：「線上訂單重複建立 — 緊急修復」
-
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `hotfix` |
-| **階段** | Bootstrap → Implement (x2) → Review → Test (x2) → Ship |
-| **啟動技能** | 6 個（含 systematic-debugging、red-team-adversarial） |
-| **階段重複** | implement x2（除錯循環）、test x2（回歸） |
-
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 22,097 |
-| 技能探測 | 3,437 |
-| 技能執行細節 | 5,014 |
-| **當前總計** | **30,548** |
-| 預期（優化後） | 23,824 |
-| **節省** | **6,724 (22.0%)** |
-
-**結論**：Hotfix 跳過 Spec 和 Plan 階段但仍強制 Review + Test。除錯循環成本適中，因為 systematic-debugging 技能採用 on-failure 載入策略（只在偵測到失敗時才載入）。
-
----
-
-### 場景 5：架構變更 + 多 Agent 協作
-
-> **範例**：「從單體架構遷移到微服務 — 拆分 auth、catalog、order 服務」
-
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `architecture-change` |
-| **階段** | Bootstrap → Plan → Implement (x2) → Review (x2) → Test (x2) → Handoff → Ship |
-| **啟動技能** | 14 個（全部領域技能 + worktrees + parallel agents + subagent） |
-| **階段重複** | implement x2、review x2、test x2 |
-
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 28,682 |
-| 技能探測 | 11,752 |
-| 技能執行細節 | 20,850 |
-| **當前總計** | **61,284** |
-| 預期（優化後） | 45,947 |
-| **節省** | **15,337 (25.0%)** |
-
-**結論**：最重的生命週期 — 啟動全部 14 個領域技能並使用平行 agent 協調。即使如此，總治理成本維持在 62K tokens 以下。優化省下 15K+ tokens。
-
----
-
-### 場景 6：Review 反饋循環
-
-> **範例**：「處理 reviewer 的 5 條意見、重新實作、通過複審」
-
-| 屬性 | 值 |
-|:---|:---|
-| **分類** | `feature` |
-| **階段** | Review (x4) → Implement (x2) → Test (x2) → Handoff → Ship |
-| **啟動技能** | 6 個（含 receiving-code-review、requesting-code-review） |
-| **階段重複** | review x4、implement x2、test x2 |
-
-**Token 成本**：
-| 指標 | Tokens |
-|:---|---:|
-| 工作流讀取 | 27,381 |
-| 技能探測 | 3,606 |
-| 技能執行細節 | 5,878 |
-| **當前總計** | **36,865** |
-| 預期（優化後） | 26,188 |
-| **節省** | **10,677 (29.0%)** |
-
-**結論**：Reviewer 反饋循環產生最多的階段重複。Heading-scoped 工作流讀取在後續進入時只重讀核心章節，省下約 7.9K tokens。
-
----
-
-## 彙總比較
-
-| 指標 | 6 個場景合計 |
-|:---|---:|
-| 當前方法總計 | **233,675 tokens** |
-| 優化方法總計 | **179,158 tokens** |
-| 節省總計 | **54,517 tokens (23.3%)** |
-
-### 按分類層級
-
-| 分類 | 當前 Tokens | 優化 Tokens | 節省 |
-|:---|---:|---:|---:|
-| Quick-Win | 17,041 | 15,315 | 1,726 (10.1%) |
-| Feature (TDD) | 36,962 | 29,340 | 7,622 (20.6%) |
-| Feature (API+Auth+DB) | 50,975 | 38,544 | 12,431 (24.4%) |
-| Hotfix | 30,548 | 23,824 | 6,724 (22.0%) |
-| Architecture Change | 61,284 | 45,947 | 15,337 (25.0%) |
-| Post-Review Loop | 36,865 | 26,188 | 10,677 (29.0%) |
 
 ### Token 優化機制拆解
 
@@ -234,25 +127,24 @@
 步驟 1: /audit          → 理解現狀
 步驟 2: /app-init       → 建立專案特定慣例
 步驟 3: /spec-intake    → 匯入現有規格/需求
-步驟 4: 挑一個 quick-win → 以低成本（~17K tokens）體驗完整生命週期
-步驟 5: 嘗試一個 feature → 完整 7 階段生命週期 + 技能
+步驟 4: 挑一個 quick-win → 以低成本（~27K tokens）體驗完整生命週期
+步驟 5: 嘗試一個 feature → 完整生命週期 + 技能
 ```
 
 這種漸進式路徑讓你的團隊可以逐步體驗治理機制，而不是第一天就嘗試完整的 feature 生命週期。
 
 ---
 
-## 自己跑基準測試
+## 重新產生本報告
 
 ```bash
 # CI 把關驗證套件（權威的通過/失敗訊號 — GitHub Actions 執行的就是這個）
 python -m pytest tests/ci/ tests/guard/ -v
 
-# 開發期分析套件，產生下方的 token 數字
-#（包含追蹤倉庫演進的即時不變量檢查）
+# 開發期分析套件，產生 token 數字（追蹤即時倉庫）
 python -m pytest .agentcortex/tests/ -v
 
-# 產生 token 分析報告
+# 重新產生 Token 消耗快照數字
 python .agentcortex/tools/analyze_token_lifecycle.py --root . --format text
 
 # JSON 輸出供程式使用
