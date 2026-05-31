@@ -1,6 +1,6 @@
 # Lifecycle Benchmark & Token Consumption Report
 
-> **Framework**: Agentic OS v1.2.0 | **CI-gated suite**: 126 passing | **Token figures**: illustrative (measured 2026-04-12, not re-run per release)
+> **Framework**: Agentic OS v1.2.0 | **CI-gated suite**: 126 passing | **Token snapshot**: regenerated 2026-05-31 (numbers below are tool-generated — see "Regenerating This Report")
 
 This report documents lifecycle scenario coverage and token-consumption measurements.
 It helps teams evaluate Agentic OS governance overhead before adoption.
@@ -29,176 +29,69 @@ Two suites exist; they serve different purposes:
 
 ---
 
-## 6 Real-World Lifecycle Scenarios
+## Token Consumption Snapshot
 
-### Scenario 1: Quick-Win Single Module
+> **The numbers below are generated, not hand-maintained.** Regenerate them anytime with
+> `python .agentcortex/tools/analyze_token_lifecycle.py --root . --format text` — they drift as
+> workflows and skills evolve, so treat this table as a dated snapshot, not a fixed contract.
+>
+> **Snapshot date**: 2026-05-31 · **Formula**: `chars / 4` (±10% vs your model's tokenizer) · **Baseline**: registry 4,838 tok, compact index 2,664 tok.
 
-> **Example**: "Fix the date format in the export CSV feature"
+"Current" = naïve full-read-every-time. "Optimized" = compact-index probing + heading-scoped workflow reads + skill heading-scope.
 
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `quick-win` |
-| **Phases** | Bootstrap → Plan → Implement → Ship |
-| **Activated Skills** | 4 (writing-plans, executing-plans, verification-before-completion, finishing-a-development-branch) |
-| **Phase Repeats** | None |
-
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 14,336 |
-| Skill probe (candidate evaluation) | 1,550 |
-| Skill execution detail | 1,155 |
-| **Current total** | **17,041** |
-| Projected (optimized) | 15,315 |
-| **Savings** | **1,726 (10.1%)** |
-
-**Takeaway**: Lightest lifecycle. Governance overhead is ~17K tokens — about the cost of a single medium-length conversation turn. Adequate for models with 32K+ context.
+| Scenario | Class | Current | Optimized | Savings |
+|:---|:---|---:|---:|---:|
+| Quick-Win (single module) | `quick-win` | 26,749 | 22,077 | 4,672 (17.5%) |
+| Feature + TDD loop | `feature` | 56,139 | 38,739 | 17,400 (31.0%) |
+| Feature (API + Auth + DB) | `feature` | 70,177 | 39,532 | 30,645 (43.7%) |
+| Hotfix + debug loop | `hotfix` | 44,662 | 30,740 | 13,922 (31.2%) |
+| Architecture-change + multi-agent | `architecture-change` | 82,665 | 44,130 | 38,535 (46.0%) |
+| Post-review feedback loop | `feature` | 55,336 | 30,390 | 24,946 (45.1%) |
+| **All 6 combined** | — | **335,728** | **205,608** | **130,120 (38.8%)** |
 
 ---
 
-### Scenario 2: Feature with TDD Loop
+## Scenario Profiles
 
-> **Example**: "Add user email verification with OTP flow"
+Qualitative shape of each scenario (what drives cost). Token figures live in the snapshot above; skill names below reflect the current 14-skill set.
 
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `feature` |
-| **Phases** | Bootstrap → Plan → Implement (x3) → Review → Test (x2) → Handoff → Ship |
-| **Activated Skills** | 7 (writing-plans, executing-plans, verification-before-completion, test-driven-development, red-team-adversarial, requesting-code-review, finishing-a-development-branch) |
-| **Phase Repeats** | implement x3 (Red→Green→Refactor), test x2 (regression) |
+### 1. Quick-Win — single module
+> *"Fix the date format in the export CSV feature"*
+- **Phases**: Bootstrap → Plan → Implement → Ship
+- **Skills**: verification-before-completion, karpathy-principles
+- **Cost driver**: lightest lifecycle — governance overhead only; no review/test/handoff. Adequate for 32K+ context models.
 
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 28,141 |
-| Skill probe | 3,839 |
-| Skill execution detail | 4,982 |
-| **Current total** | **36,962** |
-| Projected (optimized) | 29,340 |
-| **Savings** | **7,622 (20.6%)** |
+### 2. Feature with TDD loop
+> *"Add user email verification with OTP flow"*
+- **Phases**: Bootstrap → Spec → Plan → Implement (×3) → Review → Test (×2) → Handoff → Ship
+- **Skills**: test-driven-development, verification-before-completion, red-team-adversarial, karpathy-principles
+- **Cost driver**: Red→Green→Refactor implement repeats + regression test repeats; the continuation model (first-load + cached notes) absorbs most of the repeat cost.
 
-**Takeaway**: TDD loops inflate implement/test costs but the continuation model (first-load + cache) cuts execution detail by ~53% vs naive full-read-every-time approach.
+### 3. Feature touching API, Auth & Database
+> *"Add role-based access control for the admin panel with new DB tables"*
+- **Phases**: Bootstrap → Spec → Plan → Implement (×2) → Review → Test (×2) → Handoff → Ship
+- **Skills**: api-design, database-design, auth-security, doc-lookup, test-driven-development, red-team-adversarial, production-readiness
+- **Cost driver**: cross-domain features activate the most skills → probe cost rises; compact-index probing is where the big savings appear.
 
----
+### 4. Hotfix with debugging loop
+> *"Production orders are duplicating — urgent fix needed"*
+- **Phases**: Bootstrap → Research → Plan → Implement (×2) → Review → Test (×2) → Ship
+- **Skills**: systematic-debugging, verification-before-completion, red-team-adversarial
+- **Cost driver**: hotfix still enforces review/test, but `systematic-debugging` loads on-failure only, keeping debug-loop cost moderate.
 
-### Scenario 3: Feature Touching API, Auth & Database
+### 5. Architecture change with multi-agent
+> *"Migrate from monolith to microservices — separate auth, catalog, order services"*
+- **Phases**: Bootstrap → ADR → Spec → Plan → Implement (×2) → Review (×2) → Test (×2) → Handoff → Ship
+- **Skills**: all domain skills + using-git-worktrees + dispatching-parallel-agents + subagent-driven-development
+- **Cost driver**: the heaviest lifecycle — activates the full skill set and parallel-agent coordination; optimization saves the most absolute tokens here.
 
-> **Example**: "Add role-based access control for the admin panel with new DB tables"
-
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `feature` |
-| **Phases** | Bootstrap → Plan → Implement (x2) → Review → Test (x2) → Handoff → Ship |
-| **Activated Skills** | 11 (includes api-design, database-design, auth-security, doc-lookup, TDD, red-team) |
-| **Phase Repeats** | implement x2, test x2 |
-
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 25,406 |
-| Skill probe | 9,838 |
-| Skill execution detail | 15,731 |
-| **Current total** | **50,975** |
-| Projected (optimized) | 38,544 |
-| **Savings** | **12,431 (24.4%)** |
-
-**Takeaway**: Cross-domain features activate more skills (11 vs 7), increasing probe cost. The compact index probe saves ~8.4K tokens vs reading full SKILL.md files for each candidate.
+### 6. Post-review feedback loop
+> *"Address reviewer's 5 comments, re-implement, then pass re-review"*
+- **Phases**: Review (×4) → Implement (×2) → Test (×2) → Handoff → Ship
+- **Skills**: red-team-adversarial, verification-before-completion, karpathy-principles
+- **Cost driver**: the most phase repetitions; heading-scoped workflow reads (re-read only core sections on re-entry) drive the highest optimization percentage.
 
 ---
-
-### Scenario 4: Hotfix with Debugging Loop
-
-> **Example**: "Production orders are duplicating — urgent fix needed"
-
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `hotfix` |
-| **Phases** | Bootstrap → Implement (x2) → Review → Test (x2) → Ship |
-| **Activated Skills** | 6 (executing-plans, verification-before-completion, systematic-debugging, red-team-adversarial, requesting-code-review, finishing-a-development-branch) |
-| **Phase Repeats** | implement x2 (debug cycles), test x2 (regression) |
-
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 22,097 |
-| Skill probe | 3,437 |
-| Skill execution detail | 5,014 |
-| **Current total** | **30,548** |
-| Projected (optimized) | 23,824 |
-| **Savings** | **6,724 (22.0%)** |
-
-**Takeaway**: Hotfix skips Spec and Plan phases but still enforces Review + Test. Debug loop costs are moderate thanks to systematic-debugging skill's on-failure loading policy (only loaded when failures are detected).
-
----
-
-### Scenario 5: Architecture Change with Multi-Agent
-
-> **Example**: "Migrate from monolith to microservices — separate auth, catalog, and order services"
-
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `architecture-change` |
-| **Phases** | Bootstrap → Plan → Implement (x2) → Review (x2) → Test (x2) → Handoff → Ship |
-| **Activated Skills** | 14 (all domain skills + worktrees + parallel agents + subagent development) |
-| **Phase Repeats** | implement x2, review x2, test x2 |
-
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 28,682 |
-| Skill probe | 11,752 |
-| Skill execution detail | 20,850 |
-| **Current total** | **61,284** |
-| Projected (optimized) | 45,947 |
-| **Savings** | **15,337 (25.0%)** |
-
-**Takeaway**: The heaviest lifecycle — activates all 14 domain skills and uses parallel agent coordination. Even so, total governance cost stays under 62K tokens. The optimization saves 15K+ tokens through compact probing and heading-scoped workflow reads.
-
----
-
-### Scenario 6: Post-Review Feedback Loop
-
-> **Example**: "Address reviewer's 5 comments, re-implement, then pass re-review"
-
-| Attribute | Value |
-|:---|:---|
-| **Classification** | `feature` |
-| **Phases** | Review (x4) → Implement (x2) → Test (x2) → Handoff → Ship |
-| **Activated Skills** | 6 (receiving-code-review, requesting-code-review, executing-plans, verification-before-completion, red-team-adversarial, finishing-a-development-branch) |
-| **Phase Repeats** | review x4, implement x2, test x2 |
-
-**Token Cost**:
-| Metric | Tokens |
-|:---|---:|
-| Workflow reads | 27,381 |
-| Skill probe | 3,606 |
-| Skill execution detail | 5,878 |
-| **Current total** | **36,865** |
-| Projected (optimized) | 26,188 |
-| **Savings** | **10,677 (29.0%)** |
-
-**Takeaway**: Reviewer feedback loops cause the most phase repetitions. Heading-scoped workflow reads save ~7.9K tokens by re-reading only the core sections on subsequent entries, not the full 3.3K-token review.md each time.
-
----
-
-## Aggregate Comparison
-
-| Metric | All 6 Scenarios Combined |
-|:---|---:|
-| Total current approach | **233,675 tokens** |
-| Total optimized approach | **179,158 tokens** |
-| Total savings | **54,517 tokens (23.3%)** |
-
-### By Classification Tier
-
-| Classification | Current Tokens | Projected Tokens | Savings |
-|:---|---:|---:|---:|
-| Quick-Win | 17,041 | 15,315 | 1,726 (10.1%) |
-| Feature (TDD) | 36,962 | 29,340 | 7,622 (20.6%) |
-| Feature (API+Auth+DB) | 50,975 | 38,544 | 12,431 (24.4%) |
-| Hotfix | 30,548 | 23,824 | 6,724 (22.0%) |
-| Architecture Change | 61,284 | 45,947 | 15,337 (25.0%) |
-| Post-Review Loop | 36,865 | 26,188 | 10,677 (29.0%) |
 
 ### Token Optimization Breakdown
 
@@ -235,25 +128,24 @@ The `/audit` command performs a **read-only** traversal of your existing codebas
 Step 1: /audit          → Understand the current state
 Step 2: /app-init       → Set up project-specific conventions
 Step 3: /spec-intake    → Import existing specs/requirements
-Step 4: Pick a quick-win → Experience the full lifecycle at low cost (~17K tokens)
-Step 5: Attempt a feature → Full 7-phase lifecycle with skills
+Step 4: Pick a quick-win → Experience the full lifecycle at low cost (~27K tokens)
+Step 5: Attempt a feature → Full lifecycle with skills
 ```
 
 This graduated approach lets your team experience governance incrementally rather than attempting a full feature lifecycle on day one.
 
 ---
 
-## Running the Benchmarks Yourself
+## Regenerating This Report
 
 ```bash
 # CI-gated validation suite (the authoritative pass/fail signal — what GitHub Actions runs)
 python -m pytest tests/ci/ tests/guard/ -v
 
-# Dev-time analysis suite that produces the token figures below
-# (includes live-repo invariant checks that track the evolving repo)
+# Dev-time analysis suite that produces the token figures (tracks the live repo)
 python -m pytest .agentcortex/tests/ -v
 
-# Generate token analysis report
+# Regenerate the Token Consumption Snapshot numbers
 python .agentcortex/tools/analyze_token_lifecycle.py --root . --format text
 
 # JSON output for programmatic consumption
