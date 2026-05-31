@@ -14,7 +14,7 @@
 - **Project Name**: (set by /app-init)
 - **Last Updated**: 2026-05-31
 - **Last Verified**: 2026-05-31
-- **Update Sequence**: 25
+- **Update Sequence**: 26
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -74,6 +74,14 @@
 - [Category: audit-verification][Severity: HIGH][Trigger: subagent-deep-audit-finding][prev: ad985879] Same-vendor sub-agent deep-audit findings have a HIGH false-alarm rate — independently verify each by READING THE ACTUAL CODE PATH before committing to a fix. 2026-05-29: of 3 deep findings, C3 (claimed P1 'disjoint-lock lost-update' in guard_context_write) was entirely false (cmd_write holds the outer lock for both modes; the sub-agent saw two lock files but missed the wrapping lock), and 3 of 4 D parity gaps were false (validate.ps1 already had the checks the agent reported missing). Only 1 of D was real. The agents even 'reproduced' the false claims. Verifying first turned a claimed feature (C3 lock unification) into a 2-line docstring no-op and avoided 3 phantom validate.ps1 edits. Reinforces 4faa557a (same-vendor roundtables share blind spots): a sub-agent 'reproduction' is a hypothesis, not evidence — re-trace it.
 - [Category: cross-platform-cli][Severity: MEDIUM][Trigger: powershell-switch-flag-binding][prev: 935ac89f] PowerShell scripts that expose options as `[switch]$Foo` params bind ONLY `-Foo`, NOT `--foo`. A `--foo` token is taken as a positional value and silently binds to the first positional param (e.g. $Target), so the switch is OFF and the target is corrupted. Confirmed 2026-05-31 (PR #120): a README 'preview' line `deploy_brain.ps1 --dry-run <path>` ran a REAL deploy instead of a dry-run because `--dry-run` did not bind `[switch]$DryRun`. Discipline: when documenting or invoking a .ps1 directly, use `-Switch`; reserve `--flag` only for the bash/cmd wrappers that translate them. Cross-wrapper arg parity (sh uses --flag, ps1 uses -Flag) MUST be verified by actually running each entry point, not by reading — same family as [audit-verification]: a sub-agent's 'handled' is a hypothesis.
 ## Ship History
+
+### Ship-chore-governance-doc-consistency-2026-05-31
+- **Branch `chore/governance-doc-consistency`** (quick-win, doc-only) — Follow-up consistency cleanup of 4 verified defect-class instances surfaced during the handoff-trigger work (scattered constants / stale facts / cross-platform drift). Advisory docs only; no enforced rule changed; `validate.sh` fail=0.
+  - **tiny-fix threshold unified**: `< 5 lines` → canonical `< 3 files, no semantic change` in `antigravity-v5-runtime.md §6` + `context-budget.md` (SSoT = AGENTS.md / engineering_guardrails §10.1,§10.3).
+  - **Sentinel unified**: `antigravity-v5-runtime.md §8` stale `[ACX-READ-OK]` → canonical `⚡ ACX` (AGENTS.md rule 11); also removed pre-existing §6 corruption + a stray `303:` line-prefix.
+  - **Model strings genericized**: `AGENT_MODEL_GUIDE.md` (+zh) + bug-report template — exact minor versions → drift-proof tier descriptors. ADR-00X intentionally NOT edited (accepted = historical record).
+  - **Pitfalls guide aligned**: `ai-development-pitfalls.md` 60%/30-45min reframed as proxies for the occupancy SSoT; `/clear`,`/compact` de-Claude-ified; AGENTS.md-first; softened a hard-coded token price.
+  - **NOTE (SSoT merge race)**: PR #121 (handoff-trigger) also bumps Seq→26 + adds a ship entry; whichever merges second rebases this section (trivial additive merge).
 
 ### Ship-fix-win-cmd-dispatch-readme-counts-2026-05-31
 - **Commit `554377e`** (squash, PR #120, quick-win) - Fixed a dead Windows `.cmd` install/update path + corrected stale README skill/workflow counts.
