@@ -1,0 +1,7 @@
+{
+  "expected_sha": "656b1316882e76537f5f8f4e75431b63f7cba0a96282659e60123cc1e484f14d",
+  "mode": "replace",
+  "new_sha": "f9572a8dd03d37b5606abfbf0018c009830997975cc5dade7b1e74d0cefd66c6",
+  "target": ".agentcortex/context/current_state.md",
+  "timestamp": 1780287771
+}

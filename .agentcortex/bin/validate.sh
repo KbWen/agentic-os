@@ -1960,7 +1960,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
 
     # L-3: Kind distribution sanity — warn if all non-— rows have Kind=feature (no review-finding/hotfix-spawn ever written)
     if [[ "$total_pending" -gt 9 ]]; then
-      kind_variety=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | grep -v '| — |' | awk -F'|' '{print $3}' | sort -u | grep -v '^\s*$' | wc -l | tr -d '[:space:]')
+      kind_variety=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4}' | grep -vE '^\s*(—)?\s*$' | sort -u | wc -l | tr -d '[:space:]')
       kind_variety=${kind_variety:-0}
       if [[ "$kind_variety" -eq 1 ]]; then
         record_result WARN "backlog Kind diversity: all assigned pending items share the same Kind value — review-finding and hotfix-spawn entries may not be reaching the backlog"
@@ -1972,7 +1972,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     # L-3b: schema-zero guard — L-3 silently PASSes when ALL pending items have Kind=—
     # (kind_variety=0 ≠ 1, so falls to the PASS branch without surfacing the empty schema).
     if [[ "$total_pending" -gt 5 ]]; then
-      kind_assigned=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); if ($3 != "—" && $3 != "") print}' | wc -l | tr -d '[:space:]')
+      kind_assigned=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); if ($4 != "—" && $4 != "") print}' | wc -l | tr -d '[:space:]')
       kind_assigned=${kind_assigned:-0}
       if [[ "$kind_assigned" -eq 0 ]]; then
         record_result WARN "backlog Kind schema-zero: all ${total_pending} pending items have Kind=— — populate Kind column to enable cluster routing and L-3 diversity checks"
@@ -1980,7 +1980,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     fi
 
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
-    distinct_labels=$(grep '| Pending\|In Progress' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $4}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
+    distinct_labels=$(grep '| Pending\|In Progress' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
     distinct_labels=${distinct_labels:-0}
     if [[ "$distinct_labels" -gt 15 ]]; then
       record_result WARN "backlog label vocabulary: ${distinct_labels} distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"
