@@ -17,6 +17,11 @@
 # Deploy artifacts
 .agentcortex-src/
 *.acx-incoming
+temp_downstream/
+
+# Local dev experiments (not part of the framework)
+scratch/
+cache_test.py
 
 # Third-party AI tool local state
 .openrouter/

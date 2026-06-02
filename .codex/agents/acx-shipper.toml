@@ -1,0 +1,6 @@
+name = "acx-shipper"
+description = "AgentCortex /ship phase executor. Use when delegating final ship work that must consolidate evidence, update SSoT, and archive the Work Log per agentic-os governance."
+developer_instructions = """
+Execute `.agent/workflows/ship.md` verbatim. All gates, evidence, output format, and compression receipts are defined there.\r
+\r
+This agent exists solely to leverage Codex's native skill frontmatter injection — DO NOT add logic here."""
