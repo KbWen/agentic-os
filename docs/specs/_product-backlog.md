@@ -21,10 +21,12 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 
 > The **GH Issue** column links the GitHub tracker (`KbWen/agentic-os`). The
 > **Dependencies** column uses bare `#N` = backlog entry numbers (this file).
-> Entries #51/#57/#58 were added 2026-06-02 from an optimization-research pass.
-> An earlier draft of that pass added #45–#64, but most were retracted on review
-> (conceptual / no verified problem or consumer in this repo — DELETE-bias); only
-> the three with a demonstrated gap remain. See
+> Entries #45–#68 came from a 2026-06-02 optimization-research pass mining a more
+> mature internal reference implementation. The set was deliberately curated: each
+> survivor was cross-checked against this repo's actual code paths over multiple
+> verification rounds; items that were premature, already-handled, or
+> deliberately-removed-before were dropped (DELETE-bias). The rows below are the
+> verified ~1–2 month roadmap. See
 > [`../OPTIMIZATION_ROADMAP.md`](../OPTIMIZATION_ROADMAP.md).
 
 | # | Feature | Kind | Labels | Priority | Spec File | Tier | Status | GH Issue | Dependencies |
@@ -40,9 +42,17 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 18 | Lightweight routing heuristics (decision tree in config.yaml, not a DSL) | framework | routing | P2 | — | quick-win | Pending | [#148](https://github.com/KbWen/agentic-os/issues/148) | — |
 | 21 | Skill cache timestamp + staleness invalidation | framework | skills | P2 | — | quick-win | Pending | [#149](https://github.com/KbWen/agentic-os/issues/149) | — |
 | 33 | Claude Code plugin packaging (.claude-plugin/plugin.json + bin/ + commands/agents/hooks bundling, no monitors) | dx | packaging | P2 | — | feature | Pending | [#150](https://github.com/KbWen/agentic-os/issues/150) | #30, #31 |
+| 45 | Governance behavioral eval harness + DELETE-bias diff | framework | governance | P1 | — | feature | Pending | [#151](https://github.com/KbWen/agentic-os/issues/151) | — |
+| 48 | Skill discovery linter + skill-cards.json index | framework | skills | P2 | — | quick-win | Pending | [#154](https://github.com/KbWen/agentic-os/issues/154) | — |
+| 50 | Spec drift linter (AC coverage vs git diff, advisory) | framework | governance | P2 | — | quick-win | Pending | [#156](https://github.com/KbWen/agentic-os/issues/156) | — |
 | 51 | Token lifecycle baseline + drift detector | framework | ci | P2 | — | quick-win | Pending | [#157](https://github.com/KbWen/agentic-os/issues/157) | — |
+| 56 | Cross-platform adapter generator (Gemini/Cursor/Copilot stubs) | framework | platform | P2 | — | feature | Pending | [#162](https://github.com/KbWen/agentic-os/issues/162) | — |
 | 57 | CI hardening: pinned requirements + pip cache + UTF-8 + pytest on PR | framework | ci | P2 | — | quick-win | Pending | [#163](https://github.com/KbWen/agentic-os/issues/163) | — |
 | 58 | Downstream local_guardrails.md extension point | framework | governance | P2 | — | quick-win | Pending | [#164](https://github.com/KbWen/agentic-os/issues/164) | — |
+| 65 | Deletion-First Norm + ADD-gate signal tiering | framework | governance | P1 | — | feature | Pending | [#166](https://github.com/KbWen/agentic-os/issues/166) | #45 |
+| 66 | Recommended-workflows advisory layer | framework | routing | P2 | — | feature | Pending | [#167](https://github.com/KbWen/agentic-os/issues/167) | — |
+| 67 | Canonical-doc-path gate + research-wiki sidecar | framework | governance | P2 | — | quick-win | Pending | [#168](https://github.com/KbWen/agentic-os/issues/168) | — |
+| 68 | Authority-map metadata (read-this-not-that resolver) | framework | governance | P2 | — | quick-win | Pending | [#169](https://github.com/KbWen/agentic-os/issues/169) | — |
 
 > Completed entries (#2, 4–6, 8–10, 12, 15, 19–20, 22–32, 34–44) are in [`_product-backlog-archive.md`](./_product-backlog-archive.md).
 
