@@ -871,13 +871,13 @@ else {
 if ($isSourceRepo) {
     $readmeZhTw = Join-NormalPath $root 'docs/README_zh-TW.md'
     if (Test-Path -Path $readmeZhTw -PathType Leaf) {
-        Test-ContainsLiteral -Path $readmeZhTw -Pattern '從「流程驅動」進化到「自我管理」的專業級 AI Agent 核心架構。' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
+        Test-ContainsLiteral -Path $readmeZhTw -Pattern '用工作流程、交付閘門與工程護欄' -SuccessMessage 'README_zh-TW.md encoding looks healthy' -FailureMessage 'README_zh-TW.md appears mojibaked or re-encoded'
     }
     $readmeEn = Join-NormalPath $root 'README.md'
     if (Test-Path -Path $readmeEn -PathType Leaf) {
         $params = @{
             Path = $readmeEn
-            Pattern = 'governance-first operating system for AI coding agents'
+            Pattern = 'governance-first layer for AI coding agents'
             SuccessMessage = 'README.md encoding looks healthy'
             FailureMessage = 'README.md appears mojibaked or re-encoded'
         }

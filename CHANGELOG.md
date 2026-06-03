@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.3.0] - 2026-06-03
+
+Consolidated release covering PRs #124–#177 since v1.2.0. Activates the downstream override layer, adds a merge-conflict-marker validator gate, brings the sh/ps1 validators to full count parity, expands governance contract tests, and polishes the public-facing docs.
+
+**Features**
+- **Downstream override layer activated + skill-sidecar tiering (#175)**: per-fork/per-user `AGENTS.override.md` is now loaded present-only at session start (MAY narrow/disable directives but cannot relax delivery gates), and `deploy` preserves locally-modified framework skills as visible `.acx-incoming` sidecars instead of overwriting them.
+- **Merge-conflict-marker gate (#131)**: `validate.sh` / `validate.ps1` now FAIL on unresolved `<<<<<<<` / `=======` / `>>>>>>>` markers in tracked files.
+
+**Validator & tooling**
+- sh↔ps1 full count parity: closed parity gaps F2 + F4, gated the ps1 count-parity test to Windows, aligned `validate.sh` column indices, and removed the em-dash pre-filter (#133).
+- Cleared 3 framework-self false-positive WARNs (#170, #171, #172); adopted code-review findings with stronger fixes plus regression tests.
+
+**Governance & tests**
+- State-machine transition-graph contract test (#132); classification-escalation + SSoT-heartbeat contract tests (#16).
+- `CITATION.cff` correctness + skill count corrected 17→14 (#124); untracked a leaked work log and advanced the SSoT sequence (#125).
+
+**Downstream & Windows**
+- Hardened deploy + validation follow-ups for Windows; regenerated the AGENTS.md trigger-compact-index for content-hash drift; tightened downstream ADR tiering coverage; corrected ship-evidence SSoT root-cause notes.
+
+**CI**
+- Pinned test deps + pip cache + UTF-8 + branch-scoped concurrency (#163, #177); dropped the unsupported Dependabot pip ecosystem entry (#163 follow-up).
+
+**Docs**
+- **README de-slop (EN + zh-TW)**: removed AI-generated tonal artifacts so the project face reads as a genuine, professional share rather than a product launch page. Dropped the triple-slogan line, per-section header emoji, and the "demand discipline" footer in `README.md`; softened the buzzword-heavy opening ("頂尖開發者 / 高效能 / 結構化認知框架") and removed section-header emoji in `docs/README_zh-TW.md`. Aligned the top tagline ("operating system" → "layer") with the humbler open-source footer, and brought the zh-TW anti-drift bullets back to plain register for EN/zh parity. Trimmed the redundant "Ready/Compatible" marketing badges (platform support is already in the Platform Compatibility table). No content, tables, diagrams, or install steps were removed.
+- Self-regenerating benchmark token snapshot + deleted-skill-ref fixes + zh-TW parity (#126–#130); documentation navigation map; refreshed stale platform/skill references; clarified the Windows Git Bash requirement; backlog issue-sync + archival (#8, #139, #165); Codex contributor attribution; QRSPI research notes (backlog #69).
+- Version banners bumped to v1.3.0 across `README.md`, `docs/README_zh-TW.md`, `CITATION.cff`, the Model Selection Guide, and the Testing Protocol (EN + zh-TW). Validator encoding-canary phrases repointed (sh + ps1) to match the de-slopped READMEs. Measurement-tied banners (`LIFECYCLE_BENCHMARK`, dated to the 2026-05-31 snapshot) and illustrative example text were intentionally left unchanged.
+
 ## [1.2.0] - 2026-05-31
 
 Consolidated release covering PRs #98–#122 since v1.1.2. Highlights:

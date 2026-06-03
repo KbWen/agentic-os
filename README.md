@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Agentic OS-v1.2.0-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.2.0"/>
+  <img src="https://img.shields.io/badge/Agentic OS-v1.3.0-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.3.0"/>
 </p>
 
 <h1 align="center">Agentic OS</h1>
 
 <p align="center">
-  <strong>The governance-first operating system for AI coding agents.</strong><br/>
+  <strong>A governance-first layer for AI coding agents.</strong><br/>
   Portable workflows, delivery gates, engineering guardrails, and 14 professional skills<br/>
   for Claude Code, OpenAI Codex, Google Antigravity, Cursor, GitHub Copilot, and other coding agents.
 </p>
@@ -14,10 +14,6 @@
   <a href="https://github.com/KbWen/agentic-os/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/validate.yml?branch=main&style=flat-square&label=CI" alt="CI Status"/></a>
   <a href="https://github.com/KbWen/agentic-os/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/security.yml?branch=main&style=flat-square&label=Security" alt="Security Scan"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MIT License"/></a>
-  <img src="https://img.shields.io/badge/Claude_Code-Ready-8b5cf6?style=flat-square" alt="Claude Code"/>
-  <img src="https://img.shields.io/badge/Antigravity-Compatible-3b82f6?style=flat-square" alt="Antigravity"/>
-  <img src="https://img.shields.io/badge/Codex-Ready-f59e0b?style=flat-square" alt="Codex"/>
-  <img src="https://img.shields.io/badge/Cursor-Compatible-ec4899?style=flat-square" alt="Cursor"/>
 </p>
 
 <p align="center">
@@ -53,13 +49,13 @@ AI coding agents are powerful, but they need shared operating rules. Without str
                ⛔ STOP                          ⛔ STOP
 ```
 
-**No evidence = no completion. No gate = no progression. No exceptions.**
+The idea behind every phase is the same: if there's no verifiable evidence, the task isn't done — and the gates enforce that, instead of trusting the agent to self-report honestly.
 
 ---
 
 ## Features
 
-### 🔒 Gate Engine & Phase System
+### Gate Engine & Phase System
 
 Every task flows through mandatory phases. The AI cannot skip ahead.
 
@@ -87,7 +83,7 @@ flowchart LR
 | **hotfix** | Bootstrap → Research → Plan → Implement → Review → Test → Ship |
 | **architecture-change** | Bootstrap → ADR → Spec → Plan → Implement → Review → Test → Handoff → Ship |
 
-### 🛡️ Engineering Guardrails
+### Engineering Guardrails
 
 A constitution for AI behavior — loaded automatically, enforced at every phase:
 
@@ -97,7 +93,7 @@ A constitution for AI behavior — loaded automatically, enforced at every phase
 - **OWASP Top 10 Auto-Scan** — security checks run during `/implement` and `/review`
 - **Confidence Gate** — AI must declare confidence level; low confidence triggers escalation
 
-### ⚡ 14 Professional Skills
+### 14 Professional Skills
 
 Skills auto-activate based on task classification and workflow phase:
 
@@ -118,7 +114,7 @@ Skills auto-activate based on task classification and workflow phase:
 | Git Worktrees | parallel branches | Worktree isolation workflows |
 | Doc Lookup | documentation needed | Documentation retrieval strategy |
 
-### 🧠 Single Source of Truth (SSoT)
+### Single Source of Truth (SSoT)
 
 Every project has one canonical state file. AI agents read it first, write to it last.
 
@@ -133,7 +129,7 @@ Every project has one canonical state file. AI agents read it first, write to it
 - **SSoT** tracks global decisions, lessons, and ship history
 - **Handoff** enables seamless AI-to-AI continuity across conversations
 
-### 👥 Multi-Agent Collaboration
+### Multi-Agent Collaboration
 
 Built for teams where multiple AI sessions work on the same codebase:
 
@@ -142,7 +138,7 @@ Built for teams where multiple AI sessions work on the same codebase:
 - **Ship Guard** — checks for SSoT conflicts before merging
 - **Session Identity** — every AI session writes its model name and timestamp
 
-### 🚀 Three Entry Paths
+### Three Entry Paths
 
 Pick the one that matches your starting point (full opener templates in **Quick Start §2**):
 
@@ -154,7 +150,7 @@ Pick the one that matches your starting point (full opener templates in **Quick 
 
 See the [Lifecycle Benchmark](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK.md) ([繁體中文](https://github.com/KbWen/agentic-os/blob/main/docs/LIFECYCLE_BENCHMARK_zh-TW.md)) for real token consumption data across 6 development scenarios.
 
-### 📉 Token Efficiency
+### Token Efficiency
 
 Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 
@@ -451,5 +447,5 @@ MIT License. See [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <sub>Built for developers who demand discipline from their AI agents.</sub>
+  <sub>An open-source governance layer for AI coding agents. Contributions and feedback are welcome.</sub>
 </p>
