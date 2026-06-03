@@ -7,7 +7,7 @@ Global (applies to all projects using template).
 ## Reading Mode
 
 - **Full Mode** (default for `feature`, `architecture-change`, `hotfix`): Read core sections first, then load conditional sections per the Heading-Scoped Read rules below.
-- **Quick Mode** (for `quick-win`): Do NOT read this file. Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §7 quick-win classification. If the task escalates beyond quick-win, switch to Full Mode.
+- **Quick Mode** (for `quick-win`): Do NOT read this file. Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §1 Classification Tiers. If the task escalates beyond quick-win, switch to Full Mode.
 - **Skip Mode** (for `tiny-fix` ONLY): Do NOT read this file. `AGENTS.md` §Core Directives provides sufficient governance for tiny-fix tasks (scope discipline, evidence requirement, fast-path rules). If the task escalates beyond tiny-fix, switch to Quick or Full Mode and read this file at that point.
 
 ### Heading-Scoped Read (Full Mode Optimization)

@@ -40,7 +40,7 @@ skill_cache_policy:
   min_body_chars: 50
   # NOTE: prefer_hash_when_available was removed in 2026-04-25 cleanup.
   # No validator computed cached_hash in practice; the structural check
-  # above (1-4) is the actual cache predicate. See AGENTS.md §Skill Safety #7.
+  # above (1-4) is the actual cache predicate. See AGENTS.md §Skill Safety & Precedence.
 
 # Advisory Work Log locking — prevents accidental concurrent edits.
 # Contract: AGENTS.md §Multi-Person / Multi-Session Collaboration.
@@ -55,7 +55,7 @@ worklog_lock:
   enabled: true
 
 # Domain Doc governance — two-layer Architecture (Synthesis L1 + Decision Log L2).
-# Contract: AGENTS.md §Document Lifecycle Governance.
+# Contract: .agentcortex/docs/guides/doc-governance.md (AGENTS.md §References → Doc Lifecycle).
 domain_doc:
   # Maximum lines for a Domain Doc Layer 1 (Synthesis) file.
   # Exceeding this cap should trigger /govern-docs --restructure.
@@ -72,7 +72,7 @@ domain_doc:
 # User Skill Preferences — per-user persistent skill pinning/disabling.
 # Capability-by-presence: if the preferences file does not exist, this
 # entire feature is inert. Zero cost.
-# See: AGENTS.md §Skill Safety & Precedence item 8.
+# See: AGENTS.md §Skill Safety & Precedence (items 5–9 deferred to bootstrap.md §3.6).
 user_preferences:
   # Path (relative to repo root) where the user's personal preferences
   # file is read. This path MUST be gitignored.
