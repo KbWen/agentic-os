@@ -1816,7 +1816,11 @@ if [[ -f "$CURRENT_STATE" ]]; then
   cs_content="$(cat "$CURRENT_STATE" 2>/dev/null)" || { record_result WARN "cannot read current_state.md — skipping state checks"; }
 
   # ADR Index completeness
-  adr_index_section="$(printf '%s' "$cs_content" | awk '/\*\*ADR Index\*\*:/{found=1; next} found && /^- \*\*/{exit} found{print}')"
+  # NOTE: feed awk via here-string, NOT `printf | awk`. awk's `exit` closes the
+  # pipe early; with set -o pipefail the upstream printf's SIGPIPE (141) would
+  # fail the whole script intermittently when $cs_content is large. <<< reads a
+  # temp file, so early exit cannot break a pipe.
+  adr_index_section="$(awk '/\*\*ADR Index\*\*:/{found=1; next} found && /^- \*\*/{exit} found{print}' <<<"$cs_content")"
   adr_missing_count=0
   adr_missing_list=""
   adr_phantom_count=0
@@ -1857,7 +1861,7 @@ if [[ -f "$CURRENT_STATE" ]]; then
   fi
 
   # Spec Index completeness
-  spec_index_section="$(printf '%s' "$cs_content" | awk '/\*\*Spec Index\*\*/{found=1; next} found && /^- \*\*/{exit} found{print}')"
+  spec_index_section="$(awk '/\*\*Spec Index\*\*/{found=1; next} found && /^- \*\*/{exit} found{print}' <<<"$cs_content")"
   spec_missing_count=0
   spec_missing_list=""
   for spec_dir in "$ROOT/docs/specs" "$ROOT/.agentcortex/specs"; do
