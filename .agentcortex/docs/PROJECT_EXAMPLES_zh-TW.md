@@ -34,9 +34,9 @@
 1. 依序執行
 
 - `/brainstorm`
-- `/write-plan`
+- `/plan`
 - `/test-skeleton` (TDD 推薦：實作前先出測試藍圖)
-- `/execute-plan`
+- `/implement`
 - `/review`
 - `/test`
 - `/ship`
@@ -102,7 +102,7 @@ ruff check .
 
 - Codex Web：每次新需求開新對話，先貼 `/bootstrap` 範本。
 - Codex App：每次提交前固定跑 `./.agentcortex/bin/validate.sh`。
-- Google Antigravity：優先使用 `/write-plan` + `/execute-plan`，避免長 prompt 漂移。
+- Google Antigravity：優先使用 `/plan` + `/implement`，避免長 prompt 漂移。
 
 ## 延伸閱讀
 

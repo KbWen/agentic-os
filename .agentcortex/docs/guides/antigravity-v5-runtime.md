@@ -86,7 +86,7 @@ flowchart LR
         WL[".agentcortex/context/work/&lt;worklog-key&gt;.md<br/>Work Log + Drift + Evidence"]:::art
         SSOT[".agentcortex/context/current_state.md<br/>SSoT (controlled writes)"]:::art
         CODE["src/** + tests/**"]:::art
-        GUIDE["docs/guides/antigravity-anti-drift.md"]:::art
+        GUIDE[".agentcortex/docs/guides/antigravity-v5-runtime.md"]:::art
     end
 
     %% ==========================================

@@ -34,9 +34,9 @@ Acceptance Criteria:
 1. Execute in order:
 
 - `/brainstorm`
-- `/write-plan`
+- `/plan`
 - `/test-skeleton` (TDD recommended: blueprints before implementation)
-- `/execute-plan`
+- `/implement`
 - `/review`
 - `/test`
 - `/ship`
@@ -102,7 +102,7 @@ ruff check .
 
 - Codex Web: Start a new thread for each requirement; paste the `/bootstrap` template first.
 - Codex App: Run `./.agentcortex/bin/validate.sh` before every submission.
-- Google Antigravity: Prioritize `/write-plan` + `/execute-plan` to avoid long prompt drift.
+- Google Antigravity: Prioritize `/plan` + `/implement` to avoid long prompt drift.
 
 ## Further Reading
 
