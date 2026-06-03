@@ -7,6 +7,13 @@ authority: extracted from AGENTS.md (2026-05-07) to keep AGENTS.md within token 
 
 # Document Lifecycle Governance
 
+> **Realizes** ADR-002 / `docs/specs/lock-unification.md` AC-24 & AC-25. This guide is the
+> canonical "Document Lifecycle Governance" home — extracted from `AGENTS.md` on 2026-05-07
+> (token-budget consolidation). The **Document Taxonomy** below is the doc-ownership matrix
+> that AC-25 planned under the filename `governance-doc-lifecycle-matrix.md`; that file was
+> never created — this guide superseded it. AC-25's "3 ownership gaps marked as Spec Seeds"
+> were superseded by the doc-lifecycle backlog (#1, #3, #7, #11, #13, #67).
+
 ## Document Taxonomy
 
 | Type | Path | Status | Owner Workflow |

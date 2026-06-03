@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-04-25
 classification: architecture-change
 primary_domain: document-governance
@@ -184,7 +184,7 @@ Skeptic Amendment #3: "Closes Part B & D in one stroke; ~15 LOC, no friction add
 | `.agentcortex/bin/validate.ps1` | mirror (~10 LOC) |
 | `docs/audit/governance-lifecycle-2026-04-25.md` | retroactively add `lifecycle:` (this is THE audit doc; lead by example) |
 | `docs/adr/ADR-002-guarded-governance-writes.md` | this file's frontmatter ALREADY includes `lifecycle:` fields (see top) |
-| `AGENTS.md §Document Lifecycle Governance` | +1 paragraph pointer to `docs/guides/governance-doc-lifecycle-matrix.md` |
+| `AGENTS.md §Document Lifecycle Governance` | +1 paragraph pointer to the ownership matrix. **As-built (post-ship):** the section was extracted from `AGENTS.md` into `.agentcortex/docs/guides/doc-governance.md` (2026-05-07); the planned `governance-doc-lifecycle-matrix.md` was never created and is superseded by that guide's Document Taxonomy. |
 
 ---
 
