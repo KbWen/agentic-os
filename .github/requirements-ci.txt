@@ -1,0 +1,5 @@
+# Pinned CI test dependencies for reproducible runs (#163).
+# Bumped by Dependabot (pip ecosystem, see .github/dependabot.yml).
+# Must stay compatible with the CI Python matrix (3.9 and 3.12).
+pytest==8.4.1
+PyYAML==6.0.2
