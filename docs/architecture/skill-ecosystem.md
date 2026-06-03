@@ -31,7 +31,7 @@ The platform goal is **safe extensibility without context explosion**. Skills ar
 The skill-ecosystem direction is one half of a broader platform strategy.
 
 - `docs/architecture/skill-ecosystem.md` defines the **tooling/control plane**: what skills are, how they are resolved, what they can do, and how they are distributed safely.
-- `docs/architecture/product-construction.md` defines the **product authority/quality plane**: what the agent should build, how quality is described, and how delivery is verified across UI, API, security, and interactive product work.
+- `docs/architecture/product-construction.md` *(planned — not yet authored)* defines the **product authority/quality plane**: what the agent should build, how quality is described, and how delivery is verified across UI, API, security, and interactive product work.
 
 Both tracks are required if Agentic OS is meant to help agents build complete products rather than only invoke isolated tools correctly.
 

@@ -1,6 +1,6 @@
 # Lifecycle Benchmark & Token Consumption Report
 
-> **Framework**: Agentic OS v1.2.0 | **CI-gated suite**: 126 passing | **Token snapshot**: regenerated 2026-05-31 (numbers below are tool-generated — see "Regenerating This Report")
+> **Framework**: Agentic OS v1.3.0 | **CI-gated suite**: 180 passing (verified 2026-06-03) | **Token snapshot**: 2026-05-31 (dated — numbers below are tool-generated; see "Regenerating This Report")
 
 This report documents lifecycle scenario coverage and token-consumption measurements.
 It helps teams evaluate Agentic OS governance overhead before adoption.
@@ -11,19 +11,26 @@ It helps teams evaluate Agentic OS governance overhead before adoption.
 
 Two suites exist; they serve different purposes:
 
-- **CI-gated validation suite** — `python -m pytest tests/ci/ tests/guard/` — **126 tests, all passing** (verified 2026-05-31). This is what GitHub Actions enforces on every PR and is the authoritative "is the framework healthy?" signal.
+- **CI-gated validation suite** — `python -m pytest tests/ci/ tests/guard/` — **180 tests, all passing** (verified 2026-06-03). This is what GitHub Actions enforces on every PR and is the authoritative "is the framework healthy?" signal.
 
 | Category | Tests | File |
 |:---|:---:|:---|
 | Security scanning (Semgrep + TruffleHog + pip-audit) | 32 | `tests/ci/test_security_workflow.py` |
-| Audit-chain witness | 9 | `tests/ci/test_audit_witness.py` |
 | Guard write (unit) | 24 | `tests/guard/test_d2_1_guard_unit.py` |
 | Audit-chain tamper-evidence | 17 | `tests/guard/test_audit_chain.py` |
 | Governed-write lint | 16 | `tests/guard/test_d2_2_lint.py` |
 | Doc-lifecycle contract | 14 | `tests/guard/test_d2_3_lifecycle.py` |
 | ADR coverage | 12 | `tests/guard/test_adr_coverage.py` |
+| State-machine contract | 11 | `tests/guard/test_state_machine_contract.py` |
+| Validator false-positives | 11 | `tests/ci/test_validator_false_positives.py` |
+| Deploy tiering | 9 | `tests/ci/test_deploy_tiering.py` |
+| Audit-chain witness | 9 | `tests/ci/test_audit_witness.py` |
+| Classification escalation | 8 | `tests/guard/test_classification_escalation.py` |
+| Conflict markers | 7 | `tests/guard/test_conflict_markers.py` |
+| SSoT-heartbeat contract | 4 | `tests/guard/test_ssot_heartbeat_contract.py` |
+| CI hardening | 4 | `tests/ci/test_ci_hardening.py` |
 | Guard write (race) | 2 | `tests/guard/test_d2_1_guard_race.py` |
-| **Total (CI-gated)** | **126** | all passing |
+| **Total (CI-gated)** | **180** | all passing |
 
 - **Dev-time analysis suite** — `.agentcortex/tests/` — generates the token-consumption figures below via `analyze_token_lifecycle.py`. It includes live-repo invariant checks (SSoT sequence monotonicity, backlog/ship-history resolvability) that intentionally track the evolving repository, so it is **not** part of release gating.
 
