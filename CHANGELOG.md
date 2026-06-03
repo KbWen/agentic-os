@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1] - 2026-06-03
+
+Documentation polish release — no functional, governance, or runtime behavior changes.
+
+**Docs**
+- **README de-slop (EN + zh-TW)**: removed AI-generated tonal artifacts to make the project face read as a genuine, professional share rather than a product launch page. Dropped the triple-slogan line, per-section header emoji, and the "demand discipline" footer in `README.md`; softened the buzzword-heavy opening ("頂尖開發者 / 高效能 / 結構化認知框架") and removed section-header emoji in `docs/README_zh-TW.md`. Aligned the top tagline ("operating system" → "layer") with the humbler open-source footer, and brought the zh-TW anti-drift bullets back to plain register for EN/zh parity. Trimmed the redundant "Ready/Compatible" marketing badges (platform support already documented in the Platform Compatibility table). No content, tables, diagrams, or install steps were removed.
+- Version banners bumped to v1.2.1 across `README.md`, `docs/README_zh-TW.md`, `CITATION.cff`, the Model Selection Guide, and the Testing Protocol (EN + zh-TW). Measurement-tied banners (`LIFECYCLE_BENCHMARK`, dated to the v1.2.0 snapshot) were intentionally left unchanged.
+
 ## [1.2.0] - 2026-05-31
 
 Consolidated release covering PRs #98–#122 since v1.1.2. Highlights:
