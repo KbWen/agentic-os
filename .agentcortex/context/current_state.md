@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-08T11:39:40+08:00
+- **Last Updated**: 2026-06-08T12:13:20+08:00
 - **Last Verified**: 2026-06-08
-- **Update Sequence**: 37
+- **Update Sequence**: 38
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -31,6 +31,7 @@
   - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
   - docs/specs/multi-agent-review-guidelines.md — Multi-Agent Review Guidelines and Contributor Adapters, [Shipped 2026-06-04] (backlog #56, issue #162)
   - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
+  - docs/specs/worklog-lock-auto-recovery.md — Work Log Lock Auto-Recovery, [Shipped 2026-06-08] (issue #188)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -309,3 +310,8 @@
 - **Branch `codex/issue-192-pre-commit-hook`** (feature, issue #192) — Added an opt-in `.githooks/pre-commit.guard-ssot.sample` local validation hook that runs Agentic OS validators from the Git root, prefers `validate.ps1` on Windows Git Bash when PowerShell is available, and falls back to `validate.sh`; guarded SSoT receipt warnings remain advisory-only.
   - **Docs/tests**: README now documents `git config core.hooksPath .githooks` setup; `tests/ci/test_pre_commit_hook.py` covers failure blocking, success pass, subdirectory execution, missing-validator failure, Windows validator selection wiring, advisory guard warning, and setup docs.
   - **Evidence**: focused hook suite 7 passed; hook `bash -n` passed; `git diff --check` passed; final validators run after SSoT update. Rollback = revert PR.
+### Ship-codex-issue-188-lock-auto-recovery-2026-06-08
+- **Branch `codex/issue-188-lock-auto-recovery`** (feature, issue #188) — Added bootstrap-time recovery for stale, dead-PID, and corrupted advisory Work Log locks while preserving active-lock warnings for other live sessions.
+  - **Tooling**: `.agentcortex/tools/recover_worklog_lock.py` classifies locks as missing/active/recoverable, writes current owner/session/branch/phase payloads, records recovery in Work Log Drift Log, and returns exit code 2 for active locks owned by another live session.
+  - **Workflow/tests**: `.agent/workflows/bootstrap.md §2a` now points agents to the helper with Python-unavailable fallback; `tests/guard/test_worklog_lock_recovery.py` covers missing, stale-time, dead-PID, corrupt JSON, active preservation, and bootstrap wiring.
+  - **Evidence**: focused lock suite 6 passed; adjacent guard suite 30 passed; `py_compile` passed; final validator run after SSoT/archive update. Rollback = revert PR.

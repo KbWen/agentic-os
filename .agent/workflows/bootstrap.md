@@ -273,13 +273,30 @@ When creating or resuming a Work Log (non-`tiny-fix`), write or update an adviso
   "branch": "<branch-name>",
   "phase": "bootstrap",
   "updated_at": "<ISO-timestamp>",
-  "stale_timeout_minutes": 60
+  "stale_timeout_minutes": 60,
+  "pid": "<optional-process-id>"
 }
 ```
 
-**On resume**: If a lock file exists and belongs to another session:
+Preferred command:
+
+```bash
+python .agentcortex/tools/recover_worklog_lock.py ensure \
+  --lock .agentcortex/context/work/<worklog-key>.lock.json \
+  --worklog .agentcortex/context/work/<worklog-key>.md \
+  --owner "<user-name or session-id>" \
+  --session "<ISO-timestamp>" \
+  --branch "<branch-name>" \
+  --phase bootstrap
+```
+
+The helper classifies the lock as `missing`, `active`, or `recoverable`, checks optional `pid` liveness, overwrites missing/recoverable locks, and records recoveries in the Work Log `## Drift Log`. Exit code `2` means a non-stale lock is active for another owner/session and MUST be surfaced before continuing.
+
+**Python-unavailable fallback / manual resume**: If the helper cannot run and a lock file exists that belongs to another session:
 
 - Check `updated_at` + `stale_timeout_minutes`. If stale (expired), warn and overwrite.
+- If `pid` is present and not alive, warn, overwrite, and record the recovery in the Work Log `## Drift Log`.
+- If the lock JSON is corrupted or lacks a parseable `updated_at`, warn, overwrite, and record the recovery in the Work Log `## Drift Log`.
 - If non-stale, output: `"⚠️ Active lock held by [owner] since [updated_at]. Concurrent edit risk. Proceed? (yes/no)"`.
 - This is advisory — it warns but does not hard-block.
 
