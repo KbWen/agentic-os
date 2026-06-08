@@ -151,7 +151,16 @@ class TestWorklogLockRecovery(unittest.TestCase):
     def test_active_lock_preserved_by_api_and_cli(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             lock = Path(base_dir) / "demo.lock.json"
-            lock.write_text(json.dumps(_lock_payload(pid=os.getpid())), encoding="utf-8")
+            # The CLI subprocess below cannot be handed a frozen `now`, so it
+            # classifies against the real wall clock. Stamp `updated_at` from the
+            # real clock (not the frozen module-level NOW) so the lock stays
+            # non-stale when the CLI runs more than `stale_timeout_minutes` of
+            # wall-clock time after NOW. Mirrors the sibling CLI tests.
+            recent = datetime.now(timezone.utc)
+            lock.write_text(
+                json.dumps(_lock_payload(updated_at=recent.isoformat(), pid=os.getpid())),
+                encoding="utf-8",
+            )
 
             result = wl.ensure_lock(
                 lock,
@@ -159,7 +168,7 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 session="codex-session",
                 branch="codex/issue-188-lock-auto-recovery",
                 phase="bootstrap",
-                now=NOW,
+                now=recent,
             )
 
             self.assertEqual(result.status, "active")
