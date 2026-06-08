@@ -116,7 +116,7 @@ def _lock_payload(
     phase: str,
     now: datetime,
     stale_timeout_minutes: int,
-    include_pid: bool,
+    pid: int | None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "owner": owner,
@@ -126,8 +126,8 @@ def _lock_payload(
         "updated_at": now.isoformat(),
         "stale_timeout_minutes": stale_timeout_minutes,
     }
-    if include_pid:
-        payload["pid"] = os.getpid()
+    if pid is not None:
+        payload["pid"] = pid
     return payload
 
 
@@ -170,7 +170,8 @@ def ensure_lock(
     worklog: Path | None = None,
     now: datetime | None = None,
     stale_timeout_minutes: int = DEFAULT_STALE_TIMEOUT_MINUTES,
-    include_pid: bool = True,
+    owner_pid: int | None = None,
+    include_pid: bool = False,
 ) -> LockDecision:
     current = now or _now()
     if current.tzinfo is None:
@@ -185,7 +186,7 @@ def ensure_lock(
         phase=phase,
         now=current,
         stale_timeout_minutes=stale_timeout_minutes,
-        include_pid=include_pid,
+        pid=owner_pid if owner_pid is not None else os.getpid() if include_pid else None,
     )
 
     if decision.status == "missing":
@@ -225,7 +226,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ensure.add_argument("--phase", required=True)
     ensure.add_argument("--worklog", type=Path)
     ensure.add_argument("--stale-timeout-minutes", type=int, default=DEFAULT_STALE_TIMEOUT_MINUTES)
-    ensure.add_argument("--no-pid", action="store_true", help="omit pid from the written lock payload")
+    ensure.add_argument("--pid", type=int, help="owner process id; use only for a long-lived lock owner")
+    ensure.add_argument("--no-pid", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
@@ -240,7 +242,7 @@ def main(argv: list[str] | None = None) -> int:
             phase=args.phase,
             worklog=args.worklog,
             stale_timeout_minutes=args.stale_timeout_minutes,
-            include_pid=not args.no_pid,
+            owner_pid=None if args.no_pid else args.pid,
         )
         print(json.dumps(asdict(result), sort_keys=True))
         return result.exit_code

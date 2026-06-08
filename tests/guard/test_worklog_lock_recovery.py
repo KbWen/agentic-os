@@ -190,6 +190,111 @@ class TestWorklogLockRecovery(unittest.TestCase):
             self.assertIn("active", cli.stdout + cli.stderr)
             self.assertEqual(json.loads(lock.read_text(encoding="utf-8"))["owner"], "other")
 
+    def test_cli_created_lock_is_preserved_until_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as base_dir:
+            lock = Path(base_dir) / "demo.lock.json"
+
+            first = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "recover_worklog_lock.py"),
+                    "ensure",
+                    "--lock",
+                    str(lock),
+                    "--owner",
+                    "agent-a",
+                    "--session",
+                    "session-a",
+                    "--branch",
+                    "codex/hotfix-worklog-lock-cli-pid",
+                    "--phase",
+                    "bootstrap",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(first.returncode, 0)
+            self.assertNotIn("pid", json.loads(lock.read_text(encoding="utf-8")))
+
+            second = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "recover_worklog_lock.py"),
+                    "ensure",
+                    "--lock",
+                    str(lock),
+                    "--owner",
+                    "agent-b",
+                    "--session",
+                    "session-b",
+                    "--branch",
+                    "codex/hotfix-worklog-lock-cli-pid",
+                    "--phase",
+                    "bootstrap",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(second.returncode, 2)
+            self.assertIn("active", second.stdout + second.stderr)
+            self.assertEqual(json.loads(lock.read_text(encoding="utf-8"))["owner"], "agent-a")
+
+    def test_cli_explicit_owner_pid_preserves_active_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as base_dir:
+            lock = Path(base_dir) / "demo.lock.json"
+
+            first = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "recover_worklog_lock.py"),
+                    "ensure",
+                    "--lock",
+                    str(lock),
+                    "--owner",
+                    "agent-a",
+                    "--session",
+                    "session-a",
+                    "--branch",
+                    "codex/hotfix-worklog-lock-cli-pid",
+                    "--phase",
+                    "bootstrap",
+                    "--pid",
+                    str(os.getpid()),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(first.returncode, 0)
+            self.assertEqual(json.loads(lock.read_text(encoding="utf-8"))["pid"], os.getpid())
+
+            second = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "recover_worklog_lock.py"),
+                    "ensure",
+                    "--lock",
+                    str(lock),
+                    "--owner",
+                    "agent-b",
+                    "--session",
+                    "session-b",
+                    "--branch",
+                    "codex/hotfix-worklog-lock-cli-pid",
+                    "--phase",
+                    "bootstrap",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(second.returncode, 2)
+            self.assertEqual(json.loads(lock.read_text(encoding="utf-8"))["owner"], "agent-a")
+
     def test_bootstrap_documents_recovery_helper(self) -> None:
         bootstrap = (ROOT / ".agent" / "workflows" / "bootstrap.md").read_text(encoding="utf-8")
         self.assertIn(".agentcortex/tools/recover_worklog_lock.py ensure", bootstrap)

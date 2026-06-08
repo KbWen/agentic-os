@@ -292,6 +292,8 @@ python .agentcortex/tools/recover_worklog_lock.py ensure \
 
 The helper classifies the lock as `missing`, `active`, or `recoverable`, checks optional `pid` liveness, overwrites missing/recoverable locks, and records recoveries in the Work Log `## Drift Log`. Exit code `2` means a non-stale lock is active for another owner/session and MUST be surfaced before continuing.
 
+The CLI intentionally omits `pid` by default because the helper process exits immediately after writing the lock; a short-lived helper PID does not represent the owning agent session. Only pass `--pid <owner-pid>` from a long-lived process that truly owns the lock.
+
 **Python-unavailable fallback / manual resume**: If the helper cannot run and a lock file exists that belongs to another session:
 
 - Check `updated_at` + `stale_timeout_minutes`. If stale (expired), warn and overwrite.

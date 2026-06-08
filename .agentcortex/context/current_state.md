@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-08T12:13:20+08:00
+- **Last Updated**: 2026-06-08T13:55:00+08:00
 - **Last Verified**: 2026-06-08
-- **Update Sequence**: 38
+- **Update Sequence**: 39
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -315,3 +315,8 @@
   - **Tooling**: `.agentcortex/tools/recover_worklog_lock.py` classifies locks as missing/active/recoverable, writes current owner/session/branch/phase payloads, records recovery in Work Log Drift Log, and returns exit code 2 for active locks owned by another live session.
   - **Workflow/tests**: `.agent/workflows/bootstrap.md §2a` now points agents to the helper with Python-unavailable fallback; `tests/guard/test_worklog_lock_recovery.py` covers missing, stale-time, dead-PID, corrupt JSON, active preservation, and bootstrap wiring.
   - **Evidence**: focused lock suite 6 passed; adjacent guard suite 30 passed; `py_compile` passed; final validator run after SSoT/archive update. Rollback = revert PR.
+### Ship-codex-hotfix-worklog-lock-cli-pid-2026-06-08
+- **Branch `codex/hotfix-worklog-lock-cli-pid`** (hotfix) — Restored advisory Work Log active-lock protection for bootstrap's CLI helper by preventing short-lived helper PIDs from being written as lock owner PIDs.
+  - **Root cause**: `recover_worklog_lock.py ensure` wrote its own process PID; after the CLI exited, the next CLI treated a fresh non-stale lock as `dead-pid` and overwrote it.
+  - **Fix**: CLI omits `pid` by default; explicit owner PID now requires `--pid <owner-pid>`; API default `include_pid=False`; bootstrap documents the long-lived-owner PID requirement.
+  - **Evidence**: regression MRE failed before fix, focused lock suite 8 passed, adjacent guard suite 32 passed, guard suite 140 passed, PowerShell and Git Bash validators both fail=0. Rollback = revert PR.
