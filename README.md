@@ -201,6 +201,23 @@ bash installers/deploy_brain.sh .
 
 > **AI-agent install:** If you're asking an AI assistant to install Agentic OS, point it to this README. The commands above are deterministic — no platform-specific heuristics required.
 
+**Optional local pre-commit validation:** enable the bundled Git hook sample to run Agentic OS validation before each commit.
+
+```bash
+cp .githooks/pre-commit.guard-ssot.sample .githooks/pre-commit
+chmod +x .githooks/pre-commit
+git config core.hooksPath .githooks
+```
+
+On Windows, run the setup from PowerShell:
+
+```powershell
+Copy-Item .githooks\pre-commit.guard-ssot.sample .githooks\pre-commit
+git config core.hooksPath .githooks
+```
+
+The hook runs `validate.ps1` from Git Bash on Windows when PowerShell is available, otherwise it runs `validate.sh`. Validator failures block the commit; guarded SSoT receipt warnings remain advisory.
+
 <details>
 <summary><b>Windows (PowerShell / CMD)</b></summary>
 

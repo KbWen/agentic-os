@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 # pre-commit.guard-ssot.sample
-# Advisory guard hook — warns when governance SSoT files are staged without a guard receipt.
+# Opt-in Agentic OS validation hook.
 # INSTALL: cp .githooks/pre-commit.guard-ssot.sample .githooks/pre-commit && chmod +x .githooks/pre-commit
 #          git config core.hooksPath .githooks
 #
-# This hook is WARN-ONLY (exit 0 always). It does NOT block commits.
-# Purpose: make accidental direct edits to SSoT files visible before they land.
+# Validator failures block commits. Guarded SSoT receipt checks remain advisory.
+
+set -u
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "$ROOT" ]]; then
+  echo "ACX pre-commit: unable to locate the Git repository root."
+  exit 1
+fi
+
+cd "$ROOT" || exit 1
 
 GUARD_RECEIPT=".agentcortex/context/.guard_receipts"
 GUARDED_PATHS=(
@@ -14,14 +23,48 @@ GUARDED_PATHS=(
   ".agent/config.yaml"
 )
 
+is_windows_git_shell() {
+  case "$(uname -s 2>/dev/null || echo unknown)" in
+    MINGW*|MSYS*|CYGWIN*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+run_validator() {
+  if is_windows_git_shell && [[ -f ".agentcortex/bin/validate.ps1" ]]; then
+    if command -v powershell >/dev/null 2>&1; then
+      powershell -ExecutionPolicy Bypass -File ".agentcortex/bin/validate.ps1"
+      return $?
+    fi
+    if command -v pwsh >/dev/null 2>&1; then
+      pwsh -NoProfile -ExecutionPolicy Bypass -File ".agentcortex/bin/validate.ps1"
+      return $?
+    fi
+  fi
+
+  if [[ ! -f ".agentcortex/bin/validate.sh" ]]; then
+    echo "ACX pre-commit: missing .agentcortex/bin/validate.sh."
+    return 1
+  fi
+
+  bash ".agentcortex/bin/validate.sh"
+}
+
+echo "ACX pre-commit: running local validator..."
+if ! run_validator; then
+  echo "ACX pre-commit: validator failed; commit blocked."
+  exit 1
+fi
+echo "ACX pre-commit: validator passed."
+
 warn=0
 for path in "${GUARDED_PATHS[@]}"; do
-  if git diff --cached --name-only | grep -qF "$path"; then
+  if git diff --cached --name-only | grep -qxF "$path"; then
     # Check for a recent receipt (written in last 60 minutes)
     if [[ ! -d "$GUARD_RECEIPT" ]] || ! find "$GUARD_RECEIPT" -name "*.json" -newer "$path" -mmin -60 | grep -q .; then
-      echo "⚠️  GUARD WARN: $path staged without a recent guard receipt."
+      echo "GUARD WARN: $path staged without a recent guard receipt."
       echo "   Run guard_context_write.py or use the /ship workflow to update SSoT."
-      echo "   (Advisory only — commit not blocked)"
+      echo "   (Advisory only - commit not blocked)"
       warn=1
     fi
   fi

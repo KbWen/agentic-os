@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-06T15:05:00+08:00
-- **Last Verified**: 2026-06-06
-- **Update Sequence**: 36
+- **Last Updated**: 2026-06-08T11:39:40+08:00
+- **Last Verified**: 2026-06-08
+- **Update Sequence**: 37
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -30,6 +30,7 @@
   - docs/specs/downstream-fork-accommodation.md — Downstream Fork/Clone Accommodation (override layer activation + deploy skill-sidecar tiering + README fork stance + custom/* namespace), [Shipped 2026-06-03] (ADR-004 + ADR-005)
   - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
   - docs/specs/multi-agent-review-guidelines.md — Multi-Agent Review Guidelines and Contributor Adapters, [Shipped 2026-06-04] (backlog #56, issue #162)
+  - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -304,3 +305,7 @@
   - **Adversarial review (subagent, code-verified) caught a real HIGH defect**: backup `cp ${CP_FLAG}` could be silently skipped under user-set `CP_FLAG=-n`/`-i` (stale `.acx-local` never auto-cleaned) → reintroduced the silent data loss. Fixed with `rm -f` before backup; added `*.acx-local` to managed `.gitignore`; added a `CP_FLAG=-n` regression test.
   - **Scope correction**: `deploy.ps1` is a thin bash launcher → single logic file (issue's "both deploy.sh + deploy.ps1" was a misread).
   - **Evidence**: behavioral repro (backup holds edit, force-updated live, scaffold preserved, idempotent, 0 false-positives over 180+ files); `pytest tests/ci tests/guard` **201 passed**; `validate.sh` passed; PR CI 11/11 green. Rollback = revert PR.
+### Ship-codex-issue-192-pre-commit-hook-2026-06-08
+- **Branch `codex/issue-192-pre-commit-hook`** (feature, issue #192) — Added an opt-in `.githooks/pre-commit.guard-ssot.sample` local validation hook that runs Agentic OS validators from the Git root, prefers `validate.ps1` on Windows Git Bash when PowerShell is available, and falls back to `validate.sh`; guarded SSoT receipt warnings remain advisory-only.
+  - **Docs/tests**: README now documents `git config core.hooksPath .githooks` setup; `tests/ci/test_pre_commit_hook.py` covers failure blocking, success pass, subdirectory execution, missing-validator failure, Windows validator selection wiring, advisory guard warning, and setup docs.
+  - **Evidence**: focused hook suite 7 passed; hook `bash -n` passed; `git diff --check` passed; final validators run after SSoT update. Rollback = revert PR.
