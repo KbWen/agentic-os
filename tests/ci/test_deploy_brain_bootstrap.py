@@ -166,6 +166,49 @@ def test_source_flag_overrides_manifest_for_origin_check(tmp_path: Path) -> None
 
 @requires_bash
 @requires_git
+def test_source_equals_flag_overrides_manifest_for_origin_check(tmp_path: Path) -> None:
+    """The bash wrapper must honor deploy.sh's equivalent --source=<url> form.
+
+    Otherwise direct bash users can still deploy from a stale cache while the
+    canonical deploy.sh implementation would have used the override correctly.
+    """
+    right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
+    wrong = _make_source_repo(tmp_path / "wrong-repo", "WRONG REPO DEPLOY")
+    project = _make_project(tmp_path / "proj", wrong)
+    _git("clone", wrong, str(project / ".agentcortex-src"), cwd=tmp_path)
+
+    env = {k: v for k, v in os.environ.items() if k != "ACX_SOURCE"}
+    result = subprocess.run(
+        [bash, str(project / "installers" / "deploy_brain.sh"), f"--source={right}", "."],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(project), env=env,
+    )
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "does not match" in combined
+    assert STUB_MARKER in combined, "--source=<url> must drive both check and deploy"
+    assert "WRONG REPO DEPLOY" not in combined
+    assert _cache_origin(project) == right
+
+
+@requires_bash
+@requires_git
+def test_manifest_source_repo_preserves_spaces(tmp_path: Path) -> None:
+    """source_repo can be a local path; spaces must not be truncated."""
+    source = _make_source_repo(tmp_path / "source repo with spaces", STUB_MARKER)
+    project = _make_project(tmp_path / "proj", source)
+
+    result = _run_deploy_brain(project)
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert STUB_MARKER in combined
+    assert _cache_origin(project) == source
+
+
+@requires_bash
+@requires_git
 def test_origin_url_normalization_is_not_a_mismatch(tmp_path: Path) -> None:
     right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
     project = _make_project(tmp_path / "proj", right)

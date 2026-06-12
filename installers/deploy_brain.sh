@@ -21,13 +21,19 @@ if [[ -z "$ACX_SOURCE" ]]; then
             ACX_SOURCE="$_arg"
             break
         fi
+        case "$_arg" in
+            --source=*)
+                ACX_SOURCE="${_arg#--source=}"
+                break
+                ;;
+        esac
         _prev="$_arg"
     done
 fi
 
 # Try to read source_repo from manifest
 if [[ -z "$ACX_SOURCE" && -f "$MANIFEST" ]]; then
-    ACX_SOURCE="$(grep '^source_repo:' "$MANIFEST" | awk '{print $2}')" || true
+    ACX_SOURCE="$(sed -n 's/^source_repo:[[:space:]]*//p' "$MANIFEST" | head -n 1)" || true
 fi
 
 # NVM-style dispatch:
