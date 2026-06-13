@@ -19,6 +19,7 @@ Before loading any context, walk the decision table below top-to-bottom — **fi
 
 | IF the task... | THEN |
 |---|---|
+| modifies installer/updater/bootstrap implementation logic for source selection/provenance (`source_repo`, `--source`, cache origin verification, manifest integrity, remote fetch/download/clone/pull/checkout, or executing framework code from a resolved source) | minimum `hotfix` — Step 1; docs-only exempt |
 | modifies `docs/specs/_product-backlog.md` | route to `/spec-intake` (not bootstrap) |
 | modifies any file in `docs/specs/` or `docs/architecture/` | minimum `quick-win` — continue to Step 1 |
 | modifies `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.agent/rules/*`, or `.agent/config.yaml` | minimum `quick-win` — continue to Step 1; read `engineering_guardrails.md §13` (Deletion-First / ADD-Gate) before editing |

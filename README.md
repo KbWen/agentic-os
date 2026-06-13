@@ -463,6 +463,28 @@ Start with the document that matches what you are trying to do:
 
 ---
 
+## FAQ
+
+**What is Agentic OS?**
+Agentic OS is an open-source governance framework for AI coding agents. It gives agents like Claude Code, OpenAI Codex, Cursor, GitHub Copilot, and Google Antigravity a repeatable workflow — plan, build, review, test, ship — and enforces quality gates so they can't skip steps or call a task "done" without verifiable evidence.
+
+**How is it different from Cursor Rules or a plain `AGENTS.md` file?**
+A rules file tells the agent how to behave. Agentic OS adds the workflow and the gates that hold it to that behavior: phase sequencing, evidence requirements, scope discipline, and a single source of truth that remembers decisions across sessions. It's the difference between a prompt the agent might follow and a workflow it has to.
+
+**Which AI coding agents does it support?**
+Any agent that can read Markdown instructions. It ships native entry points for Claude Code (`CLAUDE.md`) and Codex / Antigravity (`AGENTS.md`), and works with Cursor, GitHub Copilot, and other LLM agents through the same model-agnostic workflow files.
+
+**Do I need to know a specific programming language?**
+No. The governance layer is plain Markdown. Python is optional — it only unlocks the deeper validation checks. Everything deploys and runs without it.
+
+**Does it lock me into one AI vendor?**
+No. The workflows are model-agnostic Markdown, so the same governance works whether you switch between Claude, Codex, Gemini, or anything else.
+
+**Is it free?**
+Yes — MIT licensed. Use it, fork it, ship it.
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](https://github.com/KbWen/agentic-os/blob/main/CONTRIBUTING.md) for guidelines on contributing as a human or AI agent.

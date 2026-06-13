@@ -1,0 +1,28 @@
+# Agentic OS
+
+> Agentic OS is an open-source governance framework for AI coding agents. It gives agents — Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Google Antigravity, and any Markdown-reading LLM agent — a repeatable plan → build → review → test → ship workflow with enforced quality gates, so they can't skip steps, drift from scope, or claim completion without evidence.
+
+Agentic OS installs into any project as a set of Markdown governance files plus optional Python validation tooling. Every task is classified (tiny-fix, quick-win, feature, hotfix, architecture-change) and flows through mandatory phases; nothing is "done" without verifiable evidence; and a single source of truth (SSoT) persists decisions across agent sessions so context survives between conversations.
+
+## Documentation
+
+- [README](https://raw.githubusercontent.com/KbWen/agentic-os/main/README.md): Overview, install, features, and FAQ
+- [Quick Start](https://github.com/KbWen/agentic-os/blob/main/README.md#quick-start): Install commands and first steps
+- [Commands](https://github.com/KbWen/agentic-os/blob/main/README.md#commands): The workflow command reference
+- [Agent Philosophy](https://raw.githubusercontent.com/KbWen/agentic-os/main/.agentcortex/docs/AGENT_PHILOSOPHY.md): The 10 core principles
+- [Model Selection Guide](https://raw.githubusercontent.com/KbWen/agentic-os/main/docs/AGENT_MODEL_GUIDE.md): Choosing an AI model
+- [Lifecycle Benchmark](https://raw.githubusercontent.com/KbWen/agentic-os/main/docs/LIFECYCLE_BENCHMARK.md): Real token-cost data across 6 scenarios
+- [Testing Protocol](https://raw.githubusercontent.com/KbWen/agentic-os/main/.agentcortex/docs/TESTING_PROTOCOL.md): Evidence and verification standards
+
+## Platforms
+
+- Claude Code — native, `CLAUDE.md` entry point
+- OpenAI Codex — native, `AGENTS.md` entry point
+- Google Antigravity — native, intent router
+- Cursor — compatible, `AGENTS.md` / project rules
+- GitHub Copilot — compatible, repository instructions
+- Any LLM agent — compatible, model-agnostic Markdown workflows
+
+## License
+
+- MIT

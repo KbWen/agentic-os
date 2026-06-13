@@ -23,6 +23,7 @@ GUARDRAILS = ROOT / ".agent" / "rules" / "engineering_guardrails.md"
 AGENTS = ROOT / "AGENTS.md"
 ROUTING = ROOT / ".agent" / "workflows" / "routing.md"
 BOOTSTRAP = ROOT / ".agent" / "workflows" / "bootstrap.md"
+STATE_MACHINE = ROOT / ".agent" / "rules" / "state_machine.md"
 
 # Governance files that MUST always escalate above tiny-fix. These appear in
 # BOTH engineering_guardrails §10.3 and AGENTS.md's tiny-fix exclusions — the
@@ -52,6 +53,16 @@ def _subsection(text: str, heading_prefix: str) -> str:
     return m.group(1)
 
 
+def _heading_section(text: str, heading_prefix: str) -> str:
+    """Body of a `##` or `###` section up to the next heading at the same or higher level."""
+    m = re.search(
+        rf"^(##+)\s+{re.escape(heading_prefix)}.*?$(.*?)(?=^\1\s|^##\s|\Z)",
+        text, flags=re.MULTILINE | re.DOTALL,
+    )
+    assert m, f"missing heading section: {heading_prefix}"
+    return m.group(2)
+
+
 class ClassificationEscalationContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -59,6 +70,7 @@ class ClassificationEscalationContractTests(unittest.TestCase):
         cls.agents = AGENTS.read_text(encoding="utf-8")
         cls.routing = ROUTING.read_text(encoding="utf-8")
         cls.bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
+        cls.state_machine = STATE_MACHINE.read_text(encoding="utf-8")
         cls.escalation = _subsection(cls.text, "10.1")
         cls.gate_standards = _subsection(cls.text, "10.2")
         cls.tiny_fix = _subsection(cls.text, "10.3")
@@ -128,6 +140,90 @@ class ClassificationEscalationContractTests(unittest.TestCase):
         """regression-class quick-win MUST record a root cause."""
         self.assertIn("Root-Cause Escalation", self.quick_win)
         self.assertRegex(self.quick_win, r"Root Cause:")
+
+    def test_supply_chain_provenance_escalation_rule_present(self) -> None:
+        """installer/updater/source-provenance changes MUST not stay quick-win."""
+        required = [
+            "Supply-Chain / Provenance Escalation",
+            "hotfix",
+            "source_repo",
+            "--source",
+            "cache origin",
+            "manifest integrity",
+            "remote fetch/download/clone/pull/checkout",
+            "trust boundary",
+            "docs that merely mention deploy commands do not trigger",
+        ]
+        for token in required:
+            self.assertIn(
+                token,
+                self.quick_win,
+                f"§10.4 supply-chain/provenance escalation missing token: {token!r}",
+            )
+
+        escalation_rules = _heading_section(self.state_machine, "Classification Escalation Rules")
+        self.assertRegex(
+            escalation_rules,
+            r"Supply-Chain / Provenance Escalation.*source_repo.*escalate to `hotfix` minimum.*REVIEWED \+ TESTED",
+            "state_machine.md must require supply-chain/provenance quick-wins to escalate to hotfix review/test gates",
+        )
+        for token in (
+            "implementation logic",
+            "source_repo",
+            "--source",
+            "cache origin",
+            "manifest integrity",
+            "remote fetch/download/clone/pull/checkout",
+            "executing framework code from a resolved source",
+            "Docs-only exempt",
+        ):
+            self.assertIn(
+                token,
+                escalation_rules,
+                f"state_machine.md escalation rules missing token: {token!r}",
+            )
+
+        for token in (
+            "implementation logic",
+            "source_repo",
+            "--source",
+            "cache origin",
+            "manifest integrity",
+            "remote fetch/download/clone/pull/checkout",
+            "executing framework code from a resolved source",
+            "minimum `hotfix`",
+            "docs-only exempt",
+        ):
+            self.assertIn(
+                token,
+                self.bootstrap,
+                f"bootstrap.md pre-classification fast check missing token: {token!r}",
+            )
+
+        table_lines = [
+            line for line in self.bootstrap.splitlines()
+            if line.startswith("| modifies ") or line.startswith("| IF the task")
+        ]
+        self.assertGreaterEqual(len(table_lines), 2, "bootstrap fast-check table must have data rows")
+        first_data_row = table_lines[1]
+        self.assertIn(
+            "source selection/provenance",
+            first_data_row,
+            "bootstrap first-match table must make supply-chain/provenance the first data row",
+        )
+        supply_index = next(
+            i for i, line in enumerate(table_lines)
+            if "source selection/provenance" in line and "minimum `hotfix`" in line
+        )
+        first_quickwin_index = next(
+            i for i, line in enumerate(table_lines)
+            if "minimum `quick-win`" in line
+        )
+        self.assertLess(
+            supply_index,
+            first_quickwin_index,
+            "bootstrap.md first-match table must check supply-chain/provenance hotfix before quick-win rows",
+        )
 
     # --- cross-file drift guard (the core #16 protection) ---------------
     def test_agents_md_tinyfix_exclusions_match_guardrails(self) -> None:

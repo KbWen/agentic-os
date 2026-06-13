@@ -21,6 +21,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Detect whether the change touches anything beyond pure documentation. Heavy
+  # jobs (Windows pytest, deploy smoke tests, ubuntu pytest) are skipped on
+  # docs-only changes — they can't regress when no code/governance/CI moved. The
+  # three branch-protection-required checks (Framework Validation, ShellCheck,
+  # Check Markdown Links) are intentionally NOT gated, so protection still holds.
+  changes:
+    name: Detect change scope
+    runs-on: ubuntu-latest
+    outputs:
+      heavy: ${{ steps.scope.outputs.heavy }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files (docs-only -> skip heavy jobs)
+        id: scope
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.event.pull_request.head.sha }}"
+          else
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+          fi
+          zero="0000000000000000000000000000000000000000"
+          if [ -z "$base_sha" ] || [ "$base_sha" = "$zero" ]; then
+            echo "No usable base sha ($base_sha) — running full suite (fail-safe)."
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! files="$(git diff --name-only "${base_sha}...${head_sha}" 2>/dev/null)"; then
+            echo "git diff failed — running full suite (fail-safe)."
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Changed files:"
+          printf '%s\n' "$files"
+          heavy=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              # Inert documentation surfaces — never exercised by the test suite.
+              README.md|README_*.md|llms.txt|LICENSE|CHANGELOG.md|CONTRIBUTING.md|CITATION.cff) ;;
+              docs/*|.agentcortex/context/*|.agentcortex/docs/*) ;;
+              # Anything else (code, AGENTS.md/.agent governance, tests, CI) is heavy.
+              *) heavy=true; break ;;
+            esac
+          done <<< "$files"
+          echo "Heavy (code/test/deploy) jobs needed: $heavy"
+          echo "heavy=$heavy" >> "$GITHUB_OUTPUT"
+
   validate:
     name: Framework Validation
     runs-on: ubuntu-latest
@@ -129,6 +183,8 @@ jobs:
   deploy-smoke-test:
     name: Deploy Smoke Test
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -154,6 +210,8 @@ jobs:
   test-ci-structural:
     name: CI Structural Tests
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -172,6 +230,8 @@ jobs:
   test-windows:
     name: Pytest (Windows)
     runs-on: windows-latest
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -239,6 +299,8 @@ jobs:
   deploy-no-python:
     name: Deploy Smoke Test (No Python)
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     steps:
       - uses: actions/checkout@v6
 
