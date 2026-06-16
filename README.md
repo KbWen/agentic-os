@@ -183,7 +183,9 @@ Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 
 > **No Python?** The framework deploys and works without Python. Validation runs in
 > degraded mode — Python-dependent checks report `WARN` instead of `FAIL`.
-> Pass `--no-python` to suppress warnings: `bash .agentcortex/bin/validate.sh --no-python`
+> Pass `--no-python` to suppress warnings from a Git Bash or POSIX shell:
+> `bash .agentcortex/bin/validate.sh --no-python`. On Windows PowerShell, prefer
+> `powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1 -NoPython`.
 
 **Install (first time):**
 
@@ -255,8 +257,8 @@ powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1
 # Lightweight validation when Python is not installed
 powershell -ExecutionPolicy Bypass -File .\.agentcortex\bin\validate.ps1 -NoPython
 
-# (Git Bash equivalent)
-bash ./.agentcortex/bin/validate.sh --no-python
+# Git Bash equivalent (run in a Git Bash terminal, not PowerShell)
+# bash ./.agentcortex/bin/validate.sh --no-python
 ```
 
 </details>

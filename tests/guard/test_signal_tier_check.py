@@ -24,6 +24,7 @@ pytestmark = pytest.mark.slow
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATE_SH = ROOT / ".agentcortex" / "bin" / "validate.sh"
 VALIDATE_PS1 = ROOT / ".agentcortex" / "bin" / "validate.ps1"
+DEPLOY_SH = ROOT / ".agentcortex" / "bin" / "deploy.sh"
 
 # bash discovery (mirror test_validator_false_positives.py).
 git_path = shutil.which("git")
@@ -56,7 +57,7 @@ requires_windows = pytest.mark.skipif(
 # ---------------------------------------------------------------------------
 # Fixture specs
 # ---------------------------------------------------------------------------
-# All written to docs/specs/ and removed in finally, no matter what.
+# All written to an isolated deployed temp repo, never the source docs/specs/.
 # Each is a plausible minimal spec with --- fences, title, status: draft.
 
 _FIXTURES: dict[str, str] = {
@@ -116,7 +117,6 @@ _FIXTURES: dict[str, str] = {
     ),
 }
 
-SPEC_DIR = ROOT / "docs" / "specs"
 WARN_LINE = "governance spec missing signal_tier: zz-st-missing.md"
 # Use a substring that avoids the multi-byte § character, which PowerShell may
 # emit as replacement characters depending on console encoding.
@@ -124,36 +124,52 @@ WARN_SUMMARY = "governance specs missing signal_tier frontmatter"
 SILENT_FILES = ["zz-st-tier2.md", "zz-st-none.md", "zz-st-old.md"]
 
 
-def _write_fixtures() -> None:
-    for name, content in _FIXTURES.items():
-        (SPEC_DIR / name).write_text(content, encoding="utf-8")
-
-
-def _remove_fixtures() -> None:
-    for name in _FIXTURES:
-        (SPEC_DIR / name).unlink(missing_ok=True)
-
-
-def _run_sh() -> str:
+def _make_validation_target(tmp_path: Path) -> Path:
+    target = tmp_path / "proj"
+    target.mkdir()
     proc = subprocess.run(
-        [bash, str(VALIDATE_SH)],
+        [bash, str(DEPLOY_SH), str(target)],
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
         cwd=str(ROOT),
     )
-    return proc.stdout + proc.stderr
+    assert proc.returncode == 0, f"deploy failed:\n{proc.stdout}\n{proc.stderr}"
+    return target
 
 
-def _run_ps1() -> str:
+def _write_fixtures(spec_dir: Path) -> None:
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    for name, content in _FIXTURES.items():
+        (spec_dir / name).write_text(content, encoding="utf-8")
+
+
+def _remove_fixtures(spec_dir: Path) -> None:
+    for name in _FIXTURES:
+        (spec_dir / name).unlink(missing_ok=True)
+
+
+def _run_sh(cwd: Path) -> str:
     proc = subprocess.run(
-        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(VALIDATE_PS1)],
+        [bash, str(cwd / ".agentcortex" / "bin" / "validate.sh")],
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
-        cwd=str(ROOT),
+        cwd=str(cwd),
+    )
+    return proc.stdout + proc.stderr
+
+
+def _run_ps1(cwd: Path) -> str:
+    proc = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(cwd / ".agentcortex" / "bin" / "validate.ps1")],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(cwd),
     )
     return proc.stdout + proc.stderr
 
@@ -164,13 +180,15 @@ def _run_ps1() -> str:
 
 
 @requires_bash
-def test_signal_tier_warn_bash() -> None:
+def test_signal_tier_warn_bash(tmp_path: Path) -> None:
     """validate.sh: WARN names zz-st-missing.md; silent for tier/none/old."""
-    _write_fixtures()
+    target = _make_validation_target(tmp_path)
+    spec_dir = target / "docs" / "specs"
+    _write_fixtures(spec_dir)
     try:
-        out = _run_sh()
+        out = _run_sh(target)
     finally:
-        _remove_fixtures()
+        _remove_fixtures(spec_dir)
 
     assert WARN_LINE in out, (
         f"Expected WARN line not found in validate.sh output.\n"
@@ -189,13 +207,15 @@ def test_signal_tier_warn_bash() -> None:
 @requires_bash
 @requires_powershell
 @requires_windows
-def test_signal_tier_warn_powershell() -> None:
+def test_signal_tier_warn_powershell(tmp_path: Path) -> None:
     """validate.ps1: same parity assertions as the bash test."""
-    _write_fixtures()
+    target = _make_validation_target(tmp_path)
+    spec_dir = target / "docs" / "specs"
+    _write_fixtures(spec_dir)
     try:
-        out = _run_ps1()
+        out = _run_ps1(target)
     finally:
-        _remove_fixtures()
+        _remove_fixtures(spec_dir)
 
     assert WARN_LINE in out, (
         f"Expected WARN line not found in validate.ps1 output.\n"
