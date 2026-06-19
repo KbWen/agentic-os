@@ -3,7 +3,7 @@ status: living
 title: Product Backlog
 source: governance-bloat-review-2026-04-12 + optimization-round-2026-05-04 + optimization-research-2026-06-02
 created: 2026-04-12
-last_updated: 2026-06-15
+last_updated: 2026-06-19
 ---
 
 # Product Backlog
@@ -46,13 +46,15 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 77 | D — Reviewable Task→Step hierarchy | framework | governance | P1 | — | architecture-change | Pending | [#252](https://github.com/KbWen/agentic-os/issues/252) | — |
 | 78 | B+C — Task capsule + one read-only reviewer (two verdicts) | framework | governance | P1 | — | feature | Pending | [#253](https://github.com/KbWen/agentic-os/issues/253) | #77 |
 | 79 | A — Skill effectiveness evaluation harness | framework | skills | P2 | — | feature | Pending | [#254](https://github.com/KbWen/agentic-os/issues/254) | #77, #78 |
-| 80 | G1a — First-party SKILL.md compatibility floor (delta over validate.sh) | framework | skills | P1 | — | quick-win | Pending | [#255](https://github.com/KbWen/agentic-os/issues/255) | — |
-| 81 | G1b — Activated-skill provenance inventory | framework | skills | P2 | — | feature | Pending | [#256](https://github.com/KbWen/agentic-os/issues/256) | — |
-| 82 | Karpathy-principles source/license provenance wording | docs | governance | P3 | — | tiny-fix | Pending | [#257](https://github.com/KbWen/agentic-os/issues/257) | — |
+| 80 | G1a — First-party SKILL.md compatibility floor (delta over validate.sh) | framework | skills | P1 | — | quick-win | Shipped | [#255](https://github.com/KbWen/agentic-os/issues/255) | — |
+| 81 | G1b — Activated-skill provenance inventory | framework | skills | P2 | — | quick-win | Shipped | [#256](https://github.com/KbWen/agentic-os/issues/256) | — |
+| 82 | Karpathy-principles source/license provenance wording | docs | governance | P3 | — | tiny-fix | Shipped | [#257](https://github.com/KbWen/agentic-os/issues/257) | — |
+| 83 | Skill/workflow content-optimization pass — research + compare vs reference repos (multica-ai/addyosmani/tech-leads-club/VoltAgent/superpowers/anthropic-skills) for substantive guidance/structure improvements to our skills & workflows | research | skills | P2 | — | research | Pending | — | after #80/#81/#82 ship |
 
 > Rows whose GH issue is CLOSED-premature (#7, #13, #18, #21, #33) are kept deliberately as
 > future directions — reopen the issue when a concrete signal appears (2026-06-02 curation).
 > Rows #76–82 (added 2026-06-19) came from the external skill/workflow-practices research (Node-15 synthesis). #76 was reduced to a lightweight `research.md` note-taking convention and the heavier capsule design (ADR-009 + draft spec) retired — external prior art (Anthropic context-engineering + multi-agent research system) treats research-state persistence as lightweight "structured note-taking", not infrastructure, and agentic-os already externalizes to Work Logs / private notes. **Reopen-triggers (record-only, no issue opened):** G2 byte/installer-verification → when an external skill-installation capability is separately approved; E context-free author testing → when #79 is built; F isolation-aware worktree portability → when a non-git-worktree platform target appears (must not duplicate existing worktree rules).
+> 2026-06-19 (Option A): #80+#81 merged on branch `feat/skill-provenance` as ONE quick-win ("SKILL.md compatibility + provenance floor"); #81 right-sized feature→quick-win (static manifest + completeness check); its heavy half (digests/byte-verify/exception-schema) stays under the G2 reopen-trigger above. #82 rides along. #83 (skill/workflow content-optimization research vs reference repos) added, queued AFTER this branch ships.
 > Completed entries (#2, 4–6, 8–10, 12, 14–16, 19–20, 22–32, 34–44, 51, 66–68, 71, 73–75) are in [`_product-backlog-archive.md`](./_product-backlog-archive.md).
 
 ## Status Key

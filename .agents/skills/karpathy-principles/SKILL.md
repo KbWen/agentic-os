@@ -136,7 +136,7 @@ Load numbered principle sections (`## 1`–`## 4`), `Common Rationalizations`, `
 
 ## References
 
-- Source: [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) (MIT)
+- Source: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT declared upstream; no root LICENSE artifact; provenance asserted)
 - Simplification enrichment: [addyosmani/agent-skills — code-simplification](https://github.com/addyosmani/agent-skills) (MIT)
 - Complements: `writing-plans` (Think Before Coding), `verification-before-completion` (Goal-Driven Execution)
 - Guardrails: `.agent/rules/engineering_guardrails.md` §7 Scope Discipline

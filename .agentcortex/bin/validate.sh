@@ -50,6 +50,7 @@ ARCHIVE_INDEX_JSONL="$ROOT/.agentcortex/context/archive/INDEX.jsonl"
 LESSON_CHAIN_CHECK="$ROOT/.agentcortex/tools/check_lesson_chain.py"
 SSOT_CURRENT_STATE="$ROOT/.agentcortex/context/current_state.md"
 COMMAND_SYNC_CHECK="$ROOT/.agentcortex/tools/check_command_sync.py"
+SKILL_PROVENANCE_CHECK="$ROOT/.agentcortex/tools/check_skill_provenance.py"
 TRIGGER_REGISTRY="$ROOT/.agentcortex/metadata/trigger-registry.yaml"
 TRIGGER_COMPACT_INDEX="$ROOT/.agentcortex/metadata/trigger-compact-index.json"
 LIFECYCLE_SCENARIOS="$ROOT/.agentcortex/metadata/lifecycle-scenarios.json"
@@ -365,6 +366,12 @@ run_python_check "guarded-write lint (governance paths)" FAIL "$GUARDED_WRITES_L
 # {owner, review_cadence, review_trigger, supersedes, superseded_by}.
 # Files dated before 2026-04-25 are grandfathered (WARN); newer files FAIL.
 run_python_check "lifecycle frontmatter (governance docs)" FAIL "$LIFECYCLE_FRONTMATTER_CHECK" --root "$ROOT"
+
+# Skill provenance + compatibility floor (backlog #80/#81). Source-repo only:
+# the tool self-skips downstream when a .agentcortex-manifest is present, and as
+# a CI/source validator it is not in deploy.sh runtime_tools, so it is simply
+# absent downstream -> run_python_check records a graceful SKIP.
+run_python_check "skill provenance + compatibility floor" FAIL "$SKILL_PROVENANCE_CHECK" --root "$ROOT"
 
 # Verify the hash chain on the archive INDEX.jsonl. A broken chain means an
 # entry was retroactively rewritten without going through

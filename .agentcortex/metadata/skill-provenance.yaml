@@ -1,0 +1,86 @@
+# Skill provenance manifest -- SOURCE-REPO ONLY.
+# Validated by .agentcortex/tools/check_skill_provenance.py (backlog #80/#81).
+# This file is NOT deployed downstream; the check skips when a
+# .agentcortex-manifest is present (a deployed fork customizes its own skills).
+#
+# Fields (strict allowlist -- the checker rejects unknown/missing keys):
+#   skill          : directory name under .agents/skills/
+#   origin         : first-party (authored here) | adapted (derived from a source)
+#   source         : "owner/repo@rev" when external content was used, else "-"
+#   license        : declared license (SPDX-ish); first-party = this repo's MIT
+#   license-status : asserted   (human-stated from upstream declaration or
+#                                first-party authorship). "detected"/"reviewed"
+#                                are intentionally NOT allowed yet -- add them
+#                                only when a scanner / review process exists (G2).
+
+skills:
+  - skill: api-design
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: auth-security
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: database-design
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: dispatching-parallel-agents
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: doc-lookup
+    origin: first-party
+    source: "addyosmani/agent-skills@36c543d (source-driven-development enrichment)"
+    license: MIT
+    license-status: asserted
+  - skill: frontend-patterns
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: karpathy-principles
+    origin: adapted
+    source: "multica-ai/andrej-karpathy-skills@2c606141"
+    license: "MIT (declared upstream; no root LICENSE artifact)"
+    license-status: asserted
+  - skill: production-readiness
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: red-team-adversarial
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: subagent-driven-development
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: systematic-debugging
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: test-driven-development
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: using-git-worktrees
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted
+  - skill: verification-before-completion
+    origin: first-party
+    source: "-"
+    license: MIT
+    license-status: asserted

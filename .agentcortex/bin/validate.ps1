@@ -241,6 +241,7 @@ $archiveIndexJsonl = Join-NormalPath $root '.agentcortex/context/archive/INDEX.j
 $lessonChainCheck = Join-NormalPath $root '.agentcortex/tools/check_lesson_chain.py'
 $ssotCurrentState = Join-NormalPath $root '.agentcortex/context/current_state.md'
 $commandSyncCheck = Join-NormalPath $root '.agentcortex/tools/check_command_sync.py'
+$skillProvenanceCheck = Join-NormalPath $root '.agentcortex/tools/check_skill_provenance.py'
 $triggerRegistry = Join-NormalPath $root '.agentcortex/metadata/trigger-registry.yaml'
 $triggerCompactIndex = Join-NormalPath $root '.agentcortex/metadata/trigger-compact-index.json'
 $lifecycleScenarios = Join-NormalPath $root '.agentcortex/metadata/lifecycle-scenarios.json'
@@ -417,6 +418,10 @@ Invoke-PythonCheck -Label 'guarded-write lint (governance paths)' -MissingPython
 
 # Lifecycle frontmatter check mirror of validate.sh integration.
 Invoke-PythonCheck -Label 'lifecycle frontmatter (governance docs)' -MissingPythonLevel 'FAIL' -ScriptPath $lifecycleFrontmatterCheck -Arguments @('--root', $root)
+
+# Skill provenance + compatibility floor (backlog #80/#81) -- mirror of validate.sh.
+# Source-repo only; absent downstream (not in deploy runtime_tools) -> graceful SKIP.
+Invoke-PythonCheck -Label 'skill provenance + compatibility floor' -MissingPythonLevel 'FAIL' -ScriptPath $skillProvenanceCheck -Arguments @('--root', $root)
 
 # Verify the hash chain on the archive INDEX.jsonl.
 if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {

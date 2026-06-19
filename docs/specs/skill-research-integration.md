@@ -127,4 +127,4 @@ evaluating.
 - [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents)
 - [hesreallyhim/awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code)
 - [VoltAgent/awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills)
-- [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills) (already integrated as karpathy-principles)
+- [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (already integrated as karpathy-principles)
