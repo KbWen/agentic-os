@@ -23,13 +23,20 @@
 
 ## See it catch a cut corner
 
-No install, a couple of seconds:
+<p align="center">
+  <img src="docs/assets/hero-demo.gif" alt="An AI agent leaks an AWS key into a config file and reports done; Agentic OS's credential gate detects it and blocks the commit." width="760"/>
+</p>
+
+That's the real `scan_credentials.py` gate, not a mockup. **Run it yourself** — no install, a couple of seconds:
 
 ```sh
 bash demo/run.sh          # Windows (PowerShell): pwsh demo/run.ps1
 ```
 
-An agent writes a config file, reports "done," and the credential check that runs before the commit disagrees:
+The leaked key is generated at runtime and redacted on output, so the demo never stores or prints a real secret. It's one check of several.
+
+<details>
+<summary>Full terminal output</summary>
 
 ```text
   An AI agent wrote this file and reported: "Done — config added."
@@ -51,7 +58,7 @@ Rotate the exposed secret, remove it from the change, then retry.
   redacted the value instead of echoing your secret back at you.
 ```
 
-The key is generated at runtime and redacted on output — the demo never stores or prints a real secret. It's one check of several.
+</details>
 
 ## Rules vs. enforcement
 
