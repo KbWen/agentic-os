@@ -379,7 +379,17 @@ def test_validators_check_override_step_parity() -> None:
 
 
 def test_readme_fork_guidance_parity() -> None:
-    assert "Customizing Without Conflicts" in README.read_text(encoding="utf-8")
+    """Fork/clone customization guidance (ADR-004/ADR-005) must stay reachable
+    from both language entry points. The English README was slimmed to a
+    landing page, so the guidance now lives in the dedicated install guide
+    (docs/INSTALL.md) and is linked from the README; the zh-TW README still
+    carries it inline (its lean overhaul is tracked separately)."""
+    readme = README.read_text(encoding="utf-8")
+    install = (ROOT / "docs" / "INSTALL.md").read_text(encoding="utf-8")
+    # English: guidance in INSTALL.md, reachable via a README link.
+    assert "Customizing without conflicts" in install
+    assert "docs/INSTALL.md" in readme
+    # zh-TW: still inline in the localized README.
     assert "客製化而不衝突" in README_ZH.read_text(encoding="utf-8")
 
 

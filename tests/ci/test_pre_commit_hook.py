@@ -142,8 +142,14 @@ def test_ac3_guard_receipt_warning_is_advisory_only(tmp_path: Path) -> None:
 
 
 def test_ac4_ac5_readme_documents_pre_commit_hook_setup() -> None:
-    text = README.read_text(encoding="utf-8")
+    # The pre-commit hook setup moved from the README to the dedicated install
+    # guide (docs/INSTALL.md) when the README was slimmed to a landing page; the
+    # README links to it. AC4/AC5 require the setup to be documented and
+    # reachable, not that it live in the README file specifically.
+    readme = README.read_text(encoding="utf-8")
+    install = (ROOT / "docs" / "INSTALL.md").read_text(encoding="utf-8")
 
-    assert "cp .githooks/pre-commit.guard-ssot.sample .githooks/pre-commit" in text
-    assert "git config core.hooksPath .githooks" in text
-    assert "Copy-Item .githooks\\pre-commit.guard-ssot.sample .githooks\\pre-commit" in text
+    assert "docs/INSTALL.md" in readme
+    assert "cp .githooks/pre-commit.guard-ssot.sample .githooks/pre-commit" in install
+    assert "git config core.hooksPath .githooks" in install
+    assert "Copy-Item .githooks\\pre-commit.guard-ssot.sample .githooks\\pre-commit" in install
