@@ -162,6 +162,7 @@ Tool exit codes:
 
 <!-- SCOPE: Steps 3-6 are conditional — skip steps whose preconditions are not met -->
 3. IF `.agentcortex/context/private/` exists, SCAN for local-only instructions (e.g., private Git workflows, environment-specific configs). These files are gitignored and contain context that should NOT be committed.
+   - **Resumable research notes** (Ref: `research.md §Persist Before Browse`): if the scan finds any `research-*.md` note, surface it as resumable context — name the file and its current source / next action — so a new session continues prior research instead of restarting, without a human having to remember the note exists. Present-only: no note → no extra reads or prompts; multiple matches → list them and ask which to resume.
 4. **Migration/Integration Scenario** *(skip if not a migration task)*:
    - Follow `.agentcortex/docs/guides/migration.md`. Actively scan and suggest file reorganization.
    - MUST output migration plan and await user `OK` before ANY move/rename.

@@ -33,6 +33,10 @@ Conduct autonomous exploratory research. AI investigates the codebase, external 
 - If the problem is bigger than expected, suggest rollback + upgrade via `/decide` instead of silent reclassification.
 - If research is inconclusive after reasonable effort, say so explicitly and list what would unblock further progress.
 
+## Persist Before Browse (multi-source / resumable research)
+
+For research that is multi-source, comparative/deep, or meant to be resumable: **before the first external browse**, initialize (or resume an existing) gitignored private note — `.agentcortex/context/private/research-<topic>.md` — writing the source list (one-line intent each), then append a bounded note (facts, unknowns, claim + disposition, next action) after each source. This survives a context reset even before a Work Log or spec exists. **`/bootstrap` auto-surfaces this note, and the Work Log (when one exists) stores a pointer to it — so a *new* session discovers and resumes the research on its own, without a human remembering it exists.** Reuse the existing private-notes convention (atomic writes via `guard_context_write.py`); keep raw page bodies, transcripts, and secrets out. Lightweight note-taking convention (cf. industry "structured note-taking" / scratchpad practice), not a gate or helper — single-source lookups are exempt.
+
 ## Spec Handoff (optional)
 
 If **Next Actions** point toward building or specifying something new, persist findings so `/spec-intake` can consume them without relying on conversation memory.
