@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Agentic%20OS-v1.6.0-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIvPjwvc3ZnPg==" alt="Agentic OS v1.6.0"/>
-</p>
-
 <h1 align="center">Agentic OS</h1>
 
 <p align="center">
@@ -11,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KbWen/agentic-os/releases"><img src="https://img.shields.io/github/v/release/KbWen/agentic-os?style=flat-square&label=release" alt="Release"/></a>
   <a href="https://github.com/KbWen/agentic-os/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/validate.yml?branch=main&style=flat-square&label=CI" alt="CI Status"/></a>
   <a href="https://github.com/KbWen/agentic-os/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/security.yml?branch=main&style=flat-square&label=Security" alt="Security Scan"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-22c55e?style=flat-square" alt="MIT License"/></a>
@@ -29,7 +26,7 @@
 No install, a couple of seconds:
 
 ```sh
-bash demo/run.sh
+bash demo/run.sh          # Windows (PowerShell): pwsh demo/run.ps1
 ```
 
 An agent writes a config file, reports "done," and the credential check that runs before the commit disagrees:
@@ -48,21 +45,23 @@ An agent writes a config file, reports "done," and the credential check that run
 
 CREDENTIAL PATTERN(S) DETECTED (values redacted):
   config.env:2: aws-access-key-id
+Rotate the exposed secret, remove it from the change, then retry.
 
-  Commit BLOCKED. The agent said "done"; the machine said no.
+  Commit BLOCKED. The agent said "done"; the machine said no — and it
+  redacted the value instead of echoing your secret back at you.
 ```
 
 The key is generated at runtime and redacted on output — the demo never stores or prints a real secret. It's one check of several.
 
 ## Rules vs. enforcement
 
-Most of the framework is *rules* — plan before coding, don't refactor what nobody asked for, declare your confidence. An agent can ignore those; they're discipline, not a cage. What it can't ignore is the layer underneath:
+Most of the framework is *rules* — plan before coding, don't refactor what nobody asked for, declare your confidence. An agent can ignore those, and sometimes will. The part it can't ignore is underneath:
 
 | The failure that burns you | What catches it | When |
 |:---|:---|:---|
-| A secret committed to history | `scan_credentials.py` (above) | pre-commit hook |
+| A secret committed to history | `scan_credentials.py` (above) | pre-commit hook + CI |
 | "Tests pass" with no tests | CI runs the real suite | pull request |
-| A phase skipped with no evidence | `validate.sh` reads the work trail | pre-commit + CI |
+| A phase skipped with no evidence | `validate.sh` reads the work trail | pre-commit (local) |
 
 A passing run is a receipt you can check, not a promise you take on faith.
 
@@ -72,7 +71,7 @@ A passing run is a receipt you can check, not a promise you take on faith.
 
 ### Gate Engine & Phase System
 
-Every task runs through mandatory phases, tracked as gate receipts the validators check — so a skipped phase surfaces as a failed check, not a silent gap.
+Every task runs through mandatory phases, recorded as gate receipts in the work log; the local pre-commit validator flags a skipped phase before it lands.
 
 ```mermaid
 flowchart LR
