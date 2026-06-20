@@ -1,313 +1,216 @@
-# Agentic OS v1.6.0 (Runtime v1.1 Anti-Drift Edition)
+<h1 align="center">Agentic OS</h1>
 
-[English Version](../README.md)
+<p align="center">
+  <strong>「Done。」—— 你的 AI coding agent,對著它根本沒測過的程式碼這樣說。</strong><br/>
+  一份 rules 檔只是「請」agent 守規矩。Agentic OS <strong>會去查它到底有沒有做到</strong> —— agent 想跳過測試、跳過 review、或把外洩的密鑰送進 commit,都會撞上你的 git hooks、validator 和 CI,而不是聽 agent 自己一句話。
+</p>
 
-> 一套給 AI coding agent 的治理框架：用工作流程、交付閘門與工程護欄，讓 agent 的行為可預期、可驗證。
+<p align="center">
+  <strong>一套給 AI coding agent 的治理框架</strong> —— 用工作流程、交付閘門與工程護欄,為 Claude Code、Codex、Cursor、Copilot、Antigravity,或任何讀得懂 Markdown 的 agent 把關。
+</p>
 
-## 專案定位
+<p align="center">
+  <a href="../README.md">English</a> ·
+  <a href="../CONTRIBUTING.md">Contributing</a> ·
+  <a href="../CHANGELOG.md">Changelog</a>
+</p>
 
-**Agentic OS** 是一套可攜的治理框架，適用於 Gemini、Claude、GPT 等主流模型。它讓 AI agent 在理解代碼庫、遵守工程護欄的同時，以較低的 token 成本穩定執行複雜任務。
+<p align="center">
+  <img src="assets/concept-hero-zh.png" alt="一個 AI coding agent 自信地宣稱「Done. Tests pass. Shipping it.」,Agentic OS 在這句宣稱上蓋了一個「[citation needed]」的章。Agentic OS 會查證你的 AI agent 所宣稱的事 —— 外洩密鑰、沒寫的測試、被跳過的 review —— 靠 git hooks 和 CI,而不是聽 agent 自己說。" width="820"/>
+</p>
 
-我們對齊並優化了 Google Antigravity / Codex Web / Codex App 的使用情境：
+<p align="center"><sub>它會查你的 AI coding agent 宣稱的事情背後有沒有證據 —— 密鑰、測試、review —— 靠的是 git hooks 和 CI,不是 agent 一句話。下面就是一道閘門實際擋下來的樣子:</sub></p>
 
-- **Self-Managed**：AI 自行分類任務並套用對應的治理閘門。
-- **Anti-Drift Engine**：強制防跳步驟的 `Gate` 與交握機制，防止 AI 略過流程或宣稱未經驗證的完成。
-- **Concurrency & Migration Safe**：衝突感知的多 session 保護、多人協作的 metadata 防衝突，以及既有專案無痛導入的 `/audit` 工作流。
-- **Token Optimized**：針對不同風險等級自動調整治理強度，`tiny-fix` 走 fast-path 以節省成本。
-- **Command-first**：用標準化指令觸發 Agent 能力，確保行為一致性。
-- **10 不可違反原則**：[設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md)定義 P1-P10 核心信條 — AI 主導、不跳步驟、憲法高於任務、無證據不完成、跨模型合規。
-- **命名空間隔離**：下游專案可自由添加自定義 skill 和 workflow，框架用 `.agentcortex-manifest` 區分管理範圍，用戶指令永遠優先。
-- **14 項專業技能**：每個 skill metadata 都宣告在哪個 phase 自動啟用，AI 不需要人類提示就知道何時使用。
+<p align="center">
+  <img src="assets/workflow-demo.gif" alt="終端機裡,一個 AI coding agent 宣稱任務完成並嘗試 ship;Agentic OS 的閘門因為 work trail 裡沒有 review 或測試的證據而回傳 verdict FAIL、擋下 ship,直到 review、測試與證據都補齊才放行。" width="780"/>
+</p>
 
-## 運作原理
+上面的 `/bootstrap`、`/review`、`/ship` 都只是純文字 prompt —— 你的 agent 會把它們對應到 repo 裡的 workflow 檔,所以在 Cursor 或 Codex 裡跑起來,跟在 Claude Code 裡一樣。
 
-每個階段的核心信條都一樣：沒有可驗證的證據，任務就不算完成 —— 而 Gate 會強制執行這件事，而不是信任 AI 自行誠實回報。
+其中一道閘門你現在就能跑,免安裝 —— 在外洩金鑰進到 git 歷史之前抓住它:
 
-```mermaid
-flowchart LR
-    U["使用者<br/>提出需求"] --> G{"Gate<br/>引擎"}
-    G -->|通過| W["工作流程<br/>+ 技能"]
-    W --> E{"證據<br/>要求"}
-    E -->|通過| S["交付<br/>→ SSoT"]
-    G -->|未過| X1["⛔ 停止"]
-    E -->|未過| X2["⛔ 停止"]
-
-    style U fill:#8b5cf6,color:#fff,stroke:none
-    style G fill:#f59e0b,color:#fff,stroke:none
-    style W fill:#3b82f6,color:#fff,stroke:none
-    style E fill:#22c55e,color:#fff,stroke:none
-    style S fill:#06b6d4,color:#fff,stroke:none
-    style X1 fill:#ef4444,color:#fff,stroke:none
-    style X2 fill:#ef4444,color:#fff,stroke:none
+```sh
+bash demo/run.sh          # Windows(PowerShell):pwsh demo/run.ps1
 ```
 
-## 三條起點路徑
+<details>
+<summary>完整終端機輸出</summary>
 
-依你的專案狀態挑一條（詳細開場提示見「快速開始 §3」）：
+```text
+  An AI agent wrote this file and reported: "Done — config added."
+  ----------------------------------------------------------------
+    DB_HOST=prod.internal
+    aws_access_key_id = AKIA****************
+  ----------------------------------------------------------------
 
-| 起點 | 第一個指令 | 完整鏈 |
-|---|---|---|
-| 🆕 全新專案 + 多 feature 想法 | `/spec-intake` | spec-intake → 選 feature → bootstrap → app-init → plan → implement |
-| 🏗️ 既有 repo 首次導入 | `/audit`（唯讀掃描，零風險） | audit → app-init → spec-intake → quick-win → feature |
-| 🎯 單一明確任務 | `/bootstrap` | bootstrap → plan → implement → review → test → ship |
+  Without a gate, that commit lands and the key is in git history forever.
+  Agentic OS runs this before the commit is allowed:
 
-詳見 [生命週期基準測試](LIFECYCLE_BENCHMARK_zh-TW.md)（[English](LIFECYCLE_BENCHMARK.md)）— 6 個真實場景的 token 消耗數據。
+    $ scan_credentials.py config.env
 
-## 參考來源
+CREDENTIAL PATTERN(S) DETECTED (values redacted):
+  config.env:2: aws-access-key-id
+Rotate the exposed secret, remove it from the change, then retry.
 
-- Superpowers 專案（理念參考）：<https://github.com/obra/superpowers>
-- 專案導入範例：`.agentcortex/docs/PROJECT_EXAMPLES_zh-TW.md`
-- 遷移與整合指南：`.agentcortex/docs/guides/migration_zh-TW.md`
-- Token 治理指南：`.agentcortex/docs/guides/token-governance_zh-TW.md`
-- Token 優化快速指南：[token-optimization-quickstart_zh-TW.md](guides/token-optimization-quickstart_zh-TW.md)（[English](guides/token-optimization-quickstart.md)）
-- 生命週期基準測試：[LIFECYCLE_BENCHMARK_zh-TW.md](LIFECYCLE_BENCHMARK_zh-TW.md)
-
-## 目錄總覽
-
-- `.agent/rules/engineering_guardrails.md`：工程憲法（含分類規則與 Gate 標準）
-- `.agent/workflows/*.md`：單檔工作流程（bootstrap, plan, implement, handoff, ship 等）
-- `.agent/skills/<skill>/SKILL.md`：技能檔（Codex 相容路徑：`.agents/skills`）
-- `.agentcortex/context/current_state.md`：全域唯讀狀態（SSoT）
-- `.agentcortex/context/work/`：任務隔離 Work Log
-- `docs/adr/`：架構決策記錄
-- `.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md`：Codex 平台指南
-- `AGENTS.md`：跨平台長期指令入口
-
-## 系列功能對照 (Superpowers Based)
-
-| 功能 | 指令 | 對應檔案 | 目的 |
-| :--- | :--- | :--- | :--- |
-| 任務啟動 | `/bootstrap` | `.agent/workflows/bootstrap.md` | 固定目標、限制與 AC，凍結分類 |
-| 頭腦風暴 | `/brainstorm` | `.agent/workflows/brainstorm.md` | 快速發散方案並收斂 |
-| 探索研究 | `/research` | `.agent/workflows/research.md` | 補齊未知與限制 |
-| 規格定義 | `/spec` | `.agent/workflows/spec.md` | 產出可驗收規格 |
-| 任務規劃 | `/plan` | `.agent/workflows/plan.md` | 先規劃再動手 |
-| 實作執行 | `/implement` | `.agent/workflows/implement.md` | 安全實作、可回退 |
-| 代碼審查 | `/review` | `.agent/workflows/review.md` | 風險與品質檢查 |
-| 回顧精進 | `/retro` | `.agent/workflows/retro.md` | 形成可複用經驗 |
-| 交接摘要 | `/handoff` | `.agent/workflows/handoff.md` | 跨回合核心：保留決策脈絡 |
-| 決策記錄 | `/decide` | `.agent/workflows/decide.md` | 記錄關鍵決策與推理，防止跨回合重複推導 |
-| 測試分類 | `/test-classify` | `.agent/workflows/test-classify.md` | 依任務分類自動選擇測試深度與證據格式 |
-| 最終交付 | `/ship` | `.agent/workflows/ship.md` | 彙整提交證據與歸檔狀態 |
-| 規格匯入 | `/spec-intake` | `.agent/workflows/spec-intake.md` | 匯入並拆解多功能外部規格 |
-| 架構決策 | `/adr` | `.agent/workflows/adr.md` | 建立架構決策記錄 |
-| 外部委派 (自然語言) | `ask-openrouter` | `.agent/workflows/ask-openrouter.md` | [可選] 將任務委派給 OpenRouter 模型 |
-| Codex CLI 執行 | `codex-cli` | `.agent/workflows/codex-cli.md` | [可選] 透過 Codex CLI 安全執行任務 |
-
-## Antigravity / Codex 路徑差異
-
-- Antigravity 主要讀取：`.agent/skills` (Native Agent 核心能力)
-- Codex 主要掃描：`.agents/skills` (Codex App 專屬能力)
-- **注意**：兩者目錄獨立存在以適應不同平台配置。若需共用，請根據需求手動鏡像或建立軟連結。
-
-## 規則檔與安全邊界
-
-- `.antigravity/rules.md`：Antigravity 優先讀取的規則總表。
-- `codex/rules/default.rules`：Codex 規則擴充入口。
-- `AGENTS.md`：跨平台長期指令，引用 `engineering_guardrails.md`。
-
-### 執行守門員 (Anti-Drift Engine)
-
-這套機制防止 AI 繞過授權與工作流程，確保每一次操作都具備證據與手動確認。
-
-```mermaid
-flowchart LR
-    A[需求輸入] --> B[自然語言]
-    B --> C[Intent Router]
-    C --> D[Gate Engine]
-
-    D -->|pass| E["交握授權 PROCEED-*"]
-    D -->|fail| X["停止並報錯"]
-
-    E --> F[工作流程]
-    F --> G[技能擴充]
-    G --> H[測試證據]
-    H --> I["/ship"]
-    I --> J[更新 SSoT]
-    
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
-    classDef highlight fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    class C,D,E highlight;
+  Commit BLOCKED. The agent said "done"; the machine said no — and it
+  redacted the value instead of echoing your secret back at you.
 ```
 
-### 高風險指令安全設定
+</details>
 
-`rm -rf`、`git reset --hard`、force push 等高風險指令預設禁止直接執行：執行前需先說明爆炸半徑與回退方案（必須涵蓋未追蹤／gitignored 狀態），並取得使用者確認。正式規範與完整指令清單以 `AGENTS.md §Core Directives`（Destructive Command Gate）為準。
+agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測試的綠勾勾、或被跳過的 review 通過 hooks 和 CI —— 那些檢查不管它配不配合都會跑。上面那把金鑰是執行時即時產生、輸出時遮蔽的,所以這個 demo 從不存下真正的密鑰。
+
+## 規則 vs. 強制
+
+一份 rules 檔 —— Cursor Rules、或一份單純的 `AGENTS.md` —— 是一段 agent 可以無視的 prompt。Agentic OS 保留那份紀律(先計畫再動手、不做沒人要求的重構),再加上一層 agent 控制不了的東西:
+
+| 失誤型態 | 誰擋下它 | 在哪 |
+|:---|:---|:---|
+| 密鑰被 commit 進歷史 | `scan_credentials.py`(上面的 demo) | pre-commit hook + CI |
+| 「測試通過」但根本沒測試 | CI 跑真正的測試套件 | pull request |
+| 跳過某個階段、沒有證據 | `validate.sh` 讀 work trail | pre-commit(本機) |
+
+第三列是 rules 檔碰不到的地方:`validate.sh` 會解析每個任務的 work log,只要少了某個必要階段、或它的證據不見了,就讓檢查失敗。本機的 pre-commit hook 是選用的,你可以用 `--no-verify` 繞過;CI 才是那道無法跳過的底線。上面那顆 Security 徽章,就是這個 repo 在自己每次 push 時跑同一套密鑰與 SAST 閘門。
+
+## 分階段把關,依風險縮放
+
+每個任務都跑一條有閘門的工作流,而嚴謹度會依風險縮放。跳過一個階段,`validate.sh` 就失敗 —— 但改一個 typo 不必跟一個 feature 走同一條關卡:
+
+<p align="center">
+  <img src="assets/pipeline-demo.gif" alt="Agentic OS 工作流的示意圖:一個 tiny-fix 任務走過 classify、execute、done 三步短路徑後 ship,而一個 feature 任務走完整的有閘門流程(bootstrap、plan、implement、review、test、ship),在 ship 閘門因為跳過測試而被擋下,直到測試證據補上才通過。" width="820"/>
+</p>
+
+完整的路徑,依分類:
+
+| 分類 | 必經階段 |
+|:---|:---|
+| **tiny-fix** | Classify → Execute → Evidence → Done |
+| **quick-win** | Bootstrap → Plan → Implement → Evidence → Ship |
+| **feature** | Bootstrap → Spec → Plan → Implement → Review → Test → Handoff → Ship |
+| **hotfix** | Bootstrap → Research → Plan → Implement → Review → Test → Ship |
+| **architecture-change** | Bootstrap → ADR → Spec → Plan → Implement → Review → Test → Handoff → Ship |
+
+## 你得到什麼
+
+| | |
+|:---|:---|
+| **機器強制的底線** | 外洩密鑰、假的「測試通過」、被跳過的階段,會讓你的 commit 或 build 失敗 —— 由 git hooks、validator 和 CI 把關,而不是靠 agent 自己回報。 |
+| **依階段自動掛上的 skill** | 工作流會依任務型態,把對的檢查清單放到 agent 面前 —— feature 上 TDD、login 程式碼上 auth-security —— 你不必手動接線。是引導,不是閘門。 |
+| **跨交接還活著的記憶** | 決策與證據存在單一真實狀態檔裡,所以它們會跨 session、跨 agent 留下來,而不是隨對話一起重置。 |
+| **跨平台** | Claude Code、Codex、Cursor、Copilot、Antigravity,或任何讀 Markdown 的 agent —— 同一套治理檔,通吃。 |
+| **天生省 token** | 治理依風險縮放:tiny-fix 跳過厚重的護欄(約省 5,000 token),修個 typo 不必付旗艦模型的價。 |
+
+<details>
+<summary><strong>工作流依任務型態自動掛上的 14 個 skill</strong></summary>
+
+工作流會依分類掛上這些 skill,讓相關的檢查清單在對的階段就在 agent 面前 —— 碰 login 程式碼時掛 auth-security,做 migration 時掛 forward-only 檢查。它們是結構化的引導,不是機器閘門(閘門是上面的 hooks、validator 和 CI);它們省掉的是手動接線。
+
+| Skill | 觸發 | 重點 |
+|:---|:---|:---|
+| Test-Driven Development | feature、architecture-change | Red → Green → Refactor 循環 |
+| Systematic Debugging | 遇到 bug | 4 階段根因分析 |
+| Red Team / Adversarial | review、test | 依分類的資安分析 |
+| API Design | 偵測到 API 端點 | 端點驗證強制 |
+| Auth Security | 偵測到 auth 程式碼 | 雜湊、token、rate limiting |
+| Database Design | 偵測到 migration | forward-only、ORM-aware 的 migration 安全 |
+| Frontend Patterns | UI 元件 | 元件與狀態管理樣式 |
+| Parallel Agent Dispatching | 複雜任務 | 協調 subagent 執行 |
+| Subagent-Driven Development | 多模組任務 | 多 agent 協作 |
+| Karpathy Principles | 所有 coding 任務 | 針對 LLM 常見錯誤的行為護欄 |
+| Production Readiness | feature、architecture-change | 上線前可觀測性:錯誤匯流、log 策略、rollback 遙測 |
+| Verification Before Completion | /ship | 5 道閘門:Scope → Quality → Evidence → Risk → Communication |
+| Git Worktrees | 平行分支 | worktree 隔離工作流 |
+| Doc Lookup | 需要查文件 | 文件檢索策略 |
+
+</details>
+
+<details>
+<summary><strong>多 agent & 跨交接的記憶</strong></summary>
+
+為多個 AI session —— 或多人的 agent —— 同時動同一個 repo 而設計:
+
+```
+.agentcortex/context/
+├── current_state.md          # 全域專案狀態(單一真實來源)
+└── work/
+    └── <branch-name>.md      # 每任務的 work log(隔離,含證據 + 閘門收據)
+```
+
+- **一個分支 = 一個 owner** —— 防止並發的 work-log 污染。
+- **單一寫入者鎖** —— 原子鎖檔擋掉同分支上互撞的 session(可調回 advisory)。
+- **Ship guard** —— 合併前檢查單一真實來源有無衝突。
+- **Session 身分** —— 每個 AI session 都記下自己的模型名與時間戳,讓交接可追溯。
+
+</details>
+
+## 支援你的 agent
+
+| 平台 | 狀態 | 整合 |
+|:---|:---|:---|
+| **Claude Code** | 原生 | `CLAUDE.md` 入口 + Claude 平台指南 |
+| **OpenAI Codex** | 原生 | `AGENTS.md`、Codex 平台指南、CLI 委派工作流 |
+| **Google Antigravity** | 原生 | Intent router + Antigravity runtime 指引 |
+| **Cursor** | 相容 | 讀 `AGENTS.md` / project-rule 風格的指引 —— 斜線指令只是純 prompt |
+| **GitHub Copilot** | 相容 | 用 repository instructions 與護欄文件 |
+| **任何 LLM agent** | 相容 | 模型無關的 Markdown 工作流 + 證據規則 |
+
+不管哪一種,真正的底線都一樣:git hooks 和 CI 不在乎你跑的是哪個 agent。
 
 ## 快速開始
 
-### 1) 部署到專案
-
-**先決條件**：
-
-| 依賴 | 必要？ | 用途 |
-|:---|:---|:---|
-| **Git** | 必要 | 版本控制與部署 |
-| **Bash** | 必要 | 執行部署與驗證腳本（[Git for Windows](https://gitforwindows.org/) 已內建） |
-| **Python 3.9+** | 推薦 | 啟用完整驗證（metadata、編碼、命令同步檢查） |
-
-> **沒有 Python？** 框架可以正常部署與使用。驗證會以降級模式執行 — Python 相關檢查報告 `WARN` 而非 `FAIL`。
-> 使用 `--no-python` 抑制警告：`bash .agentcortex/bin/validate.sh --no-python`
-
 ```bash
-./installers/deploy_brain.sh /path/to/your-project
+git clone https://github.com/KbWen/agentic-os.git
+./agentic-os/installers/deploy_brain.sh --dry-run /path/to/your-project   # 預覽,不動任何檔
+./agentic-os/installers/deploy_brain.sh /path/to/your-project             # 部署
 ```
 
-> [!TIP]
-> 部署腳本會自動將 Agent 相關暫存檔（如 `work/`, `skills/` 等）加入 `.gitignore`，防止其被上傳到遠端倉庫。
+然後對你的 agent 說:*「讀 `AGENTS.md` 並遵循它。在 /review 與 /test 通過前,不准宣稱完成。」* —— 接著 `/bootstrap` 加上你的任務。
 
-### 1a) 客製化而不衝突（Fork 或 Clone）
+| 你的起點 | 第一個指令 |
+|:---|:---|
+| 全新專案、多 feature 想法 | `/spec-intake` |
+| 既有 repo 首次導入 Agentic OS | `/audit`(唯讀,零風險) |
+| 單一明確任務 | `/bootstrap` |
 
-無論你用 **fork**（再 `git pull upstream`）或 **clone + `deploy_brain.sh`** 導入，同一條規則讓升級無痛：**只「加」你自己的檔，絕不原地編輯框架檔。** 把客製放在框架保證永不觸碰的地方，它就能同時撐過 `git pull upstream`（fork）與下次 `deploy`（clone）：
+既有檔案永遠不會被覆寫(會存成 `.acx-incoming` sidecar 讓你合併)。Windows / 無 Python 模式、更新、客製化、完整開場提示 → **[docs/INSTALL.md](INSTALL.md)**。
 
-| 你想要… | 放這裡 | 為何升級不會壞 |
-|---|---|---|
-| 加專案治理（narrow/停用某指令） | `AGENTS.override.md`（專案根）或 `~/.agentcortex/AGENTS.override.md`（個人） | session 起始 present-only 載入；框架永不 ship 這些檔。MAY narrow/disable，但**不得**放寬 delivery gates。 |
-| 加你自己的 skill | `.agents/skills/custom-<name>/SKILL.md`（+ `.agent/skills/custom-<name>` metadata） | `custom-*` 是框架永不 ship 的保留 namespace → 零碰撞、不被覆寫。 |
-| 調整 skill 啟用（pin/排除） | `.agentcortex/context/private/user-preferences.yaml` | gitignored、個人、bootstrap 載入。 |
+### 客製化而不衝突
 
-**不要做的事**：原地編輯框架檔（`AGENTS.md`、`.agent/rules/*`、`.agent/workflows/*`、已 ship 的 skill body）會在 `git pull upstream`（fork）造成 merge 衝突、在下次 `deploy`（clone）被強制更新。框架 **skill** 是唯一寬容的例外——你若改了，`deploy` 會把你的版本保留成可見的 `<file>.acx-incoming` sidecar，而非靜默覆寫——但更乾淨的做法永遠是複製成 `custom-<name>` skill 再改。治理、安全、workflow 檔一律強制更新，確保你持續收到修補。
+升級無痛的原則只有一條:**只「加」你自己的檔,絕不原地編輯框架檔。** 加自己的 skill 放 `.agents/skills/custom-<name>/`(`custom-*` 是框架永不 ship 的保留 namespace);加專案治理放 `AGENTS.override.md`(可窄化/停用指令,但**不得**放寬交付閘門);調整 skill 啟用放 `.agentcortex/context/private/user-preferences.yaml`。原地改框架檔會在 `git pull upstream`(fork)或下次 `deploy`(clone)被覆蓋。完整說明見 [docs/INSTALL.md](INSTALL.md)。
 
-### 2) Codex / Antigravity 開場
+## 常見問題
 
-```text
-Fetch and follow instructions from <your-raw-url>/.codex/INSTALL.md
-```
+**Agentic OS 是什麼?**
+一套給 AI coding agent 的開源治理框架。它讓 Claude Code、Codex、Cursor、Copilot、Antigravity 這類 agent 有一條可重複的工作流 —— plan、build、review、test、ship —— 並用閘門強制,讓它們不能跳步驟、也不能在沒有可驗證證據下宣稱「done」。
 
-> 若遇到 403 錯誤，請直接貼上 `.codex/INSTALL.md` 全文。
+**我要怎麼擋住 AI agent 跳過測試、或 ship 沒驗證過的程式碼?**
+這就是核心。密鑰掃描、測試套件、階段/證據 validator 都跑在你的 git hooks 和 CI 裡 —— 所以外洩密鑰、缺測試、跳過的 review 會讓 commit 或 build 失敗,不管 agent 怎麼回報。agent 還是能偷工,只是那個工偷不過它控制不了的檢查。
 
-### 3) 開場提示 — 依你的起點挑一條
+**它跟 Cursor Rules 或單純一份 `AGENTS.md` 差在哪?**
+rules 檔告訴 agent 怎麼做,agent 可以無視。Agentic OS 加上工作流、以及把行為釘住的檢查:階段順序、證據要求、scope 紀律,還有一份跨 session 記住決策的單一真實來源。skill 和紀律仍是 agent 跟隨的「引導」;真正被「強制」的,是那層會讓你 commit 或 CI 失敗的東西 —— 外洩密鑰、缺測試、被跳過的階段。
 
-> **共通前綴**（任何情境都先貼這一段）
->
-> ```text
-> 請先閱讀並遵循 AGENTS.md — 這是本專案的治理憲法。
-> 在 /review 與 /test 通過前，禁止宣稱完成。
-> ```
+**會被綁死在單一 AI 廠商嗎?**
+不會。它是模型無關的 Markdown —— 對 Claude Code(`CLAUDE.md`)和 Codex / Antigravity(`AGENTS.md`)有原生入口,並透過同一套 workflow 檔支援 Cursor、Copilot 與任何其他 LLM agent。
 
-#### 情境 A：全新專案 + 多 feature 想法
+**免費嗎?**
+是 —— MIT 授權。fork 它、ship 它。
 
-> 適用：有產品想法、有多個功能、還沒寫 code。
+## 文件
 
-```text
-這是一個全新的專案。我的初步想法是：
-[一兩段描述產品和功能]
+| 目標 | 從這裡開始 |
+|:---|:---|
+| 安裝、更新、客製化 | [安裝與使用](INSTALL.md) |
+| 查所有指令、架構與原則 | [Reference](reference.md) |
+| 選模型 · 看真實 token 成本 | [模型指南](AGENT_MODEL_GUIDE_zh-TW.md) · [生命週期基準](LIFECYCLE_BENCHMARK_zh-TW.md) |
+| 核心原則與測試標準 | [設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md) · [測試協議](../.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md) |
+| 平台專屬注意事項 | [Codex](../.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md) |
 
-請先執行 /spec-intake，把它拆成 Feature Inventory。
-我選定第一個 feature 後，再跑 /bootstrap → /app-init 建立技術棧 ADR，
-然後 /plan → /implement。
-```
+## 貢獻
 
-**為何 /spec-intake 先行**：多 feature 的 raw idea 必須先拆成 `docs/specs/_product-backlog.md`，
-否則 /bootstrap 的分類和 Work Log scope 都會錯位。
+見 [CONTRIBUTING.md](../CONTRIBUTING.md) —— 不論你是人類還是 AI agent 的貢獻指引。
 
-#### 情境 B：既有 repo 首次導入 Agentic OS
+## 授權
 
-> 適用：repo 已經有程式碼，剛部署完框架。
+MIT。見 [LICENSE](../LICENSE)。
 
-```text
-這個 repo 已有程式碼，剛部署完 Agentic OS。
-請先跑 /audit（唯讀掃描）建立既有結構的地圖，
-然後 /app-init 紀錄技術棧 ADR，
-等我準備加功能時再跑 /spec-intake。
-```
-
-#### 情境 C：已穩定專案 + 單一明確任務
-
-> 適用：專案已有 ADR，目前只想做一件具體的事。
-
-```text
-請先執行 /bootstrap 分類此任務。
-需求：[一句話]
-目標檔案：[path1, path2]
-限制：[不可改 API / 不可改 schema]
-驗收：[列 2-3 點]
-```
-
-#### 情境 D：帶入前期討論素材（已與其他 AI 討論過）
-
-> 適用：手上有別的 AI 寫好的規格、白皮書、技術文件。直接貼入即可，AI 會自行提取與歸檔。
-
-```text
-請先執行 /spec-intake — 我帶來了前期討論的完整素材，請先消化後再決定流程。
----
-[直接貼上所有素材：對話記錄、規格書、技術文件等]
----
-```
-
-> AI 在 /spec-intake 期間會自動：寫入 `docs/specs/_raw-intake.md` → 拆 Feature Inventory →
-> 寫入 `docs/specs/_product-backlog.md`。完成後再走 /bootstrap → /app-init 鏈。
-
-### 4) 跨回合交接提示（續做任務時使用）
-
-```text
-以下是前一個模型留下的 handoff，請以此為「唯一真實狀態」繼續工作。
-你不得重新設計、不得調整 scope，只能依此 handoff 完成你的任務。
-[貼上 handoff 內容]
-```
-
-### 5) 用指令驅動開發
-
-1. `/bootstrap`：初始化任務並凍結分類
-2. `/plan`（或 `/write-plan`）：列檔案、步驟、風險、回退
-3. `/implement`（或 `/execute-plan`）：只改已同意範圍
-4. `/review`：做嚴格自審
-5. `/test`：列並執行最小必要驗證
-6. `/handoff`：跨回合交接（非 tiny-fix 必須）
-7. `/ship`：整理 commit / 變更摘要 / 測試結果
-
-## 建議節奏
-
-```mermaid
-flowchart LR
-    Idea[需求] --> Plan["/plan"]
-    Plan --> Impl["/implement"]
-    Impl --> Rev["/review"]
-    Rev --> Test["/test"]
-    Test --> Ship["/ship"]
-    Ship --> SSoT[狀態更新]
-```
-
-- **小修補（tiny-fix）**：`classify → plan (inline) → execute`，附最小證據
-- **快速修補（quick-win）**：`bootstrap → check Spec Index → plan → implement → evidence → ship`
-- **功能開發（feature）**：`/bootstrap → /spec → /plan → /implement → /review → /test → /handoff → /ship`
-- **架構調整（architecture-change）**：`/bootstrap → /adr → /spec → /plan → /implement → /review → /test → /handoff → /ship`
-- **緊急修復（hotfix）**：`/bootstrap → /research → /plan → /implement → /review → /test → /ship`
-
-## Token Hygiene（避免小任務放大成本）
-
-- 任務啟動只讀：`.agentcortex/context/current_state.md` 與 `.agentcortex/context/work/<worklog-key>.md`（worklog-key = branch name 的 filesystem-safe 正規化，例如 `/` 換 `-`）。
-- 優先精準檢索（`rg <keyword> <path>`），避免全樹掃描。
-- 先用 `/plan` 收斂檔案範圍，再進入 `/implement`，降低來回修正。
-- 小型任務沿用 Fast Lane；若變更開始影響狀態/策略，立即升級流程，避免返工。
-
-## 文件導覽
-
-| 目標 | 先讀這裡 | 用途 |
-|:---|:---|:---|
-| 安裝或升級 Agentic OS | [快速開始](#快速開始)、[遷移與整合指南](../.agentcortex/docs/guides/migration_zh-TW.md) | 部署指令、更新流程、既有專案導入 |
-| 選擇合適模型 | [模型選擇指南](AGENT_MODEL_GUIDE_zh-TW.md)、[生命週期基準測試](LIFECYCLE_BENCHMARK_zh-TW.md) | 模型取捨與實測 token 成本 |
-| 跑穩定的 agent 工作流 | [設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md)、[測試協議](../.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md) | 核心規則、證據要求、驗證標準 |
-| 使用特定平台 | [Codex 平台指南](../.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md)、[Antigravity v5 Runtime](../.agentcortex/docs/guides/antigravity-v5-runtime.md) | 平台載入、交接、相容性注意事項 |
-| 理解治理內部機制 | [文件治理](../.agentcortex/docs/guides/doc-governance.md)、[非線性情境](../.agentcortex/docs/NONLINEAR_SCENARIOS_zh-TW.md) | 狀態、交接、復原與文件生命週期 |
-| 安全擴充技能 | [Skill Ecosystem](architecture/skill-ecosystem.md)、[Token 治理指南](../.agentcortex/docs/guides/token-governance_zh-TW.md) | skill 封裝、觸發策略、context 預算控制 |
-
-## 自我驗證
-
-```bash
-.agentcortex/bin/validate.sh
-```
-
-完整平台建議請見 `.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md`。
-
----
-詳細變更請見 [CHANGELOG.md](../CHANGELOG.md)
-
-## Windows（無 bash）部署補充
-
-若你的 Windows 環境沒有 `bash`，可使用 `installers/` 目錄的 wrapper：
-
-- PowerShell：`powershell -ExecutionPolicy Bypass -File .\installers\deploy_brain.ps1 .`
-- CMD：`installers\deploy_brain.cmd .`
-
-這兩個 wrapper 會轉呼叫 `deploy_brain.sh`，因此仍需要安裝 [Git for Windows](https://gitforwindows.org/)（已內含 Git Bash）或 WSL。
+<p align="center"><sub>一套給 AI coding agent 的治理框架。歡迎貢獻與回饋。</sub></p>
