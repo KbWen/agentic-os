@@ -120,6 +120,13 @@ downstream_capabilities:
   load_policy_ceiling: on-match
   custom_prefix_required: true
 
+  # knowledge_sources (ADR-009): present-only, advisory-ONLY external KB consumption
+  # pointers. role is FIXED to advisory (a KB can never gate a phase); manifest_trusted
+  # defaults false (a BYO manifest's sha is never trusted to skip a read unless the
+  # adopter's own CI keeps it fresh). Enforced by validate_downstream_capabilities.py.
+  kb_role_fixed: advisory
+  kb_manifest_trusted_default: false
+
 
 # Document lifecycle caps — prevents unbounded SSoT bloat.
 # See: docs/specs/tiered-doc-lifecycle.md

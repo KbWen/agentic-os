@@ -546,6 +546,14 @@ check_contains_literal \
   "bootstrap ships downstream-capabilities load step (ADR-007 §1b)" \
   "bootstrap missing downstream-capabilities load step (ADR-007 §1b)"
 
+# ADR-009: bootstrap MUST ship the kb-consult scope-detected row (§3.6 / §1b knowledge_sources).
+# Structural only -- per-agent consult quality is honor-system (like the override read).
+check_contains_literal \
+  "$WORKFLOWS_DIR/bootstrap.md" \
+  'kb-consult' \
+  "bootstrap ships KB-consult scope-detected row (ADR-009)" \
+  "bootstrap missing KB-consult scope-detected row (ADR-009)"
+
 # ADR-007: a present downstream-capabilities.yaml MUST be schema gate-safe
 # (gate-relaxation is REJECTED, never clamped). Absent file -> validator exits 0.
 CAP_VALIDATOR="$ROOT/.agentcortex/tools/validate_downstream_capabilities.py"

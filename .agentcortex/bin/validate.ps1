@@ -678,6 +678,8 @@ Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Patte
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Pattern 'Load Override Layer' -SuccessMessage 'bootstrap ships override-layer load step (ADR-004 §1a)' -FailureMessage 'bootstrap missing override-layer load step (ADR-004 §1a)'
 # ADR-007: bootstrap MUST ship the downstream-capabilities load step (§1b).
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Pattern 'Load Downstream Capabilities' -SuccessMessage 'bootstrap ships downstream-capabilities load step (ADR-007 §1b)' -FailureMessage 'bootstrap missing downstream-capabilities load step (ADR-007 §1b)'
+# ADR-009: bootstrap MUST ship the kb-consult scope-detected row (§3.6 / §1b knowledge_sources). Structural only; consult quality is honor-system.
+Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Pattern 'kb-consult' -SuccessMessage 'bootstrap ships KB-consult scope-detected row (ADR-009)' -FailureMessage 'bootstrap missing KB-consult scope-detected row (ADR-009)'
 # ADR-007: a present downstream-capabilities.yaml MUST be schema gate-safe (rejected, not clamped).
 $capValidator = Join-NormalPath $root '.agentcortex/tools/validate_downstream_capabilities.py'
 $capFile = Join-NormalPath $root '.agentcortex/context/private/downstream-capabilities.yaml'

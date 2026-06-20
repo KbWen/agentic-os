@@ -214,6 +214,11 @@ ALLOWED_SUBAGENT_POLICY = {"read-only", "governed"}
 # keys that could relax / escalate a gate anywhere in the doc -> hard reject (fail-closed)
 FORBIDDEN_KEYS = {"gate", "gates", "ship_edge", "ship_edges", "block_if_missed",
                   "trigger_priority", "worklog_writers", "blocking", "hard"}
+# knowledge_sources (ADR-009): a present-only, advisory-ONLY KB consumption pointer.
+# A KB can inform an agent but can NEVER gate/relax a phase: role is fixed to advisory,
+# the key-allowlist rejects required/gate/etc., and manifest_trusted defaults false.
+ALLOWED_KS_KEYS = {"id", "path", "entrypoint", "role", "manifest_trusted", "tier_source", "description"}
+ALLOWED_KS_ROLE = {"advisory"}
 
 
 def _forbidden(obj, where="root"):
@@ -244,9 +249,9 @@ def validate(data):
     # ALLOWLIST (not just a denylist): an unknown top-level key cannot be smuggled in
     # as a future escalation surface -> gate-relaxation is structurally unrepresentable.
     for key in data:
-        if str(key) not in {"version", "skills", "subagent_policy", "trackers"}:
-            return ("unknown top-level key %r - only version/skills/subagent_policy/trackers "
-                    "are allowed (gate-relaxation is unrepresentable)" % key)
+        if str(key) not in {"version", "skills", "subagent_policy", "trackers", "knowledge_sources"}:
+            return ("unknown top-level key %r - only version/skills/subagent_policy/trackers/"
+                    "knowledge_sources are allowed (gate-relaxation is unrepresentable)" % key)
     for i, sk in enumerate(data.get("skills") or []):
         if not isinstance(sk, dict):
             return "skills[%d] must be a mapping" % i
@@ -268,6 +273,22 @@ def validate(data):
     for i, tr in enumerate(data.get("trackers") or []):
         if not isinstance(tr, dict):
             return "trackers[%d] must be a mapping" % i
+    for i, ks in enumerate(data.get("knowledge_sources") or []):
+        if not isinstance(ks, dict):
+            return "knowledge_sources[%d] must be a mapping" % i
+        if not str(ks.get("path", "")).strip():
+            return "knowledge_sources[%d] requires a non-empty path" % i
+        role = ks.get("role", "advisory")
+        if not isinstance(role, str) or role not in ALLOWED_KS_ROLE:
+            return ("knowledge_sources[%d].role %r must be advisory "
+                    "(a knowledge source can never be authority / gate a phase)" % (i, role))
+        mt = ks.get("manifest_trusted", False)
+        if not isinstance(mt, bool):
+            return "knowledge_sources[%d].manifest_trusted must be true/false (default false)" % i
+        for ks_key in ks:
+            if str(ks_key) not in ALLOWED_KS_KEYS:
+                return ("knowledge_sources[%d] unknown key %r (allowlist: "
+                        "id/path/entrypoint/role/manifest_trusted/tier_source/description)" % (i, ks_key))
     return None
 
 

@@ -72,11 +72,39 @@ def test_empty_file_is_safe(tmp_path):
     ("skip_confirmation: true\n", "unknown top-level"),
     ("ship_without_review: true\n", "unknown top-level"),
     ("skills:\n  - id: custom-x\n    autonomy: full\n", "unknown key"),
+    # ADR-009 knowledge_sources: advisory-ONLY; gate-relaxation unrepresentable (rejected, not clamped)
+    ("knowledge_sources:\n  - path: ../kb\n    role: authority\n", "advisory"),
+    ("knowledge_sources:\n  - path: ../kb\n    role: [advisory]\n", "advisory"),  # unhashable role -> clean reject, not traceback
+    ("knowledge_sources:\n  - path: ../kb\n    required: true\n", "unknown key"),
+    ("knowledge_sources:\n  - id: k\n", "path"),
+    ("knowledge_sources:\n  - path: ../kb\n    manifest_trusted: yes\n", "manifest_trusted"),
+    ("knowledge_sources:\n  - path: ../kb\n    gate: ship\n", "gate"),
 ])
 def test_unsafe_file_is_rejected_not_clamped(tmp_path, body, needle):
     r = _check(tmp_path, body)
     assert r.returncode == 1, f"must REJECT (not clamp) {body!r} -> rc={r.returncode}, err={r.stderr!r}"
     assert needle in r.stderr, f"reason must name {needle!r}: {r.stderr!r}"
+
+
+_KS_SAFE = """\
+version: 1
+skills:
+  - id: custom-x
+    load_policy: on-match
+knowledge_sources:
+  - id: kb-main
+    path: ../knowledge-base
+    entrypoint: outputs/manifest.json
+    role: advisory
+    manifest_trusted: false
+"""
+
+
+def test_knowledge_sources_gate_safe(tmp_path):
+    # ADR-009: a valid present-only knowledge_sources block (advisory, manifest_trusted
+    # false) is gate-safe and coexists with skills/trackers (non-regression).
+    r = _check(tmp_path, _KS_SAFE)
+    assert r.returncode == 0, f"a valid knowledge_sources block must pass: {r.stderr!r}"
 
 
 # --- Strict capabilities grammar (parse_strict) -------------------------------
