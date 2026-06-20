@@ -100,10 +100,10 @@ The full set of paths, by classification:
 
 | | |
 |:---|:---|
-| **Machine-enforced backstops** | A leaked secret, a fake "tests pass", or a skipped phase fails your commit or your build — caught by git hooks, the validator, and CI rather than by the agent's own report. |
+| **Machine-enforced backstops** | The failure modes above are caught by your git hooks, the validator, and CI — not by the agent's own report. The agent can cut a corner; it can't get that corner past the checks it doesn't control. |
 | **Skills that auto-attach by phase** | The workflow puts the right checklist in front of the agent by task type — TDD on a feature, an auth-security pass on login code — so you don't wire skills by hand. Guidance, not gates. |
 | **Memory that survives handoffs** | Decisions and evidence live in one source-of-truth state file, so they carry across sessions and agents instead of resetting with the chat. |
-| **Cross-platform** | Claude Code, Codex, Cursor, Copilot, Antigravity, or any Markdown-reading agent — the same governance files for all of them. |
+| **Cross-platform** | One set of governance files works across every major AI coding agent — the same rules whichever one you run. |
 | **Token-efficient by design** | Governance scales to risk: a tiny-fix skips the heavy guardrails (~5,000 tokens), so you're not paying frontier-model rates to fix a typo. |
 
 <details>

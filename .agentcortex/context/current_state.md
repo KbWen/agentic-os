@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-20T13:49:14+08:00
+- **Last Updated**: 2026-06-20T14:17:11+08:00
 - **Last Verified**: 2026-06-20
-- **Update Sequence**: 75
+- **Update Sequence**: 76
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -94,6 +94,11 @@
 - [Category: rule-placement][Severity: HIGH][Trigger: authoring-safety-rule-or-auditing-rule-surfaces][prev: 3b15e10b] Sort SAFETY rules by hazard reachability, not token cost. A rule that must hold during a 30-second out-of-phase action (destructive commands, secrets, untrusted tool output) MUST live on the always-loaded surface (AGENTS.md Core Directives invariant cluster, cap ~5) - phase/tier-scoped files and platform adapters are probabilistic gates, and a probabilistic gate on an irreversible failure is a design error regardless of token savings. Confirmed 2026-06-11: 'Destructive Command Blocking' was advertised in both READMEs and machine-guarded in ADAPTER copies (validators checked Codex/Antigravity retained it!) while the canonical loaded surface had nothing - a downstream rm -rf cascade destroyed a parent repo working tree. Placement test for every new MUST: hazard reachable from any tool call AND irreversible/exfiltrating -> always-loaded; else phase surface is fine but README/docs must not claim it is always-on.
 - [Category: eval-mapping][Severity: MEDIUM][Trigger: adding-or-retargeting-eval-protects-tag][prev: 14ac98ca] An eval case can silently guard an EMPTY rule: protects-tags resolve at section level, so a case pointing at a section that contains no text for the behavior it tests still 'resolves' and scores green off the model's general training - verifier-without-defense, the inverse of advertised-but-unenforced. Confirmed 2026-06-11: prompt-injection-in-tool-output protected 'AGENTS.md Core Directives' which contained zero injection text for ~2 months. Discipline: when ADDING a rule, land the guarding case in the SAME commit; when ADDING/RETARGETING a case, quote the exact rule sentence it protects in the PR description - if you cannot quote it, the rule does not exist and the case is theatre.
 ## Ship History
+
+### Ship-docs-readme-dedup-2026-06-20
+- **Branch `docs/readme-dedup` (PR pending)** (quick-win, docs/adoption, backlog #86) — De-dup the README's repeated content. The "What you get" table's **Machine-enforced backstops** + **Cross-platform** rows verbatim re-listed content already in the canonical "Rules vs. enforcement" + "Works with your agent" tables; trimmed both (EN `README.md`:103,106 + 繁中 `README_zh-TW.md`:102,105) to keep each row's distinct point. Page is tighter, no info lost (the lists stay in their tables). FAQ kept self-contained on purpose (answer-engine/SEO surface, #230). **GIF unification (the other half of #86) DESCOPED** — re-rendering binary GIF assets needs visual verification that can't be reliably done here; left as a reopen-trigger rather than shipping unverifiable assets to the public README.
+- **Evidence**: independent fresh-context review PASS (6/6: meaning preserved+sharpened; "failure modes above" reference resolves; canaries intact; EN/zh parity faithful; no new overclaim; exactly 2 rows/file); canaries grep-verified; pin tests 31 passed **locally** (CI docs-skip skips them on a docs-only PR); validate fail=0 CI-equiv. Rollback = revert PR.
+- Tests: 31 pin tests passed; validators fail=0 CI-equiv.
 
 ### Ship-fix-ship-history-ordering-doc-2026-06-20
 - **Branch `fix/ship-history-ordering-doc` (PR pending)** (quick-win, governance/docs) — /retro Try from the #84 cycle. `ship.md` §State Update step 2 instructed "append the completion record to the bottom of the file under ## Ship History (append mode)", but the live convention is newest-first-at-TOP (the NEVER-reorder rule makes oldest-first impossible) and `guard_context_write.py --mode append` is O_APPEND (file-end) → a literal follower drops the newest entry at the bottom, silently breaking order (this session had to Edit-prepend + log a deviation for both #84 and #264). **Fix**: ship.md now says add the record at the **top** of `## Ship History` via `--mode replace` or a surgical Edit, with an explicit "Do NOT use `--mode append` (O_APPEND = file-end)".
