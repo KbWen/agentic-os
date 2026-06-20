@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-20T21:17:07+08:00
+- **Last Updated**: 2026-06-20T21:52:02+08:00
 - **Last Verified**: 2026-06-20
-- **Update Sequence**: 80
+- **Update Sequence**: 81
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -96,6 +96,10 @@
 - [Category: rule-placement][Severity: HIGH][Trigger: authoring-safety-rule-or-auditing-rule-surfaces][prev: 3b15e10b] Sort SAFETY rules by hazard reachability, not token cost. A rule that must hold during a 30-second out-of-phase action (destructive commands, secrets, untrusted tool output) MUST live on the always-loaded surface (AGENTS.md Core Directives invariant cluster, cap ~5) - phase/tier-scoped files and platform adapters are probabilistic gates, and a probabilistic gate on an irreversible failure is a design error regardless of token savings. Confirmed 2026-06-11: 'Destructive Command Blocking' was advertised in both READMEs and machine-guarded in ADAPTER copies (validators checked Codex/Antigravity retained it!) while the canonical loaded surface had nothing - a downstream rm -rf cascade destroyed a parent repo working tree. Placement test for every new MUST: hazard reachable from any tool call AND irreversible/exfiltrating -> always-loaded; else phase surface is fine but README/docs must not claim it is always-on.
 - [Category: eval-mapping][Severity: MEDIUM][Trigger: adding-or-retargeting-eval-protects-tag][prev: 14ac98ca] An eval case can silently guard an EMPTY rule: protects-tags resolve at section level, so a case pointing at a section that contains no text for the behavior it tests still 'resolves' and scores green off the model's general training - verifier-without-defense, the inverse of advertised-but-unenforced. Confirmed 2026-06-11: prompt-injection-in-tool-output protected 'AGENTS.md Core Directives' which contained zero injection text for ~2 months. Discipline: when ADDING a rule, land the guarding case in the SAME commit; when ADDING/RETARGETING a case, quote the exact rule sentence it protects in the PR description - if you cannot quote it, the rule does not exist and the case is theatre.
 ## Ship History
+
+### Ship-chore-v1.7.0-release-2026-06-20
+- **Branch `chore/v1.7.0-release`** (quick-win, docs/release, tag `v1.7.0`) — Minor **v1.7.0** packaging the since-v1.6.0 merges: the present-only `knowledge_sources` KB-consumption seam (ADR-009, PR #270 + token-budget follow-up #271), skill provenance (#259), research persist-before-browse (#258), and a proof-first README/docs adoption overhaul (#260-#263/#266/#267/#269). Banners 1.6.0→1.7.0 across CITATION.cff (+date-released 2026-06-20), Model Guide EN+zh, Testing Protocol EN+zh, deploy.sh ACX_VERSION, antigravity-v5-runtime pointer; SECURITY.md supported-versions adds 1.7.x (keeps 1.6.x, drops 1.5.x → `< 1.6`); CHANGELOG `[1.7.0]`. README badges are dynamic `github/v/release` shields → no edit. Discoverability fix: `INSTALL.md` "Customizing" table now points at `connecting-a-knowledge-base.md` (the guide was orphaned from every user-facing index). Tag `v1.7.0` + GitHub release on merge.
+- Tests: validators fail=0 CI-equiv; release is doc-only.
 
 ### Ship-arch-knowledge-source-seam-2026-06-20
 - **Branch `arch/knowledge-source-seam`** (architecture-change, **ADR-009**, spec `knowledge-source-seam.md`) — A present-only, OPTIONAL `knowledge_sources:` capability seam (extends ADR-007's `downstream-capabilities.yaml`) that lets the governed flow CONSUME (read-only) an external markdown knowledge-base to enrich `/plan` + `/review` — **manifest-preferred, page-authoritative, KB content = DATA, never a gate**. Load-bearing property: **absent → structural zero cost** (the ~99% with no KB inherit ADR-007's proven §1b present-only inertness); **BYO** works with any markdown index (`llms.txt`/`_index.md`), the `manifest.json` an optional accelerator. Scoped **Stage 1** (the consult seam); **Stage 2** (multi-standard / auto-cross-phase / drift-detection) deferred to a verified consumer; **automated KB backfill REJECTED** (cross-repo write into shared state).

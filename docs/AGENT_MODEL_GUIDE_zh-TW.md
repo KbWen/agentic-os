@@ -1,4 +1,4 @@
-# Agentic OS v1.6.0 — 模型選擇指南
+# Agentic OS v1.7.0 — 模型選擇指南
 
 > 人類參考用 — 此檔案不會被載入 AI context。
 

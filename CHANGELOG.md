@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.0] - 2026-06-20
+
+Minor release: a present-only knowledge-base consumption seam (ADR-009) plus skill-provenance, a research-persistence convention, and a proof-first README/docs overhaul aimed at adoption. Packages the since-v1.6.0 merges (#258–#271, #86).
+
+**Governance / downstream adaptability** (#270/#271 — ADR-009)
+- **Knowledge-Source Consumption Seam**: a present-only, OPTIONAL `knowledge_sources:` block extending ADR-007's `downstream-capabilities.yaml` lets the governed flow CONSUME (read-only) an external markdown knowledge-base to enrich `/plan` + `/review`. **Absent → zero reads, zero tokens, byte-identical behavior** (the no-KB path most adopters are on). KB content is treated as DATA under `AGENTS.md §Untrusted Tool Output` (never loaded as governance); the manifest is a hint, the page is authority; `role` is fixed to `advisory` and `manifest_trusted` defaults `false`. The validator (`validate_downstream_capabilities.py`) accepts the block under a strict allowlist sub-schema — gate-relaxation stays structurally unrepresentable (rejected whole-file, never clamped) — and `validate.sh`/`.ps1` gained an AC-7 check that the seam's `§1b` loader + `§3.6 kb-consult` row stay shipped. Stage-1 only; cross-phase auto-consult and any agentic-os→KB auto-backfill were rejected (cross-repo write = poisoning). Downstream guide: `connecting-a-knowledge-base.md` (now linked from `INSTALL.md`).
+
+**Governance / skills** (#258, #259)
+- **Skill provenance + compatibility floor** (#259): a source-repo-only validator (`check_skill_provenance.py`) asserts every `.agents/skills/*/SKILL.md` declares `name`+`description` (name==dir) and that a static `skill-provenance.yaml` manifest (origin/source/license, fail-closed allowlist) stays complete — no orphans/dupes.
+- **Research persist-before-browse** (#258): `/research` writes its source list + bounded notes to a gitignored `research-<topic>.md` before the first external browse; `/bootstrap §3` auto-surfaces them so a new session resumes prior research without a human remembering it exists.
+
+**Docs / adoption** (#260–#263, #266, #267, #269)
+- **Proof-first README overhaul**: rebuilt the public README from a 506-line spec-dump into a lean, visual-first landing page (concept hero + workflow/pipeline GIFs, EN + 繁中) with a reproducible `demo/run.sh` exercising the real credential gate; feature/command/architecture detail relocated to new `docs/reference.md` + `docs/INSTALL.md`. Honest framing throughout (guidance vs. enforced controls; no "can't lie").
+- **CI-onboarding** (#263): `docs/INSTALL.md` shows adopters how to wire the deployed validator + credential scan as a required status check. **Copilot entry parity** (#264): `deploy.sh` now ships `.github/copilot-instructions.md` downstream. **CLAUDE platform guide** gained a 繁中 twin (#269). **Worktree safety checks** added (nesting + gitignored-target detection, #267).
+
+**Fixes / housekeeping**
+- Ship-History ordering doc corrected to prepend newest-first (#265); README de-dup (#86); backlog handoff + ship bookkeeping (#268).
+
 ## [1.6.0] - 2026-06-15
 
 Minor release: an upfront plan-time change-sizing advisory plus a security fix closing an ADR-007 capability-gate fail-open, packaging the since-v1.5.4 merges. PRs #241 (#145), #244, plus backlog / work-log hygiene (#240/#242/#243/#245/#246/#247).
