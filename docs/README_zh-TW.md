@@ -22,7 +22,7 @@
 <p align="center"><sub>它會查你的 AI coding agent 宣稱的事情背後有沒有證據 —— 密鑰、測試、review —— 靠的是 git hooks 和 CI,不是 agent 一句話。下面就是一道閘門實際擋下來的樣子:</sub></p>
 
 <p align="center">
-  <img src="assets/workflow-demo.gif" alt="終端機裡,一個 AI coding agent 宣稱任務完成並嘗試 ship;Agentic OS 的閘門因為 work trail 裡沒有 review 或測試的證據而回傳 verdict FAIL、擋下 ship,直到 review、測試與證據都補齊才放行。" width="780"/>
+  <img src="assets/workflow-demo-zh.gif" alt="終端機裡,一個 AI coding agent 宣稱任務完成並嘗試 ship;Agentic OS 的閘門因為 work trail 裡沒有 review 或測試的證據而回傳 verdict FAIL、擋下 ship,直到 review、測試與證據都補齊才放行。" width="800"/>
 </p>
 
 上面的 `/bootstrap`、`/review`、`/ship` 都只是純文字 prompt —— 你的 agent 會把它們對應到 repo 裡的 workflow 檔,所以在 Cursor 或 Codex 裡跑起來,跟在 Claude Code 裡一樣。
@@ -77,7 +77,7 @@ agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測�
 每個任務都跑一條有閘門的工作流,而嚴謹度會依風險縮放。跳過一個階段,`validate.sh` 就失敗 —— 但改一個 typo 不必跟一個 feature 走同一條關卡:
 
 <p align="center">
-  <img src="assets/pipeline-demo.gif" alt="Agentic OS 工作流的示意圖:一個 tiny-fix 任務走過 classify、execute、done 三步短路徑後 ship,而一個 feature 任務走完整的有閘門流程(bootstrap、plan、implement、review、test、ship),在 ship 閘門因為跳過測試而被擋下,直到測試證據補上才通過。" width="820"/>
+  <img src="assets/pipeline-demo-zh.gif" alt="Agentic OS 工作流的示意圖:一個 tiny-fix 任務走過 classify、execute、done 三步短路徑後 ship,而一個 feature 任務走完整的有閘門流程(bootstrap、plan、implement、review、test、ship),在 ship 閘門因為跳過測試而被擋下,直到測試證據補上才通過。" width="820"/>
 </p>
 
 完整的路徑,依分類:
