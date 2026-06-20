@@ -102,6 +102,81 @@ If you only want the governance templates (Markdown files) without running any t
 
 </details>
 
+## Turn on the CI floor (required status check)
+
+`deploy_brain.sh` puts the validator (`.agentcortex/bin/validate.sh`) and the
+credential scanner (`.agentcortex/tools/scan_credentials.py`) in your repo, but it
+does **not** add a CI workflow or change your branch settings — that part is yours
+to switch on. This is what turns the checks into a floor your agent can't
+`--no-verify` past: they run on every pull request, and a failing check blocks the
+merge.
+
+**1. Add a workflow** at `.github/workflows/security.yml` (this filename also
+clears the advisory `validate.sh` raises when a repo has workflows but no security
+workflow):
+
+```yaml
+name: Agentic OS
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history so the credential scan can diff the PR
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'   # without Python the validator degrades to advisory WARN
+      - name: Phase & evidence gate
+        run: bash .agentcortex/bin/validate.sh
+      - name: Credential scan (PR diff)
+        if: github.event_name == 'pull_request'
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          # a git error here (rare, given fetch-depth: 0 above) fails the step — fail-closed
+          python .agentcortex/tools/scan_credentials.py --range "${base}...${head}"
+      - name: Your tests
+        run: |
+          if [ -d tests ]; then
+            echo "Replace with your test command, e.g. pytest -q / npm test / go test ./..."
+          else
+            echo "No tests/ yet — add your suite and wire it here."
+          fi
+```
+
+This runs only what `deploy_brain.sh` actually installed; the test step is a
+placeholder you replace (the framework's own `tests/` are not deployed, so don't
+copy this repo's `validate.yml`).
+
+**2. Make the check required** so a failing run blocks the merge. Open one pull
+request first — a check only becomes selectable after it has run once — then in
+your repo:
+
+- **Settings → Branches → Add branch protection rule** (or **Settings → Rules →
+  Rulesets**, GitHub's newer equivalent), targeting your default branch.
+- Enable **"Require status checks to pass before merging"** and select the
+  **`gate`** check by name.
+- Enable **"Do not allow bypassing the above settings"** so the rule applies to
+  administrators too.
+
+To script it instead of clicking, see GitHub's
+[branch-protection API](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
+(the payload is verbose; the UI is simpler for a one-time setup).
+
+**Honest caveats:** (1) the workflow runs as soon as you add it, but it only
+*blocks* merges once you add the branch-protection rule — until then it is
+advisory; (2) a repository admin can still override a required check — this raises
+the floor, it does not make a bypass impossible; (3) keep the `setup-python` step,
+or the validator degrades to advisory `WARN`s and won't fail the build (see
+[Prerequisites](#prerequisites) for no-Python mode).
+
 ## Customizing without conflicts (fork or clone)
 
 However you adopt Agentic OS — **fork** the repo, or **clone + `deploy_brain.sh`** into your project — the same rule keeps upgrades painless: **add your own files; never edit framework-owned files in place.** Put your customizations where the framework guarantees never to touch them, and they survive both `git pull upstream` (fork) and the next `deploy` (clone):

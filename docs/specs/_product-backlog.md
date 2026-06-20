@@ -3,7 +3,7 @@ status: living
 title: Product Backlog
 source: governance-bloat-review-2026-04-12 + optimization-round-2026-05-04 + optimization-research-2026-06-02
 created: 2026-04-12
-last_updated: 2026-06-19
+last_updated: 2026-06-20
 ---
 
 # Product Backlog
@@ -50,7 +50,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 81 | G1b — Activated-skill provenance inventory | framework | skills | P2 | — | quick-win | Shipped | [#256](https://github.com/KbWen/agentic-os/issues/256) | — |
 | 82 | Karpathy-principles source/license provenance wording | docs | governance | P3 | — | tiny-fix | Shipped | [#257](https://github.com/KbWen/agentic-os/issues/257) | — |
 | 83 | Skill/workflow content-optimization pass — research + compare vs reference repos (multica-ai/addyosmani/tech-leads-club/VoltAgent/superpowers/anthropic-skills) for substantive guidance/structure improvements to our skills & workflows | research | skills | P2 | — | research | Pending | — | after #80/#81/#82 ship |
-| 84 | README→CI onboarding — show adopters how to wire CI as a required, non-bypassable check; README sells "CI is the floor that can't be skipped" but Quick Start only covers `deploy_brain.sh` (reviewer-flagged as the real conversion gap; likely a docs/INSTALL.md section + branch-protection recipe) | docs | adoption | P2 | — | quick-win | Pending | — | after #262 |
+| 84 | README→CI onboarding — show adopters how to wire CI as a required, non-bypassable check; README sells "CI is the floor that can't be skipped" but Quick Start only covers `deploy_brain.sh` (reviewer-flagged as the real conversion gap; likely a docs/INSTALL.md section + branch-protection recipe) | docs | adoption | P2 | — | quick-win | Shipped | — | after #262 |
 | 85 | Cursor first-class support — a real in-Cursor screenshot/GIF + a Cursor platform guide (Cursor sits in the Compatible tier with no guide while Codex/Claude have one; `CLAUDE_PLATFORM_GUIDE.md` also lacks a `_zh-TW` twin) | docs | adoption | P3 | — | quick-win | Pending | — | after #262 |
 | 86 | README polish — de-dup the 3× "leaked secret / fake tests / skipped phase" repetition (Rules-vs-enforcement · What-you-get · FAQ) and the 2× cross-platform mention; unify the workflow + pipeline GIFs onto one example task (EN + 繁中) | docs | adoption | P3 | — | tiny-fix | Pending | — | after #262 |
 
