@@ -50,7 +50,7 @@ LINES = [
     ([("> ", GREEN), ("/ship", FG)], False),
     ([], False),
     ([("  gate: ship     verdict: ", DIM), ("FAIL", RED), ("     missing: ", DIM), ("[review, test]", RED)], False),
-    ([("  ×  說「done」, 但 work trail 裡沒有 review、沒有 test", RED)], True),
+    ([("  ×  說「done」,但 work trail 裡沒有 review、沒有 test", RED)], True),
     ([], False),
     ([("  review ", DIM), ("done", GREEN), ("    test ", DIM), ("done", GREEN), ("    證據已記錄", DIM)], False),
     ([("> ", GREEN), ("/ship", FG)], False),

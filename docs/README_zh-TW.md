@@ -10,6 +10,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KbWen/agentic-os/releases"><img src="https://img.shields.io/github/v/release/KbWen/agentic-os?style=flat-square&label=release" alt="Release"/></a>
+  <a href="https://github.com/KbWen/agentic-os/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/validate.yml?branch=main&style=flat-square&label=CI" alt="CI"/></a>
+  <a href="https://github.com/KbWen/agentic-os/actions/workflows/security.yml"><img src="https://img.shields.io/github/actions/workflow/status/KbWen/agentic-os/security.yml?branch=main&style=flat-square&label=Security" alt="Security"/></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=flat-square" alt="MIT"/></a>
+  &nbsp;·&nbsp;
   <a href="../README.md">English</a> ·
   <a href="../CONTRIBUTING.md">Contributing</a> ·
   <a href="../CHANGELOG.md">Changelog</a>
@@ -98,7 +103,7 @@ agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測�
 | **依階段自動掛上的 skill** | 工作流會依任務型態,把對的檢查清單放到 agent 面前 —— feature 上 TDD、login 程式碼上 auth-security —— 你不必手動接線。是引導,不是閘門。 |
 | **跨交接還活著的記憶** | 決策與證據存在單一真實狀態檔裡,所以它們會跨 session、跨 agent 留下來,而不是隨對話一起重置。 |
 | **跨平台** | Claude Code、Codex、Cursor、Copilot、Antigravity,或任何讀 Markdown 的 agent —— 同一套治理檔,通吃。 |
-| **天生省 token** | 治理依風險縮放:tiny-fix 跳過厚重的護欄(約省 5,000 token),修個 typo 不必付旗艦模型的價。 |
+| **天生省 token** | 治理依風險縮放:tiny-fix 跳過笨重的護欄(約省 5,000 token),修個 typo 不必付旗艦模型的價。 |
 
 <details>
 <summary><strong>工作流依任務型態自動掛上的 14 個 skill</strong></summary>
@@ -111,7 +116,7 @@ agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測�
 | Systematic Debugging | 遇到 bug | 4 階段根因分析 |
 | Red Team / Adversarial | review、test | 依分類的資安分析 |
 | API Design | 偵測到 API 端點 | 端點驗證強制 |
-| Auth Security | 偵測到 auth 程式碼 | 雜湊、token、rate limiting |
+| Auth Security | 偵測到 auth 程式碼 | hashing、token、rate limiting |
 | Database Design | 偵測到 migration | forward-only、ORM-aware 的 migration 安全 |
 | Frontend Patterns | UI 元件 | 元件與狀態管理樣式 |
 | Parallel Agent Dispatching | 複雜任務 | 協調 subagent 執行 |
