@@ -107,6 +107,30 @@ def test_knowledge_sources_gate_safe(tmp_path):
     assert r.returncode == 0, f"a valid knowledge_sources block must pass: {r.stderr!r}"
 
 
+def _check_with_bom(tmp_path, body):
+    # Write the file as UTF-8-WITH-BOM (utf-8-sig encoding prepends the BOM) to mimic an
+    # older Windows Notepad / PowerShell Out-File save of a hand-edited capabilities file.
+    f = tmp_path / "downstream-capabilities.yaml"
+    f.write_text(textwrap.dedent(body), encoding="utf-8-sig")
+    return subprocess.run([sys.executable, str(VALIDATOR), str(f)],
+                          capture_output=True, encoding="utf-8", errors="replace")
+
+
+def test_utf8_bom_is_tolerated(tmp_path):
+    # A capabilities file saved with a leading UTF-8 BOM must parse, NOT fail with a
+    # cryptic "unknown top-level key '﻿version'". The BOM is stripped (utf-8-sig).
+    r = _check_with_bom(tmp_path, _KS_SAFE)
+    assert r.returncode == 0, f"a BOM-prefixed valid file must pass: {r.stderr!r}"
+
+
+def test_utf8_bom_does_not_smuggle_gate_relaxation(tmp_path):
+    # BOM tolerance must NOT become a fail-open: a BOM-prefixed gate-relaxing file is
+    # still REJECTED (strip BOM, then the allowlist rejects role: authority).
+    r = _check_with_bom(tmp_path, "version: 1\nknowledge_sources:\n  - path: ../kb\n    role: authority\n")
+    assert r.returncode == 1, f"BOM must not smuggle gate-relaxation: rc={r.returncode}, err={r.stderr!r}"
+    assert "advisory" in r.stderr, f"reason must still name the role rule: {r.stderr!r}"
+
+
 # --- Strict capabilities grammar (parse_strict) -------------------------------
 # The validator parses with a dedicated STRICT allowlist mini-parser, NOT the shared
 # lenient _yaml_loader and NOT PyYAML -- so behaviour is identical with or without

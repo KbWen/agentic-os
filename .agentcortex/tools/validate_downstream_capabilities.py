@@ -300,7 +300,10 @@ def main():
     if not path.exists():
         return 0  # absent = inert = safe (present-only)
     try:
-        data = parse_strict(path.read_text(encoding="utf-8"))
+        # utf-8-sig tolerates a leading BOM (older Windows Notepad / PowerShell
+        # Out-File default) so a hand-edited capabilities file does not fail with a
+        # cryptic "unknown top-level key '﻿version'"; absent a BOM it is plain utf-8.
+        data = parse_strict(path.read_text(encoding="utf-8-sig"))
     except _StrictError as exc:
         # Unsupported syntax in a capabilities file -> cannot be safely interpreted.
         # Fail closed (exit 2) rather than risk a parser-divergence gate-relaxation.
