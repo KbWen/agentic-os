@@ -17,10 +17,14 @@ Git worktree allows mounting multiple working directories onto the same reposito
 
 ## Safety Checks
 
-1. Ensure the primary workspace is clean (prevent taking uncommitted changes).
-2. List existing worktrees first: `git worktree list`.
-3. Check that the target directory does not exist or is empty.
-4. Confirm branch naming and tracking strategies.
+1. **Detect nesting first** — do not create a worktree from inside another worktree or a submodule:
+   - You are already in a *linked* worktree if `git rev-parse --git-dir` differs from `git rev-parse --git-common-dir` (they match in the main worktree). `cd` to the main worktree before adding.
+   - You are in a submodule if `git rev-parse --show-superproject-working-tree` is non-empty. Operate on the intended repo, not the submodule.
+2. Ensure the primary workspace is clean (prevent taking uncommitted changes).
+3. List existing worktrees first: `git worktree list`.
+4. Check that the target directory does not exist or is empty.
+5. **Keep the worktree path out of the tracked tree** — prefer a sibling dir (`../wt-<task>`). If it must live inside the repo, verify it is ignored first: `git check-ignore -q <path>` (exit 0 = ignored). A non-ignored in-repo worktree pollutes the parent's `git status` and can be committed by accident.
+6. Confirm branch naming and tracking strategies.
 
 ## Setup Workflow
 
