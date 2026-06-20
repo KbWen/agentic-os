@@ -118,6 +118,7 @@ get_tier() {
         .claude/settings.json) echo "scaffold" ;;
         .github/ISSUE_TEMPLATE/*) echo "scaffold" ;;
         .github/PULL_REQUEST_TEMPLATE.md) echo "scaffold" ;;
+        .github/copilot-instructions.md) echo "scaffold" ;;
 
         # scaffold — user may customize advisory hook samples before activating
         .githooks/*) echo "scaffold" ;;
@@ -156,6 +157,7 @@ _get_tier_inline() {
         .claude/settings.json) _TIER="scaffold" ;;
         .github/ISSUE_TEMPLATE/*) _TIER="scaffold" ;;
         .github/PULL_REQUEST_TEMPLATE.md) _TIER="scaffold" ;;
+        .github/copilot-instructions.md) _TIER="scaffold" ;;
         .githooks/*) _TIER="scaffold" ;;
         .agent/skills/*|.agents/skills/*) _TIER="scaffold" ;;
         *) _TIER="core" ;;
@@ -747,7 +749,8 @@ if $DRY_RUN; then
              "$REPO_ROOT"/.claude/settings.json \
              "$REPO_ROOT"/.claude/agents/*.md \
              "$REPO_ROOT"/.codex/INSTALL.md \
-             "$REPO_ROOT"/.github/ISSUE_TEMPLATE/*.md "$REPO_ROOT"/.github/PULL_REQUEST_TEMPLATE.md; do
+             "$REPO_ROOT"/.github/ISSUE_TEMPLATE/*.md "$REPO_ROOT"/.github/PULL_REQUEST_TEMPLATE.md \
+             "$REPO_ROOT"/.github/copilot-instructions.md; do
         _dry_print_file "$f" "${f#$REPO_ROOT/}"
     done
     # Runtime tools (whitelist only — not all *.py)
@@ -1025,6 +1028,15 @@ for f in "$REPO_ROOT"/.github/ISSUE_TEMPLATE/*.md; do
     deploy_file "$f" ".github/ISSUE_TEMPLATE/${f##*/}"
 done
 deploy_file "$REPO_ROOT/.github/PULL_REQUEST_TEMPLATE.md" ".github/PULL_REQUEST_TEMPLATE.md"
+
+# --- Deploy: .github/copilot-instructions.md (scaffold) ---
+# GitHub Copilot's repo-wide entry point (points at AGENTS.md). AGENTS.md alone
+# only covers Copilot's coding-agent surface; the IDE custom-instructions surface
+# reads this file. Scaffold tier so an adopter's own copilot-instructions.md is
+# preserved (.acx-incoming) instead of overwritten.
+if [ -f "$REPO_ROOT/.github/copilot-instructions.md" ]; then
+    deploy_file "$REPO_ROOT/.github/copilot-instructions.md" ".github/copilot-instructions.md"
+fi
 
 # --- Deploy: .githooks/ advisory hook samples (scaffold) ---
 if [ -f "$REPO_ROOT/.githooks/pre-commit.guard-ssot.sample" ]; then

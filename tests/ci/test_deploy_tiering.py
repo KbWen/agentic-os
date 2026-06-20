@@ -642,6 +642,24 @@ def test_gemini_md_is_deployed() -> None:
 
 
 @requires_bash
+def test_copilot_instructions_is_deployed() -> None:
+    """`.github/copilot-instructions.md` is GitHub Copilot's repo-wide entry point
+    (it points at AGENTS.md). AGENTS.md alone only covers Copilot's coding-agent
+    surface; the IDE custom-instructions surface reads copilot-instructions.md. It
+    was absent from deploy.sh's .github list — downstream Copilot users got no
+    governance entry point. Scaffold tier (user-customizable, preserved as
+    .acx-incoming). (cross-platform entry-point diagnosis, 2026-06-20)"""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        target.mkdir()
+        assert _deploy(target).returncode == 0, "deploy failed"
+        instr = target / ".github" / "copilot-instructions.md"
+        assert instr.is_file(), ".github/copilot-instructions.md must be deployed downstream"
+        manifest = (target / ".agentcortex-manifest").read_text(encoding="utf-8")
+        assert ".github/copilot-instructions.md" in manifest, "copilot-instructions.md must be in the manifest"
+
+
+@requires_bash
 def test_no_migration_banner_on_clean_update() -> None:
     """A bare .agentcortex-manifest is the normal installed state; announcing
     'Migrating from legacy paths' on every routine re-deploy was pure noise.
