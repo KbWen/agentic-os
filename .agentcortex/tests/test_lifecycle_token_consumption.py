@@ -428,12 +428,13 @@ class TestTokenBudgetBounds(unittest.TestCase):
         Threshold history: 26k → 28k (Design-First gate chain + document-state-growth
         governance); 28k → 29k (ADR-007/008: the present-only downstream-capability
         loader at bootstrap §1b + the AGENTS.md safety-floor fence/delegation + the
-        config block). Like the prior additions, these are no-ops for quick-win tasks
-        (capability-by-presence: absent file = zero reads) but count toward governance
-        file size.
+        config block); 29k → 30k (ADR-009: the present-only knowledge_sources binding at
+        §1b + the §3.6 kb-consult row + config caps — trimmed lean, detail in ADR/spec).
+        Like the prior additions, these are no-ops for quick-win tasks (capability-by-
+        presence: absent file = zero reads) but count toward governance file size.
         """
         qw = self.results["quick-win-single-module"]
-        self.assertLess(qw["current_total_tokens"], 29000)
+        self.assertLess(qw["current_total_tokens"], 30000)
 
     def test_feature_current_total_under_80k(self) -> None:
         """Even the heaviest feature scenario should stay under 80k tokens."""
@@ -497,7 +498,7 @@ class TestTokenBudgetBounds(unittest.TestCase):
         current_total = sum(result["current_total_tokens"] for result in self.results.values())
         self.assertLess(
             current_total,
-            350_000,
+            352_000,  # 350k → 352k: ADR-009 present-only knowledge_sources seam (§1b + §3.6 + config); trimmed lean
             f"aggregate lifecycle current total is unexpectedly high: {current_total}",
         )
 
