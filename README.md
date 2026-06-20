@@ -206,6 +206,7 @@ Yes — MIT licensed. Fork it and ship it.
 | Choose a model · see real token costs | [Model Guide](docs/AGENT_MODEL_GUIDE.md) · [Lifecycle Benchmark](docs/LIFECYCLE_BENCHMARK.md) |
 | The principles & the test standard | [Agent Philosophy](.agentcortex/docs/AGENT_PHILOSOPHY.md) · [Testing Protocol](.agentcortex/docs/TESTING_PROTOCOL.md) |
 | Platform-specific notes | [Codex](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) · [Claude](.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md) |
+| Connect an external knowledge base (optional) | [Connecting a knowledge base](.agentcortex/docs/guides/connecting-a-knowledge-base.md) |
 
 ## Contributing
 
