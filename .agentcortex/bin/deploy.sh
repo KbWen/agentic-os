@@ -981,7 +981,7 @@ for f in \
   "$REPO_ROOT"/.agentcortex/docs/PROJECT_EXAMPLES*.md \
   "$REPO_ROOT"/.agentcortex/docs/PROJECT_OVERVIEW*.md \
   "$REPO_ROOT"/.agentcortex/docs/NONLINEAR_SCENARIOS*.md \
-  "$REPO_ROOT"/.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md; do
+  "$REPO_ROOT"/.agentcortex/docs/CLAUDE_PLATFORM_GUIDE*.md; do
   [ -f "$f" ] || continue
   deploy_file "$f" ".agentcortex/docs/${f##*/}"
 done
@@ -1146,6 +1146,7 @@ strip_managed_ignore_blocks() {
         managed["docs/AGENT_PHILOSOPHY.md"] = 1
         managed["docs/AGENT_PHILOSOPHY_zh-TW.md"] = 1
         managed["docs/CLAUDE_PLATFORM_GUIDE.md"] = 1
+        managed["docs/CLAUDE_PLATFORM_GUIDE_zh-TW.md"] = 1
         managed["docs/CODEX_PLATFORM_GUIDE.md"] = 1
         managed["docs/CODEX_PLATFORM_GUIDE_zh-TW.md"] = 1
         managed["docs/PROJECT_EXAMPLES.md"] = 1
