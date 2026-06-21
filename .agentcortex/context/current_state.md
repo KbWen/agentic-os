@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-21T11:30:00+08:00
+- **Last Updated**: 2026-06-21T12:00:00+08:00
 - **Last Verified**: 2026-06-21
-- **Update Sequence**: 85
+- **Update Sequence**: 86
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -97,6 +97,19 @@
 - [Category: rule-placement][Severity: HIGH][Trigger: authoring-safety-rule-or-auditing-rule-surfaces][prev: 3b15e10b] Sort SAFETY rules by hazard reachability, not token cost. A rule that must hold during a 30-second out-of-phase action (destructive commands, secrets, untrusted tool output) MUST live on the always-loaded surface (AGENTS.md Core Directives invariant cluster, cap ~5) - phase/tier-scoped files and platform adapters are probabilistic gates, and a probabilistic gate on an irreversible failure is a design error regardless of token savings. Confirmed 2026-06-11: 'Destructive Command Blocking' was advertised in both READMEs and machine-guarded in ADAPTER copies (validators checked Codex/Antigravity retained it!) while the canonical loaded surface had nothing - a downstream rm -rf cascade destroyed a parent repo working tree. Placement test for every new MUST: hazard reachable from any tool call AND irreversible/exfiltrating -> always-loaded; else phase surface is fine but README/docs must not claim it is always-on.
 - [Category: eval-mapping][Severity: MEDIUM][Trigger: adding-or-retargeting-eval-protects-tag][prev: 14ac98ca] An eval case can silently guard an EMPTY rule: protects-tags resolve at section level, so a case pointing at a section that contains no text for the behavior it tests still 'resolves' and scores green off the model's general training - verifier-without-defense, the inverse of advertised-but-unenforced. Confirmed 2026-06-11: prompt-injection-in-tool-output protected 'AGENTS.md Core Directives' which contained zero injection text for ~2 months. Discipline: when ADDING a rule, land the guarding case in the SAME commit; when ADDING/RETARGETING a case, quote the exact rule sentence it protects in the PR description - if you cannot quote it, the rule does not exist and the case is theatre.
 ## Ship History
+
+### Ship-chore-v1.8.0-release-2026-06-21
+- **Branch `chore/v1.8.0-release`** (quick-win, docs/release; tag `v1.8.0`) — Minor **v1.8.0**
+  packaging the KB-seam hardening wave landed since v1.7.0: `${ACX_KB_PATH}` env resolution +
+  path trust-model + injection-decline eval + committed `.example` (PR #275), surgical-read
+  discipline at `bootstrap.md §3.6` + per-entry KB health + no-Python one-liner (PR #276), README
+  `## Docs` discoverability EN+繁中 (PR #274). Version banners 1.7.0→1.8.0: `deploy.sh` ACX_VERSION,
+  `CITATION.cff` (+`date-released` 2026-06-21), Model Guide EN+zh, Testing Protocol EN+zh,
+  `antigravity-v5-runtime.md`; `SECURITY.md` supported adds 1.8.x (keeps 1.7.x, drops 1.6.x →
+  `< 1.7`); `CHANGELOG.md` `[1.8.0]`. README badges are dynamic shields → no edit. Tag `v1.8.0`
+  + GitHub release cut on merge.
+- **Evidence**: validators fail=0 (CI-equiv `Framework Validation` green on the wave PRs); release
+  is version/doc-only — no engine/test/logic change; ADR-009 decisions unchanged.
 
 ### Ship-feat-kb-consult-surgical-discipline-2026-06-21
 - **Branch `feat/kb-consult-surgical-discipline`** (quick-win, ADR-009 follow-up; **stacked on PR #275**)

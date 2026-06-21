@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.8.0] - 2026-06-21
+
+Minor release: a hardening + dogfood wave for the v1.7.0 ADR-009 knowledge-base seam. Packages #274–#276. **Adopters with no KB are unaffected** — still byte-identical, zero-cost-when-absent.
+
+**Governance / downstream adaptability** (#275/#276 — ADR-009 follow-up, `docs/specs/kb-seam-hardening.md`)
+- **`${ACX_KB_PATH}` env resolution** (#275): a `knowledge_sources[].path` containing `${ACX_KB_PATH}` resolves against the env var (clone root; `entrypoint` relative) so one machine relocates a shared KB clone without per-project edits. Present-only (read only when a block is present), literal paths unchanged, cross-platform, no-Python safe. A committed `.agentcortex/templates/downstream-capabilities.example.yaml` demonstrates it (the strict validator accepts only full-line comments + quoted `:`/`${}` paths — now documented, closing a pre-existing copy-paste footgun).
+- **Path trust model, no guard** (#275): the KB path is documented as self-authored / out-of-repo / OFF the trust boundary, consumed fail-closed as DATA; **no `..`/containment guard is added** — it would only ever fire on the legitimate out-of-repo KB, and the path is not attacker-influenced. `validate_downstream_capabilities.py` stays schema-gate-safety-only (never resolves the path; CI-deterministic).
+- **Surgical-read discipline at the line-of-action** (#276): the `bootstrap.md §3.6 kb-consult` row now carries the mechanic the agent acts on — query `task_routing` (never Read the whole ~25–53K-tok manifest), read the routed page's checklist *section* not the whole page, ≤3 pages/phase. A real **dogfood** proved the gap (the agent over-routed 4 pages = 36K tok vs a 495-tok surgical consult = ~17× cheaper). **Per-entry KB health**: `§1b` records `knowledge_sources: <id>→OK|UNREADABLE` so a moved/dead KB is visible each bootstrap; a no-Python one-liner verifies wiring on demand.
+- **Injection-decline eval** (#275): one LLM-in-loop governance-eval case asserts a directive embedded in a KB page is named-and-declined (the `§Untrusted Tool Output` floor on KB-surfaced data). Consult-quality stays honor-system — labeled, raised-probability-not-enforced.
+
+**Docs / adoption** (#274)
+- **README discoverability**: the `knowledge_sources` KB seam now surfaces in the README `## Docs` table (EN + 繁中), linking the adopter guide — previously reachable only via `INSTALL.md`.
+
+**Housekeeping**
+- Lifecycle token budget bumped 352k→353k for the matured seam (the §3.6 rule is net-token-saving — it prevents 36K-tok over-routes) and re-baselined. A roundtable + Tenth-Man pass deliberately **deferred** a `kb_doctor` tool and **cut** a resolver / fixture-pytest / path-guard (vacuous-green or security-theater given consumption is agent-prose-driven).
+
 ## [1.7.0] - 2026-06-20
 
 Minor release: a present-only knowledge-base consumption seam (ADR-009) plus skill-provenance, a research-persistence convention, and a proof-first README/docs overhaul aimed at adoption. Packages the since-v1.6.0 merges (#258–#271, #86).
