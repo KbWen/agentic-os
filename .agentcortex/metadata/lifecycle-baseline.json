@@ -1,26 +1,26 @@
 {
   "_doc": "Token lifecycle baseline (backlog #51 / issue #157). Per-scenario current_total_tokens + aggregate registry/compact-index tokens, produced by analyze_token_lifecycle.py. GROWTH beyond slack_default is drift: update_lifecycle_baseline.py --dry-run exits non-zero and validate.sh WARNs. Regenerate intentionally with --apply after a legitimate scenario/workflow change. Schema deliberately omits user-/env-specific memory-file tokens \u2014 only deterministic repo-local signals are baselined.",
   "version": 1,
-  "last_updated": "2026-06-14",
+  "last_updated": "2026-06-21",
   "slack_default": 0.1,
   "baselines": {
     "quick-win-single-module": {
-      "current_total_tokens": 28630
+      "current_total_tokens": 29349
     },
     "feature-core-logic-tdd": {
-      "current_total_tokens": 58383
+      "current_total_tokens": 59114
     },
     "feature-api-auth-db": {
-      "current_total_tokens": 72421
+      "current_total_tokens": 73148
     },
     "hotfix-debug-loop": {
-      "current_total_tokens": 46774
+      "current_total_tokens": 47451
     },
     "architecture-multi-agent": {
-      "current_total_tokens": 85140
+      "current_total_tokens": 86325
     },
     "post-review-feedback-loop": {
-      "current_total_tokens": 56516
+      "current_total_tokens": 56680
     }
   },
   "aggregate": {
