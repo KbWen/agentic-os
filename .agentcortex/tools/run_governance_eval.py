@@ -153,14 +153,26 @@ def _score_case(case: dict[str, Any], transcript: str) -> tuple[str, list[str]]:
 # Agent runner
 # ---------------------------------------------------------------------------
 
-def _run_agent(cmd_template: str, prompt: str, timeout: int) -> tuple[str, int]:
+def _sanitize_diagnostic(value: str | bytes | None) -> str:
+    """Return a bounded, single-line diagnostic with common secrets redacted."""
+    if value is None:
+        return ""
+    text = value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value
+    text = re.sub(r"(?i)\b(token|password|secret|api[_-]?key|authorization)\b(\s*[:=]\s*|\s+)\S+",
+                  r"\1\2[REDACTED]", text)
+    text = re.sub(r"(?i)\bbearer\s+\S+", "Bearer [REDACTED]", text)
+    text = " | ".join(line.strip() for line in text.splitlines() if line.strip())
+    return text[:500]
+
+
+def _run_agent(cmd_template: str, prompt: str, timeout: int) -> tuple[str, int, str]:
     """Run a live agent for a single case prompt.
 
     cmd_template: a string like "claude -p {prompt}" or "myagent".
     The template is split with shlex once; then {prompt} is substituted
     into the specific argv element — never via shell interpolation.
     prompt: raw case prompt text.
-    Returns (stdout, returncode).
+    Returns (stdout, returncode, sanitized_stderr).
 
     Shell injection note: shlex.split runs on the TEMPLATE string only (which
     is operator-controlled). The prompt is then substituted as a literal string
@@ -182,14 +194,22 @@ def _run_agent(cmd_template: str, prompt: str, timeout: int) -> tuple[str, int]:
             input=stdin_data,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             shell=False,
         )
-        return result.stdout, result.returncode
-    except subprocess.TimeoutExpired:
-        return "", -1
-    except FileNotFoundError as exc:
-        return f"error: command not found: {exc}", -2
+        return result.stdout, result.returncode, _sanitize_diagnostic(result.stderr)
+    except subprocess.TimeoutExpired as exc:
+        stderr = _sanitize_diagnostic(exc.stderr)
+        diagnostic = f"agent timeout after {timeout}s" + (f": {stderr}" if stderr else "")
+        return "", -1, diagnostic
+    except OSError as exc:
+        executable = _sanitize_diagnostic(re.split(r"[\\/]", argv[0])[-1]) if argv else "<unknown>"
+        error_code = getattr(exc, "winerror", None) or exc.errno
+        diagnostic = f"agent launch error (OSError): executable={executable}"
+        diagnostic += f"; code={error_code}" if error_code is not None else ""
+        return "", -2, diagnostic
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +290,7 @@ def main() -> int:
         help="Path to eval YAML (default: .agentcortex/eval/governance.yaml)",
     )
     parser.add_argument("--transcripts", help="Directory of <case-id>.txt transcript files")
-    parser.add_argument("--case", help="Single case id (use with --transcript)")
+    parser.add_argument("--case", help="Single case id (use with --transcript or --agent-cmd)")
     parser.add_argument("--transcript", help="Single transcript file path (use with --case)")
     parser.add_argument(
         "--agent-cmd",
@@ -387,12 +407,19 @@ def main() -> int:
 
     # Live agent mode
     elif args.agent_cmd:
-        for cid in sorted_ids:
+        live_ids = sorted_ids
+        if args.case:
+            if args.case not in cases_by_id:
+                print(f"error: case id not found in eval: {args.case!r}", file=sys.stderr)
+                return 1
+            live_ids = [args.case]
+        for cid in live_ids:
             case = cases_by_id[cid]
             prompt = case.get("prompt", "")
-            stdout, rc = _run_agent(args.agent_cmd, prompt, args.timeout)
+            stdout, rc, diagnostic = _run_agent(args.agent_cmd, prompt, args.timeout)
             if rc != 0:
-                results.append({"id": cid, "status": "error", "failed_expectations": [f"agent exit {rc}"]})
+                failed = [f"agent exit {rc}"] + ([f"agent diagnostic: {diagnostic}"] if diagnostic else [])
+                results.append({"id": cid, "status": "error", "failed_expectations": failed})
             else:
                 status, failed = _score_case(case, stdout)
                 results.append({"id": cid, "status": status, "failed_expectations": failed})
