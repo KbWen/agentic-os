@@ -21,15 +21,24 @@ those phases with domain criteria the framework itself does not carry. The KB is
 
 Add a `knowledge_sources:` block to your gitignored
 `.agentcortex/context/private/downstream-capabilities.yaml` (the same present-only
-file that registers custom skills; it is never shipped, never overwritten on update):
+file that registers custom skills; it is never shipped, never overwritten on update).
+**A ready-to-copy template ships at `.agentcortex/templates/downstream-capabilities.example.yaml`**
+— copy it to that gitignored path and edit:
 
 ```yaml
+# YAML note: a comment MUST be on its own line. A trailing `# ...` after a value, or an
+# unquoted ':' / '{}' / backslash, fail-closes the WHOLE file. Quote ${...} and Windows (C:) paths.
 knowledge_sources:
   - id: kb-main
-    path: ../knowledge-base            # resolves OUTSIDE the framework's write/guard paths
-    entrypoint: outputs/manifest.json  # or llms.txt / _index.md
-    role: advisory                     # FIXED — a KB can never be authority
-    manifest_trusted: false            # default; set true only if YOUR CI keeps the manifest fresh
+    # path: ${ACX_KB_PATH} = clone root (set once per machine); a literal "../knowledge-base" also
+    # works (resolves OUTSIDE the framework's write/guard paths). Use forward slashes.
+    path: "${ACX_KB_PATH}"
+    # entrypoint (relative to the resolved root): outputs/manifest.json, or llms.txt / _index.md
+    entrypoint: outputs/manifest.json
+    # role: FIXED to advisory — a KB can never be authority
+    role: advisory
+    # manifest_trusted: default; set true only if YOUR CI keeps the manifest fresh
+    manifest_trusted: false
 ```
 
 ## Minimal contract a KB must satisfy
@@ -56,3 +65,39 @@ knowledge_sources:
 > completion" always outranks "the KB said so." A BYO manifest's freshness is YOUR
 > CI's job — off the framework's trust boundary, hence `manifest_trusted: false` by
 > default.
+
+## Relocating the clone (`${ACX_KB_PATH}`)
+
+Set `ACX_KB_PATH` to your KB clone **root** once per machine (`export ACX_KB_PATH=/path/to/knowledge-base`
+in bash; `$env:ACX_KB_PATH = 'C:\path\to\knowledge-base'` in PowerShell). Then every project's
+`path: ${ACX_KB_PATH}/...` resolves without per-project edits — relocate the clone, change one env var.
+Literal paths still work. Unset `ACX_KB_PATH` → the KB is treated as absent (zero cost, no error). The
+env var is read **only when a `knowledge_sources` block is present** (present-only preserved).
+
+## Verify your wiring (no-Python, on demand)
+
+After moving the KB or setting `ACX_KB_PATH`, sanity-check by hand that the path resolves and the
+entrypoint is readable. The seam **fail-closes to absent**, so a broken path costs only a missing
+consult — never an error — which is exactly why a quick manual check is worth it:
+
+```bash
+f="${ACX_KB_PATH}/outputs/manifest.json"; [ -r "$f" ] && echo "OK: $f" || echo "UNREADABLE -> KB treated as absent (ACX_KB_PATH unset, or clone moved?)"
+grep -o '"total_approx_tokens":[0-9]*' "$f"   # optional: the KB's own declared token budget (an unverified hint)
+```
+```powershell
+$f = "$($env:ACX_KB_PATH)/outputs/manifest.json"; if (Test-Path $f) { "OK: $f" } else { "UNREADABLE -> KB treated as absent" }
+```
+
+(Adjust `outputs/manifest.json` to your `entrypoint` if you use `llms.txt` / `_index.md`.) Starting a
+session also surfaces this: `bootstrap §1b` records `knowledge_sources: <id>→OK | →UNREADABLE` in the Work Log.
+
+## Trust model (why there is no path guard)
+
+The KB `path` is **self-authored, out-of-repo, and OFF the framework's trust boundary**. It is
+consumed **read-only, as DATA** (never instructions) and **fail-closed**: an unreadable / malformed
+/ `${ACX_KB_PATH}`-unset / symlink-dead path is treated as **absent** (one advisory, behavior unchanged).
+There is deliberately **no `..` / containment / symlink-rejection guard** — the legitimate KB is an
+out-of-repo path you write in your own gitignored config, not an attacker-influenced input, so a
+guard would only ever fire on the legitimate path while adding no safety the always-on DATA
+discipline (`AGENTS.md §Untrusted Tool Output`) doesn't already provide. The validator checks schema
+gate-safety only; it never resolves or reads the path (and the gitignored real config never reaches CI).
