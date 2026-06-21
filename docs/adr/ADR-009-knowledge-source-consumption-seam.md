@@ -176,7 +176,15 @@ workflow, gets a stale-but-authoritative-looking manifest — bounded by
 "`sha` is a drift hint, never a seal." A **poisoned manifest** can mis-ground
 (waste tokens, surface a wrong-but-inert page) but **cannot escalate to
 instruction execution** — bounded by the always-on, eval-backed `§Untrusted Tool
-Output`; this is **parity with a poisoned markdown index, not worse**.
+Output`; this is **parity with a poisoned markdown index, not worse**. The KB **path**
+is self-authored and out-of-repo (off the agentic-os trust boundary); it is consumed
+**fail-closed as DATA** (unreadable / `${ACX_KB_PATH}`-unset / malformed / symlink-dead →
+treated as absent). No containment / `..` / symlink-rejection guard is applied: the
+legitimate KB is an out-of-repo sibling path the adopter writes in their own gitignored
+config (not attacker-influenced), so a guard would only ever fire on the legitimate path
+while adding no anti-execution safety over the always-on DATA discipline. The optional
+`${ACX_KB_PATH}` env-var resolution + this path trust model are specified in
+`docs/specs/kb-seam-hardening.md` (a present-only, additive ADR-009 follow-up).
 
 **Out of scope (honest boundaries)**: **Stage 2** (multi-standard resolution /
 auto cross-phase consult / a "KB-drift-detected" review finding / a backfill

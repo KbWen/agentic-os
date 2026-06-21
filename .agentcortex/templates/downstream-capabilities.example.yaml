@@ -1,0 +1,35 @@
+# Example downstream-capabilities.yaml — COMMITTED TEMPLATE (safe to read; not active).
+# Copy to .agentcortex/context/private/downstream-capabilities.yaml (gitignored, never shipped),
+# then edit. This .example lives OUTSIDE context/private/ on purpose so CI + adopters can see it
+# (the real file is gitignored and never reaches CI). Validated by
+# validate_downstream_capabilities.py (schema gate-safety only — it never resolves/reads the path).
+#
+# YAML rule (strict validator): a comment MUST be on its OWN line. A trailing inline comment after
+# a value (path: x  # note) fail-closes the WHOLE file, as does an unquoted ':' / '{}' / backslash.
+# QUOTE any path with ${...} or a Windows drive colon (C:); use forward slashes.
+#
+# Trust model (ADR-009 + docs/specs/kb-seam-hardening.md): the KB path is SELF-AUTHORED, OUT-OF-REPO,
+# and OFF the agentic-os trust boundary. KB content is consumed READ-ONLY, as DATA (never
+# instructions), fail-closed (unreadable / ${ACX_KB_PATH}-unset / malformed -> treated as absent). role
+# is FIXED to advisory (a KB can never gate a phase). No path-containment guard is applied: the
+# legitimate KB is an out-of-repo path the adopter writes here, not an attacker-influenced input.
+
+knowledge_sources:
+  - id: kb-main
+    # path: ${ACX_KB_PATH} expands to the KB clone ROOT. Set the env var once per machine --
+    #   bash:        export ACX_KB_PATH=/path/to/knowledge-base
+    #   PowerShell:  $env:ACX_KB_PATH = 'C:/path/to/knowledge-base'
+    # A literal path like "../knowledge-base" also works. Read ONLY when this block is present.
+    path: "${ACX_KB_PATH}"
+    # entrypoint (relative to the resolved root): outputs/manifest.json, or llms.txt / _index.md
+    entrypoint: outputs/manifest.json
+    # role: FIXED to advisory -- a KB can never be authority
+    role: advisory
+    # manifest_trusted: default; set true only if YOUR CI keeps the manifest fresh
+    manifest_trusted: false
+
+# Other present-only opt-ins (ADR-007) -- uncomment to use:
+# skills:
+#   - id: custom-my-skill
+#     load_policy: on-match
+#     phase_scope: [implement, review]
