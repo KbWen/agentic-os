@@ -74,6 +74,23 @@ in bash; `$env:ACX_KB_PATH = 'C:\path\to\knowledge-base'` in PowerShell). Then e
 Literal paths still work. Unset `ACX_KB_PATH` → the KB is treated as absent (zero cost, no error). The
 env var is read **only when a `knowledge_sources` block is present** (present-only preserved).
 
+## Verify your wiring (no-Python, on demand)
+
+After moving the KB or setting `ACX_KB_PATH`, sanity-check by hand that the path resolves and the
+entrypoint is readable. The seam **fail-closes to absent**, so a broken path costs only a missing
+consult — never an error — which is exactly why a quick manual check is worth it:
+
+```bash
+f="${ACX_KB_PATH}/outputs/manifest.json"; [ -r "$f" ] && echo "OK: $f" || echo "UNREADABLE -> KB treated as absent (ACX_KB_PATH unset, or clone moved?)"
+grep -o '"total_approx_tokens":[0-9]*' "$f"   # optional: the KB's own declared token budget (an unverified hint)
+```
+```powershell
+$f = "$($env:ACX_KB_PATH)/outputs/manifest.json"; if (Test-Path $f) { "OK: $f" } else { "UNREADABLE -> KB treated as absent" }
+```
+
+(Adjust `outputs/manifest.json` to your `entrypoint` if you use `llms.txt` / `_index.md`.) Starting a
+session also surfaces this: `bootstrap §1b` records `knowledge_sources: <id>→OK | →UNREADABLE` in the Work Log.
+
 ## Trust model (why there is no path guard)
 
 The KB `path` is **self-authored, out-of-repo, and OFF the framework's trust boundary**. It is
