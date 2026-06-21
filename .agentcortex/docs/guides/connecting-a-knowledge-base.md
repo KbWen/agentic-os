@@ -21,7 +21,9 @@ those phases with domain criteria the framework itself does not carry. The KB is
 
 Add a `knowledge_sources:` block to your gitignored
 `.agentcortex/context/private/downstream-capabilities.yaml` (the same present-only
-file that registers custom skills; it is never shipped, never overwritten on update):
+file that registers custom skills; it is never shipped, never overwritten on update).
+**A ready-to-copy template ships at `.agentcortex/templates/downstream-capabilities.example.yaml`**
+— copy it to that gitignored path and edit:
 
 ```yaml
 # YAML note: a comment MUST be on its own line. A trailing `# ...` after a value, or an
