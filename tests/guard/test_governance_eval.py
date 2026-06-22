@@ -390,6 +390,21 @@ class TestScoringMatrix(unittest.TestCase):
         self.assertIn("warming up", diagnostic)
         self.assertIn("[REDACTED]", diagnostic)
 
+    def test_nonzero_agent_exit_redacts_inline_url_credentials(self) -> None:
+        result = _run_live_script(
+            "import sys\n"
+            "sys.stderr.write('cannot reach postgres://dbuser:p4ssw0rd@db.internal:5432/app\\n')\n"
+            "sys.exit(7)\n",
+            case_id="dsn-case",
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("p4ssw0rd", result.stdout + result.stderr)
+        self.assertNotIn("dbuser", result.stdout + result.stderr)
+        diagnostic = "\n".join(json.loads(result.stdout)["cases"][0]["failed_expectations"])
+        self.assertIn("[REDACTED]", diagnostic)
+        self.assertIn("postgres://", diagnostic)   # scheme preserved for diagnosis
+        self.assertIn("db.internal", diagnostic)   # host preserved for diagnosis
+
 
 class TestKbPageInjectionDeclineOracle(unittest.TestCase):
     RECEIPT = (

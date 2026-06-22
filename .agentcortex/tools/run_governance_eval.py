@@ -161,6 +161,9 @@ def _sanitize_diagnostic(value: str | bytes | None) -> str:
     text = re.sub(r"(?i)\b(token|password|secret|api[_-]?key|authorization)\b(\s*[:=]\s*|\s+)\S+",
                   r"\1\2[REDACTED]", text)
     text = re.sub(r"(?i)\bbearer\s+\S+", "Bearer [REDACTED]", text)
+    # Redact inline URL credentials (scheme://user:pass@host) — keep scheme/host for diagnosis.
+    text = re.sub(r"(?i)\b([a-z][a-z0-9+.\-]*://)[^\s:/@]+:[^\s/@]+@",
+                  r"\1[REDACTED]@", text)
     text = " | ".join(line.strip() for line in text.splitlines() if line.strip())
     return text[:500]
 
