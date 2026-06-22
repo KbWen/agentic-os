@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-06-21T12:00:00+08:00
-- **Last Verified**: 2026-06-21
-- **Update Sequence**: 86
+- **Last Updated**: 2026-06-22T22:30:00+08:00
+- **Last Verified**: 2026-06-22
+- **Update Sequence**: 87
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -97,6 +97,11 @@
 - [Category: rule-placement][Severity: HIGH][Trigger: authoring-safety-rule-or-auditing-rule-surfaces][prev: 3b15e10b] Sort SAFETY rules by hazard reachability, not token cost. A rule that must hold during a 30-second out-of-phase action (destructive commands, secrets, untrusted tool output) MUST live on the always-loaded surface (AGENTS.md Core Directives invariant cluster, cap ~5) - phase/tier-scoped files and platform adapters are probabilistic gates, and a probabilistic gate on an irreversible failure is a design error regardless of token savings. Confirmed 2026-06-11: 'Destructive Command Blocking' was advertised in both READMEs and machine-guarded in ADAPTER copies (validators checked Codex/Antigravity retained it!) while the canonical loaded surface had nothing - a downstream rm -rf cascade destroyed a parent repo working tree. Placement test for every new MUST: hazard reachable from any tool call AND irreversible/exfiltrating -> always-loaded; else phase surface is fine but README/docs must not claim it is always-on.
 - [Category: eval-mapping][Severity: MEDIUM][Trigger: adding-or-retargeting-eval-protects-tag][prev: 14ac98ca] An eval case can silently guard an EMPTY rule: protects-tags resolve at section level, so a case pointing at a section that contains no text for the behavior it tests still 'resolves' and scores green off the model's general training - verifier-without-defense, the inverse of advertised-but-unenforced. Confirmed 2026-06-11: prompt-injection-in-tool-output protected 'AGENTS.md Core Directives' which contained zero injection text for ~2 months. Discipline: when ADDING a rule, land the guarding case in the SAME commit; when ADDING/RETARGETING a case, quote the exact rule sentence it protects in the PR description - if you cannot quote it, the rule does not exist and the case is theatre.
 ## Ship History
+
+### Ship-fix-v1.8.1-governance-eval-2026-06-22
+- **Branch `fix/v1.8.1-governance-eval` (PR #280)** (quick-win, governance/eval; Codex-implemented → Claude review+ship takeover) — Closes the **BLOCKING MEDIUM** from the independent v1.7.0..v1.8.0 review: the `kb-page-injection-decline` governance-eval (AC-4) scored via a **denylist** (banned attack terms), which false-FAILed a correct refusal that NAMES the attack while a paraphrased compliance could PASS. Now the oracle asserts an `\A...\Z`-anchored **exact two-line receipt** (structured `refusal_receipt` naming every declined action + `⚡ ACX` sentinel — the receipt IS the surfacing channel) and isolates the untrusted injection payload inside a `<kb-data>` block with the receipt contract in the TRUSTED evaluator wrapper. **Work B** hardens the live runner: Windows UTF-8 child decode, exact `--case` with `--agent-cmd`, redacted OSError/timeout diagnostics (no argv/secret leak), stderr preservation, clean `.ps1` launch failure; plus the review's one LOW (inline URL-credential redaction in `_sanitize_diagnostic`). **Adopter delta**: governance engine behavior UNCHANGED — the KB-injection eval now genuinely proves the "KB-surfaced directive = DATA, name-and-decline" floor instead of rewarding banned-term avoidance.
+- **Evidence**: independent fresh-context review → PASS (18 hostile transcripts could not defeat the anchored oracle; `protects:` maps 1:1 to the live `AGENTS.md §Untrusted Tool Output` floor — not verifier-without-defense); `pytest tests/guard/test_governance_eval.py` → 46 passed; `py_compile` + `git diff --check` clean; scope = 3 authorized files (`governance.yaml`, `run_governance_eval.py`, `test_governance_eval.py`). Rollback = revert PR #280.
+- Tests: 46 passed; eval data + runner + test only, no engine/SSoT logic change.
 
 ### Ship-chore-v1.8.0-release-2026-06-21
 - **Branch `chore/v1.8.0-release`** (quick-win, docs/release; tag `v1.8.0`) — Minor **v1.8.0**
