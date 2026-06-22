@@ -1,5 +1,5 @@
 ---
-status: draft
+status: shipped
 date: 2026-06-22
 classification: architecture-change
 primary_domain: governance-lifecycle
