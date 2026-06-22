@@ -1814,7 +1814,9 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
                 ForEach-Object {
                     $relPath = $_.FullName.Replace($root + [System.IO.Path]::DirectorySeparatorChar, '').Replace('\', '/')
                     $fileContent = Get-Content -Path $_.FullName -Raw -ErrorAction SilentlyContinue
-                    if ($fileContent -and $fileContent -match '(?m)^status:\s*draft') { return }
+                    # Skip pre-ship intermediate states: draft, frozen, cancelled
+                    # (not yet required in Spec Index; /ship indexes on ship)
+                    if ($fileContent -and $fileContent -match '(?m)^status:\s*(draft|frozen|cancelled)') { return }
                     $relPath
                 })
         }
@@ -1824,7 +1826,7 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
     $specPhantom = @($indexedSpecPaths | Where-Object { $_ -and -not (Test-Path -Path (Join-NormalPath $root $_) -PathType Leaf) })
     if ($specMissing.Count -gt 0 -or $specPhantom.Count -gt 0) {
         $specMsg = @()
-        if ($specMissing.Count -gt 0) { $specMsg += "$($specMissing.Count) non-draft spec(s) not in index" }
+        if ($specMissing.Count -gt 0) { $specMsg += "$($specMissing.Count) shipped/living spec(s) not in index" }
         if ($specPhantom.Count -gt 0) { $specMsg += "$($specPhantom.Count) indexed spec(s) not on disk" }
         Add-Result -Level 'FAIL' -Message "SSoT Spec Index completeness: $($specMsg -join '; ')"
         foreach ($m in $specMissing) { Write-Output "  not indexed: $m" }
@@ -1832,7 +1834,7 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         Write-Output "  fix: update Spec Index in .agentcortex/context/current_state.md via /ship"
     }
     else {
-        Add-Result -Level 'PASS' -Message 'SSoT Spec Index completeness: all non-draft specs are indexed'
+        Add-Result -Level 'PASS' -Message 'SSoT Spec Index completeness: all shipped/living specs are indexed'
     }
 
     # Active Backlog consistency

@@ -1979,8 +1979,9 @@ if [[ -f "$CURRENT_STATE" ]]; then
         basename_spec="$(basename "$spec_file")"
         # Skip files starting with _
         [[ "$basename_spec" == _* ]] && continue
-        # Skip files with status: draft in frontmatter
-        if grep -qm1 '^status:[[:space:]]*draft' "$spec_file" 2>/dev/null; then
+        # Skip files with status: draft, frozen, or cancelled in frontmatter
+        # (pre-ship intermediate states — not yet required in Spec Index; /ship indexes on ship)
+        if grep -qm1 '^status:[[:space:]]*\(draft\|frozen\|cancelled\)' "$spec_file" 2>/dev/null; then
           continue
         fi
         rel_path="${spec_file#$ROOT/}"
@@ -2003,7 +2004,7 @@ if [[ -f "$CURRENT_STATE" ]]; then
   done < <(printf '%s' "$spec_index_section" | sed -n 's/.*\] \([^ ]*\.md\) .*/\1/p')
   if [[ "$spec_missing_count" -gt 0 || "$spec_phantom_count" -gt 0 ]]; then
     spec_msg=""
-    [[ "$spec_missing_count" -gt 0 ]] && spec_msg="${spec_missing_count} non-draft spec(s) not in index"
+    [[ "$spec_missing_count" -gt 0 ]] && spec_msg="${spec_missing_count} shipped/living spec(s) not in index"
     if [[ "$spec_phantom_count" -gt 0 ]]; then
       [[ -n "$spec_msg" ]] && spec_msg="$spec_msg; "
       spec_msg="${spec_msg}${spec_phantom_count} indexed spec(s) not on disk"
@@ -2013,7 +2014,7 @@ if [[ -f "$CURRENT_STATE" ]]; then
     printf '%b' "$spec_phantom_list"
     echo "  fix: update Spec Index in .agentcortex/context/current_state.md via /ship"
   else
-    record_result PASS "SSoT Spec Index completeness: all non-draft specs are indexed"
+    record_result PASS "SSoT Spec Index completeness: all shipped/living specs are indexed"
   fi
 
   # Active Backlog consistency

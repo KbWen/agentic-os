@@ -250,3 +250,150 @@ def test_validator_count_parity_on_framework() -> None:
     sh = _summary_counts(_run_validate(ROOT))
     ps = _summary_counts(_run_validate_ps1(ROOT))
     assert sh == ps, f"validator count parity broken: sh={sh} ps1={ps}"
+
+
+# ---------------------------------------------------------------------------
+# ADR-010: Frozen-Spec Lifecycle Fix — regression tests
+#
+# Structural (fast, no subprocess): verify the skip-condition pattern is
+# identical in both validators (sh/ps1 parity).
+#
+# Behavioral (slow, subprocess): verify a status:frozen spec on disk NOT in
+# the Spec Index does NOT FAIL the check (AC-1), and a status:shipped spec
+# NOT in the index still FAILs (AC-2).
+# ---------------------------------------------------------------------------
+
+FROZEN_SPEC_SKIP_PATTERN_SH = r"draft\|frozen\|cancelled"
+FROZEN_SPEC_SKIP_PATTERN_PS1 = r"draft|frozen|cancelled"
+SPEC_INDEX_FAIL_MSG = "not in index"
+SPEC_INDEX_PASS_MSG = "shipped/living specs are indexed"
+
+
+def _minimal_current_state_with_spec_index(spec_index_entries: str = "") -> str:
+    """Return a minimal current_state.md content with the given Spec Index entries."""
+    return (
+        "# Project Current State\n\n"
+        "- **Update Sequence**: 1\n"
+        "- **ADR Index**: none\n"
+        f"- **Spec Index** (shipped specs at `docs/specs/`):\n{spec_index_entries}\n"
+        "- **Active Backlog**: none\n"
+        "\n## Global Lessons\n\nnone\n"
+    )
+
+
+def test_adr010_sh_skip_pattern_includes_frozen_and_cancelled() -> None:
+    """validate.sh must skip status:frozen and status:cancelled (ADR-010 AC-5, structural)."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    assert FROZEN_SPEC_SKIP_PATTERN_SH in sh, (
+        "validate.sh must skip status:draft|frozen|cancelled (ADR-010 AC-1/AC-5)"
+    )
+
+
+def test_adr010_ps1_skip_pattern_includes_frozen_and_cancelled() -> None:
+    """validate.ps1 must skip status:frozen and status:cancelled (ADR-010 AC-5, structural)."""
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert FROZEN_SPEC_SKIP_PATTERN_PS1 in ps1, (
+        "validate.ps1 must skip status:draft|frozen|cancelled (ADR-010 AC-1/AC-5)"
+    )
+
+
+def test_adr010_parity_pass_message() -> None:
+    """Both validators must use the same PASS message (shipped/living) for the Spec Index check."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert SPEC_INDEX_PASS_MSG in sh, "validate.sh must reference 'shipped/living' in PASS message"
+    assert SPEC_INDEX_PASS_MSG in ps1, "validate.ps1 must reference 'shipped/living' in PASS message"
+
+
+def _make_minimal_repo(td: Path, spec_status: str, index_entry: str = "") -> Path:
+    """Set up a minimal repo layout for Spec Index behavioral tests.
+
+    Creates:
+    - docs/specs/_product-backlog.md (excluded by _* rule)
+    - docs/specs/test-feature.md (with given status)
+    - .agentcortex/context/current_state.md (with optional Spec Index entry)
+    """
+    import subprocess as sp
+    target = td / "proj"
+    target.mkdir()
+    # Deploy the framework into the target
+    result = sp.run(
+        [bash, str(DEPLOY_SH), str(target)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(ROOT),
+    )
+    assert result.returncode == 0, f"deploy failed:\n{result.stderr}"
+
+    # Create docs/specs dir and a test spec with the given status
+    spec_dir = target / "docs" / "specs"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    (spec_dir / "_product-backlog.md").write_text(
+        "# Backlog\n", encoding="utf-8"
+    )
+    (spec_dir / "test-feature.md").write_text(
+        f"---\nstatus: {spec_status}\n---\n# Test Feature\n", encoding="utf-8"
+    )
+
+    # Write current_state.md with optional Spec Index entry
+    cs = target / ".agentcortex" / "context" / "current_state.md"
+    cs.write_text(
+        _minimal_current_state_with_spec_index(index_entry),
+        encoding="utf-8",
+    )
+    return target
+
+
+@pytest.mark.slow
+@requires_bash
+def test_adr010_frozen_spec_not_indexed_does_not_fail_sh() -> None:
+    """AC-1: a status:frozen spec NOT in the Spec Index must NOT FAIL validate.sh."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(Path(td), spec_status="frozen")
+        out = _run_validate(target)
+        assert SPEC_INDEX_FAIL_MSG not in out, (
+            f"validate.sh must not FAIL for a status:frozen spec missing from Spec Index "
+            f"(ADR-010 AC-1). Output:\n{out[-600:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_adr010_shipped_spec_not_indexed_fails_sh() -> None:
+    """AC-2: a status:shipped spec NOT in the Spec Index must still FAIL validate.sh."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(Path(td), spec_status="shipped")
+        out = _run_validate(target)
+        assert SPEC_INDEX_FAIL_MSG in out, (
+            f"validate.sh must FAIL when a status:shipped spec is missing from Spec Index "
+            f"(ADR-010 AC-2). Output:\n{out[-600:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_adr010_frozen_spec_not_indexed_does_not_fail_ps1() -> None:
+    """AC-1/AC-5: a status:frozen spec NOT in the Spec Index must NOT FAIL validate.ps1."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(Path(td), spec_status="frozen")
+        out = _run_validate_ps1(target)
+        assert SPEC_INDEX_FAIL_MSG not in out, (
+            f"validate.ps1 must not FAIL for a status:frozen spec missing from Spec Index "
+            f"(ADR-010 AC-1/AC-5). Output:\n{out[-600:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_adr010_shipped_spec_not_indexed_fails_ps1() -> None:
+    """AC-2/AC-5: a status:shipped spec NOT in the Spec Index must still FAIL validate.ps1."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(Path(td), spec_status="shipped")
+        out = _run_validate_ps1(target)
+        assert SPEC_INDEX_FAIL_MSG in out, (
+            f"validate.ps1 must FAIL when a status:shipped spec is missing from Spec Index "
+            f"(ADR-010 AC-2/AC-5). Output:\n{out[-600:]}"
+        )
