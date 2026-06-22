@@ -1,7 +1,9 @@
 # Connecting an external knowledge base (optional)
 
-> **Optional, present-only, zero-cost-when-absent.** Most projects use no knowledge
-> base — they pay nothing for this seam. Ref: ADR-009, `docs/specs/knowledge-source-seam.md`.
+> **Optional, present-only, inert when absent.** Most projects use no knowledge
+> base — they read no KB and ingest zero KB-content tokens (the seam's bootstrap
+> guidance is a small fixed always-loaded cost, ~217 tokens — not literally zero).
+> Ref: ADR-009, `docs/specs/knowledge-source-seam.md`.
 
 Agentic OS can OPTIONALLY consult an external **markdown** knowledge base (curated
 dev standards / playbooks / checklists) during `/plan` and `/review`, to enrich
@@ -10,8 +12,9 @@ those phases with domain criteria the framework itself does not carry. The KB is
 
 ## Three paths
 
-1. **No KB (default — most adopters).** Declare nothing. Zero reads, zero tokens,
-   behavior identical to today. You never need a KB.
+1. **No KB (default — most adopters).** Declare nothing. Zero KB reads, zero
+   KB-content tokens, behavior identical to today (the seam's bootstrap guidance is
+   a small fixed always-loaded cost, ~217 tokens). You never need a KB.
 2. **Bring your own.** Point the framework at any markdown KB you already have
    (a `docs/` folder, a wiki). The only requirement is one readable index file.
 3. **Start from a reference.** Use a Karpathy-style "LLM wiki" as a template. The
@@ -82,10 +85,10 @@ consult — never an error — which is exactly why a quick manual check is wort
 
 ```bash
 f="${ACX_KB_PATH}/outputs/manifest.json"; [ -r "$f" ] && echo "OK: $f" || echo "UNREADABLE -> KB treated as absent (ACX_KB_PATH unset, or clone moved?)"
-grep -o '"total_approx_tokens":[0-9]*' "$f"   # optional: the KB's own declared token budget (an unverified hint)
+grep -oE '"total_approx_tokens":[[:space:]]*[0-9]+' "$f"   # optional: the KB's own declared token budget (an unverified hint)
 ```
 ```powershell
-$f = "$($env:ACX_KB_PATH)/outputs/manifest.json"; if (Test-Path $f) { "OK: $f" } else { "UNREADABLE -> KB treated as absent" }
+$f = "$($env:ACX_KB_PATH)/outputs/manifest.json"; if (Test-Path -PathType Leaf $f) { "OK: $f" } else { "UNREADABLE -> KB treated as absent" }
 ```
 
 (Adjust `outputs/manifest.json` to your `entrypoint` if you use `llms.txt` / `_index.md`.) Starting a
