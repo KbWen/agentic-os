@@ -132,7 +132,14 @@ class SSOTCompletenessTests(unittest.TestCase):
             self.assertIn("phantom index entry", validate.stdout)
 
     def test_spec_not_indexed_fails(self) -> None:
-        """Frozen spec on disk but not in SSoT Spec Index → validator must fail."""
+        """Shipped spec on disk but not in SSoT Spec Index → validator must fail.
+
+        Per ADR-010, the Spec Index completeness check requires an index entry only
+        for shipped/living specs; pre-ship draft/frozen/cancelled states are skipped
+        (a legal `status: frozen` spec must NOT fail — covered by
+        tests/ci/test_validator_false_positives.py::test_adr010_*). A `status: shipped`
+        spec missing from the index is still a real defect and must FAIL.
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
             deploy = run_deploy(target)
@@ -142,7 +149,7 @@ class SSOTCompletenessTests(unittest.TestCase):
 
             (target / "docs/specs").mkdir(parents=True, exist_ok=True)
             (target / "docs/specs/test-feature.md").write_text(
-                "---\nstatus: frozen\ntitle: Test Feature\n---\n\n# Test Feature\n",
+                "---\nstatus: shipped\ntitle: Test Feature\n---\n\n# Test Feature\n",
                 encoding="utf-8",
             )
 
