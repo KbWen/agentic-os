@@ -94,6 +94,49 @@ $f = "$($env:ACX_KB_PATH)/outputs/manifest.json"; if (Test-Path -PathType Leaf $
 (Adjust `outputs/manifest.json` to your `entrypoint` if you use `llms.txt` / `_index.md`.) Starting a
 session also surfaces this: `bootstrap §1b` records `knowledge_sources: <id>→OK | →UNREADABLE` in the Work Log.
 
+## Make your KB cheaper to consult (optional manifest accelerators)
+
+If your KB includes a `manifest.json`, the framework can use optional schema-v4 accelerator
+fields to make consults faster, more token-efficient, and identity-aware. **These fields are
+never required** — a BYO markdown KB without any manifest works fine via the fallback ladder
+(`llms.txt` / `_index.md`). The accelerators only make the consult cheaper or safer when present.
+
+**Per-page `approx_tokens`** — lets the agent budget by data rather than guessing. When present,
+prefer pages with smaller `approx_tokens` first and cap an extracted section at a few k tokens.
+Without it, the agent falls back to the ≤3-page count cap. Example field shape:
+
+```json
+{ "slug": "my-page", "path": "pages/my-page.md", "approx_tokens": 1200 }
+```
+
+**`kb_version`** (top-level, 12-hex sha256 of normalized page text) — a content fingerprint.
+When present, `bootstrap §1b` records `<id>→OK@<kb_version>` in the Work Log instead of bare
+`OK`, so a moved or stale-but-readable KB shows a different fingerprint each session (honor-system
+record; no automated validation). Without it, the record stays bare `OK`.
+
+**`schema_version`** (top-level int) — lets the agent detect format changes. If absent or
+unparseable, the seam falls back to absent (UNREADABLE, fail-closed; no third state).
+
+**`load_policy`** — a top-level object with read-discipline hints:
+- `cheap_entry`: the lightweight index to read first (e.g. `index.jsonl`, `llms.txt`, `_index.md`)
+  instead of loading the full manifest.
+- `routing_is_candidate_pool`: when `true`, routed slugs from `task_routing` are a CANDIDATE POOL,
+  not a full-load mandate. The agent does a bounded applicability pass — keeps only items relevant
+  to the scoped change, records a one-line N/A rationale for the rest, and only applicable items
+  become blockers. Prevents false blockers from irrelevant checklist items (e.g. a retry-client
+  route that includes BOLA/SQL/Firestore items irrelevant to a docs change).
+- `surgical_read`: the read ladder (read the section, not the page).
+
+**`task_routing`** (top-level list of `{task, slugs}`) — maps task types to candidate page slugs.
+The agent queries this instead of loading the whole manifest, then applies the applicability pass.
+
+**Without a manifest** the seam still works: the agent reads the markdown index (`llms.txt` /
+`_index.md`) and applies its own judgment on which pages to consult. No accelerator fields are
+ever required; their absence degrades gracefully to the BYO fallback path.
+
+> **Privacy reminder**: never put absolute paths, real `kb_version` values, or any private KB
+> content into public repo artifacts. The guide above shows only GENERIC field shapes.
+
 ## Trust model (why there is no path guard)
 
 The KB `path` is **self-authored, out-of-repo, and OFF the framework's trust boundary**. It is

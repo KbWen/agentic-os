@@ -498,7 +498,7 @@ class TestTokenBudgetBounds(unittest.TestCase):
         current_total = sum(result["current_total_tokens"] for result in self.results.values())
         self.assertLess(
             current_total,
-            353_000,  # 350k→352k (ADR-009 seam) →353k: KB-seam hardening wave (ACX_KB_PATH §1b + surgical §3.6 + per-entry health); §3.6 trimmed lean to minimize the delta
+            354_000,  # 350k→352k (ADR-009 seam) →353k: KB-seam hardening wave →354k: accelerator-consumption follow-up (+182 tok; §3.6 kb-consult row: token-budget + applicability-filtering clauses; minimally bumped per tight-ratchet discipline)
             f"aggregate lifecycle current total is unexpectedly high: {current_total}",
         )
 

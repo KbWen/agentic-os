@@ -126,12 +126,7 @@ downstream_capabilities:
   # adopter's own CI keeps it fresh). Enforced by validate_downstream_capabilities.py.
   kb_role_fixed: advisory
   kb_manifest_trusted_default: false
-  # Env var NAME (never a path) the agent expands for a ${ACX_KB_PATH} token inside a
-  # knowledge_sources[].path, so one machine relocates a shared KB clone without editing N
-  # project configs. ACX_KB_PATH = clone ROOT; entrypoint stays relative. Read ONLY when a
-  # knowledge_sources block is present (present-only); unset/empty -> path resolves to absent
-  # (ladder rung 3). Cross-platform ($ACX_KB_PATH / $env:ACX_KB_PATH / %ACX_KB_PATH%); no-Python safe.
-  kb_path_env: ACX_KB_PATH
+  # ACX_KB_PATH env var is referenced in bootstrap.md §1b directly; no config key needed.
 
 
 # Document lifecycle caps — prevents unbounded SSoT bloat.
