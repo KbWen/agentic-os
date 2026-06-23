@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.1] - 2026-06-23
+
+Patch release: governance, KB seam, docs, and CI hardening wave. Packages #280–#284. **Adopters with no KB are behaviorally unaffected** — all engine behavior is unchanged; the eval, lifecycle, and CI changes are internal correctness fixes.
+
+**Governance fixes** (#280/#281)
+- **KB injection-decline oracle hardening** (#280): replaced the flawed denylist oracle with an `\A...\Z`-anchored exact two-line receipt (structured `refusal_receipt` + `⚡ ACX` sentinel; untrusted payload isolated in a `<kb-data>` block). The eval now genuinely proves the "KB-surfaced directive = DATA, name-and-decline" floor instead of rewarding banned-term avoidance. Live runner hardened: Windows UTF-8 child decode, exact `--case` with `--agent-cmd`, redacted OSError/timeout diagnostics (no argv/secret leak), stderr preservation, clean `.ps1` launch failure; plus inline URL-credential redaction in `_sanitize_diagnostic`.
+- **Frozen-spec SSoT lifecycle fix (ADR-010)** (#281): resolves a PRE-EXISTING impossible-SSoT cycle where a legal `status: frozen` spec could never satisfy the validator (required Spec Index entry) without a forbidden pre-`/ship` SSoT write. `validate.sh`/`validate.ps1` now skip `draft|frozen|cancelled` and require an index entry only for `shipped`/`living`. `/ship` remains the sole SSoT indexer; Write Isolation single-writer invariant preserved. `spec.md` reconciled (no pre-ship index write), `plan.md` Frozen-Spec Pre-Check reads `status:` from disk.
+
+**KB seam** (#282/#283)
+- **Absent-cost honesty + changelog + wiring probes** (#282): corrected the overclaim that the KB seam is "zero-cost when absent" — the v1.8 seam adds ~217 always-loaded bootstrap tokens even with no KB declared. `CHANGELOG.md` + `connecting-a-knowledge-base.md` updated to "zero KB reads / zero KB-content tokens when absent; ~217-tok always-loaded cost." Added omitted PR #273 to the v1.8.0 changelog scope. Fixed wiring probes (bash `[[:space:]]*[0-9]+`; PowerShell `Test-Path -PathType Leaf`).
+- **Optional schema-v4 manifest accelerators (ADR-009 follow-up)** (#283): teaches the governed KB-consume flow to consume OPTIONAL schema-v4 `manifest.json` accelerators: `kb_version` fingerprint in `§1b` health (detects moved/stale KB), `approx_tokens` smallest-first budgeting + section cap in `§3.6`, candidate-pool applicability pass (routed slugs → only applicable items block). `UNREADABLE` now explicitly covers malformed/unparseable (fail-closed). Deleted dead `kb_path_env` config. New adopter-guide section covers optional field shapes + BYO no-manifest fallback + privacy reminder. Graceful for absent/BYO-no-manifest; no hard schema-v4 dependency.
+
+**CI** (#284)
+- **Windows pytest sharding** (#284): the slow non-required `Pytest (Windows)` job (~8:26) is sharded across 3 parallel matrix runners via `pytest-split` (pinned `0.11.0`). Wall-clock 8:26 → 7:14 with count-split; a `.test_durations` file would balance further. `pytest-xdist` was measured slower for this suite. Zero downstream impact (deploy ships no `.github/workflows/` or `tests/`). Not promoted to required.
+
 ## [1.8.0] - 2026-06-21
 
 Minor release: a hardening + dogfood wave for the v1.7.0 ADR-009 knowledge-base seam, plus a capabilities-validator BOM fix. Packages #273–#276. **Adopters with no KB read no KB and ingest zero KB-content tokens** — the seam stays present-but-inert (behavior unchanged). Note: this is "zero KB reads / zero KB-content tokens when absent," not byte-identical — the seam's bootstrap guidance is a small fixed always-loaded cost (~217 tokens) even with no KB declared.
