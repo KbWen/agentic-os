@@ -232,10 +232,19 @@ jobs:
         run: python -m pytest tests/ci/ tests/guard/ .agentcortex/tests/ -v
 
   test-windows:
+    # Sharded across parallel runners with pytest-split — the subprocess/IO-bound
+    # deploy/validate tests are slow on Windows (~8 min unsharded); splitting across
+    # separate machines cuts wall-clock without single-machine contention (pytest-xdist
+    # was measured SLOWER here). Non-required check, so the matrix-suffixed job names do
+    # not affect branch protection. fail-fast:false so every shard reports independently.
     name: Pytest (Windows)
     runs-on: windows-latest
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2, 3]
     steps:
       - uses: actions/checkout@v6
 
@@ -250,8 +259,9 @@ jobs:
 
       # Windows previously ran only validate.ps1 — cross-platform pytest
       # regressions (CRLF, path separators, cp1252) went uncaught. (#163)
-      - name: Run full test suite on Windows
-        run: python -m pytest tests/ci/ tests/guard/ .agentcortex/tests/ -q
+      # --splits/--group: even count-split with no committed .test_durations file.
+      - name: Run test suite on Windows (shard ${{ matrix.group }}/3)
+        run: python -m pytest tests/ci/ tests/guard/ .agentcortex/tests/ --splits 3 --group ${{ matrix.group }} -q
 
   utf8-and-critical-files:
     name: UTF-8 Sweep + Critical Files
