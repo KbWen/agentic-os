@@ -1,7 +1,7 @@
 ---
 id: kb-seam-accelerator-consumption
 title: "KB-Seam Accelerator Consumption (schema-v4 manifest fields)"
-status: draft
+status: shipped
 classification: feature
 adr: ADR-009
 branch: feat/kb-accelerator-consumption
