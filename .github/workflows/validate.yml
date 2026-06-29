@@ -32,7 +32,7 @@ jobs:
     outputs:
       heavy: ${{ steps.scope.outputs.heavy }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -81,7 +81,7 @@ jobs:
     name: Framework Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -97,7 +97,7 @@ jobs:
     name: Framework Validation (Python 3.9)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -113,7 +113,7 @@ jobs:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Lint shell scripts
         run: |
@@ -145,7 +145,7 @@ jobs:
     name: Check Markdown Links
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check internal links
         run: |
@@ -174,7 +174,7 @@ jobs:
     name: Framework Validation (Windows)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -192,7 +192,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -219,7 +219,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -248,7 +248,7 @@ jobs:
       matrix:
         group: [1, 2, 3]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -269,7 +269,7 @@ jobs:
     name: UTF-8 Sweep + Critical Files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -318,7 +318,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Create test project and deploy without Python
         run: |
