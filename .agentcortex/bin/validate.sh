@@ -862,6 +862,23 @@ fi
 
 routing_action_errors=0
 routing_action_warnings=0
+routing_action_stale_warnings=0
+routing_actions_pending_warn_days=14
+if [[ -f "$AGENT_CONFIG_YAML" ]]; then
+  parsed_routing_actions_days="$(
+    awk '
+      /^document_lifecycle:[[:space:]]*$/ { in_section=1; next }
+      in_section && /^[^[:space:]]/ { in_section=0 }
+      in_section && /^[[:space:]]+routing_actions_pending_warn_days:[[:space:]]*[0-9]+[[:space:]]*$/ {
+        sub(/^[^:]*:[[:space:]]*/, "", $0); print $0; exit
+      }
+    ' "$AGENT_CONFIG_YAML" 2>/dev/null || true
+  )"
+  if [[ "$parsed_routing_actions_days" =~ ^[0-9]+$ ]]; then
+    routing_actions_pending_warn_days="$parsed_routing_actions_days"
+  fi
+fi
+routing_actions_today_epoch="$(date -u +%s 2>/dev/null || true)"
 for review in "$ROOT"/docs/reviews/*.md; do
   [[ -f "$review" ]] || continue
   if grep -F -q 'routing_actions:' "$review"; then
@@ -888,9 +905,23 @@ for review in "$ROOT"/docs/reviews/*.md; do
         *)
           printf '  routing_actions status must be pending, merged, or rejected: %s (%s)\n' "$review" "$status"
           routing_action_errors=$((routing_action_errors + 1))
-          ;;
+        ;;
       esac
     done < <(sed -n 's/^[[:space:]]*status:[[:space:]]*\([a-z]*\).*$/\1/p' "$review")
+    if [[ -n "$routing_actions_today_epoch" ]] && grep -Eq '^[[:space:]]*status:[[:space:]]*pending[[:space:]]*$' "$review"; then
+      review_base="$(basename "$review")"
+      if [[ "$review_base" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+        review_date="${BASH_REMATCH[1]}"
+        review_epoch="$(date -u -d "$review_date" +%s 2>/dev/null || date -j -f '%Y-%m-%d' "$review_date" +%s 2>/dev/null || true)"
+        if [[ "$review_epoch" =~ ^[0-9]+$ ]]; then
+          age_days=$(( (routing_actions_today_epoch - review_epoch) / 86400 ))
+          if [[ "$age_days" -ge "$routing_actions_pending_warn_days" ]]; then
+            printf '  stale pending routing_actions: %s (%sd old, threshold %sd)\n' "$review" "$age_days" "$routing_actions_pending_warn_days"
+            routing_action_stale_warnings=$((routing_action_stale_warnings + 1))
+          fi
+        fi
+      fi
+    fi
   fi
 done
 if [[ "$routing_action_errors" -gt 0 ]]; then
@@ -900,6 +931,9 @@ else
 fi
 if [[ "$routing_action_warnings" -gt 0 ]]; then
   record_result WARN "routing_actions target docs need follow-up: ${routing_action_warnings}"
+fi
+if [[ "$routing_action_stale_warnings" -gt 0 ]]; then
+  record_result WARN "stale pending routing_actions need canonical-doc follow-up: ${routing_action_stale_warnings}"
 fi
 shopt -u nullglob
 

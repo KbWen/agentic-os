@@ -820,6 +820,24 @@ else {
 
 $routingActionErrors = 0
 $routingActionWarnings = 0
+$routingActionStaleWarnings = 0
+$routingActionsPendingWarnDays = 14
+if (Test-Path -Path $agentConfigYaml -PathType Leaf) {
+    $inDocumentLifecycle = $false
+    foreach ($line in Get-Content -Path $agentConfigYaml -Encoding utf8) {
+        if ($line -match '^document_lifecycle:\s*$') {
+            $inDocumentLifecycle = $true
+            continue
+        }
+        if ($inDocumentLifecycle -and $line -match '^\S') {
+            $inDocumentLifecycle = $false
+        }
+        if ($inDocumentLifecycle -and $line -match '^\s+routing_actions_pending_warn_days:\s*(\d+)\s*$') {
+            $routingActionsPendingWarnDays = [int]$Matches[1]
+            break
+        }
+    }
+}
 $reviewDir = Join-NormalPath $root 'docs/reviews'
 if (Test-Path -Path $reviewDir -PathType Container) {
     foreach ($review in Get-ChildItem -Path $reviewDir -Filter *.md -File -ErrorAction SilentlyContinue) {
@@ -853,6 +871,20 @@ if (Test-Path -Path $reviewDir -PathType Container) {
                     $routingActionErrors++
                 }
             }
+
+            if ($reviewContent -match '(?m)^[ \t]*status:\s*pending\s*$' -and $review.BaseName -match '^(?<date>\d{4}-\d{2}-\d{2})') {
+                $reviewDate = [datetime]::ParseExact(
+                    $Matches['date'],
+                    'yyyy-MM-dd',
+                    [Globalization.CultureInfo]::InvariantCulture,
+                    [Globalization.DateTimeStyles]::AssumeUniversal
+                ).Date
+                $ageDays = [int](([datetime]::UtcNow.Date - $reviewDate).TotalDays)
+                if ($ageDays -ge $routingActionsPendingWarnDays) {
+                    Write-Output "  stale pending routing_actions: $($review.FullName) ($ageDays`d old, threshold $routingActionsPendingWarnDays`d)"
+                    $routingActionStaleWarnings++
+                }
+            }
         }
     }
 }
@@ -864,6 +896,9 @@ else {
 }
 if ($routingActionWarnings -gt 0) {
     Add-Result -Level 'WARN' -Message "routing_actions target docs need follow-up: $routingActionWarnings"
+}
+if ($routingActionStaleWarnings -gt 0) {
+    Add-Result -Level 'WARN' -Message "stale pending routing_actions need canonical-doc follow-up: $routingActionStaleWarnings"
 }
 
 Test-ContainsLiteral -Path $canonicalDeploySh -Pattern 'LEGACY_IGNORE_START="# AI Brain OS - Agent System & Local Context"' -SuccessMessage 'deploy script supports legacy ignore marker migration' -FailureMessage 'deploy script missing legacy ignore marker support'

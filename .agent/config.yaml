@@ -132,6 +132,10 @@ downstream_capabilities:
 # Document lifecycle caps — prevents unbounded SSoT bloat.
 # See: docs/specs/tiered-doc-lifecycle.md
 document_lifecycle:
+  # Review snapshots with pending routing_actions older than this emit a validator WARN.
+  # They are temporal records; durable findings must move into canonical docs/specs.
+  routing_actions_pending_warn_days: 14
+
   # Global Lessons in current_state.md: max entries before oldest LOW-severity
   # lessons are archived to .agentcortex/context/archive/global-lessons-archive.md.
   # HIGH-severity lessons are pinned until manually demoted.

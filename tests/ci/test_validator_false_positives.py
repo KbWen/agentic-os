@@ -81,6 +81,7 @@ PHASE_SUMMARY_WARN = "with empty Phase Summary"     # #171 (WARN-specific; avoid
 TEMPLATE_WARN = "project spec template missing"     # #172
 PROJECT_NAME_WARN = "Project Name field absent"     # #172
 RESUME_WARN = "work logs with ## Resume section missing required sub-sections"
+ROUTING_ACTION_STALE_WARN = "stale pending routing_actions need canonical-doc follow-up"
 
 
 def _resume_warn_count(output: str) -> int | None:
@@ -305,6 +306,66 @@ def test_resume_none_before_handoff_is_not_warned_but_handoff_is_sh() -> None:
 
         out = _run_validate(target)
         assert _resume_warn_count(out) == 1, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_stale_pending_routing_actions_warn_sh() -> None:
+    """A pending routing_action in an old review snapshot must not stay invisible
+    just because it targets a valid existing canonical doc."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        review_dir = target / "docs" / "reviews"
+        review_dir.mkdir(parents=True, exist_ok=True)
+        (review_dir / "2000-01-01-routing-actions.md").write_text(
+            """# Routing Actions Fixture
+
+## routing_actions
+
+```yaml
+routing_actions:
+  - finding: "Old pending routing action should warn."
+    target_doc: "docs/architecture/document-governance.md"
+    status: pending
+    owner: "test"
+```
+""",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        out = _run_validate(target)
+        assert ROUTING_ACTION_STALE_WARN in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_stale_pending_routing_actions_warn_ps1() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        review_dir = target / "docs" / "reviews"
+        review_dir.mkdir(parents=True, exist_ok=True)
+        (review_dir / "2000-01-01-routing-actions.md").write_text(
+            """# Routing Actions Fixture
+
+## routing_actions
+
+```yaml
+routing_actions:
+  - finding: "Old pending routing action should warn."
+    target_doc: "docs/architecture/document-governance.md"
+    status: pending
+    owner: "test"
+```
+""",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+        out = _run_validate_ps1(target)
+        assert ROUTING_ACTION_STALE_WARN in out, out[-1200:]
 
 
 @pytest.mark.slow
