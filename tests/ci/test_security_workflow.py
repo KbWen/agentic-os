@@ -20,6 +20,8 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[2]
 SECURITY_YML = ROOT / ".github" / "workflows" / "security.yml"
+VALIDATE_YML = ROOT / ".github" / "workflows" / "validate.yml"
+DEPENDABOT_YML = ROOT / ".github" / "dependabot.yml"
 
 # Floating-ref denylist: known mutable branch/alias names used as action refs.
 # Does NOT flag @v4 / @v5 (major-version tags, accepted per AC-5 for first-party setup actions).
@@ -365,7 +367,7 @@ class TestDependencyAuditCIManifest(unittest.TestCase):
 
 
 class TestVersionPinningGlobal(unittest.TestCase):
-    """AC-5: no floating refs anywhere in the workflow file."""
+    """AC-5: no floating refs or mutable tags anywhere in workflow uses lines."""
 
     def test_ac5_no_floating_refs_in_raw_yaml(self):
         # Anchor search to `uses:` lines only — avoids false positives from comments
@@ -376,6 +378,45 @@ class TestVersionPinningGlobal(unittest.TestCase):
         self.assertFalse(
             matches,
             f"Floating action refs in uses: lines: {matches} — must pin to tag or SHA (AC-5)",
+        )
+
+    def test_ac5_security_and_validate_actions_use_commit_sha(self):
+        workflow_paths = [SECURITY_YML, VALIDATE_YML]
+        bad = []
+        for workflow_path in workflow_paths:
+            raw = workflow_path.read_text(encoding="utf-8")
+            for line_no, line in enumerate(raw.splitlines(), start=1):
+                if not re.search(r"^\s*-?\s*uses:", line):
+                    continue
+                uses = line.split("uses:", 1)[1].split("#", 1)[0].strip()
+                ref = uses.split("@", 1)[1] if "@" in uses else ""
+                if not re.fullmatch(r"[0-9a-fA-F]{40}", ref):
+                    bad.append(f"{workflow_path.relative_to(ROOT)}:{line_no}: {uses}")
+        self.assertFalse(
+            bad,
+            "Workflow actions must use immutable 40-char commit SHAs, not mutable tags: "
+            + "; ".join(bad),
+        )
+
+    def test_ac5_dependabot_github_actions_updates_have_cooldown(self):
+        self.assertTrue(DEPENDABOT_YML.exists(), "Dependabot config must exist for action pin refreshes")
+        with DEPENDABOT_YML.open(encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        updates = cfg.get("updates") or []
+        github_action_updates = [
+            update for update in updates
+            if update.get("package-ecosystem") == "github-actions"
+        ]
+        self.assertTrue(github_action_updates, "Dependabot must manage github-actions updates")
+        missing = []
+        for update in github_action_updates:
+            default_days = (update.get("cooldown") or {}).get("default-days")
+            if not isinstance(default_days, int) or default_days < 7:
+                missing.append(update.get("directory", "<missing-directory>"))
+        self.assertFalse(
+            missing,
+            "github-actions Dependabot updates must set cooldown.default-days >= 7: "
+            + ", ".join(missing),
         )
 
 
@@ -429,12 +470,11 @@ class TestWorkflowIsolation(unittest.TestCase):
         self.assertTrue(SECURITY_YML.exists())
 
     def test_ac10_security_jobs_not_in_validate_yml(self):
-        validate_yml = ROOT / ".github" / "workflows" / "validate.yml"
         self.assertTrue(
-            validate_yml.exists(),
+            VALIDATE_YML.exists(),
             "validate.yml must exist — accidental deletion should be a FAIL, not a skip",
         )
-        with validate_yml.open(encoding="utf-8") as f:
+        with VALIDATE_YML.open(encoding="utf-8") as f:
             wf = yaml.safe_load(f)
         jobs = set((wf.get("jobs") or {}).keys())
         security_jobs = {"semgrep", "trufflehog", "dependency-audit"}
