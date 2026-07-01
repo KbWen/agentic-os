@@ -219,6 +219,15 @@ def test_172_no_app_init_warn_on_framework(framework_validate_output: str) -> No
 
 @pytest.mark.slow
 @requires_bash
+def test_framework_has_no_stale_pending_routing_actions_warn(framework_validate_output: str) -> None:
+    assert ROUTING_ACTION_STALE_WARN not in framework_validate_output, (
+        "framework review snapshots must close stale routing_actions by merging or rejecting "
+        "them in the target canonical doc"
+    )
+
+
+@pytest.mark.slow
+@requires_bash
 def test_172_app_init_checks_fire_for_fork_downstream() -> None:
     """A fork/clone adopter (no .agentcortex-manifest) that ran /app-init — i.e.
     has an ADR-00N-project-architecture.md — MUST still get the template /

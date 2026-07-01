@@ -78,3 +78,16 @@ source_sha: fe0f306ef529c5b30b099b5e1b7a8bac8b561f15
 [DECISION] Use `.github/copilot-instructions.md` for Copilot's always-on short entry point because Copilot code review has a documented custom-instruction length boundary.
 
 [CONSTRAINT] Do not add new durable governance claims unless a guard test or validator verifies the structural presence or size constraint.
+
+### [document-governance][2026-07-01][codex/governance-premortem-audit]
+source_review: docs/reviews/2026-06-16-audit.md
+source_review: docs/reviews/2026-07-01-governance-premortem-round2.md
+source_sha: <pr-306-commit-sha>
+
+[DECISION] Review snapshot `routing_actions` are not closed merely by being visible. Old `status: pending` actions must transition to `merged` or `rejected` after their target canonical doc absorbs or rejects the finding; validator staleness warnings are an alarm, not the final remediation.
+
+[DECISION] Optional audit-created Work Logs are support traces. If an `/audit` session creates one, it may record support-phase evidence for traceability, but that receipt must not imply normal state-machine advancement for `/plan`, `/implement`, `/review`, `/test`, `/handoff`, or `/ship`.
+
+[DECISION] Same-day repeated audit/review snapshots should use scope-qualified filenames such as `docs/reviews/<date>-<scope>-audit.md` or `docs/reviews/<date>-<scope>-premortem.md`, so a second audit does not overwrite or blur the first temporal record.
+
+[CONSTRAINT] Blast-radius evidence must preserve target-relative path context. Dry-run, deploy, or migration previews that collapse paths to basenames are insufficient for governance review when multiple files can share the same leaf name.

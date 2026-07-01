@@ -123,7 +123,7 @@ Likely fix direction: prioritize eval coverage by blast radius rather than count
 routing_actions:
   - finding: "Pending routing_actions need age/severity escalation instead of only current-domain ship checks."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "codex-session"
   - finding: "Default/protected branch Work Logs need collision-resistant session keys or explicit resume confirmation."
     target_doc: "docs/architecture/document-governance.md"
