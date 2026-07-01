@@ -3,7 +3,7 @@ status: living
 title: Product Backlog
 source: governance-bloat-review-2026-04-12 + optimization-round-2026-05-04 + optimization-research-2026-06-02
 created: 2026-04-12
-last_updated: 2026-06-28
+last_updated: 2026-07-01
 ---
 
 # Product Backlog
@@ -69,6 +69,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | 100 | Subagent fan-out under autopilot: same-owner Work Log lock contention — `subagent_policy: read-only` avoids it; lock short-circuit deferred (ADR-007, no consumer). Report-trigger issue for real autopilot adopters | framework | governance | P3 | — | feature | Pending | [#291](https://github.com/KbWen/agentic-os/issues/291) | — |
 | 101 | Surface adopter's pre-existing skills + the `custom-*` on-ramp at bootstrap — present-only opt-in detector (never auto-activate, ADR-007). Report-trigger issue for adopters with existing skill packs | framework | skill | P3 | — | feature | Pending | [#292](https://github.com/KbWen/agentic-os/issues/292) | — |
 | 102 | Legacy poisoned-manifest migration (`baseline_mode: upstream`) — conditional follow-on to the v1.8.4 deploy data-loss fix: manifests written by ≤v1.8.3 may carry a preserved *user* hash as the baseline; a `baseline_mode` marker + one conservative sidecar cycle for unmarked manifests would stop a poisoned baseline from overwriting user content on the next upgrade. Backlog-only (needs a real ≤v1.8.3 install hitting it); the v1.8.4 fix stops NEW poisoning | framework | deploy | P3 | — | quick-win | Pending | — | after v1.8.4 |
+| 103 | Governance premortem 2026-07-01 follow-ups — the 4 `status: pending` routing_actions in `docs/reviews/2026-07-01-governance-premortem.md`: (a) collision-resistant Work Log keys / explicit-resume confirmation for default/protected branches; (b) explicit reduced-assurance receipt labeling for ship/gate claims on no-file-access platforms; (c) ship-time risk-reconciliation check for quick-win governance/deploy/trust-boundary changes; (d) validator WARN taxonomy split (hygiene vs governance-integrity debt vs reduced-assurance). Keep each routing_action `pending` until absorbed into `docs/architecture/document-governance.md` or rejected. Backlog-only (premortem findings, no observed incident) | framework | governance | P3 | — | quick-win | Pending | — | — |
 
 > Rows whose GH issue is CLOSED-premature (#7, #13, #18, #21, #33) are kept deliberately as
 > future directions — reopen the issue when a concrete signal appears (2026-06-02 curation).

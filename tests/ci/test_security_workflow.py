@@ -24,7 +24,9 @@ VALIDATE_YML = ROOT / ".github" / "workflows" / "validate.yml"
 DEPENDABOT_YML = ROOT / ".github" / "dependabot.yml"
 
 # Floating-ref denylist: known mutable branch/alias names used as action refs.
-# Does NOT flag @v4 / @v5 (major-version tags, accepted per AC-5 for first-party setup actions).
+# Intentionally does NOT match @v4 / @v5 — version tags are not floating branch refs.
+# SHA enforcement for ALL actions (incl. first-party) is asserted separately by
+# test_ac5_security_and_validate_actions_use_commit_sha (AC-5).
 _FLOATING_REF_RE = re.compile(
     r"@(main|master|HEAD|latest|develop|dev|trunk|stable|edge|next|nightly|release|current"
     r"|beta|alpha|rc|canary|preview|unstable|snapshot|experimental|pre)\b",

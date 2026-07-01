@@ -82,7 +82,7 @@ source_sha: fe0f306ef529c5b30b099b5e1b7a8bac8b561f15
 ### [document-governance][2026-07-01][codex/governance-premortem-audit]
 source_review: docs/reviews/2026-06-16-audit.md
 source_review: docs/reviews/2026-07-01-governance-premortem-round2.md
-source_sha: <pr-306-commit-sha>
+source_sha: <ship-commit-sha>
 
 [DECISION] Review snapshot `routing_actions` are not closed merely by being visible. Old `status: pending` actions must transition to `merged` or `rejected` after their target canonical doc absorbs or rejects the finding; validator staleness warnings are an alarm, not the final remediation.
 
