@@ -143,3 +143,37 @@ def test_ac10_pytest_ini_has_norecursedirs() -> None:
             f"pytest.ini norecursedirs must include {entry!r} to prevent collecting "
             f"non-test files from that directory (AC-10)"
         )
+
+
+# ---------------------------------------------------------------------------
+# Backlog #112: docs-pins job — content-pin tests must run on docs-only PRs.
+# ---------------------------------------------------------------------------
+
+def test_docs_pins_job_runs_when_heavy_is_false() -> None:
+    """validate.yml must carry a docs-pins job gated on heavy != 'true' running -m docs_pin."""
+    txt = WORKFLOW.read_text(encoding="utf-8")
+    assert "docs-pins:" in txt, "validate.yml must define the docs-pins job (#112)"
+    m = re.search(r"docs-pins:(.*?)\n  [a-z][a-z0-9-]*:", txt, re.DOTALL)
+    block = m.group(1) if m else ""
+    assert "needs.changes.outputs.heavy != 'true'" in block, (
+        "docs-pins must run when heavy jobs are SKIPPED (heavy != 'true') — that is its whole point (#112)"
+    )
+    assert "-m docs_pin" in block, "docs-pins must select tests via the docs_pin marker (#112)"
+
+
+def test_docs_pin_marker_registered_and_selects_tests() -> None:
+    """pytest.ini registers docs_pin, and the marker selects the content-pin tests (>=4)."""
+    assert "docs_pin" in PYTEST_INI.read_text(encoding="utf-8"), (
+        "pytest.ini must register the docs_pin marker (#112)"
+    )
+    import subprocess, sys
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests/ci/", "-m", "docs_pin", "--collect-only", "-q"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT),
+    )
+    m = re.search(r"(\d+)/\d+ tests collected", proc.stdout)
+    count = int(m.group(1)) if m else 0
+    assert count >= 4, (
+        f"-m docs_pin must select >=4 content-pin tests (got {count}) — a lost tag silently "
+        f"re-opens the docs-only gate hole (#112). {proc.stdout[-400:]}"
+    )

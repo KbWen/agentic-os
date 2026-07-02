@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 import sys
 import unittest
+
+import pytest
 from pathlib import Path
 
 try:
@@ -422,6 +424,7 @@ class TestVersionPinningGlobal(unittest.TestCase):
         )
 
 
+@pytest.mark.docs_pin
 class TestClaimsVsReality(unittest.TestCase):
     """AC-7 (dev-flow-hardening): security spec must not overstate enforcement reality.
 

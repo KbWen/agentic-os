@@ -141,6 +141,7 @@ def test_ac3_guard_receipt_warning_is_advisory_only(tmp_path: Path) -> None:
     assert "GUARD WARN: AGENTS.md" in result.stdout
 
 
+@pytest.mark.docs_pin
 def test_ac4_ac5_readme_documents_pre_commit_hook_setup() -> None:
     # The pre-commit hook setup moved from the README to the dedicated install
     # guide (docs/INSTALL.md) when the README was slimmed to a landing page; the

@@ -447,6 +447,7 @@ def test_source_and_downstream_ignore_guard_receipt_directory() -> None:
     assert ".agentcortex/context/.guard_receipts/" in deploy_sh
 
 
+@pytest.mark.docs_pin
 def test_text_only_install_does_not_copy_runtime_context() -> None:
     install = INSTALL.read_text(encoding="utf-8")
     text_only = install.split("<summary><b>Text-only usage", 1)[1].split("</details>", 1)[0]
@@ -547,6 +548,7 @@ def test_validators_check_override_step_parity() -> None:
     assert "Load Override Layer" in VALIDATE_PS1.read_text(encoding="utf-8")
 
 
+@pytest.mark.docs_pin
 def test_readme_fork_guidance_parity() -> None:
     """Fork/clone customization guidance (ADR-004/ADR-005) must stay reachable
     from both language entry points. The English README was slimmed to a
