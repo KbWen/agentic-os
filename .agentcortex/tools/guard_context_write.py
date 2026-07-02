@@ -364,6 +364,19 @@ def file_lock(
                     ) from exc
                 time.sleep(backoff_ms / 1000.0)
                 backoff_ms = min(int(backoff_ms * 2), 1000)
+            except PermissionError:
+                # Windows: a lock file in delete-pending state (holder mid-unlink,
+                # or AV/indexer briefly holding it) surfaces as ACCESS_DENIED from
+                # os.open — NOT FileExistsError — during a window of a few ms.
+                # Sibling quirk to the WinError 32 note on the unlink side below.
+                # Treat as lock-busy and retry with backoff; if it persists past
+                # the deadline, re-raise the ORIGINAL PermissionError so a genuine
+                # ACL misconfiguration stays diagnosable (unlike the busy-timeout
+                # RuntimeError above).
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(backoff_ms / 1000.0)
+                backoff_ms = min(int(backoff_ms * 2), 1000)
         if handle is None:
             raise RuntimeError(f"lock busy: {lock_path.name}")
     except BaseException:

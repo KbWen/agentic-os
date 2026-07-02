@@ -103,5 +103,56 @@ class TestConcurrentAppendSubprocess(unittest.TestCase):
             self.assertEqual(seen, set(range(N_CONCURRENT)))
 
 
+class TestWindowsDeletePendingPermissionError(unittest.TestCase):
+    """file_lock must survive the Windows delete-pending window, where os.open
+    on a lock file being unlinked by the previous holder raises PermissionError
+    (ACCESS_DENIED) instead of FileExistsError. Observed twice on windows-latest
+    CI (2026-07-02, PR #311): the retry loop caught only FileExistsError, so the
+    subprocess crashed. Deterministic reproduction: fail os.open once with
+    PermissionError, then delegate to the real os.open."""
+
+    def test_permission_error_is_retried_as_busy(self) -> None:
+        import os as _os
+
+        real_open = _os.open
+        calls = {"n": 0}
+
+        def flaky_open(path, flags, *a, **kw):
+            if str(path).endswith(".guard.lock") and calls["n"] == 0:
+                calls["n"] += 1
+                raise PermissionError(13, "Access is denied (delete-pending sim)", str(path))
+            return real_open(path, flags, *a, **kw)
+
+        with tempfile.TemporaryDirectory() as td:
+            lock_path = Path(td) / "sim.jsonl.guard.lock"
+            gw.os.open = flaky_open
+            try:
+                with gw.file_lock(lock_path, max_wait_seconds=5.0):
+                    pass  # acquired despite the injected delete-pending window
+            finally:
+                gw.os.open = real_open
+        self.assertEqual(calls["n"], 1, "the PermissionError branch must have been exercised")
+
+    def test_persistent_permission_error_reraises_original(self) -> None:
+        import os as _os
+
+        real_open = _os.open
+
+        def always_denied(path, flags, *a, **kw):
+            if str(path).endswith(".guard.lock"):
+                raise PermissionError(13, "Access is denied (persistent)", str(path))
+            return real_open(path, flags, *a, **kw)
+
+        with tempfile.TemporaryDirectory() as td:
+            lock_path = Path(td) / "acl.jsonl.guard.lock"
+            gw.os.open = always_denied
+            try:
+                with self.assertRaises(PermissionError):
+                    with gw.file_lock(lock_path, max_wait_seconds=0.3):
+                        pass
+            finally:
+                gw.os.open = real_open
+
+
 if __name__ == "__main__":
     unittest.main()
