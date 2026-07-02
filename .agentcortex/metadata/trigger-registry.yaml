@@ -130,7 +130,7 @@ entries:
     mirror_ref: .agents/skills/systematic-debugging/agents/openai.yaml
     detail_ref: .agents/skills/systematic-debugging/SKILL.md
     platforms: [claude, codex, antigravity]
-    phase_scope: [implement, review, test, hotfix]
+    phase_scope: [implement, review, test]
     trigger_priority: contextual
     user_disableable: true
     detect_by:

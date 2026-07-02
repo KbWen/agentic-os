@@ -193,8 +193,7 @@
       "phase_scope": [
         "implement",
         "review",
-        "test",
-        "hotfix"
+        "test"
       ],
       "detect_by": {
         "classification": [

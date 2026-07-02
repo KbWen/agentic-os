@@ -1,7 +1,7 @@
 ---
 name: systematic-debugging
 description: 4-phase root cause analysis (Observe→Hypothesize→Verify→Fix). Auto-activate whenever a bug or unexpected behavior is encountered during any phase. Also activate during hotfix research.
-phases: ["implement", "review", "test", "hotfix"]
+phases: ["implement", "review", "test"]
 trigger: auto (on bug/error encounter)
 trigger_priority: contextual
 load_policy: on-failure

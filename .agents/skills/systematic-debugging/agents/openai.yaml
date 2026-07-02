@@ -6,7 +6,7 @@ agentcortex:
   summary_ref: .agent/skills/systematic-debugging
   detail_ref: .agents/skills/systematic-debugging/SKILL.md
   trigger_priority: contextual
-  phase_scope: ["implement", "review", "test", "hotfix"]
+  phase_scope: ["implement", "review", "test"]
   load_policy: on-failure
   cost_type: execution
   cost_risk: high

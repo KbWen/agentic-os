@@ -247,7 +247,11 @@ agentcortex:
         self.assertTrue(payload["all_workflows_ready"])
         self.assertTrue(payload["all_skills_auto_trigger_ready"])
         skills = {entry["skill"]: entry for entry in payload["skills"]}
-        self.assertTrue(skills["systematic-debugging"]["phase_hooks"]["hotfix"]["ready"])
+        sd_hooks = skills["systematic-debugging"]["phase_hooks"]
+        for phase in ("implement", "review", "test"):
+            self.assertTrue(sd_hooks[phase]["ready"])
+        # hotfix is a classification, not a phase — the phases carve-out was removed
+        self.assertNotIn("hotfix", sd_hooks)
 
     def test_resolver_matches_across_platforms(self) -> None:
         outputs = []

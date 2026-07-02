@@ -150,7 +150,7 @@ Rules:
 - MUST identify at least 1 Risk + viable Rollback.
 - List ONLY files being modified (Prevent scope creep).
 - MUST explicitly cite documentation (e.g., `Ref: docs/specs/auth.md`).
-- **Frozen Spec Pre-Check**: For each target file, check whether a corresponding `docs/specs/*.md` file exists on disk with `status: frozen` in its frontmatter (do NOT rely on a `[Frozen]` Spec Index tag — frozen specs are not yet indexed pre-ship under ADR-010). If any target file falls under a frozen spec, warn immediately: "⚠️ [file] is governed by Frozen Spec [spec-name]. Unfreeze required before proceeding. Approve? (yes/no)"
+- **Frozen Spec Pre-Check**: For each target file, check whether a corresponding `docs/specs/*.md` file exists on disk with `status: frozen` in its frontmatter (do NOT rely on a `[Frozen]` Spec Index tag — frozen specs are not yet indexed pre-ship under ADR-010). **Own-spec exemption**: the spec THIS plan implements is frozen by design (§4.2) — no unfreeze to implement it; editing that spec file itself routes via §Spec Feedback Loop. If a target file falls under a DIFFERENT frozen spec, warn immediately: "⚠️ [file] is governed by Frozen Spec [spec-name]. Unfreeze required before proceeding. Approve? (yes/no)"
 
 ## Spec Feedback Loop
 

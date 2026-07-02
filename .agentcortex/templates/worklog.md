@@ -121,6 +121,22 @@ none
 
 ---
 
+## Review Feedback
+
+> Written by /review (fix suggestions + NOT READY findings). Read by /implement on resume-after-review — scope is ONLY the UNPROVEN/blocking rows.
+
+none
+
+---
+
+## Red Team Findings
+
+> Written by /review and /test when adversarial testing runs. HIGH findings do not block but MUST record a risk decision here.
+
+none
+
+---
+
 ## Design Reference
 
 > Populated by /plan for UI tasks. If not a UI task, write `none`.

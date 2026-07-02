@@ -129,7 +129,7 @@ def validate_entry(root: Path, entry: dict[str, Any], errors: list[str]) -> None
 
     ensure(bool(entry["runtime_anchor"]), f"{entry['id']}: runtime_anchor must not be empty", errors)
     ensure(isinstance(entry["phase_scope"], list), f"{entry['id']}: phase_scope must be a list", errors)
-    ensure(all(phase in VALID_PHASES or phase == "hotfix" for phase in entry["phase_scope"]), f"{entry['id']}: invalid phase_scope", errors)
+    ensure(all(phase in VALID_PHASES for phase in entry["phase_scope"]), f"{entry['id']}: invalid phase_scope", errors)
     ensure(isinstance(entry["platforms"], list), f"{entry['id']}: platforms must be a list", errors)
     ensure(isinstance(entry["detect_by"], dict), f"{entry['id']}: detect_by must be an object", errors)
 

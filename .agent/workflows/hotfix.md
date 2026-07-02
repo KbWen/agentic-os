@@ -50,7 +50,11 @@ Work Log must contain: root cause description, fix rationale, reproduction test 
 - Set `Labels` to the affected domain
 - Set `Priority: P1` (systemic issues warrant near-term attention but don't block the hotfix itself)
 
-## 6. Optional: Cloud PR Auto-Fix (Claude Code CLI only)
+## 6. Ship
+
+Run `/ship`. Its Gate Receipt Audit expects PASS receipts for **bootstrap, plan, implement, review, test** — steps 1–4 write them when run canonically; if one is missing, re-run that phase (never hand-write a receipt). Ships from `TESTED` only; `/handoff` exempt (§10.2).
+
+## 7. Optional: Cloud PR Auto-Fix (Claude Code CLI only)
 
 When the hotfix is pushed to a PR and the user is running inside Claude Code CLI, the user MAY invoke `/autofix-pr` to enable Anthropic's cloud auto-fix loop on the PR. Claude Code on the web watches CI + review comments and pushes fixes until green.
 

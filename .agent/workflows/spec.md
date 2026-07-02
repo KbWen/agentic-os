@@ -41,7 +41,7 @@ Checkpoints:
 ## Output Location (Hard Rule)
 
 - Write spec to: `docs/specs/<feature-name>.md`.
-- Do NOT write to `current_state.md` at draft-creation or freeze-time (Write Isolation: Spec Index is written by `/ship` only — see `AGENTS.md §Write Isolation` and `spec-intake.md §5.3`).
+- Do NOT write to `current_state.md` at draft-creation or freeze-time (Write Isolation: Spec Index is written by `/ship` only — see `AGENTS.md §Write Isolation` and `spec-intake.md §5 Confirm & Freeze`).
 - This file is the ONLY artifact that satisfies the Spec Gate in `/plan`.
 
 > Note: Antigravity's `implementation_plan.md` (in brain/) is a per-conversation ephemeral artifact. It does NOT replace `docs/specs/<feature>.md` as the persistent specification SSoT.
