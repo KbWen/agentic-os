@@ -838,6 +838,35 @@ def test_d5_current_branch_legacy_guard_present_in_both_validators() -> None:
     )
 
 
+def test_ps1_d4_passes_index_path_as_argv_not_source_interpolation() -> None:
+    """F1: validate.ps1 D4 must pass the INDEX path via sys.argv, NOT interpolate it
+    into the Python source (a repo path with an apostrophe would crash the child and
+    silently mask a dangling ref to PASS on Windows). validate.sh was always argv-based."""
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert "idx = r'" not in ps1, (
+        "validate.ps1 must NOT interpolate the INDEX path into the D4 Python source "
+        "(apostrophe-path SyntaxError → empty output → false PASS)"
+    )
+    assert "idx = sys.argv[1]" in ps1, "validate.ps1 D4 must read the INDEX path from sys.argv[1]"
+    # Empty/errored child output must NOT silently default to PASS.
+    assert "referenced-file check did not run" in ps1, (
+        "validate.ps1 D4 must WARN (not PASS) when the child produces empty/unrecognized output"
+    )
+
+
+def test_created_date_parser_accepts_non_bold_forms_in_both_validators() -> None:
+    """F2: the Created Date parser must accept list/backtick/table forms, not bold-only.
+    The template + all real logs use plain/backtick form; a bold-only parser left the
+    legacy gate-evidence exemption (and its D5 refinement) as dead code."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    # The bold-only anchors must be gone (replaced by bold-optional `\*{0,2}`).
+    assert r"s/^- \*\*Created Date\*\*:" not in sh, "validate.sh Created Date parser must not be bold-only (F2)"
+    assert r"'(?m)^- \*\*Created Date\*\*:\s*(.+)$'" not in ps1, "validate.ps1 Created Date parser must not be bold-only (F2)"
+    assert r"Created Date\*{0,2}" in sh, "validate.sh Created Date parser must accept bold-optional form (F2)"
+    assert r"Created Date\*{0,2}" in ps1, "validate.ps1 Created Date parser must accept bold-optional form (F2)"
+
+
 def _seed_index_jsonl(target: Path, log_name: str, *, create_file: bool) -> None:
     """Write a minimal 1-entry archive/INDEX.jsonl referencing log_name.
 

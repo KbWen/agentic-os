@@ -439,9 +439,14 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
 # (append-only chain + git witness forbid entry deletion), so this SURFACES the
 # gap for review rather than blocking. Capability-by-presence; needs Python.
 if ((Test-Path -Path $archiveIndexJsonl -PathType Leaf) -and $script:PythonCommand) {
+    # Pass the path as an argv (sys.argv[1]), NOT interpolated into the Python
+    # source — a repo path containing an apostrophe (e.g. C:\Users\O'Brien\...)
+    # would otherwise produce an unterminated string literal, crash the child,
+    # and (via the empty-output default below) silently mask a dangling ref to
+    # PASS on Windows. Mirror of validate.sh, which already uses argv.
     $indexRefsOut = (& $script:PythonCommand.Source -c @"
-import json, os
-idx = r'$($archiveIndexJsonl.Replace('\','/'))'
+import json, os, sys
+idx = sys.argv[1]
 archive = os.path.dirname(os.path.abspath(idx))
 missing = []
 seen = 0
@@ -466,9 +471,7 @@ except OSError:
     print('error')
     raise SystemExit(0)
 print(('missing:' + ','.join(missing)) if missing else ('ok:%d' % seen))
-"@ 2>$null | Out-String).Trim()
-    $indexRefsLevel = 'PASS'
-    $indexRefsMsg = 'INDEX.jsonl referenced logs all present on disk'
+"@ $archiveIndexJsonl 2>$null | Out-String).Trim()
     if ($indexRefsOut -like 'missing:*') {
         $dangling = $indexRefsOut.Substring('missing:'.Length)
         $danglingCount = @($dangling -split ',' | Where-Object { $_ -ne '' }).Count
@@ -476,7 +479,14 @@ print(('missing:' + ','.join(missing)) if missing else ('ok:%d' % seen))
         $indexRefsLevel = 'WARN'
         $indexRefsMsg = "INDEX.jsonl referenced logs missing on disk: $danglingCount (dangling audit reference)"
     } elseif ($indexRefsOut -like 'ok:*') {
+        $indexRefsLevel = 'PASS'
         $indexRefsMsg = "INDEX.jsonl referenced logs all present on disk ($($indexRefsOut.Substring('ok:'.Length)) checked)"
+    } else {
+        # Empty/unrecognized output = the child could not run (not a clean 'ok').
+        # WARN rather than silently defaulting to PASS, so a check that failed to
+        # execute cannot mask a dangling reference.
+        $indexRefsLevel = 'WARN'
+        $indexRefsMsg = 'INDEX.jsonl referenced-file check did not run (python error or empty output) -- verify manually'
     }
     Add-Result -Level $indexRefsLevel -Message $indexRefsMsg
 }
@@ -1215,7 +1225,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                             elseif ($wlClassForGates -in @('quick-win','tiny-fix')) { $legalDefault }
                             else { $legalStrict }  # H1 fail-closed: unknown → strictest transitions
         $createdDate = ''
-        $createdDateMatch = [regex]::Match($content, '(?m)^- \*\*Created Date\*\*:\s*(.+)$')
+        # Accept list (bold-optional, backtick-optional) OR table form — the
+        # template emits plain/backtick, not bold; a bold-only parser disabled the
+        # legacy exemption for every real log. Mirror of validate.sh.
+        $createdDateMatch = [regex]::Match($content, '(?m)^(?:-\s*\*{0,2}Created Date\*{0,2}:|\|\s*\*{0,2}Created Date\*{0,2}\s*\|)\s*`?(\d{4}-\d{2}-\d{2})')
         if ($createdDateMatch.Success) {
             $createdDate = $createdDateMatch.Groups[1].Value.Trim()
         }
@@ -1316,7 +1329,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     # H3: record ship presence BEFORE verdict filter
                     if ($gPhase -eq 'ship') { $hasShipReceipt = $true }
                     # supporting workflows are out-of-band
-                    if ($gPhase -in @('retro','research','brainstorm','decide','audit')) { continue }
+                    if ($gPhase -in @('retro','research','brainstorm','decide','audit','govern-audit')) { continue }
                     if ($line -match '(?i)\|[^|]*Verdict:\s*PASS(\s*\||$)') {
                         # PASS: clear pending re-review flag if this is review
                         if ($gPhase -eq 'review') { $reviewNotReady = $false }
