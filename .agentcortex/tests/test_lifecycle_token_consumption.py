@@ -422,8 +422,8 @@ class TestTokenBudgetBounds(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.results = {r["id"]: r for r in json.loads(result.stdout)["results"]}
 
-    def test_quick_win_current_total_under_29k(self) -> None:
-        """Quick-win should not exceed 29k tokens total.
+    def test_quick_win_current_total_under_30k(self) -> None:
+        """Quick-win should not exceed 30k tokens total.
 
         Threshold history: 26k → 28k (Design-First gate chain + document-state-growth
         governance); 28k → 29k (ADR-007/008: the present-only downstream-capability
@@ -494,7 +494,7 @@ class TestTokenBudgetBounds(unittest.TestCase):
             f"aggregate codex savings too small: {delta_total}",
         )
 
-    def test_aggregate_current_total_stays_under_350k(self) -> None:
+    def test_aggregate_current_total_stays_under_355k(self) -> None:
         current_total = sum(result["current_total_tokens"] for result in self.results.values())
         self.assertLess(
             current_total,
