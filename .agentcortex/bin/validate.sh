@@ -384,6 +384,55 @@ else
   record_result SKIP "audit chain integrity -- archive INDEX.jsonl not present"
 fi
 
+# D4: INDEX.jsonl referenced-file existence. The hash chain + git witness above
+# prove entries are append-only and unedited, but neither verifies that each
+# entry's `log` artifact still exists on disk — a DANGLING reference (entry
+# present, file gone) is an integrity gap the chain cannot see. WARN, not FAIL:
+# a genuine historical dangling ref cannot be cleanly removed (append-only chain
+# + git witness forbid entry deletion), so this SURFACES the gap for review
+# rather than blocking. Capability-by-presence; needs Python for robust JSON.
+if [[ -f "$ARCHIVE_INDEX_JSONL" ]] && [[ -n "$PYTHON_BIN" ]]; then
+  _acx_index_refs_py=$(cat <<'PYEOF'
+import json, os, sys
+archive = os.path.dirname(os.path.abspath(sys.argv[1]))
+missing = []
+seen = 0
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except Exception:
+                continue
+            log = entry.get("log")
+            if not log:
+                continue
+            seen += 1
+            cands = [os.path.join(archive, log), os.path.join(archive, "work", log)]
+            if not any(os.path.exists(c) for c in cands):
+                missing.append(log)
+except OSError:
+    print("error")
+    sys.exit(0)
+print(("missing:" + ",".join(missing)) if missing else ("ok:%d" % seen))
+PYEOF
+)
+  index_refs_result="$("$PYTHON_BIN" -c "$_acx_index_refs_py" "$ARCHIVE_INDEX_JSONL" 2>/dev/null)"
+  index_refs_level=PASS
+  index_refs_msg="INDEX.jsonl referenced logs all present on disk (${index_refs_result#ok:} checked)"
+  if [[ "$index_refs_result" == missing:* ]]; then
+    _acx_dangling="${index_refs_result#missing:}"
+    _acx_dangling_count="$(printf '%s' "$_acx_dangling" | tr ',' '\n' | grep -c '.')"
+    printf '  INDEX.jsonl references %s file(s) not present on disk: %s\n' "$_acx_dangling_count" "$_acx_dangling"
+    index_refs_level=WARN
+    index_refs_msg="INDEX.jsonl referenced logs missing on disk: ${_acx_dangling_count} (dangling audit reference)"
+  fi
+  record_result "$index_refs_level" "$index_refs_msg"
+fi
+
 # C1: git append-only WITNESS for INDEX.jsonl (ADR-003 amendment; spec
 # audit-chain-tamper-evidence AC-4/5/6). The back-linked chain above cannot
 # detect TAIL-TRUNCATION (deleting the most recent entries leaves a chain that
@@ -1176,15 +1225,23 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     # Runtime section: ## Gate Evidence — check existence, receipt format,
     # AND phase progression legality. Illegal progression = FAIL.
     if ! printf '%s' "$wl_content" | grep -q '^## Gate Evidence'; then
-      if [[ "$legacy_gate_evidence" -eq 1 ]]; then
+      if [[ "$legacy_gate_evidence" -eq 1 ]] && [[ "$is_current_branch" -eq 0 ]]; then
         legacy_gate_evidence_missing=$((legacy_gate_evidence_missing + 1))
       else
+        # D5: a log on the CURRENT branch claiming legacy status (Created Date
+        # < cutoff) but missing gate evidence cannot legitimately be a
+        # pre-Runtime-v4 log — you are actively shipping on this branch now.
+        # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
       fi
     elif ! printf '%s' "$wl_content" | grep -qiE '^(`?- )?gate:.*verdict:'; then
-      if [[ "$legacy_gate_evidence" -eq 1 ]]; then
+      if [[ "$legacy_gate_evidence" -eq 1 ]] && [[ "$is_current_branch" -eq 0 ]]; then
         legacy_gate_evidence_missing=$((legacy_gate_evidence_missing + 1))
       else
+        # D5: a log on the CURRENT branch claiming legacy status (Created Date
+        # < cutoff) but missing gate evidence cannot legitimately be a
+        # pre-Runtime-v4 log — you are actively shipping on this branch now.
+        # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
       fi
     else

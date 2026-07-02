@@ -802,3 +802,80 @@ def test_ac6_current_branch_arch_change_at_handoff_no_resume_fails_ps1() -> None
             f"validate.ps1 must not WARN for current-branch Resume missing (escalated to FAIL). "
             f"Output:\n{out[-1200:]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# D4: INDEX.jsonl referenced-file existence (governance self-audit).
+# The hash chain + git witness prove entries are append-only and unedited, but
+# neither verifies each entry's `log` artifact still exists on disk. D4 surfaces
+# a dangling reference (entry present, file gone) as a WARN in BOTH validators.
+#
+# D5: a current-branch log claiming legacy status (Created Date < cutoff) but
+# missing gate evidence cannot legitimately be pre-Runtime-v4 — the legacy WARN
+# downgrade is denied (FAIL-tier miss) in BOTH validators.
+# ---------------------------------------------------------------------------
+
+D4_INDEX_REF_WARN = "INDEX.jsonl referenced logs missing on disk"
+
+
+def test_d4_index_ref_check_present_in_both_validators() -> None:
+    """D4 dangling-reference check must exist in sh and ps1 (parity, structural)."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert D4_INDEX_REF_WARN in sh, "validate.sh must carry the D4 INDEX referenced-file check"
+    assert D4_INDEX_REF_WARN in ps1, "validate.ps1 must carry the D4 INDEX referenced-file check"
+
+
+def test_d5_current_branch_legacy_guard_present_in_both_validators() -> None:
+    """D5 current-branch-cannot-be-legacy guard must exist in sh and ps1 (parity, structural)."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert 'is_current_branch" -eq 0' in sh, (
+        "validate.sh legacy gate-evidence exemption must be guarded by NOT current-branch (D5)"
+    )
+    assert "-not $isCurrentBranch" in ps1, (
+        "validate.ps1 legacy gate-evidence exemption must be guarded by NOT current-branch (D5)"
+    )
+
+
+def _seed_index_jsonl(target: Path, log_name: str, *, create_file: bool) -> None:
+    """Write a minimal 1-entry archive/INDEX.jsonl referencing log_name.
+
+    D4 only reads the `log` field and checks disk existence, so a valid hash
+    chain is not required for this check (unrelated audit-chain output, if any,
+    does not remove the D4 line)."""
+    archive = target / ".agentcortex" / "context" / "archive"
+    archive.mkdir(parents=True, exist_ok=True)
+    (archive / "INDEX.jsonl").write_text(
+        '{"log": "%s", "prev_sha": "GENESIS", "branch": "test", "shipped": "2026-07-02"}\n' % log_name,
+        encoding="utf-8", newline="\n",
+    )
+    if create_file:
+        (archive / log_name).write_text("# archived fixture log\n", encoding="utf-8", newline="\n")
+
+
+@pytest.mark.slow
+@requires_bash
+def test_d4_dangling_index_ref_warns_sh() -> None:
+    """A dangling INDEX `log` reference (file absent on disk) must WARN in validate.sh."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _seed_index_jsonl(target, "never-committed-log-20260702.md", create_file=False)
+        out = _run_validate(target)
+        assert D4_INDEX_REF_WARN in out, (
+            f"validate.sh must WARN on a dangling INDEX reference (D4). Output:\n{out[-800:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_d4_present_index_ref_no_warn_sh() -> None:
+    """An INDEX `log` reference whose file exists must NOT trigger the D4 dangling WARN."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _seed_index_jsonl(target, "present-log-20260702.md", create_file=True)
+        out = _run_validate(target)
+        assert D4_INDEX_REF_WARN not in out, (
+            f"validate.sh must NOT WARN when every INDEX reference resolves on disk (D4). "
+            f"Output:\n{out[-800:]}"
+        )

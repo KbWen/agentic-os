@@ -431,6 +431,56 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     Add-Result -Level 'SKIP' -Message 'audit chain integrity -- archive INDEX.jsonl not present'
 }
 
+# D4: INDEX.jsonl referenced-file existence. Mirror of validate.sh. The hash
+# chain + git witness prove entries are append-only and unedited, but neither
+# verifies each entry's `log` artifact still exists on disk — a DANGLING
+# reference (entry present, file gone) is an integrity gap the chain cannot see.
+# WARN, not FAIL: a genuine historical dangling ref cannot be cleanly removed
+# (append-only chain + git witness forbid entry deletion), so this SURFACES the
+# gap for review rather than blocking. Capability-by-presence; needs Python.
+if ((Test-Path -Path $archiveIndexJsonl -PathType Leaf) -and $script:PythonCommand) {
+    $indexRefsOut = (& $script:PythonCommand.Source -c @"
+import json, os
+idx = r'$($archiveIndexJsonl.Replace('\','/'))'
+archive = os.path.dirname(os.path.abspath(idx))
+missing = []
+seen = 0
+try:
+    with open(idx, encoding='utf-8') as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except Exception:
+                continue
+            log = entry.get('log')
+            if not log:
+                continue
+            seen += 1
+            cands = [os.path.join(archive, log), os.path.join(archive, 'work', log)]
+            if not any(os.path.exists(c) for c in cands):
+                missing.append(log)
+except OSError:
+    print('error')
+    raise SystemExit(0)
+print(('missing:' + ','.join(missing)) if missing else ('ok:%d' % seen))
+"@ 2>$null | Out-String).Trim()
+    $indexRefsLevel = 'PASS'
+    $indexRefsMsg = 'INDEX.jsonl referenced logs all present on disk'
+    if ($indexRefsOut -like 'missing:*') {
+        $dangling = $indexRefsOut.Substring('missing:'.Length)
+        $danglingCount = @($dangling -split ',' | Where-Object { $_ -ne '' }).Count
+        Write-Output "  INDEX.jsonl references $danglingCount file(s) not present on disk: $dangling"
+        $indexRefsLevel = 'WARN'
+        $indexRefsMsg = "INDEX.jsonl referenced logs missing on disk: $danglingCount (dangling audit reference)"
+    } elseif ($indexRefsOut -like 'ok:*') {
+        $indexRefsMsg = "INDEX.jsonl referenced logs all present on disk ($($indexRefsOut.Substring('ok:'.Length)) checked)"
+    }
+    Add-Result -Level $indexRefsLevel -Message $indexRefsMsg
+}
+
 # C1: git append-only WITNESS for INDEX.jsonl (ADR-003 amendment; spec
 # audit-chain-tamper-evidence AC-4/5/6). Mirror of validate.sh. The back-linked
 # chain cannot detect TAIL-TRUNCATION; git's merge-base with origin/main is used
@@ -1174,15 +1224,21 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         if ($content -notmatch '(?m)(^- (`Current Phase`|Current Phase):|^\| (`Current Phase`|Current Phase) +\|)') { $phaseFieldMissing++ }
         if ($content -notmatch '(?m)(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)') { $checkpointMissing++ }
         if ($content -notmatch '(?m)^## Gate Evidence') {
-            if ($isLegacyGateEvidenceLog) {
+            if ($isLegacyGateEvidenceLog -and -not $isCurrentBranch) {
                 $legacyGateEvidenceMissing++
             } else {
+                # D5: a log on the CURRENT branch claiming legacy status but
+                # missing gate evidence cannot legitimately be pre-Runtime-v4 —
+                # deny the legacy WARN downgrade and treat as a FAIL-tier miss.
                 $gateEvidenceMissing++
             }
         } elseif ($content -notmatch '(?mi)^(`?- )?gate:.*verdict:') {
-            if ($isLegacyGateEvidenceLog) {
+            if ($isLegacyGateEvidenceLog -and -not $isCurrentBranch) {
                 $legacyGateEvidenceMissing++
             } else {
+                # D5: a log on the CURRENT branch claiming legacy status but
+                # missing gate evidence cannot legitimately be pre-Runtime-v4 —
+                # deny the legacy WARN downgrade and treat as a FAIL-tier miss.
                 $gateEvidenceMissing++
             }
         } else {
