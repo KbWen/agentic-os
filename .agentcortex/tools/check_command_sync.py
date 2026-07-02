@@ -30,6 +30,7 @@ EXPECTED_COMMANDS = [
     "research",
     "brainstorm",
     "audit",
+    "govern-audit",
     "decide",
     "sync-docs",
     "govern-docs",

@@ -17,6 +17,7 @@ core .agent/workflows/codex-cli.md
 core .agent/workflows/commands.md
 core .agent/workflows/decide.md
 core .agent/workflows/execute-plan.md
+core .agent/workflows/govern-audit.md
 core .agent/workflows/govern-docs.md
 core .agent/workflows/handoff.md
 core .agent/workflows/help.md
@@ -113,6 +114,7 @@ core .claude/commands/claude-cli.md
 core .claude/commands/codex-cli.md
 core .claude/commands/decide.md
 core .claude/commands/execute-plan.md
+core .claude/commands/govern-audit.md
 core .claude/commands/govern-docs.md
 core .claude/commands/handoff.md
 core .claude/commands/help.md

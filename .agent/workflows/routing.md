@@ -66,6 +66,7 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 | "研究一下", "investigate", "explore", "look into this" | `/research` | hotfix classification; uncertainty about root cause in /implement |
 | "腦力激盪", "brainstorm", "explore options", "what are our choices" | `/brainstorm` | feature/arch-change with no frozen spec (bootstrap §3.7) |
 | "audit this repo", "評估現狀", "map existing code" | `/audit` | first session in a new module, no ADR exists |
+| "governance audit", "premortem", "治理自我稽核", "audit the governance", "稽核大腦" | `/govern-audit` | — |
 
 ### Completion & Handoff
 
@@ -162,7 +163,9 @@ The `⚡ ACX` runtime sentinel is **primary-emitted**. A harness-dispatched suba
 
 5. **Skill manual activation block**: Even when a user explicitly requests a skill, the bootstrap rule table's `Skip when` column governs. If the rule table says skip for the current classification, manual activation is blocked.
 
-6. **Pinned skill vs skip-when precedence**: Pinned skills from user preferences (`.agentcortex/context/private/user-preferences.yaml`) follow the same skip-when rules as manually activated skills UNLESS the pin entry includes `force: true`. Force-pinned skills override skip-when but still respect `phase_scope` boundaries — a skill cannot activate in a phase it was never designed for. This is the ONLY mechanism that can override skip-when; manual activation (rule 5) cannot. See bootstrap §3.6a.
+6. **audit vs govern-audit**: `/audit` maps a legacy/project CODEBASE (onboarding); `/govern-audit` audits the GOVERNANCE SYSTEM itself (gates, validators, wiring). "評估現狀" about the project → `/audit`; about the framework/brain → `/govern-audit`.
+
+7. **Pinned skill vs skip-when precedence**: Pinned skills from user preferences (`.agentcortex/context/private/user-preferences.yaml`) follow the same skip-when rules as manually activated skills UNLESS the pin entry includes `force: true`. Force-pinned skills override skip-when but still respect `phase_scope` boundaries — a skill cannot activate in a phase it was never designed for. This is the ONLY mechanism that can override skip-when; manual activation (rule 5) cannot. See bootstrap §3.6a.
 
 ---
 
@@ -191,6 +194,7 @@ All commands are dispatched per `AGENTS.md §Agentic OS Runtime v1` and execute 
 | `/research` | `.agent/workflows/research.md` | investigation |
 | `/brainstorm` | `.agent/workflows/brainstorm.md` | exploration |
 | `/audit` | `.agent/workflows/audit.md` | repo assessment |
+| `/govern-audit` | `.agent/workflows/govern-audit.md` | governance self-audit |
 | `/decide` | `.agent/workflows/decide.md` | decision logging |
 | `/retro` | `.agent/workflows/retro.md` | retrospective |
 | `/sync-docs` | `.agent/workflows/sync-docs.md` | documentation sync |
