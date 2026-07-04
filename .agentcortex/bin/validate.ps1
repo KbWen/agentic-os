@@ -334,7 +334,8 @@ $isSourceRepo = (Test-Path -Path $canonicalDeploySh -PathType Leaf) -and
 $optionalModuleFiles = @(
     (Join-NormalPath $workflowsDir 'ask-openrouter.md'),
     (Join-NormalPath $workflowsDir 'codex-cli.md'),
-    (Join-NormalPath $workflowsDir 'claude-cli.md')
+    (Join-NormalPath $workflowsDir 'claude-cli.md'),
+    (Join-NormalPath $workflowsDir 'ask-local.md')
 )
 
 $deprecatedWorkflowFiles = @(

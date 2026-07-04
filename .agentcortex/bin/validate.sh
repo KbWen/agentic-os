@@ -290,7 +290,8 @@ check_file_group "required framework files present" "${required_files[@]}"
 check_optional_file_group "optional module workflow files present" \
   "$WORKFLOWS_DIR/ask-openrouter.md" \
   "$WORKFLOWS_DIR/codex-cli.md" \
-  "$WORKFLOWS_DIR/claude-cli.md"
+  "$WORKFLOWS_DIR/claude-cli.md" \
+  "$WORKFLOWS_DIR/ask-local.md"
 
 deprecated_files=("$WORKFLOWS_DIR/new-feature.md" "$WORKFLOWS_DIR/medium-feature.md" "$WORKFLOWS_DIR/small-fix.md")
 deprecated_found=()

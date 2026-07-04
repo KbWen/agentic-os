@@ -34,7 +34,7 @@ Ambiguous phrasing ("could a local model do this?") does NOT activate this modul
 
 2. **Availability Check (Silent)**: on first use per session, `GET <base>/models` with a ≤5s timeout. If unreachable: **silently fall back** to AI-native execution — no warning, no install suggestion. Cache the result per session.
 3. **Model**: user-stated name, else the first id returned by `/models`.
-4. **Cost-Tier Confirmation**: local inference is free → auto-execute (no confirmation pause).
+4. **Cost-Tier Confirmation**: local inference is free → auto-execute (no COST-confirmation pause only — classification, Work Log, and every phase gate in §6 still apply; "auto-execute" never means "skip gates").
 5. **Update Work Log**: add `Executor: ask-local (<model> @ <base>)` to the current entry.
 
 No API key is required by default (local servers); honor one if the user provides it, but NEVER write it into any file, command echo, or log (AGENTS.md §Secrets Prohibition).
