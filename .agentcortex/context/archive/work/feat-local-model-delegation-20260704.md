@@ -177,3 +177,16 @@ none
 - implement: `validate_trigger_metadata.py` → `passed for 16 entries, 6 lifecycle scenarios, and fresh compact index parity` (AC-6)
 - implement: AC-7 zero-engine audit — `git show --stat HEAD`: no AGENTS.md / .agent/rules/* / validate.* / shared-contracts.md in change set; current_state.md diff = 1 line (Last Verified, bootstrap-sanctioned guarded write, receipt 337ffd90d88a8b4f)
 - Bootstrap receipts: guarded SSoT write receipt `.agentcortex/context/.guard_receipts/337ffd90d88a8b4f.json` (Last Verified bump); lock `feat-local-model-delegation.lock.json` status=created 2026-07-04T07:06:35Z; `check_adr_coverage.py` exit 0 (routing.md ← ADR-005, ADR-007).
+
+
+---
+
+## Compaction 2 overflow (2026-07-04, ship-phase verification detail)
+
+Moved from the active log's Drift Log / Phase Summary during the second §6 compaction. Full narrative also in PR #316 + session transcript.
+
+- Regression sim (sonnet): 7/7 PASS, no regression. Change surface exact (11 files 4A/7M); routing.md pure +2 (zero pre-existing lines touched; all 28 registry rows resolve); codex-cli heading chain 1→5→5a→6→7 intact; check_command_sync synthetic-deployed negative test proves teeth (deleted pairing → exit 1); current_state.md 1 line; focused suites 30 passed; golden +2/-0 alphabetical. Premise correction: EXPECTED_COMMANDS total = 27 (26 pre-existing + 1 new).
+- Fresh-adopter deploy sim (sonnet): 7/7 PASS. deploy.sh → 202 files incl. both new (manifest sha lines 32/167); deployed-mode sync 27 verified exit 0; downstream validate pass=83 warn=3 fail=0 skip=4 (all fresh-target-expected); zero always-loaded ask-local hits (routing lookup rows only); §2 opt-in row + §2.2 silent-fallback quoted verbatim downstream; temp cleaned. Side-finding (pre-existing): EXPECTED_COMMANDS tracks 27 of 30 .claude/commands files (app-init/execute-plan/write-plan untracked) → backlog row at ship-chore, Kind=review-finding P3.
+- E2E fake-endpoint sim (opus): module EXECUTABLE. Happy path (probe → request → patch parse → primary-applies → scope check) + 3 negative cases (endpoint down → clean silent-fallback signal; prose response → refused to apply; out-of-scope diff w/ injected SECRET_BACKDOOR → whole-patch reject, injection treated as data) all PASS. Doc findings: 1 MEDIUM (§5 request JSON schema unspecified — messages shape/role/temperature/stream all guessed) + 4 LOW (path style cosmetic; diff-parse predicate; re-prompt wording; reject-whole-vs-salvage implicit).
+- Post-sim doc fix (2nd implement pass): §5 request-body JSON example added; §4 scope-derivation (+++ b/ headers) + reject-whole-no-cherry-pick rule; §7 re-prompt example (backtick-free for table-cell safety). 2 cosmetic LOWs closed-with-reason.
+- CI on ec3c8c9: 18 pass + Docs Content Pins skipping (by design). Re-run pending on doc-fix head.
