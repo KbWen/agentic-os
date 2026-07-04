@@ -71,7 +71,7 @@ Scope derivation & violation handling: derive the touched-file set from the diff
 
 Context packing (small-context reality — many local models run 8k–32k windows): include ONLY the target files + the relevant spec/plan excerpt. Do NOT stream the whole repo.
 
-`POST <base>/chat/completions` (base URLs in §2.1 already include `/v1`) with this request shape — the governance-wrapped prompt goes in as a single `user` message:
+`POST <base>/chat/completions` (the §2 default base URLs already include `/v1`) with this request shape — the governance-wrapped prompt goes in as a single `user` message:
 
 ```json
 {"model": "<model>", "messages": [{"role": "user", "content": "<governance-wrapped prompt below>"}], "temperature": 0, "stream": false}
