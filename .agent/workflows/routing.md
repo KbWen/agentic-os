@@ -108,6 +108,7 @@ It does NOT contain governance rules — those remain in `AGENTS.md`.
 | "ask openrouter", "用其他模型" | `/ask-openrouter` | requires CLI |
 | "run with codex", "用 codex" | `/codex-cli` | requires CLI |
 | "run with claude", "用 claude", "用 claude-cli", "implement 交給 claude", "實作交給 claude", "測試交給 claude", "讓 claude 寫", "讓 claude 跑測試" | `/claude-cli` | requires CLI; MUST NOT auto-trigger |
+| "use local model", "ask the local model", "用本地模型", "問本地模型", "交給本地模型", "讓本地模型寫" | `/ask-local` | requires reachable OpenAI-compatible endpoint (Ollama / LM Studio / vLLM); MUST NOT auto-trigger |
 
 ---
 
@@ -206,6 +207,7 @@ All commands are dispatched per `AGENTS.md §Agentic OS Runtime v1` and execute 
 | `/ask-openrouter` | `.agent/workflows/ask-openrouter.md` | **optional**: OpenRouter model |
 | `/codex-cli` | `.agent/workflows/codex-cli.md` | **optional**: Codex CLI delegation |
 | `/claude-cli` | `.agent/workflows/claude-cli.md` | **optional**: Claude CLI delegation |
+| `/ask-local` | `.agent/workflows/ask-local.md` | **optional**: local-model (OpenAI-compatible endpoint) delegation |
 | `/new-feature` | — *(removed)* | **deprecated**: use `feature` + `/bootstrap` |
 | `/medium-feature` | — *(removed)* | **deprecated**: use `feature`/`architecture-change` + `/bootstrap` |
 | `/small-fix` | — *(removed)* | **deprecated**: use `quick-win` + `/bootstrap` |

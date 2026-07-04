@@ -40,6 +40,7 @@ EXPECTED_COMMANDS = [
     "ask-openrouter",
     "codex-cli",
     "claude-cli",
+    "ask-local",
 ]
 
 

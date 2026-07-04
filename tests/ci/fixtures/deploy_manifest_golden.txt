@@ -8,6 +8,7 @@ core .agent/rules/skill_conflict_matrix.md
 core .agent/rules/state_machine.md
 core .agent/workflows/adr.md
 core .agent/workflows/app-init.md
+core .agent/workflows/ask-local.md
 core .agent/workflows/ask-openrouter.md
 core .agent/workflows/audit.md
 core .agent/workflows/bootstrap.md
@@ -106,6 +107,7 @@ core .claude/agents/acx-shipper.md
 core .claude/agents/acx-tester.md
 core .claude/commands/adr.md
 core .claude/commands/app-init.md
+core .claude/commands/ask-local.md
 core .claude/commands/ask-openrouter.md
 core .claude/commands/audit.md
 core .claude/commands/bootstrap.md
