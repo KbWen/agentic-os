@@ -1279,7 +1279,10 @@ LEGAL_STRICT = {
     'implement': ['review','test'],
     'review':    ['implement','test'],
     'test':      ['handoff','implement'],
-    'handoff':   ['ship','retro'],
+    # 'implement' = HANDEDOFF->IMPLEMENTING reverse edge (state_machine.md §Allowed
+    # Transitions: "ship Entry Condition fail; code change required"); the loop must
+    # then re-run review->test->handoff, still enforced by the M10 stale-review check.
+    'handoff':   ['ship','retro','implement'],
     'ship':      [],
 }
 # hotfix: must review+test but handoff is optional (goes test->ship directly)

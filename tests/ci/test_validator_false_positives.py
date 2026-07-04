@@ -908,3 +908,149 @@ def test_d4_present_index_ref_no_warn_sh() -> None:
             f"validate.sh must NOT WARN when every INDEX reference resolves on disk (D4). "
             f"Output:\n{out[-800:]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# HANDEDOFF->IMPLEMENTING reverse edge (state_machine.md §Allowed Transitions:
+# "ship Entry Condition fail; code change required"): a feature log that loops
+# handoff -> (ship NOT READY) -> implement -> review -> test -> handoff must
+# NOT flag illegal gate progression. Pre-fix, LEGAL_STRICT['handoff'] lacked
+# 'implement' and the documented reverse edge was unrepresentable.
+# ---------------------------------------------------------------------------
+
+ILLEGAL_PROGRESSION_MARK = "illegal gate progression"
+
+
+def _write_handoff_reverse_edge_worklog(target: Path) -> None:
+    work_dir = target / ".agentcortex" / "context" / "work"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    stamp = "2026-07-04T0{i}:00:00Z"
+    gate_lines = "\n".join(
+        [
+            f"- Gate: {g} | Verdict: PASS | Classification: feature | Timestamp: {stamp.format(i=i)}"
+            for i, g in enumerate(
+                ("bootstrap", "plan", "implement", "review", "test", "handoff")
+            )
+        ]
+        + [
+            "- Gate: ship | Verdict: NOT READY | Transition: HANDEDOFF->IMPLEMENTING | Classification: feature | Timestamp: 2026-07-04T06:00:00Z"
+        ]
+        + [
+            f"- Gate: {g} | Verdict: PASS | Classification: feature | Timestamp: 2026-07-04T0{i + 7}:00:00Z"
+            for i, g in enumerate(("implement", "review", "test", "handoff"))
+        ]
+    )
+    (work_dir / "feature-reverse-edge.md").write_text(
+        f"""# Work Log: feature-reverse-edge
+
+## Header
+
+- Branch: `test/feature-reverse-edge`
+- Classification: `feature`
+- Current Phase: `handoff`
+- Checkpoint SHA: `0000000000000000000000000000000000000000`
+
+---
+
+## Phase Summary
+
+Reverse-edge fixture (ship gate-entry NOT READY -> implement loop). ACX
+
+---
+
+## Gate Evidence
+
+{gate_lines}
+
+---
+
+## Drift Log
+
+- ADR Coverage Check: test fixture.
+- Reverse edge: ship Entry Condition fail -> HANDEDOFF->IMPLEMENTING per state_machine.md.
+
+---
+
+## Resume
+
+- State: HANDEDOFF
+- Completed: fixture
+- Next: ship
+- Context: fixture
+
+### Read Map (for next agent)
+- fixture.md -> full
+
+### Skip List
+- none
+
+### Context Snapshot (<= 200 tokens)
+fixture
+
+---
+
+## Evidence
+
+- Fixture evidence.
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+@requires_bash
+@pytest.mark.slow
+def test_handoff_implement_reverse_edge_not_illegal_sh() -> None:
+    """validate.sh: the HANDEDOFF->IMPLEMENTING reverse-edge loop is legal."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_handoff_reverse_edge_worklog(target)
+        out = _run_validate(target)
+        assert "handoff->implement" not in out, (
+            f"handoff->implement flagged illegal despite state_machine.md reverse edge:\n{out[-800:]}"
+        )
+        assert ILLEGAL_PROGRESSION_MARK not in out, (
+            f"unexpected illegal-progression FAIL for reverse-edge fixture:\n{out[-800:]}"
+        )
+
+
+@requires_bash
+@pytest.mark.slow
+def test_handoff_ship_skip_review_still_illegal_sh() -> None:
+    """Negative control: the reverse edge must NOT weaken the M10 stale-review
+    guard — implement after handoff followed directly by ship (no re-review)
+    stays illegal."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_worklog(
+            target,
+            "feature-reverse-edge-bad.md",
+            classification="feature",
+            phase="ship",
+            gates=(
+                "bootstrap", "plan", "implement", "review", "test", "handoff",
+                "implement", "ship",
+            ),
+            resume="- State: fixture\n\n### Read Map (for next agent)\n- x\n\n### Skip List\n- x\n\n### Context Snapshot (<= 200 tokens)\nx",
+        )
+        out = _run_validate(target)
+        assert ILLEGAL_PROGRESSION_MARK in out, (
+            f"implement->ship after reverse edge must stay illegal (stale review):\n{out[-800:]}"
+        )
+
+
+@requires_powershell
+@requires_windows
+@pytest.mark.slow
+def test_handoff_implement_reverse_edge_not_illegal_ps1() -> None:
+    """validate.ps1 parity: the HANDEDOFF->IMPLEMENTING reverse-edge loop is legal."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_handoff_reverse_edge_worklog(target)
+        out = _run_validate_ps1(target)
+        assert "handoff->implement" not in out, (
+            f"[ps1] handoff->implement flagged illegal despite state_machine.md reverse edge:\n{out[-800:]}"
+        )
+        assert ILLEGAL_PROGRESSION_MARK not in out, (
+            f"[ps1] unexpected illegal-progression FAIL for reverse-edge fixture:\n{out[-800:]}"
+        )
