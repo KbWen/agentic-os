@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.8] - 2026-07-04
+
+Local models get an official on-ramp: the governed flow can now delegate scoped work to an installer's locally-hosted model (PRs #316–#317).
+
+- **`/ask-local` — local-model delegation entry (#115, #316)**: new optional module driving any OpenAI-compatible local endpoint (Ollama / LM Studio / vLLM) as a **delegated junior executor**. Explicit opt-in only (never auto-triggers); silent fallback and zero cost when no endpoint exists; `review` (advisory second opinion) and `code` modes with a classification cap (architecture-change never delegated; hotfix review-only; feature as scoped sub-tasks under the primary's plan). The **patch contract** keeps Write Isolation structurally intact: the local model never writes files — it returns one fenced unified diff (or `FILE:` blocks); the primary reviews, applies with its own tools, and rejects the WHOLE patch on any scope violation (no cherry-picking). `engineering_guardrails.md §8.2` is reused unchanged — zero new gates or MUST rules; wiring is machine-enforced (command-sync + deploy-manifest golden). Verified by an independent fresh-context review (9/9 AC PROVEN, 6-vector red team), a fresh-adopter deploy simulation, a no-regression sweep, and a live fake-endpoint end-to-end simulation whose negative cases (endpoint down / prose response / out-of-scope patch with an injected backdoor) all held.
+- **`codex --oss` local variant (#316)**: `codex-cli.md §5a` documents Codex CLI's native local-Ollama path with the same governance wrapping and the same tightened caps.
+- **Validator: HANDEDOFF→IMPLEMENTING reverse edge (#317)**: `state_machine.md` has always allowed a ship-entry reversal back to implement ("ship Entry Condition fail; code change required"), but both validators' strict progression maps couldn't represent it — a feature log looping handoff→implement false-FAILed "illegal gate phase progression". Fixed (sh+ps1 parity) with 3 regression tests, including a negative control proving the stale-review guard (implement→ship without re-review) STAYS illegal. Found by dogfooding #316's own pre-merge quality loop.
+
 ## [1.8.7] - 2026-07-02
 
 Governance self-audit wave: the framework audited itself (three waves, 12 subagents, every finding re-verified against the code before action), fixed what was real, encoded the method as a first-class workflow, and had its own ratchets catch four of the auditor's mistakes along the way (PRs #308-#312).
