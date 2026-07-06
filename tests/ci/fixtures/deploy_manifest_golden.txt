@@ -34,7 +34,6 @@ core .agent/workflows/shared-contracts.md
 core .agent/workflows/ship.md
 core .agent/workflows/spec-intake.md
 core .agent/workflows/spec.md
-core .agent/workflows/superpowers-playbook.md
 core .agent/workflows/sync-docs.md
 core .agent/workflows/test-classify.md
 core .agent/workflows/test-skeleton.md
