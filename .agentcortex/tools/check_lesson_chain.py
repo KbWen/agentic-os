@@ -12,6 +12,16 @@ lesson — for example, removing a lesson that constrains its own future
 behaviour. The chain makes any retroactive edit cryptographically
 detectable.
 
+Legitimate archival: when the Global Lessons section hits its cap, one
+entry may be moved to `.agentcortex/context/archive/global-lessons-archive.md`
+by `append_lesson.py --archive`. That tool re-anchors the archived entry's
+successor to the archived entry's OWN predecessor hash and records a
+`lesson_archive` audit entry in the hash-chained `INDEX.jsonl`. This
+validator walks the surviving chain; where a link does not match the
+immediate predecessor, it accepts the break ONLY IF a matching
+`lesson_archive` record authorizes exactly that bridge. A removal WITHOUT
+a matching record is still reported as a broken chain (fail-closed).
+
 Exit codes:
   0  chain intact (or no lessons / file missing — capability-by-presence)
   1  chain broken at one or more lessons
@@ -22,12 +32,17 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
 GENESIS = "GENESIS"
 SHA_LEN = 8
+
+# Audit-record type (in INDEX.jsonl) that authorizes a legitimate archival bridge.
+LESSON_ARCHIVE_TYPE = "lesson_archive"
+DEFAULT_INDEX_JSONL = ".agentcortex/context/archive/INDEX.jsonl"
 
 # Match: `- [Category:<tag>][Severity:<level>][Trigger:<key>][prev:<sha>] <body>`
 # The [prev:...] token is OPTIONAL during parsing so we can detect missing-prev
@@ -53,6 +68,11 @@ def canonical(category: str, severity: str, trigger: str, body: str) -> str:
 
 def chain_sha(category: str, severity: str, trigger: str, body: str) -> str:
     return hashlib.sha256(canonical(category, severity, trigger, body).encode("utf-8")).hexdigest()[:SHA_LEN]
+
+
+# lesson_body_sha is the identity hash of a single lesson (== chain_sha of that
+# entry). Aliased so callers reading/writing archival records self-document.
+lesson_body_sha = chain_sha
 
 
 def parse_lessons(path: Path) -> list[tuple[str, str, str, str | None, str, int]]:
@@ -82,12 +102,126 @@ def parse_lessons(path: Path) -> list[tuple[str, str, str, str | None, str, int]
     return lessons
 
 
-def check_chain(path: Path) -> tuple[bool, list[str]]:
-    """Return (intact, error-strings)."""
+def load_archive_bridges(index_jsonl: Path) -> dict[tuple[str, str], dict]:
+    """Read `lesson_archive` records from the hash-chained INDEX.jsonl.
+
+    Returns a map keyed by (successor_body_sha, successor_new_prev) → record,
+    so the verifier can look up whether a specific bridge is authorized.
+    Records with a null successor (archived the tail entry — no successor to
+    re-anchor) are keyed by ("__tail__", archived_prev); the walk never needs
+    them (a removed tail leaves the surviving chain unbroken) but they are
+    retained for auditability. Absent/malformed INDEX → empty map (fail-closed:
+    no bridges authorized, so any break FAILs).
+    """
+    bridges: dict[tuple[str, str], dict] = {}
+    if not index_jsonl.is_file():
+        return bridges
+    try:
+        for raw in index_jsonl.read_text(encoding="utf-8").splitlines():
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                obj = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(obj, dict) or obj.get("type") != LESSON_ARCHIVE_TYPE:
+                continue
+            succ_sha = obj.get("successor_body_sha")
+            succ_new_prev = obj.get("successor_new_prev")
+            if succ_sha is None or succ_new_prev is None:
+                bridges[("__tail__", str(obj.get("archived_prev")))] = obj
+                continue
+            bridges[(str(succ_sha), str(succ_new_prev))] = obj
+    except OSError:
+        return bridges
+    return bridges
+
+
+def _archive_body_shas(archive_path: Path) -> set[str]:
+    """Body-shas of every `- [Category:...]` bullet in an archive markdown file."""
+    shas: set[str] = set()
+    if not archive_path.is_file():
+        return shas
+    try:
+        text = archive_path.read_text(encoding="utf-8")
+    except OSError:
+        return shas
+    for raw in text.splitlines():
+        stripped = raw.rstrip("\n").lstrip()
+        if not stripped.startswith("- [Category:"):
+            continue
+        m = LESSON_RE.match(stripped)
+        if not m:
+            continue
+        cat, sev, trig, _prev, body = m.groups()
+        shas.add(lesson_body_sha(cat, sev, trig, body))
+    return shas
+
+
+def check_archive_integrity(index_jsonl: Path, *, root: Path | None = None) -> list[str]:
+    """For each `lesson_archive` record, confirm the archived bullet still exists
+    verbatim in its archive file (body-sha matches `archived_body_sha`).
+
+    Makes a post-archival edit of the moved bullet detectable: the INDEX record
+    pins the original content and is itself tamper-evident (check_audit_chain),
+    so a mismatch means the archive file was altered after the move. Returns a
+    list of error strings (empty = clean). Records whose archive file is absent
+    are skipped (capability-by-presence — nothing to compare against).
+    """
+    errors: list[str] = []
+    if not index_jsonl.is_file():
+        return errors
+    cache: dict[Path, set[str]] = {}
+    try:
+        raw_lines = index_jsonl.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return errors
+    for raw in raw_lines:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            obj = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(obj, dict) or obj.get("type") != LESSON_ARCHIVE_TYPE:
+            continue
+        body_sha = obj.get("archived_body_sha")
+        archive_file = obj.get("archive_file")
+        if not body_sha or not archive_file:
+            continue
+        arc_path = Path(archive_file)
+        if root is not None and not arc_path.is_absolute():
+            arc_path = root / arc_path
+        if not arc_path.is_file():
+            continue  # archive file absent → nothing to compare (present-only)
+        if arc_path not in cache:
+            cache[arc_path] = _archive_body_shas(arc_path)
+        if str(body_sha) not in cache[arc_path]:
+            errors.append(
+                f"archive integrity: lesson_archive record body-sha '{body_sha}' "
+                f"not found in {arc_path.as_posix()} — archived entry was edited "
+                f"or removed after archival (record is tamper-evident via "
+                f"check_audit_chain)"
+            )
+    return errors
+
+
+def check_chain(path: Path, index_jsonl: Path | None = None) -> tuple[bool, list[str]]:
+    """Return (intact, error-strings).
+
+    A link that does not match its immediate predecessor is accepted only when
+    a matching `lesson_archive` record in `index_jsonl` authorizes the bridge.
+    """
     errors: list[str] = []
     lessons = parse_lessons(path)
     if not lessons:
         return True, []
+    if index_jsonl is None:
+        index_jsonl = path.parent / "archive" / "INDEX.jsonl"
+    bridges = load_archive_bridges(index_jsonl)
+
     prev_obj: tuple[str, str, str, str] | None = None
     for cat, sev, trig, declared_prev, body, line_no in lessons:
         expected = GENESIS if prev_obj is None else chain_sha(*prev_obj)
@@ -97,11 +231,27 @@ def check_chain(path: Path) -> tuple[bool, list[str]]:
                 f"(expected '[prev:{expected}]')"
             )
         elif declared_prev != expected:
-            errors.append(
-                f"line {line_no}: chain broken — declared prev='{declared_prev}', "
-                f"expected '{expected}'"
-            )
+            # The immediate-predecessor link is broken. Accept ONLY if an
+            # archival bridge authorizes exactly this (entry, declared_prev).
+            body_sha = lesson_body_sha(cat, sev, trig, body)
+            bridge = bridges.get((body_sha, declared_prev))
+            if bridge is not None and str(bridge.get("archived_prev")) == declared_prev:
+                # Legitimate archival: an entry was removed between the previous
+                # surviving entry and this one; this entry now re-anchors to the
+                # archived entry's own predecessor. Chain remains intact.
+                pass
+            else:
+                errors.append(
+                    f"line {line_no}: chain broken — declared prev='{declared_prev}', "
+                    f"expected '{expected}' (no authorizing lesson_archive record in "
+                    f"{index_jsonl.as_posix()})"
+                )
         prev_obj = (cat, sev, trig, body)
+
+    # Archive-integrity: every authorized archival record must still match its
+    # archived bullet verbatim (detects a post-move edit of the archive file).
+    errors.extend(check_archive_integrity(index_jsonl))
+
     return (len(errors) == 0), errors
 
 
@@ -111,6 +261,12 @@ def parse_args() -> argparse.Namespace:
         "--path",
         default=".agentcortex/context/current_state.md",
         help="Path to current_state.md (default: .agentcortex/context/current_state.md)",
+    )
+    ap.add_argument(
+        "--index-jsonl",
+        default=None,
+        help="Path to the archive INDEX.jsonl carrying lesson_archive bridge records "
+        "(default: <current_state dir>/archive/INDEX.jsonl)",
     )
     ap.add_argument(
         "--quiet",
@@ -123,8 +279,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     path = Path(args.path)
+    index_jsonl = Path(args.index_jsonl) if args.index_jsonl else None
     try:
-        intact, errors = check_chain(path)
+        intact, errors = check_chain(path, index_jsonl)
     except OSError as exc:
         print(f"IO error: {exc}", file=sys.stderr)
         return 2

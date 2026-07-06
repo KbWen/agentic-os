@@ -41,7 +41,7 @@ Reply in the user's input language — detect it from their latest message and m
 
 > [!IMPORTANT]
 > **Non-ship SSoT write exceptions (exhaustive list)**:
-> - `/retro`: may append `## Global Lessons` entries via `guard_context_write.py`.
+> - `/retro`: may append/archive `## Global Lessons` entries via `append_lesson.py`.
 > - `/app-init`: writes Project Name and ADR Index entry directly (guard has no section-targeting).
 > - `/adr`: writes new ADR entry to ADR Index directly (same reason); MUST log in Work Log `## Drift Log`.
 > All three MUST be logged in Work Log `## Drift Log`. Do NOT generalize to `/implement`, `/review`, or any other workflow.
