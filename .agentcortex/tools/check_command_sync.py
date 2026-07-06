@@ -36,12 +36,27 @@ EXPECTED_COMMANDS = [
     "govern-docs",
     "worktree-first",
     "help",
+    "app-init",
     # Optional modules
     "ask-openrouter",
     "codex-cli",
     "claude-cli",
     "ask-local",
 ]
+
+# Commands present in .claude/commands/ that are intentionally EXCLUDED from
+# EXPECTED_COMMANDS because they are pure aliases: their stub deliberately
+# references the ALIASED workflow's path (not a same-named workflow file),
+# so the standard "stub references .agent/workflows/<cmd>.md" check
+# (see main() below) would false-fail if they were added as-is.
+# Each entry documents which workflow the alias resolves to and where that
+# is verified, so this list stays auditable instead of a silent gap.
+ALIAS_EXCLUSIONS = {
+    "execute-plan": "alias for /implement — .claude/commands/execute-plan.md "
+    "references .agent/workflows/implement.md, not its own name",
+    "write-plan": "alias for /plan — .claude/commands/write-plan.md "
+    "references .agent/workflows/plan.md, not its own name",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,12 +102,43 @@ def main() -> int:
                 f".claude/commands/{cmd}.md does not reference {expected_ref}"
             )
 
+    # Aliases are checked separately: verify the stub + its OWN redirect-stub
+    # workflow file both exist, but do NOT require self-referencing text —
+    # instead confirm the alias still points at its documented target so a
+    # silent rename/retarget doesn't slip past this check unnoticed.
+    for cmd in ALIAS_EXCLUSIONS:
+        cmd_file = commands_dir / f"{cmd}.md"
+        workflow_file = workflows_dir / f"{cmd}.md"
+
+        if not cmd_file.is_file():
+            errors.append(f"missing command adapter: .claude/commands/{cmd}.md (alias)")
+            continue
+
+        if not workflow_file.is_file():
+            errors.append(
+                f"alias {cmd}.md exists but its redirect workflow .agent/workflows/{cmd}.md is missing"
+            )
+            continue
+
+        content = cmd_file.read_text(encoding="utf-8")
+        # The alias reason string documents which target path it must reference.
+        target_ref = ALIAS_EXCLUSIONS[cmd].rsplit("references ", 1)[-1].split(",")[0]
+        if target_ref not in content:
+            errors.append(
+                f".claude/commands/{cmd}.md (alias) no longer references {target_ref} — "
+                f"update ALIAS_EXCLUSIONS or fix the stub"
+            )
+
     if errors:
         for e in errors:
             print(e, file=sys.stderr)
         return 1
 
-    print(f"Command sync check passed ({len(EXPECTED_COMMANDS)} commands verified).")
+    total = len(EXPECTED_COMMANDS) + len(ALIAS_EXCLUSIONS)
+    print(
+        f"Command sync check passed ({len(EXPECTED_COMMANDS)} commands verified, "
+        f"{len(ALIAS_EXCLUSIONS)} aliases verified, {total} total)."
+    )
     return 0
 
 

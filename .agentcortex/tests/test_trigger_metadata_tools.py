@@ -306,6 +306,50 @@ agentcortex:
             f"Unexpected output: {result.stdout}",
         )
 
+    def test_command_sync_expected_commands_plus_aliases_match_stub_count(self) -> None:
+        """EXPECTED_COMMANDS + ALIAS_EXCLUSIONS must together account for every
+        .claude/commands/*.md stub on disk (backlog #116) — no untracked gap,
+        no overlap, and the two sets are disjoint by construction."""
+        sys.path.insert(0, str(ROOT / ".agentcortex" / "tools"))
+        import check_command_sync as checker
+
+        stub_names = {
+            p.stem for p in (ROOT / ".claude" / "commands").glob("*.md")
+        }
+        tracked = set(checker.EXPECTED_COMMANDS)
+        aliased = set(checker.ALIAS_EXCLUSIONS)
+
+        self.assertEqual(
+            tracked & aliased, set(), "a command cannot be both tracked and alias-excluded"
+        )
+        self.assertEqual(
+            tracked | aliased,
+            stub_names,
+            "EXPECTED_COMMANDS + ALIAS_EXCLUSIONS must exactly equal the set of "
+            ".claude/commands/*.md stubs on disk — update both sides on drift",
+        )
+
+    def test_command_sync_alias_exclusions_have_workflow_and_target(self) -> None:
+        """Each ALIAS_EXCLUSIONS entry must have its own redirect-stub workflow
+        file and its command stub must still reference the documented target
+        (guards against a silent alias retarget slipping past the checker)."""
+        sys.path.insert(0, str(ROOT / ".agentcortex" / "tools"))
+        import check_command_sync as checker
+
+        for cmd, reason in checker.ALIAS_EXCLUSIONS.items():
+            cmd_file = ROOT / ".claude" / "commands" / f"{cmd}.md"
+            workflow_file = ROOT / ".agent" / "workflows" / f"{cmd}.md"
+            self.assertTrue(cmd_file.is_file(), f"missing {cmd_file}")
+            self.assertTrue(workflow_file.is_file(), f"missing {workflow_file}")
+
+            target_ref = reason.rsplit("references ", 1)[-1].split(",")[0]
+            content = cmd_file.read_text(encoding="utf-8")
+            self.assertIn(
+                target_ref,
+                content,
+                f".claude/commands/{cmd}.md no longer references documented alias target {target_ref}",
+            )
+
     def test_writing_plans_manifest_validates(self) -> None:
         skill_dir = self.fixture_root / ".agents" / "skills" / "writing-plans"
         manifest = load_skill_package_manifest(skill_dir)
