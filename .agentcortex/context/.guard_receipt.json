@@ -1,7 +1,7 @@
 {
-  "expected_sha": "b30fa5a97595f43922464a49e4ca4c2b9c55c0e52b328ece718894878783d33b",
+  "expected_sha": "37ca59271a9996b9242f3304ada655341bb6c46d5d342f019ca46ef3beeef105",
   "mode": "replace",
-  "new_sha": "f742b9348643991c32b17534849b7b684248f2e7485a7baf2dbb5faf73e016e1",
-  "target": ".agentcortex/context/work/codex-v18-review-main.md",
-  "timestamp": 1782029339
+  "new_sha": "ca27aa4395fe609d055342d0d439915a23a561c4d9b0dce1c9152936b733b1cf",
+  "target": ".agentcortex/context/current_state.md",
+  "timestamp": 1783160644
 }

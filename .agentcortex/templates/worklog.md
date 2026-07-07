@@ -62,6 +62,7 @@ none
 ## Phase Summary
 
 > One paragraph per completed phase. Delta-oriented: what changed, what was decided.
+> End this section with the `⚡ ACX` sentinel at least once — `validate.sh` checks for it here so the runtime marker has a persistent audit trail (chat output is ephemeral).
 
 none
 

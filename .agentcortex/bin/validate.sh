@@ -290,7 +290,8 @@ check_file_group "required framework files present" "${required_files[@]}"
 check_optional_file_group "optional module workflow files present" \
   "$WORKFLOWS_DIR/ask-openrouter.md" \
   "$WORKFLOWS_DIR/codex-cli.md" \
-  "$WORKFLOWS_DIR/claude-cli.md"
+  "$WORKFLOWS_DIR/claude-cli.md" \
+  "$WORKFLOWS_DIR/ask-local.md"
 
 deprecated_files=("$WORKFLOWS_DIR/new-feature.md" "$WORKFLOWS_DIR/medium-feature.md" "$WORKFLOWS_DIR/small-fix.md")
 deprecated_found=()
@@ -1209,7 +1210,12 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         is_current_branch=1
       fi
     fi
-    created_date="$(printf '%s' "$wl_content" | sed -n 's/^- \*\*Created Date\*\*:[[:space:]]*//p' | head -n 1 | tr -d '\r')"
+    # Accept list (bold-optional, backtick-optional) OR table form — the template
+    # emits `- Created Date: `<date>`` (plain/backtick, no bold) and real logs use
+    # list or table form; a bold-only parser left this empty for every real log,
+    # silently disabling the legacy exemption (and its D5 refinement). Extract the
+    # YYYY-MM-DD regardless of surrounding markup.
+    created_date="$(printf '%s' "$wl_content" | sed -n -E 's/^-[[:space:]]*\*{0,2}Created Date\*{0,2}:[[:space:]]*`?([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p; s/^\|[[:space:]]*\*{0,2}Created Date\*{0,2}[[:space:]]*\|[[:space:]]*`?([0-9]{4}-[0-9]{2}-[0-9]{2}).*/\1/p' | head -n 1 | tr -d '\r')"
     legacy_gate_evidence=0
     if [[ -n "$created_date" ]] && [[ "$created_date" < "$WORKLOG_GATE_EVIDENCE_LEGACY_CUTOFF" ]]; then
       legacy_gate_evidence=1
@@ -1274,7 +1280,10 @@ LEGAL_STRICT = {
     'implement': ['review','test'],
     'review':    ['implement','test'],
     'test':      ['handoff','implement'],
-    'handoff':   ['ship','retro'],
+    # 'implement' = HANDEDOFF->IMPLEMENTING reverse edge (state_machine.md §Allowed
+    # Transitions: "ship Entry Condition fail; code change required"); the loop must
+    # then re-run review->test->handoff, still enforced by the M10 stale-review check.
+    'handoff':   ['ship','retro','implement'],
     'ship':      [],
 }
 # hotfix: must review+test but handoff is optional (goes test->ship directly)
@@ -1394,7 +1403,7 @@ for l in gate_lines:
         if phase == 'ship':
             has_ship_receipt = True
         # supporting workflows are out-of-band; exclude to avoid false illegal-transition flags
-        if phase in ('retro', 'research', 'brainstorm', 'decide', 'audit'):
+        if phase in ('retro', 'research', 'brainstorm', 'decide', 'audit', 'govern-audit'):
             continue
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
         v = re.search(r'\|[^|]*verdict:\s*([A-Za-z _]+?)(\s*\||$)', l, re.IGNORECASE)
