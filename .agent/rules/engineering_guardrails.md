@@ -119,7 +119,7 @@ Before emitting any verdict (phase pass/fail, classification, completion claim),
 
 **Scope Exemption (Directory-Based)**: This rule applies **only** to production code directories (e.g., `src/`, `app/`, `lib/`, `packages/`). Files in `tools/`, `scripts/`, `scratch/`, `tests/`, `__tests__/`, `*.test.*`, `*.spec.*`, and `.agentcortex/` are **automatically exempt**.
 
-**Design Source of Truth (DSoT)**: The canonical visual specification for UI work. Default tool: **Stitch**. Alternative tools (Figma, Pencil, etc.) are equally valid — the requirement is a linkable, inspectable, exportable design artifact.
+**Design Source of Truth (DSoT)**: The canonical visual specification for UI work. Default tool: **Stitch**. Alternative tools (Figma, Pencil, etc.) are equally valid — and with no design tool, a committed Markdown/ASCII wireframe file (e.g. `docs/design/<screen>.md`, describing layout + component structure + states) is an equally valid artifact. The requirement is a linkable, inspectable artifact (a URL **or a file path**), not a specific tool.
 
 **Pipeline**:
 1. **Design**: Create or update the visual specification in the DSoT tool. MUST produce a linkable artifact (URL or file path).
@@ -132,7 +132,7 @@ Before emitting any verdict (phase pass/fail, classification, completion claim),
 - `/implement` → Design Approval Check: UI rendering code blocked until DSoT design is confirmed. No design = no UI code.
 - `/review` → Design Compliance Check: 1:1 fidelity audit against DSoT. Structural deviation = **HIGH** severity.
 
-**No DSoT = No UI Implementation**: If a UI task lacks a design artifact, it MUST NOT proceed past `/plan`. Agent MUST stop: "⚠️ This task modifies UI but has no design link. Create the design in [DSoT tool] first."
+**No design artifact = No UI Implementation**: If a UI task lacks *any* design artifact, it MUST NOT proceed past `/plan`. Agent MUST stop: "⚠️ This task modifies UI but has no design link. Provide one first — a DSoT-tool URL **or** a committed Markdown/ASCII wireframe file (`docs/design/<screen>.md`)."
 
 ## 5. Testing & Verification
 
