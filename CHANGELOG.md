@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.9] - 2026-07-08
+
+Day-1 friction fixes: a design-tool-less adopter can now plan UI work with a plain wireframe file, the Claude adapter stops forcing an extra turn, and the Global Lessons learning loop is unblocked (PRs #319, #321, #322, #119).
+
+- **Design Gate names a committed wireframe file as a valid artifact (#119)**: `engineering_guardrails.md §4.4` + the `/plan` Design Gate read as "paid DSoT tool required" (Stitch/Figma/Pencil), dead-ending solo / tool-less downstream adopters building UI. But §4.4 already accepted "a linkable artifact (URL **or file path**)" — a committed wireframe file always qualified; the wording just hid it. The DSoT definition and both stop messages now name a committed Markdown/ASCII wireframe file (`docs/design/<screen>.md`) as an equally valid artifact. The gate keeps its teeth: a UI task with *no* artifact still hard-stops at `/plan` — a framing fix, not an escape hatch. (A fuller capability-seam `design_tool` escape was designed, taken to a 5-agent roundtable + tenth-man review, and rejected — it would have reincarnated the ADR-001-rejected bypass flag and broken the capability seam's gate-safety invariant.)
+- **Claude adapter: same-turn continuation (#118, #321)**: `.claude/commands/bootstrap.md` no longer unconditionally stops after bootstrap when the user requested a downstream phase in the same message — it now honors AGENTS.md §3/§6, saving every Claude Code adopter an extra turn per task. Also `check_command_sync.py` accounts for all 30 command stubs (#116) and the orphaned `superpowers-playbook.md` was deleted (#95).
+- **Chain-aware Global Lessons archival (#117, #322)**: the Global Lessons registry hit its 20/20 cap behind an unexecutable archival procedure (the hash chain broke on any removal), freezing the learning loop. `append_lesson.py --archive` now moves an entry to the archive, re-anchors the chain successor, and records a `lesson_archive` bridge in the tamper-evident `INDEX.jsonl`; `check_lesson_chain.py` accepts only record-authorized bridges. `retro.md §3` rewritten to the executable procedure (#91).
+- **`/ask-local` discovery-surface sync (#319)**: the local-model delegation module is now enumerated consistently across the SSoT seed and both validators, with a gate-skip-misread guard.
+
 ## [1.8.8] - 2026-07-04
 
 Local models get an official on-ramp: the governed flow can now delegate scoped work to an installer's locally-hosted model (PRs #316–#317).
