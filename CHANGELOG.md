@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.11] - 2026-07-10
+
+Patch release closing the v1.8.10 downstream gap found by the post-release fresh-adopter deploy simulation.
+
+- **Deploy whitelist fix (#334)**: `check_ssot_caps.py` was wired into both validators in v1.8.10 but missing from `deploy.sh`'s `runtime_tools` whitelist (array + dry-run mirror) and the deploy manifest golden — fresh downstream deploys reported `[SKIP] ssot section caps — tool not present`, so the cap advisory never activated downstream. Fresh deploys now ship the tool and report `[PASS] ssot section caps`.
+- **Session ledger closure (#333)**: the two remaining 2026-07-10 chore Work Logs (ship-wave consolidation, v1.8.10 release cut) archived with hash-chained INDEX entries.
+
 ## [1.8.10] - 2026-07-10
 
 Packages the 2026-07-10 complaint-driven-audit wave: 10 Claude command stubs lose a contradictory required-read line, 7 doc-consistency defects are fixed across templates/zh-TW mirrors/registries, the Ship History/Spec Index caps become machine-checked instead of honor-system, and the backlog + ledger get their first live cap rotation (PRs #327–#331).

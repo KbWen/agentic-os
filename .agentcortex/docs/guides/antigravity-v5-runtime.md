@@ -8,7 +8,7 @@ Date: 2026-04-17
 > **Two version axes — do not conflate.** "Runtime v5" throughout this file is this
 > anti-drift *engine spec's* own generation number; the canonical Antigravity runtime
 > **contract** version is **Runtime v1** (see `AGENTS.md §Agentic OS Runtime v1`). The
-> framework release version (v1.8.10) is tracked separately in `CHANGELOG.md`.
+> framework release version (v1.8.11) is tracked separately in `CHANGELOG.md`.
 Scope: **Antigravity environments** (token-generation agents where shell exit codes don’t halt execution)
 
 ### Why v5 exists
