@@ -5,7 +5,6 @@ Execute the canonical workflow: `.agent/workflows/spec-intake.md`
 ## Required reads before execution
 
 1. `AGENTS.md` — global directives (Spec Intake Gate, Intent Router)
-2. `.agent/rules/engineering_guardrails.md` — §4 Design Before Implementation
 3. `.agentcortex/context/current_state.md` — check for existing `_product-backlog.md`
 
 ## Execution

@@ -5,7 +5,6 @@ Execute the canonical workflow: `.agent/workflows/test-classify.md`
 ## Required reads before execution
 
 1. `AGENTS.md` — global directives
-2. `.agent/rules/engineering_guardrails.md` — §5 Testing & Verification, §10.2 Gate Evidence
 3. Active Work Log — must contain classification
 
 ## Execution
