@@ -1054,3 +1054,124 @@ def test_handoff_implement_reverse_edge_not_illegal_ps1() -> None:
         assert ILLEGAL_PROGRESSION_MARK not in out, (
             f"[ps1] unexpected illegal-progression FAIL for reverse-edge fixture:\n{out[-800:]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# NOT-READY re-review remediation hint: a feature log that goes
+# bootstrap/plan/implement PASS -> review NOT READY -> review PASS with NO
+# fresh implement between the NOT READY and the re-review PASS is STILL an
+# illegal edge (the reverse edge pops the implement, leaving plan->review).
+# The message must now name the exact remedy (a fresh implement PASS receipt
+# before the re-review PASS, review.md §Reverse Transition) — message-only
+# change; the FAIL verdict is preserved.
+# ---------------------------------------------------------------------------
+
+# ASCII-only substrings (survive any child-process encoding on Windows).
+NOT_READY_HINT = "NOT READY re-review: add a fresh"
+NOT_READY_HINT_REMEDY = "receipt for the fix BEFORE the re-review PASS"
+
+
+def _write_not_ready_re_review_worklog(target: Path) -> None:
+    work_dir = target / ".agentcortex" / "context" / "work"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    gate_lines = "\n".join(
+        [
+            f"- Gate: {g} | Verdict: PASS | Classification: feature | Timestamp: 2026-07-10T0{i}:00:00Z"
+            for i, g in enumerate(("bootstrap", "plan", "implement"))
+        ]
+        + [
+            "- Gate: review | Verdict: NOT READY | Classification: feature | Timestamp: 2026-07-10T03:00:00Z",
+            "- Gate: review | Verdict: PASS | Classification: feature | Timestamp: 2026-07-10T04:00:00Z",
+        ]
+    )
+    (work_dir / "feature-not-ready-re-review.md").write_text(
+        f"""# Work Log: feature-not-ready-re-review
+
+## Header
+
+- Branch: `test/feature-not-ready-re-review`
+- Classification: `feature`
+- Current Phase: `review`
+- Checkpoint SHA: `0000000000000000000000000000000000000000`
+
+---
+
+## Phase Summary
+
+NOT-READY re-review fixture (no fresh implement before re-review PASS). ACX
+
+---
+
+## Gate Evidence
+
+{gate_lines}
+
+---
+
+## Drift Log
+
+- ADR Coverage Check: test fixture.
+
+---
+
+## Resume
+
+none
+
+---
+
+## Evidence
+
+- Fixture evidence.
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+@requires_bash
+@pytest.mark.slow
+def test_not_ready_re_review_hint_sh() -> None:
+    """validate.sh: the illegal ...->review edge after a NOT-READY re-review
+    (no fresh implement) STILL FAILs, but now names the remedy."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_not_ready_re_review_worklog(target)
+        out = _run_validate(target)
+        assert ILLEGAL_PROGRESSION_MARK in out, (
+            f"NOT-READY re-review without fresh implement must stay illegal (FAIL preserved):\n{out[-800:]}"
+        )
+        assert NOT_READY_HINT in out and NOT_READY_HINT_REMEDY in out, (
+            f"illegal ...->review edge after NOT READY must print the remediation hint:\n{out[-800:]}"
+        )
+        assert "review.md" in out, (
+            f"remediation hint must cite review.md (Reverse Transition):\n{out[-800:]}"
+        )
+
+
+@requires_powershell
+@requires_windows
+@pytest.mark.slow
+def test_not_ready_re_review_hint_ps1() -> None:
+    """validate.ps1 parity: same NOT-READY re-review remediation hint."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_not_ready_re_review_worklog(target)
+        out = _run_validate_ps1(target)
+        assert ILLEGAL_PROGRESSION_MARK in out, (
+            f"[ps1] NOT-READY re-review without fresh implement must stay illegal:\n{out[-800:]}"
+        )
+        assert NOT_READY_HINT in out and NOT_READY_HINT_REMEDY in out, (
+            f"[ps1] illegal ...->review edge after NOT READY must print the remediation hint:\n{out[-800:]}"
+        )
+
+
+def test_not_ready_re_review_hint_source_parity() -> None:
+    """Source parity (fast, no shell): both validators carry the identical
+    NOT-READY remediation hint text + the review.md §Reverse Transition cite."""
+    sh = (ROOT / ".agentcortex" / "bin" / "validate.sh").read_text(encoding="utf-8")
+    ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8")
+    for src, label in ((sh, "validate.sh"), (ps1, "validate.ps1")):
+        assert NOT_READY_HINT in src, f"{label} missing NOT-READY remediation hint"
+        assert NOT_READY_HINT_REMEDY in src, f"{label} missing remedy phrasing"
+        assert "review.md §Reverse Transition" in src, f"{label} missing review.md §Reverse Transition cite"

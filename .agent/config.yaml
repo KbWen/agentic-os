@@ -145,6 +145,12 @@ document_lifecycle:
   # are collapsed into an archive section at bottom of the index.
   spec_index_max_entries: 30
 
+  # Ship History in current_state.md: max `### Ship-` entries before the oldest
+  # are rotated to .agentcortex/context/archive/ship-history-YYYY.md, keeping the
+  # latest 10 in-file (ship.md §State Update). Advisory only — surfaced by
+  # check_ssot_caps.py as a validator WARN, never a hard FAIL.
+  ship_history_max_entries: 10
+
   # _raw-intake*.md files: MUST be deleted (not archived) by /ship when
   # all features from the intake are Shipped or Cancelled.
   raw_intake_cleanup: must_delete

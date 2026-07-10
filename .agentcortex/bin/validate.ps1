@@ -759,6 +759,13 @@ if (Test-Path $safetyNucleusGen) {
 } else {
     Add-Result -Level 'SKIP' -Message 'safety nucleus freshness -- generator not deployed (safe to ignore)'
 }
+# ADR-006: advisory SSoT section-cap check (Ship History + Spec Index growth) as a
+# Python tool behind Invoke-PythonCheck (new checks = tools, not native lines, so the
+# native ratchet does not move). WARN-tier / never-FAIL: the tool ALWAYS exits 0 and
+# prints any over-cap finding, so an over-cap SSoT surfaces as advisory output rather
+# than a failure; fix = the rotation procedure it names. No-python -> WARN; tool absent
+# -> SKIP (Invoke-PythonCheck handles both).
+Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_ssot_caps.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
@@ -1326,6 +1333,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             $gateList = [System.Collections.Generic.List[string]]::new()
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
             $reviewNotReady = $false  # track pending re-review after NOT READY reverse edge
+            $hadNotReady = $false  # sticky: a review NOT READY reverse edge occurred (for remediation hint)
             foreach ($line in $gateLines) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
                 if ($gm.Success) {
@@ -1348,6 +1356,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                         if ($gPhase -eq 'review' -and $gateList.Count -gt 0 -and $gateList[$gateList.Count - 1] -eq 'implement') {
                             $gateList.RemoveAt($gateList.Count - 1)
                             $reviewNotReady = $true
+                            $hadNotReady = $true  # remember for the re-review remediation hint below
                         }
                     }
                 }
@@ -1391,7 +1400,14 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     $curr = $gates[$i]
                     $allowed = $legalTransitions[$prev]
                     if (($null -ne $allowed) -and ($curr -notin $allowed)) {
-                        Write-Output "  illegal gate progression in $($wl.Name): ${prev}->${curr}"
+                        if ($curr -eq 'review' -and $hadNotReady) {
+                            # NOT-READY re-review reached PASS with no fresh implement PASS in
+                            # between (the reverse edge popped the prior implement, so ${prev}->review
+                            # is now the illegal edge). Still a FAIL — but name the exact remedy.
+                            Write-Output "  illegal gate progression in $($wl.Name): ${prev}->review (NOT READY re-review: add a fresh 'Gate: implement | Verdict: PASS' receipt for the fix BEFORE the re-review PASS -- review.md §Reverse Transition)"
+                        } else {
+                            Write-Output "  illegal gate progression in $($wl.Name): ${prev}->${curr}"
+                        }
                         $gateProgressionIllegal++
                         break
                     }

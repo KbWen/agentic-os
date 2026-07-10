@@ -625,6 +625,15 @@ else
   record_result SKIP "safety nucleus freshness -- generator not deployed (safe to ignore)"
 fi
 
+# ADR-006: advisory SSoT section-cap check (Ship History + Spec Index growth) as
+# a Python tool behind run_python_check (new checks = tools, not native lines, so
+# the native ratchet does not move). WARN-tier / never-FAIL: the tool ALWAYS exits
+# 0 and prints any over-cap finding, so an over-cap SSoT surfaces as advisory output
+# rather than a validator failure; the fix is the rotation procedure the tool names
+# (ship.md §State Update). No-python host -> WARN (advisory); tool absent -> SKIP
+# (run_python_check handles both). Caps live in .agent/config.yaml §document_lifecycle.
+run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.agentcortex/tools/check_ssot_caps.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then
@@ -1394,6 +1403,7 @@ if gate_evidence_seen and not unmasked_receipt and masked_receipt_in_section:
 gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
+had_not_ready = False  # sticky: a review NOT READY reverse edge occurred (for remediation hint)
 resets_used = 0  # H4: track consumed reclassification records
 for l in gate_lines:
     m = re.match(r'^(?:\x60?- )?gate:\s*(\w+)\s*\|', l, re.IGNORECASE)
@@ -1414,6 +1424,7 @@ for l in gate_lines:
             if phase == 'review' and gates and gates[-1] == 'implement':
                 gates.pop()
                 review_not_ready = True  # flag: re-review required before test/ship
+                had_not_ready = True  # remember for the re-review remediation hint below
             continue
         # PASS verdict: if review PASS, clear the pending re-review flag
         if phase == 'review':
@@ -1458,7 +1469,14 @@ for i in range(1, len(gates)):
     prev, curr = gates[i-1], gates[i]
     allowed = LEGAL.get(prev, [])
     if curr not in allowed:
-        print(f'illegal:{prev}->{curr} (classification:{wl_class or "unknown"})')
+        if curr == 'review' and had_not_ready:
+            # A NOT-READY re-review reached PASS with no fresh implement PASS in
+            # between (the reverse edge popped the prior implement, so plan->review
+            # is now the illegal edge). Still a FAIL — but name the exact remedy
+            # instead of the bare illegal-edge text.
+            print(f'illegal:{prev}->review (NOT READY re-review: add a fresh "Gate: implement | Verdict: PASS" receipt for the fix BEFORE the re-review PASS -- review.md §Reverse Transition)')
+        else:
+            print(f'illegal:{prev}->{curr} (classification:{wl_class or "unknown"})')
         sys.exit(0)
 # M10: stale-review check — if most recent implement follows most recent review,
 # then test/handoff/ship without a new review = stale review violation
