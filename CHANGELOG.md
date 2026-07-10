@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.8.10] - 2026-07-10
+
+Packages the 2026-07-10 complaint-driven-audit wave: 10 Claude command stubs lose a contradictory required-read line, 7 doc-consistency defects are fixed across templates/zh-TW mirrors/registries, the Ship History/Spec Index caps become machine-checked instead of honor-system, and the backlog + ledger get their first live cap rotation (PRs #327–#331).
+
+- **Claude command-stub guardrails fix (#126, #327)**: removed the unconditional `.agent/rules/engineering_guardrails.md` "Required read before execution" line from 10 `.claude/commands` stubs where it contradicted CLAUDE.md step 4 / guardrails Quick-Skip Mode / bootstrap.md TOKEN LEAK BLOCK — closes the token-leak contradiction (`ask-local`'s §8.2 fallback citation kept; exclusion adjudicated correct).
+- **7 doc-consistency defects fixed (#329)**: the Work Log template was missing the validator-required `## Test Gate Results` section; two zh-TW gate-critical mirrors had drifted (`NONLINEAR_SCENARIOS.md` rollback rule, `CODEX_PLATFORM_GUIDE.md` gate-receipt-persistence section); `state_machine.md` carried a stale governance-escalation list (now a `§10.3` pointer); `AGENTS.md`'s quick-win state-transition clause was imprecise; `routing.md`'s skill index and command registry had gaps (12→14 skills + missing alias rows).
+- **SSoT caps machine-enforced (#127, #328)**: one-time Ship History archival (67→10 entries into `archive/ship-history-2026.md`) plus a new `check_ssot_caps.py` WARN-tier advisory wired into both validators, a `document_lifecycle.ship_history_max_entries: 10` config default, and a NOT-READY re-review remediation hint in both validators' gate parser — the rotation rule stops being honor-system.
+- **Backlog routing + evidence fold-ins (#330)**: new backlog rows #126–#135 from the audit wave, plus 7 evidence fold-in edits into pre-existing rows.
+- **Ship consolidation (#331)**: 6 stale Work Logs archived and the first live Ship History cap rotation exercised end-to-end.
+
 ## [1.8.9] - 2026-07-08
 
 Day-1 friction fixes: a design-tool-less adopter can now plan UI work with a plain wireframe file, the Claude adapter stops forcing an extra turn, and the Global Lessons learning loop is unblocked (PRs #319, #321, #322, #119).
