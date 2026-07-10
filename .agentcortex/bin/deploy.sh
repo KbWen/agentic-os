@@ -736,7 +736,7 @@ if $DRY_RUN; then
     _dry_count=0
     # Enumerate only the files that are actually deployed (mirrors real deploy logic).
     # Runtime Python tools are a whitelist — NOT all *.py in tools/.
-    _runtime_tools="guard_context_write.py _yaml_loader.py check_command_sync.py check_text_integrity.py check_text_integrity.ps1 text_integrity_baseline.txt sync_skills.sh lint_governed_writes.py check_lifecycle_frontmatter.py check_lesson_chain.py check_adr_coverage.py append_chain_entry.py append_lesson.py recover_worklog_lock.py lint_spec_drift.py run_governance_eval.py scan_credentials.py credential_floor.sh credential_floor.ps1 generate_safety_nucleus.py validate_downstream_capabilities.py"
+    _runtime_tools="guard_context_write.py _yaml_loader.py check_command_sync.py check_text_integrity.py check_text_integrity.ps1 text_integrity_baseline.txt sync_skills.sh lint_governed_writes.py check_lifecycle_frontmatter.py check_lesson_chain.py check_ssot_caps.py check_adr_coverage.py append_chain_entry.py append_lesson.py recover_worklog_lock.py lint_spec_drift.py run_governance_eval.py scan_credentials.py credential_floor.sh credential_floor.ps1 generate_safety_nucleus.py validate_downstream_capabilities.py"
     _dry_print_file() {
         local src="$1"
         local rel="$2"
@@ -936,6 +936,7 @@ runtime_tools=(
   lint_governed_writes.py
   check_lifecycle_frontmatter.py
   check_lesson_chain.py
+  check_ssot_caps.py
   check_adr_coverage.py
   append_chain_entry.py
   append_lesson.py

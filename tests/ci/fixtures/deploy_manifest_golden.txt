@@ -84,6 +84,7 @@ core .agentcortex/tools/check_adr_coverage.py
 core .agentcortex/tools/check_command_sync.py
 core .agentcortex/tools/check_lesson_chain.py
 core .agentcortex/tools/check_lifecycle_frontmatter.py
+core .agentcortex/tools/check_ssot_caps.py
 core .agentcortex/tools/check_text_integrity.ps1
 core .agentcortex/tools/check_text_integrity.py
 core .agentcortex/tools/credential_floor.ps1
