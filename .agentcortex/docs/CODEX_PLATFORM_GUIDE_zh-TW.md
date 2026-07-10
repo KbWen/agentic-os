@@ -54,8 +54,24 @@ Codex <267193182+codex@users.noreply.github.com>
 1. 至少 1 個 `docs/` 文件。
 2. 至少 1 個 code file path。
 3. 對應 work log：`.agentcortex/context/work/<worklog-key>.md`。
+   以 filesystem-safe 名稱從分支解析 `<worklog-key>`；若 active log 缺失但可復原，必須在拒絕 `/ship` 前重建它。
 
 若不滿足，必須拒絕 `/ship` 並列出缺失。
+
+## Gate Receipt 持久化 — Codex Web
+
+在 Codex Web 上沒有檔案寫入能力。Gate receipts 仍必須被記錄以維持 validator 合規。協定：
+
+1. 在每個階段完成時，於 chat 輸出 gate receipt 作為 fenced block：
+   ```
+   ## Gate Evidence
+   - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>
+   ```
+2. 指示使用者：「將上方區塊貼到 `.agentcortex/context/work/<worklog-key>.md` 的 `## Gate Evidence` 之下。」
+3. 在使用者確認已貼上（或表明會在 `/ship` 前完成）之前，不要進入下一階段。
+4. 在 `/ship` 時，Gate Receipt Audit 會檢查 Work Log — 若因使用者未貼上而缺少 receipts，`/ship` 必須以 `missing: [<phase> receipt]` 失敗。
+
+這確保 Codex Web 撰寫的 Work Log 即使沒有直接檔案存取也維持 validator 合規。
 
 ## 接手時機（Handoff Timing）
 

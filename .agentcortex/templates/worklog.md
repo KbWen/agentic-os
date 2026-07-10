@@ -164,6 +164,14 @@ none
 
 ---
 
+## Test Gate Results
+
+> Test-phase gate outcome for `feature`/`architecture-change` logs (required at handoff/ship once an implement receipt exists; ref: `engineering_guardrails.md §12.2`). Record pass/fail counts + the test command. Leave `none` until `/test` runs.
+
+none
+
+---
+
 ## Evidence
 
 > Reproducible evidence for completed phases. Commands, outputs, versions. "It should work" is NOT evidence.
