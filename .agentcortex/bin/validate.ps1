@@ -242,6 +242,7 @@ $archiveIndexJsonl = Join-NormalPath $root '.agentcortex/context/archive/INDEX.j
 $lessonChainCheck = Join-NormalPath $root '.agentcortex/tools/check_lesson_chain.py'
 $ssotCurrentState = Join-NormalPath $root '.agentcortex/context/current_state.md'
 $commandSyncCheck = Join-NormalPath $root '.agentcortex/tools/check_command_sync.py'
+$routingActionsCheck = Join-NormalPath $root '.agentcortex/tools/check_routing_actions.py'
 $skillProvenanceCheck = Join-NormalPath $root '.agentcortex/tools/check_skill_provenance.py'
 $triggerRegistry = Join-NormalPath $root '.agentcortex/metadata/trigger-registry.yaml'
 $triggerCompactIndex = Join-NormalPath $root '.agentcortex/metadata/trigger-compact-index.json'
@@ -886,6 +887,14 @@ else {
     Add-Result -Level 'PASS' -Message 'domain doc candidates declare the full L1 contract when present'
 }
 
+# routing_actions structural contract (governance self-audit F3) — mirror of
+# validate.sh. Structural parsing lives in check_routing_actions.py (ADR-006) so
+# inline-map / fields-outside-block bypasses are rejected. The native block in
+# the else is the no-python degraded backstop (backlog #113).
+if ($script:PythonCommand -and (Test-Path -Path $routingActionsCheck -PathType Leaf)) {
+    Invoke-PythonCheck -Label 'routing_actions contract (structural)' -MissingPythonLevel 'FAIL' -ScriptPath $routingActionsCheck -Arguments @('--root', $root)
+}
+else {
 $routingActionErrors = 0
 $routingActionWarnings = 0
 $routingActionStaleWarnings = 0
@@ -967,6 +976,7 @@ if ($routingActionWarnings -gt 0) {
 }
 if ($routingActionStaleWarnings -gt 0) {
     Add-Result -Level 'WARN' -Message "stale pending routing_actions need canonical-doc follow-up: $routingActionStaleWarnings"
+}
 }
 
 Test-ContainsLiteral -Path $canonicalDeploySh -Pattern 'LEGACY_IGNORE_START="# AI Brain OS - Agent System & Local Context"' -SuccessMessage 'deploy script supports legacy ignore marker migration' -FailureMessage 'deploy script missing legacy ignore marker support'
