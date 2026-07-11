@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.8.12] - 2026-07-11
+
+Governance-hardening release packaging the 2026-07-11 codex-audit remediation wave (PRs #337–#342). All 10 audit findings were independently verified real before remediation; the fixes tighten enforcement without adding gates, phases, or always-loaded rules (lifecycle token aggregate unchanged at 354,937).
+
+- **External executor safety (#339)**: `engineering_guardrails.md §8.2` (canon) + `/claude-cli` + `/codex-cli` now require a pre-flight worktree baseline (`git status --porcelain` + diff), stop-and-reconcile on abnormal exit (timeout / nonzero / kill) before any retry, never whole-file-revert a path that was dirty at baseline (the destructive `git checkout -- <file>` prescription is removed), and record `Requested Executor` vs `Actual Executor` — an explicitly requested executor that falls back must be disclosed. Enforced by 7 new docs-pin tests.
+- **Validator fail-open closure (#340)**: `check_command_sync.py` now validates each command stub's canonical dispatch directive line (a prose mention of the expected path no longer passes) and runs manifest-agnostically — deleting `.agentcortex-manifest` can no longer disable adapter-drift checks by faking source identity. New `check_routing_actions.py` (ADR-006 seam) structurally parses `routing_actions` blocks: inline-map records with invalid `target_doc`/`status` values are rejected; the native grep/sed block remains as the no-Python backstop (downstream promotion tracked as backlog #137).
+- **Receipt integrity (#341)**: both validators implement bootstrap.md's full 5-step canonical Work Log key normalization with case-insensitive comparison — an uppercase or punctuated branch can no longer demote current-branch Resume/Test-Gate FAILs to WARN. The WARN-tier receipt checks now value-validate Timestamp (ISO shape; order-of-appearance stays authoritative), receipt-vs-header Classification, and Checkpoint/Diff-Base SHA anchors (hex-or-placeholder + `git rev-parse` resolvability on the current-branch log only). Legacy archived logs keep WARN-tier treatment.
+- **Audit provenance + ledger (#337/#338/#342)**: the two codex audit reports are merged as review snapshots with all 10 `routing_actions` rows closed (`merged`), an L2 `document-governance` decision entry, backlog rows #136 (ps1 gate-progression FAIL double-count parity) and #137, removal of the vestigial unreferenced `.agents/workflows/` duplicates, and 5 hash-chained work-log archivals.
+
+No engine/test/logic change in the release cut itself.
+
 ## [1.8.11] - 2026-07-10
 
 Patch release closing the v1.8.10 downstream gap found by the post-release fresh-adopter deploy simulation.
