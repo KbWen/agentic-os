@@ -36,6 +36,53 @@ def run_tool(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _build_adapter_fixture(root: Path, *, manifest: bool, break_review: bool) -> None:
+    """Create a minimal Claude adapter surface under *root*.
+
+    Every EXPECTED_COMMANDS + ALIAS stub gets a valid canonical dispatch directive
+    and its workflow file. When *break_review* is set, review.md's dispatch
+    directive points at a NONEXISTENT workflow while a residual mention of the
+    correct path survives in prose — the exact fail-open F1 closes. When *manifest*
+    is set a .agentcortex-manifest is written (downstream identity); its absence
+    MUST NOT change the verdict (F2)."""
+    import check_command_sync as checker
+
+    commands = root / ".claude" / "commands"
+    workflows = root / ".agent" / "workflows"
+    commands.mkdir(parents=True, exist_ok=True)
+    workflows.mkdir(parents=True, exist_ok=True)
+
+    def _stub(cmd: str, directive: str) -> str:
+        return (
+            f"# /{cmd}\n\n"
+            f"Execute the canonical workflow: `{directive}`\n\n"
+            f"Follow every step in `{directive}` sequentially.\n"
+        )
+
+    for cmd in checker.EXPECTED_COMMANDS:
+        directive = f".agent/workflows/{cmd}.md"
+        (commands / f"{cmd}.md").write_text(_stub(cmd, directive), encoding="utf-8")
+        (workflows / f"{cmd}.md").write_text(f"# {cmd}\n", encoding="utf-8")
+
+    for cmd, reason in checker.ALIAS_EXCLUSIONS.items():
+        target = reason.rsplit("references ", 1)[-1].split(",")[0]
+        (commands / f"{cmd}.md").write_text(_stub(cmd, target), encoding="utf-8")
+        (workflows / f"{cmd}.md").write_text(f"# {cmd}\n", encoding="utf-8")
+
+    if break_review:
+        (commands / "review.md").write_text(
+            "# /review\n\n"
+            "Execute the canonical workflow: `.agent/workflows/nonexistent.md`\n\n"
+            "See `.agent/workflows/review.md` for the real steps.\n",
+            encoding="utf-8",
+        )
+
+    if manifest:
+        (root / ".agentcortex-manifest").write_text(
+            "scaffold .claude/commands/review.md sha256:deadbeef\n", encoding="utf-8"
+        )
+
+
 def load_registry_entry(skill_id: str) -> dict[str, object]:
     if skill_id == "writing-plans":
         return {
@@ -349,6 +396,59 @@ agentcortex:
                 content,
                 f".claude/commands/{cmd}.md no longer references documented alias target {target_ref}",
             )
+
+    def test_command_sync_rejects_broken_directive_despite_residual_mention(self) -> None:
+        """F1: a stub whose canonical dispatch directive points at the WRONG
+        workflow must FAIL even when a later prose line still mentions the correct
+        path (the unscoped-substring fail-open)."""
+        with tempfile.TemporaryDirectory() as td:
+            _build_adapter_fixture(Path(td), manifest=True, break_review=True)
+            result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", td)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("dispatch directive references", result.stderr)
+
+    def test_command_sync_manifest_deletion_cannot_turn_broken_adapter_green(self) -> None:
+        """F2: removing .agentcortex-manifest must NOT flip a broken adapter from
+        FAIL to PASS. Before the fix, manifest-absence self-skipped the check and
+        returned exit 0 on the identical broken adapter."""
+        with tempfile.TemporaryDirectory() as td:
+            _build_adapter_fixture(Path(td), manifest=False, break_review=True)
+            result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", td)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("dispatch directive references", result.stderr)
+
+    def test_command_sync_runs_and_passes_without_manifest(self) -> None:
+        """F2: a valid adapter surface with NO manifest runs the real check and
+        PASSES — the check is manifest-agnostic (source and downstream alike)."""
+        with tempfile.TemporaryDirectory() as td:
+            _build_adapter_fixture(Path(td), manifest=False, break_review=False)
+            result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", td)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Command sync check passed", result.stdout)
+
+    def test_command_sync_rejects_alias_directive_retarget(self) -> None:
+        """F1 (alias): an alias whose dispatch directive is retargeted must FAIL
+        even if prose still mentions the documented alias target."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _build_adapter_fixture(root, manifest=False, break_review=False)
+            (root / ".claude" / "commands" / "execute-plan.md").write_text(
+                "# /execute-plan\n\n"
+                "Execute the canonical workflow: `.agent/workflows/plan.md`\n\n"
+                "Alias for /implement — see `.agent/workflows/implement.md`.\n",
+                encoding="utf-8",
+            )
+            result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", td)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("(alias) dispatch directive references", result.stderr)
+
+    def test_command_sync_skips_only_when_surface_genuinely_absent(self) -> None:
+        """F2: skip ONLY when the adapter surface is genuinely absent (a bare
+        checkout with no .claude/commands/), regardless of manifest presence."""
+        with tempfile.TemporaryDirectory() as td:
+            result = run_tool(".agentcortex/tools/check_command_sync.py", "--root", td)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("adapter surface not present", result.stdout)
 
     def test_writing_plans_manifest_validates(self) -> None:
         skill_dir = self.fixture_root / ".agents" / "skills" / "writing-plans"

@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 """Check that .claude/commands/ dispatch files are in sync with .agent/workflows/.
 
-In source-repo context (no .agentcortex-manifest), this check is skipped because
-.claude/commands/ is an adapter surface created by deploy in downstream repos.
+The check is manifest-agnostic: it runs whenever the Claude adapter surface
+(.claude/commands/) exists, regardless of .agentcortex-manifest presence, and
+skips only when that surface is genuinely absent (a bare checkout with no
+adapters). Repository identity is NOT inferred from manifest presence — deleting
+the manifest downstream must not turn a broken adapter green (governance
+self-audit 2026-07-11, F2).
+
+Each ordinary stub must carry a single canonical dispatch directive
+("Execute the canonical workflow: `.agent/workflows/<cmd>.md`") that references
+the expected workflow. A residual mention of the path elsewhere in the file is
+NOT accepted — the directive itself must be correct (F1).
 """
 from __future__ import annotations
 
 import argparse
 import pathlib
+import re
 import sys
 
 
@@ -59,6 +69,23 @@ ALIAS_EXCLUSIONS = {
 }
 
 
+# The single canonical dispatch directive every stub carries on its own line.
+# We require THIS line to reference the expected workflow — not merely that the
+# path appears somewhere in the file. A broken directive that points at the wrong
+# (or a nonexistent) workflow must fail even if later prose still mentions the
+# correct path (governance self-audit 2026-07-11, F1).
+CANONICAL_DIRECTIVE_RE = re.compile(
+    r"Execute the canonical workflow:\s*`(\.agent/workflows/[^`]+\.md)`"
+)
+
+
+def _directive_target(content: str) -> str | None:
+    """Return the workflow path referenced by the stub's canonical execution
+    directive, or None when the stub has no such directive line."""
+    match = CANONICAL_DIRECTIVE_RE.search(content)
+    return match.group(1) if match else None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check Claude command adapter sync.")
     parser.add_argument("--root", type=pathlib.Path, default=".")
@@ -69,18 +96,21 @@ def main() -> int:
     args = parse_args()
     root = args.root.resolve()
 
-    # Source-repo detection: skip if no manifest (adapter surfaces don't exist yet)
-    if not (root / ".agentcortex-manifest").is_file():
-        print("Source repo detected — .claude/commands/ sync check skipped.")
-        return 0
-
     commands_dir = root / ".claude" / "commands"
     workflows_dir = root / ".agent" / "workflows"
     errors: list[str] = []
 
+    # Manifest-agnostic surface detection (governance self-audit F2): run the
+    # sync check whenever the Claude adapter surface exists, regardless of
+    # .agentcortex-manifest presence. Skip ONLY when the surface is genuinely
+    # absent (a bare checkout that never had adapters) — a deleted manifest must
+    # NOT disable adapter-drift detection or imply source identity.
     if not commands_dir.is_dir():
-        print(f"Missing directory: {commands_dir.relative_to(root)}")
-        return 1
+        print(
+            ".claude/commands/ absent; Claude adapter surface not present, "
+            "sync check skipped."
+        )
+        return 0
 
     for cmd in EXPECTED_COMMANDS:
         cmd_file = commands_dir / f"{cmd}.md"
@@ -94,12 +124,20 @@ def main() -> int:
             errors.append(f"command {cmd}.md exists but workflow .agent/workflows/{cmd}.md is missing")
             continue
 
-        # Verify the command file references the workflow
+        # Verify the stub's canonical dispatch directive references the expected
+        # workflow — not merely that the path appears somewhere in the file (F1).
         content = cmd_file.read_text(encoding="utf-8")
         expected_ref = f".agent/workflows/{cmd}.md"
-        if expected_ref not in content:
+        directive_target = _directive_target(content)
+        if directive_target is None:
             errors.append(
-                f".claude/commands/{cmd}.md does not reference {expected_ref}"
+                f".claude/commands/{cmd}.md has no canonical dispatch directive "
+                f"(expected 'Execute the canonical workflow: `{expected_ref}`')"
+            )
+        elif directive_target != expected_ref:
+            errors.append(
+                f".claude/commands/{cmd}.md dispatch directive references "
+                f"{directive_target}, expected {expected_ref}"
             )
 
     # Aliases are checked separately: verify the stub + its OWN redirect-stub
@@ -121,12 +159,22 @@ def main() -> int:
             continue
 
         content = cmd_file.read_text(encoding="utf-8")
-        # The alias reason string documents which target path it must reference.
+        # The alias reason string documents which target path its directive must
+        # reference. Parse the canonical directive (not any substring) so a
+        # retargeted alias directive is caught even if prose still mentions the
+        # documented target (F1).
         target_ref = ALIAS_EXCLUSIONS[cmd].rsplit("references ", 1)[-1].split(",")[0]
-        if target_ref not in content:
+        directive_target = _directive_target(content)
+        if directive_target is None:
             errors.append(
-                f".claude/commands/{cmd}.md (alias) no longer references {target_ref} — "
-                f"update ALIAS_EXCLUSIONS or fix the stub"
+                f".claude/commands/{cmd}.md (alias) has no canonical dispatch "
+                f"directive (expected it to reference {target_ref})"
+            )
+        elif directive_target != target_ref:
+            errors.append(
+                f".claude/commands/{cmd}.md (alias) dispatch directive references "
+                f"{directive_target}, expected {target_ref} — update "
+                f"ALIAS_EXCLUSIONS or fix the stub"
             )
 
     if errors:

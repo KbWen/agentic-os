@@ -50,6 +50,7 @@ ARCHIVE_INDEX_JSONL="$ROOT/.agentcortex/context/archive/INDEX.jsonl"
 LESSON_CHAIN_CHECK="$ROOT/.agentcortex/tools/check_lesson_chain.py"
 SSOT_CURRENT_STATE="$ROOT/.agentcortex/context/current_state.md"
 COMMAND_SYNC_CHECK="$ROOT/.agentcortex/tools/check_command_sync.py"
+ROUTING_ACTIONS_CHECK="$ROOT/.agentcortex/tools/check_routing_actions.py"
 SKILL_PROVENANCE_CHECK="$ROOT/.agentcortex/tools/check_skill_provenance.py"
 TRIGGER_REGISTRY="$ROOT/.agentcortex/metadata/trigger-registry.yaml"
 TRIGGER_COMPACT_INDEX="$ROOT/.agentcortex/metadata/trigger-compact-index.json"
@@ -919,6 +920,15 @@ else
   record_result PASS "domain doc candidates declare the full L1 contract when present"
 fi
 
+# routing_actions structural contract (governance self-audit F3). Structural
+# parsing lives in a Python tool (ADR-006, check_routing_actions.py) so
+# inline-map / fields-outside-block bypasses are rejected. The native block in
+# the else branch is the no-python degraded backstop (backlog #113): weaker
+# (whole-file substring + standalone-anchor based) but keeps reduced-assurance
+# coverage + the stale-pending WARN when Python is unavailable.
+if [[ -n "${PYTHON_BIN:-}" ]] && [[ -f "$ROUTING_ACTIONS_CHECK" ]]; then
+  run_python_check "routing_actions contract (structural)" FAIL "$ROUTING_ACTIONS_CHECK" --root "$ROOT"
+else
 routing_action_errors=0
 routing_action_warnings=0
 routing_action_stale_warnings=0
@@ -993,6 +1003,7 @@ if [[ "$routing_action_warnings" -gt 0 ]]; then
 fi
 if [[ "$routing_action_stale_warnings" -gt 0 ]]; then
   record_result WARN "stale pending routing_actions need canonical-doc follow-up: ${routing_action_stale_warnings}"
+fi
 fi
 shopt -u nullglob
 
