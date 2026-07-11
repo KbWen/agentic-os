@@ -7,7 +7,7 @@ tasks:
 
 # /claude-cli
 
-> `[OPTIONAL MODULE]` — This workflow requires Claude Code CLI to be installed and available as the `claude` executable. If unavailable or not authenticated, AI silently falls back to native execution per `engineering_guardrails.md` §8.2.
+> `[OPTIONAL MODULE]` — This workflow requires Claude Code CLI to be installed and available as the `claude` executable. If unavailable or not authenticated, AI falls back to native execution and **discloses** the substitution (this is an explicit executor request) per `engineering_guardrails.md` §8.2.
 > This module is explicit opt-in. The AI should route here only when the user clearly asks to use Claude for the delegated subtask.
 
 Dispatch a task to Claude CLI while ensuring Agentic OS governance compliance.
@@ -40,15 +40,12 @@ implement 交給 claude: [task description]
 
 > Ref: `engineering_guardrails.md` §8.2 (External Tool Delegation Protocol)
 
-AI MUST perform these steps **before** invoking `claude`:
+AI MUST perform these steps **before** invoking `claude` (canonical order per `engineering_guardrails.md` §8.2):
 
-1. **Availability Check**: On first use per session, run `claude -v`. If it fails, silently fall back to AI-native execution and cache the result.
-2. **Auth Check**: Run `claude auth status --text`. If auth is missing or invalid, silently fall back to AI-native execution and cache the result.
-3. **Classify** the task per `engineering_guardrails.md` §10.1.
-4. **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` with:
-   - Classification, goal, target files, constraints
-   - `Executor: Claude CLI` (to distinguish from AI-direct execution)
-   - Whether the delegated step is implementation, testing, or both
+1. **Record `Requested Executor: Claude CLI`** in the Work Log **first**. `/claude-cli` is an explicit user request, so any later fallback MUST be disclosed (step 3), never silent.
+2. **Classify** the task per `engineering_guardrails.md` §10.1, then **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` with classification, goal, target files, constraints, and whether the delegated step is implementation, testing, or both.
+3. **Availability + Auth Check**: run `claude -v` and `claude auth status --text` (cache per session). On failure, fall back to native execution, **disclose** the substitution to the user (final handoff at latest), and record `Actual Executor: native (reason: cli-missing | auth-missing)`. On success, record `Actual Executor: Claude CLI`.
+4. **Baseline Capture** (before invoking `claude`): snapshot the worktree with `git status --porcelain` + `git diff` so post-flight rollback can distinguish Claude's edits from files already **dirty at baseline**. Prefer an isolated git worktree for write-capable runs.
 5. **Generate the Claude command** by injecting governance context and a constrained target-file list.
    - The AI agent, not the user, composes the final prompt.
    - The final prompt MUST include task scope, target files, constraints, and the expected output shape before it is sent to `claude`.
@@ -97,17 +94,19 @@ EXPECTED OUTPUT: [summary | diff explanation | test evidence]
 
 ## 3. AI Post-Flight (After Claude Completes)
 
-AI MUST perform these steps **after** Claude returns:
+AI MUST perform these steps **after Claude returns — or after any abnormal exit**:
 
-1. **Verify scope**: Check `git diff` — did Claude modify files outside the target list?
-   - If yes: revert unauthorized changes, log the violation in the Work Log, and warn the user.
+0. **Abnormal exit** (timeout / nonzero exit / killed process / no result payload): a timed-out `claude` can write files before termination, so **STOP — do not retry**. Wait for the process to fully terminate, then re-derive worktree state (`git status --porcelain` + diff against the pre-flight baseline), record the partial state in the Work Log, and require explicit reconciliation before any re-invocation. A retry over an unreconciled partial write duplicates or overlaps edits.
+1. **Verify scope**: Check `git diff` against the pre-flight baseline — did Claude modify files outside the target list?
+   - If yes: reverse only Claude-attributable hunks. **Never whole-file-revert (`git checkout -- <path>`) a path that was dirty at baseline** — that destroys pre-existing user/agent work; reverse the specific hunks surgically or escalate to the user. Log the violation in the Work Log and warn the user.
 2. **Collect evidence**: Capture Claude's output summary and append it to the Work Log.
 3. **Run tests** if applicable: `npm test`, `pytest -q`, or the project-specific verification command.
 4. **Update Work Log** with:
    - Claude execution result (success/partial/failure/fallback)
+   - `Actual Executor` (+ fallback reason if it differed from `Requested Executor`)
    - Files actually modified
    - Test results
-   - Whether GPT-1.0 accepted or rejected the delegated output
+   - Whether the orchestrating agent accepted or rejected the delegated output
 5. **Gate check**: Apply the standard gate for the classification tier (see `engineering_guardrails.md` §10.2).
 
 ## 4. Example Session
@@ -144,10 +143,11 @@ AI → User: Claude 補了 parser 的邊界與錯誤路徑測試，我已經檢�
 
 | Error | AI Action |
 | --- | --- |
-| Claude CLI not installed | Silently fall back to AI-native execution |
-| Claude auth missing | Silently fall back to AI-native execution |
-| Claude modified wrong files | Revert unauthorized changes, log violation, warn user |
-| Claude output unclear | GPT-1.0 reviews the diff manually and applies standard review |
+| Claude CLI not installed | Fall back to native execution; **disclose** the substitution (explicit request) and record `Actual Executor: native` |
+| Claude auth missing | Fall back to native execution; **disclose** the substitution and record `Actual Executor: native` |
+| Claude abnormal exit (timeout / nonzero / kill) | **STOP — do not retry.** Wait for termination, re-derive state vs the pre-flight baseline, record partial state, reconcile before any re-invocation |
+| Claude modified wrong files | Reverse only Claude-attributable hunks; never whole-file-revert a path **dirty at baseline** (surgical revert or escalate); log + warn |
+| Claude output unclear | The orchestrating agent reviews the diff manually and applies standard review |
 | Task too complex for delegation | Reject delegation and continue with native execution |
 
 ## 6. Guardrails Integration

@@ -233,16 +233,16 @@ To prevent Work Log bloat and premature context compaction, agents MUST NOT past
 
 ### 8.2 External Tool Delegation Protocol
 
-External CLI tools (e.g., `ask-openrouter`, `codex`) are **OPTIONAL accelerators**. Projects MAY operate without any of them.
+External CLI tools (e.g., `ask-openrouter`, `codex`, `claude`) are **OPTIONAL accelerators**; projects MAY operate without any.
 
-**Pre/Post-Flight (Mandatory for all external tool invocations)**:
+**Pre/Post-Flight (mandatory, canonical order)**:
 
 - **Pre-Flight** (in order — fail fast):
-  1. **Cost-Tier Confirmation** (memory-only): low-cost → auto-execute; high-cost (quality/max profile) → confirm with user first.
-  2. Update Work Log with `Executor: <tool-name>` (only if cost-tier passes).
-  3. **Availability Check (Silent)**: run health check (e.g., `python -m ask_openrouter --help`, `codex --version`). If unavailable: **silently fall back** to AI-native execution. DO NOT warn user. DO NOT suggest installation. Cache per session.
-- **Post-Flight**: Read tool output, verify scope alignment, update Work Log, apply Gate Check per §10.2.
-- External tool output is treated as **Junior Tool output** — AI MUST review before accepting.
+  1. **Cost-Tier** (memory-only): low-cost → auto-execute; high-cost → confirm with user first.
+  2. Record `Requested Executor: <tool>` in the Work Log **before** probing availability, then **Baseline Capture** the worktree (`git status --porcelain` + `git diff`) so scope reverts can tell executor edits from files already **dirty at baseline**.
+  3. **Availability (silent)**: health-check the tool; if unavailable, silently fall back for *implicit* acceleration (no install prompt; cache per session), but an *explicit* executor request MUST **disclose** the fallback (final handoff at latest). Record `Actual Executor: <tool | native>` (+ reason when it differs from Requested).
+- **Post-Flight**: read output, verify scope, update Work Log, Gate Check per §10.2. On **abnormal exit** (timeout / nonzero / kill): STOP retries, wait for termination, re-derive state from the baseline diff, record partial state, reconcile explicitly before re-invoking. Never whole-file-revert (`git checkout -- <path>`) a path **dirty at baseline** — reverse only executor hunks or escalate.
+- External tool output = **Junior Tool output** — AI MUST review before accepting.
 
 ## 9. Intent Safety Rules
 
