@@ -184,18 +184,18 @@ Acceptance minimum:
 routing_actions:
   - finding: "Gate receipt Timestamp semantics must be enforced or removed from the mandatory schema claim."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-receipt-integrity-handoff"
   - finding: "Diff Base and Checkpoint anchors must be phase-valid and resolve to Git commits."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-receipt-integrity-handoff"
   - finding: "Receipt Classification must agree with the active Work Log classification epoch."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-receipt-integrity-handoff"
   - finding: "Current-branch Work Log detection must use the canonical normalization algorithm on every platform."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-receipt-integrity-handoff"
 ```

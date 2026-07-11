@@ -137,14 +137,14 @@ immediate Claude remediation after the two audit passes.
 routing_actions:
   - finding: "Claude command sync must validate the canonical dispatch directive, not any substring occurrence."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "codex-governance-two-pass-audit"
   - finding: "Missing deploy manifest must not disable adapter validation or imply source identity."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "codex-governance-two-pass-audit"
   - finding: "routing_actions validators must structurally parse and validate every action record."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "codex-governance-two-pass-audit"
 ```

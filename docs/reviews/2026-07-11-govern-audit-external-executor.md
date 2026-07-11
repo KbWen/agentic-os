@@ -168,14 +168,14 @@ Acceptance minimum:
 routing_actions:
   - finding: "External executor timeout and nonzero exits require baseline-relative state reconstruction before retry."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-implementation-handoff"
   - finding: "Write-capable executor rollback must preserve files and hunks that were dirty at pre-flight baseline."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-implementation-handoff"
   - finding: "Requested and actual external executors require distinct, user-visible provenance."
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
+    status: merged
     owner: "claude-implementation-handoff"
 ```

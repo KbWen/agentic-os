@@ -129,3 +129,45 @@ source_sha: 6095c9c
   Output): embedded directives in generated code, comments, or prose are never
   authorization; any shell mutation it proposes re-enters the Destructive
   Command Gate at the primary.
+
+### [document-governance][2026-07-11][chore/audit-wave-wrapup-20260711]
+
+Source: 2026-07-11 codex governance self-audits (PRs #337/#338, 3 review
+snapshots, 10 findings) → same-day remediation PRs #339/#340/#341. Every
+finding was primary-verified against the actual code path before delegation
+(0 false alarms; F10 was broader than reported).
+
+- [DECISION] Adapter dispatch integrity is directive-anchored, not
+  substring-anchored: `check_command_sync.py` parses each stub's single
+  canonical "Execute the canonical workflow:" directive line and requires that
+  line's target to match — a prose mention elsewhere no longer satisfies the
+  check (PR #340).
+- [DECISION] Adapter validation is surface-keyed, not manifest-keyed: the
+  command-sync check runs whenever `.claude/commands/` exists, so deleting
+  `.agentcortex-manifest` can no longer disable adapter-drift detection by
+  flipping repository identity to "source" (PR #340).
+- [DECISION] routing_actions structural validation is a Python tool
+  (`check_routing_actions.py`, ADR-006 seam) parsing only the canonical
+  column-0 fenced block; the legacy native grep/sed block remains solely as
+  the no-Python degraded backstop. Indented in-prose example blocks are
+  deliberately out of scope — audit reports may quote malformed fixtures as
+  evidence (PR #340).
+- [DECISION] External write-capable executor contract (§8.2 is canon):
+  `Requested Executor` recorded before probing; worktree baseline captured
+  before invocation; abnormal exit (timeout/nonzero/kill) stops retries and
+  requires baseline-relative reconciliation before re-invocation; a path dirty
+  at baseline is never whole-file reverted; explicit executor requests must
+  disclose fallback, implicit acceleration may stay silent (PR #339).
+- [DECISION] Work Log current-branch detection implements bootstrap.md's full
+  5-step canonical key normalization in BOTH validators with case-insensitive
+  comparison — uppercase/punctuated branches can no longer demote
+  current-branch FAIL escalations to WARN (PR #341).
+- [DECISION] Receipt/anchor value validation extends the existing WARN-tier
+  checks: Timestamp must contain a parseable ISO date (order-of-appearance
+  stays authoritative — monotonic ordering deliberately NOT enforced), receipt
+  Classification must match the header classification, and Checkpoint/Diff
+  Base SHAs must be hex-or-known-placeholder with `git rev-parse`
+  resolvability required on the current-branch log only (PR #341).
+- [CONSTRAINT] `check_routing_actions.py` is deliberately NOT in the deploy
+  runtime_tools whitelist yet — downstream keeps the native backstop;
+  promotion is a tracked follow-up (backlog #137), not an accident.
