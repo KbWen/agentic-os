@@ -1175,3 +1175,488 @@ def test_not_ready_re_review_hint_source_parity() -> None:
         assert NOT_READY_HINT in src, f"{label} missing NOT-READY remediation hint"
         assert NOT_READY_HINT_REMEDY in src, f"{label} missing remedy phrasing"
         assert "review.md §Reverse Transition" in src, f"{label} missing review.md §Reverse Transition cite"
+
+
+# ---------------------------------------------------------------------------
+# 2026-07-11 receipt-integrity audit (docs/reviews/2026-07-11-govern-audit-
+# receipt-integrity.md): F10 canonical Work Log key normalization, F7 receipt
+# Timestamp requirement, F9 receipt/header Classification agreement, F8
+# Checkpoint SHA / Diff Base SHA value-shape + resolvability validation.
+# ---------------------------------------------------------------------------
+
+GATE_SCHEMA_WARN = "active work log gate receipts with schema violations"
+CHECKPOINT_SHA_WARN_MSG = "invalid Checkpoint SHA value"
+DIFF_BASE_SHA_WARN_MSG = "invalid Diff Base SHA value"
+
+
+def _write_receipt_schema_worklog(
+    target: Path,
+    name: str,
+    *,
+    header_classification: str,
+    gate_lines: str,
+    checkpoint_sha: str = "0000000000000000000000000000000000000000",
+    extra_header: str = "",
+) -> None:
+    """Minimal Work Log fixture for F7/F8/F9 receipt-schema tests — a leaner
+    header than `_write_worklog` so tests can inject a deliberately malformed
+    Classification header, an overridden Checkpoint SHA, an extra Diff Base
+    SHA line (via extra_header), or omit Timestamp from individual receipts.
+    NOTE: Checkpoint SHA has exactly ONE emission site (the `checkpoint_sha`
+    param) — do NOT also inject a "- Checkpoint SHA:" line via extra_header,
+    or validate.sh/.ps1's `grep -m1` / first-match extraction will silently
+    prefer whichever line comes first, masking the intended override."""
+    work_dir = target / ".agentcortex" / "context" / "work"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    (work_dir / name).write_text(
+        f"""# Work Log: {name}
+
+## Header
+
+- Branch: `test/{name}`
+- Classification: `{header_classification}`
+- Current Phase: `ship`
+- Checkpoint SHA: `{checkpoint_sha}`
+{extra_header}
+---
+
+## Phase Summary
+
+Receipt-schema fixture. ACX
+
+---
+
+## Gate Evidence
+
+{gate_lines}
+
+---
+
+## Drift Log
+
+- ADR Coverage Check: test fixture.
+
+---
+
+## Resume
+
+none
+
+---
+
+## Evidence
+
+- Fixture evidence.
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+# --- F10: canonical Work Log key normalization ------------------------------
+#
+# bootstrap.md:123-131 canonical algorithm: (1) chars outside [a-zA-Z0-9._-]
+# -> '-', (2) collapse '-' runs, (3) strip leading/trailing '-'/'.',
+# (4) lowercase, (5) truncate to 100 chars. Branch "Feat/Add##Auth-" exercises
+# steps 1 (slash + double-hash -> dashes), 2 (collapse), 3 (trailing-dash
+# trim), and 4 (lowercase) all at once; canonical key = "feat-add-auth".
+
+F10_COMBINED_BRANCH = "Feat/Add##Auth-"
+F10_COMBINED_KEY = "feat-add-auth"
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f10_combined_normalization_current_log_detected_as_current_sh() -> None:
+    """An uppercase + punctuated + trailing-dash branch must still canonicalize
+    to its documented Work Log key and be detected as the CURRENT-branch log —
+    missing Resume at handoff must FAIL (not WARN). Reproduces the audit's
+    exact failure mode (case-sensitive compare in bash) plus the punctuation
+    gap the case-only reproduction did not cover."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_with_git_branch(Path(td), F10_COMBINED_BRANCH)
+        _write_worklog(
+            target,
+            f"{F10_COMBINED_KEY}.md",
+            classification="architecture-change",
+            phase="handoff",
+            gates=("bootstrap", "plan", "implement", "review", "test", "handoff"),
+            resume="none",
+        )
+        out = _run_validate(target)
+        assert AC6_FAIL_MSG in out, (
+            f"validate.sh must detect the canonical log as CURRENT for a "
+            f"combined uppercase/punctuation/trailing-dash branch (F10). "
+            f"Output:\n{out[-1200:]}"
+        )
+        assert _resume_warn_count(out) == 0 or _resume_warn_count(out) is None, (
+            f"validate.sh must not WARN (downgrade) once F10 is fixed. Output:\n{out[-1200:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_f10_combined_normalization_current_log_detected_as_current_ps1() -> None:
+    """validate.ps1 parity. PowerShell's -eq/-like are already case-insensitive
+    (masking the case half pre-fix), but punctuation was NOT normalized on
+    either platform before F10 — this branch still discriminates old vs new
+    ps1 behavior via the double-hash + trailing-dash steps."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_with_git_branch(Path(td), F10_COMBINED_BRANCH)
+        _write_worklog(
+            target,
+            f"{F10_COMBINED_KEY}.md",
+            classification="architecture-change",
+            phase="handoff",
+            gates=("bootstrap", "plan", "implement", "review", "test", "handoff"),
+            resume="none",
+        )
+        out = _run_validate_ps1(target)
+        assert AC6_FAIL_MSG in out, (
+            f"validate.ps1 must detect the canonical log as CURRENT for a "
+            f"combined uppercase/punctuation/trailing-dash branch (F10 parity). "
+            f"Output:\n{out[-1200:]}"
+        )
+        assert _resume_warn_count(out) == 0 or _resume_warn_count(out) is None, (
+            f"validate.ps1 must not WARN (downgrade) once F10 is fixed. Output:\n{out[-1200:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f10_non_matching_log_stays_historical_warn_sh() -> None:
+    """Negative control: a Work Log that does NOT match the (correctly
+    normalized) current-branch key must stay a historical WARN, not escalate
+    to FAIL — proves F10 did not make detection overly permissive."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_with_git_branch(Path(td), F10_COMBINED_BRANCH)
+        _write_worklog(
+            target,
+            "totally-unrelated-branch-log.md",
+            classification="architecture-change",
+            phase="handoff",
+            gates=("bootstrap", "plan", "implement", "review", "test", "handoff"),
+            resume="none",
+        )
+        out = _run_validate(target)
+        assert AC6_FAIL_MSG not in out, (
+            f"validate.sh must NOT FAIL for a log that doesn't match the "
+            f"current-branch key. Output:\n{out[-1200:]}"
+        )
+        assert _resume_warn_count(out) == 1, (
+            f"non-matching log must still WARN as historical. Output:\n{out[-1200:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f10_truncation_100_chars_current_log_detected_as_current_sh() -> None:
+    """Step 5: a >100-char branch name canonicalizes to a 100-char-truncated
+    key, and that truncated filename is still detected as CURRENT."""
+    long_branch = "feat/" + ("x" * 105)  # "feat-" (5) + 105 x's = 110 raw chars
+    truncated_key = ("feat-" + ("x" * 105))[:100]
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_with_git_branch(Path(td), long_branch)
+        _write_worklog(
+            target,
+            f"{truncated_key}.md",
+            classification="architecture-change",
+            phase="handoff",
+            gates=("bootstrap", "plan", "implement", "review", "test", "handoff"),
+            resume="none",
+        )
+        out = _run_validate(target)
+        assert AC6_FAIL_MSG in out, (
+            f"validate.sh must truncate a >100-char branch to 100 chars and still "
+            f"detect the resulting log as CURRENT (F10 step 5). Output:\n{out[-1200:]}"
+        )
+
+
+def test_f10_source_parity_five_step_normalization() -> None:
+    """Structural (fast, no subprocess): both validators must implement all 5
+    canonical normalization steps, not just slash->dash."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    # step 1: replace non-conforming chars with '-'
+    assert "[^a-zA-Z0-9._-]" in sh, "validate.sh missing F10 step-1 char-class replacement"
+    assert "[^a-zA-Z0-9._-]" in ps1, "validate.ps1 missing F10 step-1 char-class replacement"
+    # step 2: collapse consecutive dashes
+    assert "-+" in sh, "validate.sh missing F10 step-2 dash-collapse"
+    # step 4: lowercase
+    assert "tr '[:upper:]' '[:lower:]'" in sh, "validate.sh cur_key must lowercase (F10 step 4)"
+    assert "ToLowerInvariant()" in ps1, "validate.ps1 curKey must lowercase (F10 step 4)"
+    # step 5: truncate to 100 chars
+    assert "cut -c1-100" in sh, "validate.sh cur_key must truncate to 100 chars (F10 step 5)"
+    assert "Substring(0, 100)" in ps1, "validate.ps1 curKey must truncate to 100 chars (F10 step 5)"
+    # filename comparison must be explicitly case-insensitive on both sides
+    assert 'wl_basename="$(basename "$wl" | tr' in sh, (
+        "validate.sh must lowercase wl_basename before comparing (F10 defense)"
+    )
+    assert "GetFileName($wl.FullName).ToLowerInvariant()" in ps1, (
+        "validate.ps1 must lowercase wlBasename before comparing (F10 defense)"
+    )
+
+
+# --- F7: receipt Timestamp requirement --------------------------------------
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f7_missing_timestamp_warns_sh() -> None:
+    """F7: a receipt with no Timestamp: field must trigger the schema WARN."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "\n".join([
+            "- Gate: bootstrap | Verdict: PASS | Classification: quick-win",
+            "- Gate: plan | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z",
+        ])
+        _write_receipt_schema_worklog(
+            target, "f7-missing-timestamp.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+        )
+        out = _run_validate(target)
+        assert GATE_SCHEMA_WARN in out, out[-1200:]
+        assert "missing/unparseable Timestamp" in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_f7_missing_timestamp_warns_ps1() -> None:
+    """validate.ps1 parity for F7."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win"
+        _write_receipt_schema_worklog(
+            target, "f7-missing-timestamp.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+        )
+        out = _run_validate_ps1(target)
+        assert GATE_SCHEMA_WARN in out, out[-1200:]
+        assert "missing/unparseable Timestamp" in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f7_date_only_timestamp_accepted_sh() -> None:
+    """F7: a date-only ISO Timestamp (no time component) is accepted — the
+    audit's acceptance criterion explicitly permits a bare YYYY-MM-DD."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11"
+        _write_receipt_schema_worklog(
+            target, "f7-date-only.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+        )
+        out = _run_validate(target)
+        assert "missing/unparseable Timestamp" not in out, out[-1200:]
+
+
+# --- F9: receipt Classification must agree with header Classification -------
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f9_classification_mismatch_warns_sh() -> None:
+    """F9: a receipt claiming a different Classification than the header must WARN."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: tiny-fix | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f9-mismatch.md",
+            header_classification="feature", gate_lines=gate_lines,
+        )
+        out = _run_validate(target)
+        assert GATE_SCHEMA_WARN in out, out[-1200:]
+        assert "differs from header Classification" in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_f9_classification_mismatch_warns_ps1() -> None:
+    """validate.ps1 parity for F9."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: tiny-fix | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f9-mismatch.md",
+            header_classification="feature", gate_lines=gate_lines,
+        )
+        out = _run_validate_ps1(target)
+        assert GATE_SCHEMA_WARN in out, out[-1200:]
+        assert "differs from header Classification" in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f9_unfilled_header_classification_not_compared_sh() -> None:
+    """F9: an unfilled/malformed header Classification (still the literal
+    template placeholder — the exact state of two real active Work Logs in
+    this repo at audit time) must NOT be compared; nothing meaningful to
+    compare against, so it must not spuriously WARN."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f9-unfilled-header.md",
+            header_classification="<tiny-fix | quick-win | hotfix | feature | architecture-change>",
+            gate_lines=gate_lines,
+        )
+        out = _run_validate(target)
+        assert "differs from header Classification" not in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f9_matching_classification_no_warn_sh() -> None:
+    """Regression guard: receipts whose Classification agrees with the header
+    must not warn (the common case — every real receipt in this repo today)."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "\n".join([
+            "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z",
+            "- Gate: plan | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:05:00Z",
+        ])
+        _write_receipt_schema_worklog(
+            target, "f9-matching.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+        )
+        out = _run_validate(target)
+        assert GATE_SCHEMA_WARN not in out, out[-1200:]
+
+
+# --- F8: Checkpoint SHA / Diff Base SHA value-shape + resolvability ---------
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f8_invalid_checkpoint_sha_warns_sh() -> None:
+    """F8: a non-hex, non-placeholder Checkpoint SHA value must WARN — the
+    audit's exact repro value ('not-a-sha')."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f8-bad-sha.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+            checkpoint_sha="not-a-sha",
+        )
+        out = _run_validate(target)
+        assert CHECKPOINT_SHA_WARN_MSG in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_f8_invalid_checkpoint_sha_warns_ps1() -> None:
+    """validate.ps1 parity for F8."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f8-bad-sha.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+            checkpoint_sha="not-a-sha",
+        )
+        out = _run_validate_ps1(target)
+        assert CHECKPOINT_SHA_WARN_MSG in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f8_accepted_placeholders_no_warn_sh() -> None:
+    """F8: 'none', 'pending-commit', and the unfilled template default must
+    NOT warn — observed legitimate placeholders (grepped from this repo's real
+    active/archived Work Logs and templates/worklog.md before implementing)."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        work_dir = target / ".agentcortex" / "context" / "work"
+        for i, val in enumerate(["none", "pending-commit", "<git-sha or none>", "abc1234"]):
+            gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+            _write_receipt_schema_worklog(
+                target, f"f8-placeholder-{i}.md",
+                header_classification="quick-win", gate_lines=gate_lines,
+                checkpoint_sha=val,
+            )
+        out = _run_validate(target)
+        assert CHECKPOINT_SHA_WARN_MSG not in out, out[-1200:]
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f8_unresolvable_current_branch_sha_warns_but_historical_does_not_sh() -> None:
+    """F8: a well-formed but non-existent SHA on the CURRENT-branch log must
+    WARN (resolvability check, git rev-parse --verify); the identical value on
+    a non-current (historical) log must NOT trigger resolvability — shape-only
+    (squash/rebase legitimately invalidates old SHAs)."""
+    branch = "feat/f8-resolve-test"
+    current_log = "feat-f8-resolve-test.md"
+    fake_sha = "deadbeefcafe"  # well-formed hex, does not resolve to a real commit
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_with_git_branch(Path(td), branch)
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+        for name in (current_log, "historical-other-branch.md"):
+            _write_receipt_schema_worklog(
+                target, name,
+                header_classification="quick-win", gate_lines=gate_lines,
+                checkpoint_sha=fake_sha,
+            )
+        out = _run_validate(target)
+        assert out.count(f"unresolvable Checkpoint SHA ('{fake_sha}')") == 1, (
+            f"exactly one (the current-branch) log must get the resolvability WARN:\n{out[-1500:]}"
+        )
+        assert f"unresolvable Checkpoint SHA ('{fake_sha}') in {current_log}" in out, (
+            f"the resolvability WARN must name the current-branch log:\n{out[-1500:]}"
+        )
+        assert f"unresolvable Checkpoint SHA ('{fake_sha}') in historical-other-branch.md" not in out, (
+            f"the non-current-branch log must NOT get the resolvability WARN (shape-only):\n{out[-1500:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_f8_diff_base_sha_invalid_value_warns_sh() -> None:
+    """F8: Diff Base SHA gets the same value treatment as Checkpoint SHA even
+    though (verified before implementing) it has no pre-existing presence
+    check in either validator."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        gate_lines = "- Gate: bootstrap | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-11T00:00:00Z"
+        _write_receipt_schema_worklog(
+            target, "f8-bad-diffbase.md",
+            header_classification="quick-win", gate_lines=gate_lines,
+            checkpoint_sha="none",
+            extra_header="- Diff Base SHA: `also-not-a-sha`\n",
+        )
+        out = _run_validate(target)
+        assert DIFF_BASE_SHA_WARN_MSG in out, out[-1200:]
+
+
+def test_f8_source_parity_accepted_vocabulary_and_resolvability() -> None:
+    """Structural (fast, no subprocess): both validators must accept the same
+    placeholder vocabulary and both must resolvability-check via `git
+    rev-parse --verify ...^{commit}`, gated on the current-branch flag."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    for token in ("pending-commit", "<git-sha or none>", "rev-parse --verify"):
+        assert token in sh, f"validate.sh missing F8 token: {token!r}"
+        assert token in ps1, f"validate.ps1 missing F8 token: {token!r}"
+    assert "Diff Base SHA" in sh and "Diff Base SHA" in ps1, (
+        "both validators must extend value-validation to Diff Base SHA (F8)"
+    )
+
+
+def test_f7_f9_source_parity_messages() -> None:
+    """Structural (fast, no subprocess): both validators must emit the same
+    F7/F9 violation message substrings."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    for token in ("missing/unparseable Timestamp", "differs from header Classification"):
+        assert token in sh, f"validate.sh missing token: {token!r}"
+        assert token in ps1, f"validate.ps1 missing token: {token!r}"

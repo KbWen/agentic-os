@@ -1147,6 +1147,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     # Work Log evidence chain check (per AGENTS.md Work Log Contract)
     $phaseFieldMissing = 0
     $checkpointMissing = 0
+    $checkpointViolationList = New-Object System.Collections.Generic.List[string]
     $gateEvidenceMissing = 0
     $legacyGateEvidenceMissing = 0
     $gateProgressionIllegal = 0
@@ -1209,7 +1210,22 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 $curBranch = & git -C $root rev-parse --abbrev-ref HEAD 2>$null
             }
             if ($LASTEXITCODE -eq 0 -and $curBranch -and $curBranch -ne 'HEAD') {
-                $curKey = $curBranch.Trim() -replace '/', '-'
+                # F10 (2026-07-11 receipt-integrity audit): apply the canonical
+                # Work Log key normalization (bootstrap.md:123-131) in full —
+                # (1) chars outside [a-zA-Z0-9._-] -> '-', (2) collapse '-'
+                # runs, (3) strip leading/trailing '-'/'.', (4) lowercase,
+                # (5) truncate to 100 chars. Previously this only replaced '/'
+                # with '-'; -eq/-like are already case-insensitive in
+                # PowerShell so the case half was accidentally masked here,
+                # but punctuation (e.g. "release/v1.2:rc") still mismatched
+                # the canonical key on both platforms (F10 audit finding).
+                $normalized = $curBranch.Trim() -replace '[^a-zA-Z0-9._-]', '-'
+                $normalized = $normalized -replace '-+', '-'
+                $normalized = $normalized -replace '^[-.]+', ''
+                $normalized = $normalized -replace '[-.]+$', ''
+                $normalized = $normalized.ToLowerInvariant()
+                if ($normalized.Length -gt 100) { $normalized = $normalized.Substring(0, 100) }
+                $curKey = $normalized
             }
         }
     } catch {}
@@ -1219,7 +1235,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         # AC-6: flag whether this worklog belongs to the current branch.
         $isCurrentBranch = $false
         if ($curKey) {
-            $wlBasename = [System.IO.Path]::GetFileName($wl.FullName)
+            # F10: lowercase the basename too (curKey is already lowercase) so
+            # the comparison is explicit case-insensitive on both sides —
+            # defense against a non-conforming log filename, and independent
+            # of -eq/-like's implicit case-insensitivity.
+            $wlBasename = [System.IO.Path]::GetFileName($wl.FullName).ToLowerInvariant()
             if ($wlBasename -eq "${curKey}.md" -or $wlBasename -like "*-${curKey}.md") {
                 $isCurrentBranch = $true
             }
@@ -1246,7 +1266,93 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         $isLegacyGateEvidenceLog = $createdDate -and $createdDate -lt $legacyGateEvidenceCutoff
         # Accept list or table form for header fields (see .agentcortex/templates/worklog.md)
         if ($content -notmatch '(?m)(^- (`Current Phase`|Current Phase):|^\| (`Current Phase`|Current Phase) +\|)') { $phaseFieldMissing++ }
-        if ($content -notmatch '(?m)(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)') { $checkpointMissing++ }
+        if ($content -notmatch '(?m)(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)') {
+            $checkpointMissing++
+        } else {
+            # F8 (2026-07-11 receipt-integrity audit): value-shape + (current-
+            # branch-only) resolvability validation. Previously presence-only:
+            # a heading with a non-SHA value (e.g. "not-a-sha") passed silently.
+            # Accepts a hex object id (7-40 chars, optionally followed by
+            # trailing note text) or an observed legitimate placeholder —
+            # "none", "pending-commit" (both seen in real archived logs), or
+            # the unfilled template default "<git-sha or none>" (templates/
+            # worklog.md; two real active logs still carry it). Mutates the
+            # pre-existing $checkpointMissing / $checkpointViolationList
+            # counters (ADR-006 native-extension path — see Work Log Drift
+            # Log — not a new Add-Result call site).
+            $cpVal = $null
+            $cpM = [regex]::Match($content, '(?m)^-\s*`?Checkpoint SHA`?\s*:\s*(.+)$')
+            if ($cpM.Success) {
+                $cpVal = $cpM.Groups[1].Value
+            } else {
+                $cpM2 = [regex]::Match($content, '(?m)^\|\s*`?Checkpoint SHA`?\s*\|\s*([^|]*)\|')
+                if ($cpM2.Success) { $cpVal = $cpM2.Groups[1].Value }
+            }
+            if ($cpVal) {
+                $cpVal = ($cpVal -replace '<!--.*?-->', '') -replace '`', ''
+                $cpVal = $cpVal.Trim()
+            }
+            if ($cpVal) {
+                $cpLc = $cpVal.ToLowerInvariant()
+                if ($cpLc -ne 'none' -and $cpLc -ne 'pending-commit' -and $cpLc -ne '<git-sha or none>') {
+                    $cpVerify = $null
+                    if ($cpLc -match '^[0-9a-f]{7,40}$') {
+                        $cpVerify = $cpVal
+                    } else {
+                        $cpFirstTok = ($cpLc -split '\s+')[0]
+                        if ($cpFirstTok -match '^[0-9a-f]{7,40}$') { $cpVerify = ($cpVal -split '\s+')[0] }
+                    }
+                    if (-not $cpVerify) {
+                        $checkpointMissing++
+                        $checkpointViolationList.Add("  invalid Checkpoint SHA value ('$cpVal') in $($wl.Name)")
+                    } elseif ($isCurrentBranch) {
+                        & git -C $root rev-parse --verify "$cpVerify^{commit}" 2>$null | Out-Null
+                        if ($LASTEXITCODE -ne 0) {
+                            $checkpointMissing++
+                            $checkpointViolationList.Add("  unresolvable Checkpoint SHA ('$cpVerify') in $($wl.Name) (git rev-parse --verify failed)")
+                        }
+                    }
+                }
+            }
+        }
+        # F8: Diff Base SHA gets the same value treatment when present. No
+        # pre-existing presence check for this field — presence is NOT newly
+        # required here, only value-shape/resolvability when the field IS
+        # present.
+        $dbVal = $null
+        $dbM = [regex]::Match($content, '(?m)^-\s*`?Diff Base SHA`?\s*:\s*(.+)$')
+        if ($dbM.Success) {
+            $dbVal = $dbM.Groups[1].Value
+        } else {
+            $dbM2 = [regex]::Match($content, '(?m)^\|\s*`?Diff Base SHA`?\s*\|\s*([^|]*)\|')
+            if ($dbM2.Success) { $dbVal = $dbM2.Groups[1].Value }
+        }
+        if ($dbVal) {
+            $dbVal = ($dbVal -replace '<!--.*?-->', '') -replace '`', ''
+            $dbVal = $dbVal.Trim()
+        }
+        if ($dbVal) {
+            $dbLc = $dbVal.ToLowerInvariant()
+            if ($dbLc -ne 'none' -and $dbLc -ne 'pending-commit' -and $dbLc -ne '<git-sha or none>') {
+                $dbVerify = $null
+                if ($dbLc -match '^[0-9a-f]{7,40}$') {
+                    $dbVerify = $dbVal
+                } else {
+                    $dbFirstTok = ($dbLc -split '\s+')[0]
+                    if ($dbFirstTok -match '^[0-9a-f]{7,40}$') { $dbVerify = ($dbVal -split '\s+')[0] }
+                }
+                if (-not $dbVerify) {
+                    $checkpointMissing++
+                    $checkpointViolationList.Add("  invalid Diff Base SHA value ('$dbVal') in $($wl.Name)")
+                } elseif ($isCurrentBranch) {
+                    & git -C $root rev-parse --verify "$dbVerify^{commit}" 2>$null | Out-Null
+                    if ($LASTEXITCODE -ne 0) {
+                        $checkpointMissing++
+                        $checkpointViolationList.Add("  unresolvable Diff Base SHA ('$dbVerify') in $($wl.Name) (git rev-parse --verify failed)")
+                    }
+                }
+            }
+        }
         if ($content -notmatch '(?m)^## Gate Evidence') {
             if ($isLegacyGateEvidenceLog -and -not $isCurrentBranch) {
                 $legacyGateEvidenceMissing++
@@ -1557,9 +1663,13 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'PASS' -Message 'all active work logs have Current Phase field'
     }
     if ($checkpointMissing -gt 0) {
-        Add-Result -Level 'WARN' -Message "work logs missing Checkpoint SHA field: $checkpointMissing"
+        # F8: message now covers the field being absent OR present-with-an-
+        # invalid-or-unresolvable value (previously presence-only for
+        # Checkpoint SHA; Diff Base SHA had no coverage at all).
+        Add-Result -Level 'WARN' -Message "work logs with missing/invalid Checkpoint SHA field or invalid/unresolvable Diff Base SHA / Checkpoint SHA values: $checkpointMissing"
+        foreach ($line in $checkpointViolationList) { Write-Output $line }
     } elseif ($worklogs.Count -gt 0) {
-        Add-Result -Level 'PASS' -Message 'all active work logs have Checkpoint SHA field'
+        Add-Result -Level 'PASS' -Message 'all active work logs have well-formed Checkpoint SHA / Diff Base SHA values'
     }
     if ($gateEvidenceMissing -gt 0) {
         Add-Result -Level 'FAIL' -Message "work logs missing gate evidence receipts: $gateEvidenceMissing"
@@ -1637,12 +1747,34 @@ if (Test-Path -Path $worklogDir -PathType Container) {
 
     # Gate receipt schema validation (§4.5 structural check) — parity with validate.sh.
     # Every pipe-format gate receipt in ## Gate Evidence must include Verdict: and
-    # Classification: fields. WARN not FAIL (partial receipts are a process gap).
+    # Classification: fields. WARN not FAIL (archived Work Logs may predate this
+    # check — a SEPARATE archive loop below covers Verdict/Classification presence
+    # only for archive/*.md and is untouched by F7/F9); active logs with partial
+    # receipts are a process gap, not a ship-blocking error.
+    # F7 (2026-07-11 receipt-integrity audit): also require a Timestamp: field
+    # with at least an ISO date. Order-of-appearance remains authoritative for
+    # gate progression (see templates/worklog.md ## Gate Evidence note) —
+    # Timestamp is provenance metadata only; no monotonic/chronological check.
+    # F9: also compare each receipt's Classification value (case-insensitive)
+    # against the Work Log header Classification. Mismatch is WARN, not FAIL —
+    # reclassification epochs are legal (state machine rollback-to-CLASSIFIED)
+    # and epoch parsing is out of scope for this check.
     $gateSchemaViolations = 0
     $gateSchemaViolationList = New-Object System.Collections.Generic.List[string]
     foreach ($wl in $worklogs) {
         $wlContent = Get-Content -Path $wl.FullName -Raw -Encoding utf8 -ErrorAction SilentlyContinue
         if (-not $wlContent) { continue }
+        # F9: header Classification value — same strict "starts with a letter"
+        # extraction the gate-progression parser already uses, so an unfilled/
+        # malformed header (still the literal template placeholder) yields
+        # empty and is skipped rather than compared (nothing meaningful to
+        # compare against).
+        $hdrClass = ''
+        $hdrClassM = [regex]::Match($wlContent, '(?m)^-\s*\*{0,2}Classification\*{0,2}\s*:\s*`?([a-zA-Z][a-zA-Z0-9_-]*)')
+        if (-not $hdrClassM.Success) {
+            $hdrClassM = [regex]::Match($wlContent, '(?m)^\|\s*\*{0,2}Classification\*{0,2}\s*\|\s*`?([a-zA-Z][a-zA-Z0-9_-]*)')
+        }
+        if ($hdrClassM.Success) { $hdrClass = $hdrClassM.Groups[1].Value.ToLowerInvariant() }
         foreach ($receiptLine in ([regex]::Matches($wlContent, '(?im)^-\s+Gate\s*:.*$') | ForEach-Object { $_.Value })) {
             if ($receiptLine -notmatch '(?i)Verdict\s*:') {
                 $gateSchemaViolations++
@@ -1654,13 +1786,33 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 $gateSchemaViolationList.Add("  malformed gate receipt (missing Classification:) in $($wl.Name)")
                 break
             }
+            # F7: Timestamp field must be present with a parseable ISO date (a
+            # full ISO datetime like 2026-07-10T12:20:00Z is also accepted —
+            # the date-only regex matches its leading YYYY-MM-DD).
+            if ($receiptLine -notmatch '(?i)Timestamp\s*:\s*\d{4}-\d{2}-\d{2}') {
+                $gateSchemaViolations++
+                $gateSchemaViolationList.Add("  malformed gate receipt (missing/unparseable Timestamp:) in $($wl.Name): $receiptLine")
+                break
+            }
+            # F9: receipt Classification must agree with the header Classification.
+            if ($hdrClass) {
+                $receiptClassM = [regex]::Match($receiptLine, '(?i)Classification\s*:\s*([a-zA-Z][a-zA-Z0-9_-]*)')
+                if ($receiptClassM.Success) {
+                    $receiptClass = $receiptClassM.Groups[1].Value.ToLowerInvariant()
+                    if ($receiptClass -ne $hdrClass) {
+                        $gateSchemaViolations++
+                        $gateSchemaViolationList.Add("  receipt Classification ('$receiptClass') differs from header Classification ('$hdrClass') in $($wl.Name): $receiptLine")
+                        break
+                    }
+                }
+            }
         }
     }
     if ($gateSchemaViolations -gt 0) {
-        Add-Result -Level 'WARN' -Message "active work log gate receipts missing required fields (Verdict/Classification): $gateSchemaViolations"
+        Add-Result -Level 'WARN' -Message "active work log gate receipts with schema violations (missing Verdict/Classification/Timestamp, or Classification mismatched with header): $gateSchemaViolations"
         foreach ($line in $gateSchemaViolationList) { Write-Output $line }
     } elseif ($worklogs.Count -gt 0) {
-        Add-Result -Level 'PASS' -Message 'all active work log gate receipts have required fields (gate/verdict/classification)'
+        Add-Result -Level 'PASS' -Message 'all active work log gate receipts have required fields and consistent Classification (gate/verdict/classification/timestamp)'
     }
 
     # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock

@@ -1123,7 +1123,18 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/nu
   _cur_branch="$(git -C "$ROOT" symbolic-ref --short HEAD 2>/dev/null)" \
     || _cur_branch="$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)" || true
   if [[ -n "$_cur_branch" && "$_cur_branch" != "HEAD" ]]; then
-    cur_key="${_cur_branch//\//-}"
+    # F10 (2026-07-11 receipt-integrity audit): apply the canonical Work Log
+    # key normalization (bootstrap.md:123-131) in full — (1) chars outside
+    # [a-zA-Z0-9._-] -> '-', (2) collapse '-' runs, (3) strip leading/trailing
+    # '-'/'.', (4) lowercase, (5) truncate to 100 chars. Previously this only
+    # replaced '/' with '-' and stayed case-sensitive, so an uppercase or
+    # punctuated branch (e.g. "Feat/X", "release/v1.2:rc") mismatched the
+    # canonical lowercase Work Log filename and was misdetected as historical,
+    # downgrading current-branch-only Resume/Test-Gate escalations FAIL->WARN.
+    cur_key="$(printf '%s' "$_cur_branch" \
+      | sed -E 's/[^a-zA-Z0-9._-]/-/g; s/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
+      | tr '[:upper:]' '[:lower:]' \
+      | cut -c1-100)"
   fi
 fi
 if [[ -d "$WORKLOG_DIR" ]]; then
@@ -1187,6 +1198,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   # Work Log evidence chain check (per AGENTS.md Work Log Contract)
   phase_field_missing=0
   checkpoint_missing=0
+  checkpoint_violation_list=""
   gate_evidence_missing=0
   legacy_gate_evidence_missing=0
   gate_progression_illegal=0
@@ -1207,6 +1219,50 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   # ONE new native record_result FAIL site handles both (baseline +1).
   current_branch_gate_fail=0
   current_branch_gate_fail_list=""
+  # F8 (2026-07-11 receipt-integrity audit): shared value-shape + resolvability
+  # check for header SHA-like fields (Checkpoint SHA / Diff Base SHA). Previously
+  # presence-only: a heading with a non-SHA value (e.g. "not-a-sha") passed
+  # silently. Accepts a hex object id (7-40 chars, optionally followed by
+  # trailing note text) or an observed legitimate placeholder — "none",
+  # "pending-commit" (both seen in real archived logs), or the unfilled
+  # template default "<git-sha or none>" (templates/worklog.md; two real active
+  # logs still carry it) — anything else is a WARN-tier violation. Current-
+  # branch logs additionally get a `git rev-parse --verify` resolvability
+  # check; historical logs are shape-checked only (squash/rebase legitimately
+  # invalidates old SHAs). Mutates the pre-existing checkpoint_missing /
+  # checkpoint_violation_list counters (ADR-006 native-extension path — see
+  # Work Log Drift Log — not a new record_result call site).
+  _acx_check_sha_field() {
+    local content="$1" field="$2" is_cur="$3" wl_label="$4"
+    local raw val lc verify_val
+    raw="$(printf '%s' "$content" | grep -m1 -iE "(^-[[:space:]]*\`?${field}\`?:|^\|[[:space:]]*\`?${field}\`?[[:space:]]*\|)")" || true
+    [[ -z "$raw" ]] && return 0
+    if [[ "$raw" == -* ]]; then
+      val="$(printf '%s' "$raw" | sed -E "s/^-[[:space:]]*\`?${field}\`?:[[:space:]]*//")"
+    else
+      val="$(printf '%s' "$raw" | awk -F'|' '{print $3}')"
+    fi
+    val="$(printf '%s' "$val" | sed -E 's/<!--.*-->//' | tr -d '`\r' | xargs)" || true
+    [[ -z "$val" ]] && return 0  # unparseable — presence is already covered separately; degrade silently
+    lc="$(printf '%s' "$val" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$lc" == "none" || "$lc" == "pending-commit" || "$lc" == "<git-sha or none>" ]]; then
+      return 0
+    fi
+    if [[ "$lc" =~ ^[0-9a-f]{7,40}$ ]]; then
+      verify_val="$val"
+    elif [[ "${lc%% *}" =~ ^[0-9a-f]{7,40}$ ]]; then
+      verify_val="${val%% *}"
+    else
+      checkpoint_missing=$((checkpoint_missing + 1))
+      checkpoint_violation_list="${checkpoint_violation_list}  invalid ${field} value ('${val}') in ${wl_label}\n"
+      return 0
+    fi
+    if [[ "$is_cur" -eq 1 ]] && ! git -C "$ROOT" rev-parse --verify "${verify_val}^{commit}" >/dev/null 2>&1; then
+      checkpoint_missing=$((checkpoint_missing + 1))
+      checkpoint_violation_list="${checkpoint_violation_list}  unresolvable ${field} ('${verify_val}') in ${wl_label} (git rev-parse --verify failed)\n"
+    fi
+    return 0
+  }
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_content="$(cat "$wl" 2>/dev/null)"
@@ -1214,7 +1270,10 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     # Match <cur_key>.md OR <owner>-<cur_key>.md (owner prefix pattern).
     is_current_branch=0
     if [[ -n "$cur_key" ]]; then
-      wl_basename="$(basename "$wl")"
+      # F10: lowercase the basename too (cur_key is already lowercase) so the
+      # comparison is case-insensitive on both sides — defense against a
+      # non-conforming log filename that wasn't written in canonical case.
+      wl_basename="$(basename "$wl" | tr '[:upper:]' '[:lower:]')"
       if [[ "$wl_basename" == "${cur_key}.md" ]] || [[ "$wl_basename" == *"-${cur_key}.md" ]]; then
         is_current_branch=1
       fi
@@ -1236,7 +1295,14 @@ if [[ -d "$WORKLOG_DIR" ]]; then
     # Header field: Checkpoint SHA — accept list OR table form
     if ! printf '%s' "$wl_content" | grep -qE '(^- (`Checkpoint SHA`|Checkpoint SHA):|^\| (`Checkpoint SHA`|Checkpoint SHA) +\|)'; then
       checkpoint_missing=$((checkpoint_missing + 1))
+    else
+      # F8: value-shape + (current-branch-only) resolvability validation.
+      _acx_check_sha_field "$wl_content" "Checkpoint SHA" "$is_current_branch" "$(basename "$wl")"
     fi
+    # F8: Diff Base SHA gets the same value treatment when present. No pre-
+    # existing presence check for this field — presence is NOT newly required
+    # here, only value-shape/resolvability when the field IS present.
+    _acx_check_sha_field "$wl_content" "Diff Base SHA" "$is_current_branch" "$(basename "$wl")"
     # Runtime section: ## Gate Evidence — check existence, receipt format,
     # AND phase progression legality. Illegal progression = FAIL.
     if ! printf '%s' "$wl_content" | grep -q '^## Gate Evidence'; then
@@ -1688,9 +1754,13 @@ PYEOF
     record_result PASS "all active work logs have Current Phase field"
   fi
   if [[ "$checkpoint_missing" -gt 0 ]]; then
-    record_result WARN "work logs missing Checkpoint SHA field: ${checkpoint_missing}"
+    # F8: message now covers the field being absent OR present-with-an-invalid-
+    # or-unresolvable value (previously presence-only for Checkpoint SHA; Diff
+    # Base SHA had no coverage at all).
+    record_result WARN "work logs with missing/invalid Checkpoint SHA field or invalid/unresolvable Diff Base SHA / Checkpoint SHA values: ${checkpoint_missing}"
+    printf '%b' "$checkpoint_violation_list"
   elif [[ "$worklog_count" -gt 0 ]]; then
-    record_result PASS "all active work logs have Checkpoint SHA field"
+    record_result PASS "all active work logs have well-formed Checkpoint SHA / Diff Base SHA values"
   fi
   if [[ "$gate_evidence_missing" -gt 0 ]]; then
     record_result FAIL "work logs missing gate evidence receipts: ${gate_evidence_missing}"
@@ -1775,13 +1845,37 @@ PYEOF
   fi
   # Gate receipt schema validation (§4.5 structural check) — every pipe-format gate
   # receipt in ## Gate Evidence must include Verdict: and Classification: fields.
-  # WARN not FAIL: archived Work Logs may predate this check; active logs with partial
-  # receipts are a process gap, not a ship-blocking error.
+  # WARN not FAIL: archived Work Logs may predate this check (a SEPARATE archive
+  # loop below covers Verdict/Classification presence only for archive/*.md and
+  # is untouched by F7/F9); active logs with partial receipts are a process gap,
+  # not a ship-blocking error.
+  # F7 (2026-07-11 receipt-integrity audit): also require a Timestamp: field with
+  # at least an ISO date. Order-of-appearance remains authoritative for gate
+  # progression (see templates/worklog.md ## Gate Evidence note) — Timestamp is
+  # provenance metadata only; no monotonic/chronological check is performed.
+  # F9: also compare each receipt's Classification value (case-insensitive)
+  # against the Work Log header Classification. Mismatch is WARN, not FAIL —
+  # reclassification epochs are legal (state machine rollback-to-CLASSIFIED) and
+  # epoch parsing is out of scope for this check.
   gate_schema_violations=0
   gate_schema_violation_list=""
   for wl in "$WORKLOG_DIR"/*.md; do
     [[ -f "$wl" ]] || continue
     wl_name="$(basename "$wl")"
+    wl_content="$(cat "$wl" 2>/dev/null)"
+    # F9: header Classification value — same strict "starts with a letter"
+    # extraction the gate-progression parser already uses, so an unfilled/
+    # malformed header (still the literal template placeholder) yields empty
+    # and is skipped rather than compared (nothing meaningful to compare).
+    hdr_class="$(printf '%s' "$wl_content" \
+      | grep -m1 -iE '^-[[:space:]]*\*{0,2}Classification\*{0,2}[[:space:]]*:[[:space:]]*`?[a-zA-Z]' \
+      | sed -E 's/^-[[:space:]]*\*{0,2}Classification\*{0,2}[[:space:]]*:[[:space:]]*`?([a-zA-Z][a-zA-Z0-9_-]*).*/\1/')" || true
+    if [[ -z "$hdr_class" ]]; then
+      hdr_class="$(printf '%s' "$wl_content" \
+        | grep -m1 -iE '^\|[[:space:]]*\*{0,2}Classification\*{0,2}[[:space:]]*\|[[:space:]]*`?[a-zA-Z]' \
+        | sed -E 's/^\|[[:space:]]*\*{0,2}Classification\*{0,2}[[:space:]]*\|[[:space:]]*`?([a-zA-Z][a-zA-Z0-9_-]*).*/\1/')" || true
+    fi
+    hdr_class="$(printf '%s' "$hdr_class" | tr '[:upper:]' '[:lower:]')"
     # Extract gate evidence section lines (pipe-format receipts starting with "- Gate:")
     while IFS= read -r receipt_line; do
       # Each receipt must contain Verdict: (case-insensitive) and Classification: (case-insensitive)
@@ -1795,13 +1889,32 @@ PYEOF
         gate_schema_violation_list="${gate_schema_violation_list}  malformed gate receipt (missing Classification:) in ${wl_name}\n"
         break
       fi
+      # F7: Timestamp field must be present with a parseable ISO date (a full ISO
+      # datetime like 2026-07-10T12:20:00Z is also accepted — the date-only regex
+      # matches its leading YYYY-MM-DD).
+      if ! printf '%s' "$receipt_line" | grep -qiE 'Timestamp[[:space:]]*:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}'; then
+        gate_schema_violations=$((gate_schema_violations + 1))
+        gate_schema_violation_list="${gate_schema_violation_list}  malformed gate receipt (missing/unparseable Timestamp:) in ${wl_name}: ${receipt_line}\n"
+        break
+      fi
+      # F9: receipt Classification must agree with the header Classification.
+      if [[ -n "$hdr_class" ]]; then
+        receipt_class="$(printf '%s' "$receipt_line" \
+          | sed -nE 's/.*[Cc]lassification[[:space:]]*:[[:space:]]*([a-zA-Z][a-zA-Z0-9_-]*).*/\1/p' \
+          | tr '[:upper:]' '[:lower:]')" || true
+        if [[ -n "$receipt_class" && "$receipt_class" != "$hdr_class" ]]; then
+          gate_schema_violations=$((gate_schema_violations + 1))
+          gate_schema_violation_list="${gate_schema_violation_list}  receipt Classification ('${receipt_class}') differs from header Classification ('${hdr_class}') in ${wl_name}: ${receipt_line}\n"
+          break
+        fi
+      fi
     done < <(grep -iE '^\-[[:space:]]+[Gg]ate[[:space:]]*:' "$wl" 2>/dev/null || true)
   done
   if [[ "$gate_schema_violations" -gt 0 ]]; then
-    record_result WARN "active work log gate receipts missing required fields (Verdict/Classification): ${gate_schema_violations}"
+    record_result WARN "active work log gate receipts with schema violations (missing Verdict/Classification/Timestamp, or Classification mismatched with header): ${gate_schema_violations}"
     printf '%b' "$gate_schema_violation_list"
   elif [[ "$worklog_count" -gt 0 ]]; then
-    record_result PASS "all active work log gate receipts have required fields (gate/verdict/classification)"
+    record_result PASS "all active work log gate receipts have required fields and consistent Classification (gate/verdict/classification/timestamp)"
   fi
   # Advisory lock staleness check — reads JSON fields per config.yaml §worklog_lock.
   # All JSON parsing and stale logic stays inside Python to avoid eval/injection.
