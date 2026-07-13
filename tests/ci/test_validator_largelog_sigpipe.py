@@ -1,30 +1,37 @@
-"""Regression test for #336 — validate.sh SIGPIPE (exit 141) on large Work Logs.
+"""Regression test for #336 — validate.sh wrong verdicts / SIGPIPE on large Work Logs.
 
-`validate.sh` runs with `set -euo pipefail`. Its Work Log classification parse
-fed `$wl_content` through a pipe into a reader that exits on the first match:
+`validate.sh` runs with `set -euo pipefail` and fed `$wl_content` through pipes
+into readers that exit on the first match: the classification parse
+(`printf … | python … <break>`), plus ~27 sibling `printf '%s' "$wl_content" |
+grep -q` / `grep -m1` audit checks. When `$wl_content` exceeds the OS pipe buffer
+(64 KB on Linux/MSYS), `printf` still has bytes to write after the reader exits,
+takes SIGPIPE, and the pipeline returns 141.
 
-    wl_class="$(printf '%s' "$wl_content" | "$PYTHON_BIN" -c "$_acx_wlclass_py")"
+Two failure modes result:
+- The classification parse is a bare `$(…)` assignment, so `errexit` promoted the
+  141 and ABORTED the whole run mid-loop — no `Summary:` line (the reported #336).
+- The sibling readers live inside `if`/`if !` conditions, so `errexit` is
+  suppressed, but `pipefail` still returns 141 instead of grep's real 0 — which
+  INVERTS the check. A valid >64 KB Work Log then produced fabricated FAILs
+  (missing Current Phase / Gate Evidence / Phase Summary) AND hid real violations
+  (shipped-not-archived reported as "none found"). Silent wrong verdicts are the
+  worse failure mode.
 
-The embedded Python iterated `sys.stdin` line-by-line and `break`ed on the first
-`Classification:` hit. When `$wl_content` exceeds the OS pipe buffer (64 KB on
-Linux/MSYS), `printf` still has bytes to write after the reader is gone, takes
-SIGPIPE, and exits 141. `pipefail` promotes 141 to the pipeline status and
-`errexit` aborts the whole run — mid-loop, BEFORE the `Summary:` line prints. A
-truncated run with earlier `[FAIL]` lines and no summary reads as "finished, no
-failures", so a governance gate silently goes quiet. The Python-unavailable
-fallback had the same shape via `... | head -n 1`.
+Fix (#336): feed every `$wl_content` reader from a leading here-string
+(`<<< "$wl_content" reader …`) instead of `printf '%s' "$wl_content" | reader`.
+A here-string reads from a temp file — there is no writer process to SIGPIPE, so
+an early-exiting reader can neither abort nor invert. This mirrors the file's own
+`<<< "$wl_content"` / "NOT `printf | awk`" precedents. The classification parse
+also drains stdin before its break as belt-and-suspenders.
 
-Fix (#336): drain stdin fully before the early break (`sys.stdin.read()`), and in
-the fallback capture all matches then take the first line in bash instead of
-piping to `head -n 1`. Both make the writer complete before any early exit.
-
-validate.ps1 parses classification with `[regex]::Match($content, ...)` over the
-full in-memory string — no pipe, no SIGPIPE — so it was never affected and needs
-no change (parity: both validators still classify correctly).
+validate.ps1 parses over an in-memory string (`[regex]::Match`), no pipe, so it
+was never affected and needs no change (parity preserved).
 """
 
 from __future__ import annotations
 
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -54,34 +61,37 @@ requires_bash = pytest.mark.skipif(bash is None, reason="bash not available")
 
 
 # ---------------------------------------------------------------------------
-# Structural — deterministic, no subprocess. Locks the SIGPIPE-safe form so a
-# revert to the racy pipe pattern fails CI on every platform.
+# Structural — deterministic, no subprocess. Lock the SIGPIPE-safe form so a
+# revert to a `printf | reader` pipe over $wl_content fails CI on every platform.
 # ---------------------------------------------------------------------------
 
+def test_336_no_printf_pipe_over_wl_content() -> None:
+    """No `$wl_content` reader may use `printf '%s' "$wl_content" | …` — that pipe
+    SIGPIPEs an early-exiting reader on a >64 KB log. All must feed from a leading
+    here-string (`<<< "$wl_content" …`)."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    offenders = [
+        i + 1 for i, line in enumerate(sh.splitlines())
+        if 'printf \'%s\' "$wl_content" |' in line
+    ]
+    assert not offenders, (
+        f"validate.sh still pipes $wl_content into a reader (SIGPIPE hazard on >64 KB "
+        f"logs) at lines {offenders} — convert to `<<< \"$wl_content\" reader` (#336)"
+    )
+    # The safe idiom must actually be in use.
+    assert '<<< "$wl_content"' in sh, "validate.sh must feed $wl_content readers via here-strings (#336)"
+
+
 def test_336_wlclass_python_drains_stdin_before_break() -> None:
-    """The Work Log classification helper must drain stdin (read()) before the
-    early break — never iterate a bare `sys.stdin` and break (SIGPIPE hazard)."""
+    """The classification helper must drain stdin (read()) before the early break —
+    never iterate a bare `sys.stdin` and break (belt-and-suspenders for #336)."""
     sh = VALIDATE_SH.read_text(encoding="utf-8")
     assert "sys.stdin.read().splitlines()" in sh, (
         "validate.sh wlclass helper must drain stdin fully before break (#336)"
     )
     assert "for l in sys.stdin:" not in sh, (
-        "validate.sh must NOT iterate a bare sys.stdin then break — printf takes "
-        "SIGPIPE (141) on a >64 KB Work Log and pipefail aborts the run (#336)"
+        "validate.sh must NOT iterate a bare sys.stdin then break (#336)"
     )
-
-
-def test_336_wlclass_fallback_does_not_head_close_the_pipe() -> None:
-    """The Python-unavailable fallback must not pipe the classification match into
-    `head -n 1` (early pipe close → SIGPIPE on a large log)."""
-    sh = VALIDATE_SH.read_text(encoding="utf-8")
-    assert "_wl_class_all=" in sh, (
-        "validate.sh fallback must capture all matches then take the first line "
-        "in bash rather than piping to head -n 1 (#336)"
-    )
-    assert (
-        "Classification\\1\\?:[[:space:]]*//p' | head -n 1" not in sh
-    ), "validate.sh fallback must not close the classification pipe early with head -n 1 (#336)"
 
 
 def test_336_marker_present() -> None:
@@ -91,41 +101,42 @@ def test_336_marker_present() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Behavioral (slow) — a >64 KB current-branch Work Log must not abort the run.
-# Pre-fix this aborts with exit 141 mid-loop and prints no Summary. Deterministic
-# green post-fix on Linux (no MSYS fork limits); the non-required Windows pytest
-# job may be noisier due to the separate MSYS fork-exhaustion issue (#336
-# "Secondary issue"), which this fix intentionally does not address.
+# Behavioral (slow). Two guarantees on a >64 KB Work Log:
+#   A) the run does not SIGPIPE-abort (exit 141) and prints its Summary;
+#   B) with the compaction size gate disabled, a large log validates IDENTICALLY
+#      to a byte-for-byte-smaller copy of the same content — no fabricated FAILs,
+#      no hidden violations (the sibling-reader inversion this fix removes).
 # ---------------------------------------------------------------------------
 
-def _write_large_worklog(target: Path, name: str) -> int:
-    """Write a valid quick-win Work Log padded past the 64 KB pipe buffer.
+_GATES = ("bootstrap", "plan", "implement", "ship")
 
-    Classification sits in the header (top of file) so the parser matches early
-    and the maximal remainder is left unwritten — the exact SIGPIPE trigger. All
-    padding is inert HTML comments appended after Evidence, so it neither adds
-    gate receipts nor breaks section parsing. Returns the byte size written."""
-    work_dir = target / ".agentcortex" / "context" / "work"
-    work_dir.mkdir(parents=True, exist_ok=True)
+
+def _worklog_text(pad_lines: int) -> str:
     gate_lines = "\n".join(
         f"- Gate: {g} | Verdict: PASS | Classification: quick-win | Timestamp: 2026-07-13T00:00:00Z"
-        for g in ("bootstrap", "plan", "implement", "ship")
+        for g in _GATES
     )
-    padding = "\n".join(f"<!-- pad line {i:05d} to exceed the 64KB pipe buffer -->" for i in range(2000))
-    body = f"""# Work Log: {name}
+    padding = "\n".join(f"<!-- pad {i:05d} -->" for i in range(pad_lines))
+    return f"""# Work Log: t
 
 ## Header
 
-- Branch: `test/{name}`
+- Branch: `t`
 - Classification: `quick-win`
 - Current Phase: `ship`
 - Checkpoint SHA: `0000000000000000000000000000000000000000`
 
 ---
 
+## Session Info
+
+- Guardrails loaded: §1
+
+---
+
 ## Phase Summary
 
-Large-log SIGPIPE regression fixture. ACX
+Large-log fixture. ACX
 
 ---
 
@@ -137,7 +148,7 @@ Large-log SIGPIPE regression fixture. ACX
 
 ## Drift Log
 
-- ADR Coverage Check: test fixture.
+- ADR Coverage Check: fixture.
 
 ---
 
@@ -149,43 +160,92 @@ none
 
 ## Evidence
 
-- Fixture evidence.
+- real evidence line.
 
 {padding}
 """
-    path = work_dir / name
-    path.write_text(body, encoding="utf-8", newline="\n")
-    return path.stat().st_size
+
+
+def _deploy(td: Path) -> Path:
+    target = td / "proj"
+    target.mkdir()
+    res = subprocess.run(
+        [bash, str(DEPLOY_SH), str(target)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT),
+    )
+    assert res.returncode == 0, f"deploy failed:\n{res.stderr}"
+    return target
+
+
+def _write_worklog(target: Path, pad_lines: int) -> int:
+    wd = target / ".agentcortex" / "context" / "work"
+    wd.mkdir(parents=True, exist_ok=True)
+    p = wd / "w.md"
+    p.write_text(_worklog_text(pad_lines), encoding="utf-8", newline="\n")
+    return p.stat().st_size
+
+
+def _run(target: Path, *, env_extra: dict | None = None) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    if env_extra:
+        env.update(env_extra)
+    return subprocess.run(
+        [bash, str(target / ".agentcortex" / "bin" / "validate.sh")],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(target), env=env,
+    )
+
+
+def _summary(out: str) -> str | None:
+    m = re.search(r"Summary: pass=\d+ warn=\d+ fail=\d+ skip=\d+", out)
+    return m.group(0) if m else None
 
 
 @pytest.mark.slow
 @requires_bash
 def test_336_large_worklog_does_not_sigpipe_abort_sh(tmp_path: Path) -> None:
-    target = tmp_path / "proj"
-    target.mkdir()
-    deployed = subprocess.run(
-        [bash, str(DEPLOY_SH), str(target)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        cwd=str(ROOT),
-    )
-    assert deployed.returncode == 0, f"deploy failed:\n{deployed.stderr}"
-
-    size = _write_large_worklog(target, "big-quickwin.md")
+    target = _deploy(tmp_path)
+    size = _write_worklog(target, pad_lines=4000)
     assert size > 64 * 1024, f"fixture must exceed the 64 KB pipe buffer, got {size} bytes"
-
-    proc = subprocess.run(
-        [bash, str(target / ".agentcortex" / "bin" / "validate.sh")],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        cwd=str(target),
-    )
+    proc = _run(target)
     out = proc.stdout + proc.stderr
-    # 141 = 128 + SIGPIPE(13): the exact abort signature this fix removes.
-    assert proc.returncode != 141, (
-        f"validate.sh aborted with SIGPIPE (141) on a {size}-byte Work Log (#336). "
-        f"Tail:\n{out[-800:]}"
+    # 141 = 128 + SIGPIPE(13): the abort signature this fix removes.
+    assert proc.returncode != 141, f"validate.sh SIGPIPE-aborted on a {size}-byte log (#336):\n{out[-800:]}"
+    assert "Summary:" in out, f"no Summary line — run truncated mid-loop (#336):\n{out[-800:]}"
+
+
+@pytest.mark.slow
+@requires_bash
+def test_336_large_worklog_verdict_parity_with_small_sh(tmp_path: Path) -> None:
+    """A >64 KB log must validate IDENTICALLY to a small copy of the same content.
+    The compaction size gate (legitimately) fails an oversized log, so it is raised
+    out of the way here to isolate the SIGPIPE-inversion regression: any remaining
+    difference is a fabricated FAIL or hidden violation from a sibling reader."""
+    no_compaction = {"WORKLOG_MAX_KB": "1000000", "WORKLOG_MAX_LINES": "1000000"}
+
+    target = _deploy(tmp_path)
+    small_size = _write_worklog(target, pad_lines=5)
+    small = _run(target, env_extra=no_compaction)
+    small_summary = _summary(small.stdout + small.stderr)
+
+    big_size = _write_worklog(target, pad_lines=4000)
+    big = _run(target, env_extra=no_compaction)
+    big_out = big.stdout + big.stderr
+    big_summary = _summary(big_out)
+
+    assert small_size < 64 * 1024 < big_size, f"sizes: small={small_size} big={big_size}"
+    assert big_summary is not None, f"large-log run printed no Summary (#336):\n{big_out[-800:]}"
+    assert big_summary == small_summary, (
+        f"large log ({big_size} B) validated DIFFERENTLY from an identical-content small "
+        f"copy ({small_size} B): small=[{small_summary}] big=[{big_summary}] — a sibling "
+        f"$wl_content reader still SIGPIPE-inverts on a >64 KB log (#336).\n{big_out[-1200:]}"
     )
-    # The run must reach its end and print the Summary — a truncated run omits it.
-    assert "Summary:" in out, (
-        f"validate.sh produced no Summary line on a {size}-byte Work Log — the run "
-        f"was truncated mid-loop (#336). Tail:\n{out[-800:]}"
-    )
+    # Explicit: none of the SIGPIPE-inverted false negatives may appear for the large log.
+    for false_verdict in (
+        "missing Current Phase field",
+        "missing gate evidence receipts",
+        "missing Phase Summary section",
+    ):
+        assert false_verdict not in big_out, (
+            f"fabricated verdict {false_verdict!r} on a valid large log (#336):\n{big_out[-800:]}"
+        )
