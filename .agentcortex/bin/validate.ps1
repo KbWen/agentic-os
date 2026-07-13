@@ -1164,6 +1164,8 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $phaseSummaryMissing = 0
     $sentinelMarkerMissing = 0
     $testGateResultsMissing = 0
+    $securityFindingsMissing = 0
+    $guardrailsReceiptMissing = 0
     $currentPhaseIncoherent = 0
     $shippedNotArchived = 0
     $evidencePlaceholderOnly = 0
@@ -1578,6 +1580,23 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 $testGateResultsMissing++
             }
         }
+        # (#288) Security Findings audit — mirror the sh check. security_guardrails.md
+        # §Work Log requires findings under a `## Security Findings` heading; audit
+        # feature-tier logs that carry a review or ship receipt. WARN-tier.
+        if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change' -or $wlClass -eq 'hotfix') `
+            -and ($content -match '(?i)Gate:\s*(review|ship)\s*\|') `
+            -and ($content -notmatch '(?m)^## Security Findings')) {
+            $securityFindingsMissing++
+        }
+        # (#288) Loaded-Sections receipt audit — current-branch, non-tiny-fix logs
+        # must carry a `Guardrails loaded:` receipt (engineering_guardrails.md
+        # bootstrap). Scoped to current branch to avoid WARN-flooding historical
+        # logs (mirrors AC-6 $isCurrentBranch). WARN-tier: presence, not proof.
+        if ($isCurrentBranch -and -not [string]::IsNullOrEmpty($wlClass) -and $wlClass -ne 'tiny-fix') {
+            if ($content -notmatch '(?i)Guardrails loaded:') {
+                $guardrailsReceiptMissing++
+            }
+        }
         # MEDIUM-1 (review PASS with UNPROVEN rows)
         if ($content -match '(?i)Gate:\s*review\s*\|[^|\r\n]*Verdict:\s*PASS') {
             $unprovenLines = [regex]::Matches($content, '✗ UNPROVEN') | Where-Object { $_.Value -and ($content.Substring([Math]::Max(0,$_.Index-200), [Math]::Min(200,$_.Index)) + $content.Substring($_.Index, [Math]::Min(100,$content.Length-$_.Index))) -notmatch '\[NEEDS_HUMAN\]' }
@@ -1708,6 +1727,18 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         Add-Result -Level 'WARN' -Message "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): $testGateResultsMissing"
     } elseif ($worklogs.Count -gt 0) {
         Add-Result -Level 'PASS' -Message 'test gate results evidence present in applicable work logs'
+    }
+    # (#288) Security Findings section presence (security_guardrails.md §Work Log).
+    if ($securityFindingsMissing -gt 0) {
+        Add-Result -Level 'WARN' -Message "feature-tier work logs at review/ship missing ## Security Findings section (security_guardrails.md §Work Log): $securityFindingsMissing"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'security findings section present in applicable work logs'
+    }
+    # (#288) Loaded-Sections receipt presence in current-branch log (engineering_guardrails.md bootstrap receipt).
+    if ($guardrailsReceiptMissing -gt 0) {
+        Add-Result -Level 'WARN' -Message "current-branch work log missing 'Guardrails loaded:' receipt in ## Session Info (engineering_guardrails.md bootstrap receipt): $guardrailsReceiptMissing"
+    } elseif ($worklogs.Count -gt 0) {
+        Add-Result -Level 'PASS' -Message 'loaded-sections receipt present in current-branch work log'
     }
     if ($currentPhaseIncoherent -gt 0) {
         Add-Result -Level 'WARN' -Message "work logs with ship PASS receipt but Current Phase != ship (header not updated): $currentPhaseIncoherent"

@@ -1217,6 +1217,8 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   phase_summary_missing=0
   sentinel_marker_missing=0
   test_gate_results_missing=0
+  security_findings_missing=0
+  guardrails_receipt_missing=0
   current_phase_incoherent=0
   shipped_not_archived=0
   evidence_placeholder_only=0
@@ -1659,6 +1661,28 @@ PYEOF
         fi
       fi
     fi
+    # (#288) Security Findings audit — security_guardrails.md §Work Log requires
+    # findings be recorded under a `## Security Findings` heading. The security
+    # scan is auto-enforced during implement/review/ship, so audit feature-tier
+    # logs (feature/architecture-change/hotfix) that carry a review or ship
+    # receipt. WARN-tier: artifact presence, not proof the scan ran.
+    if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" || "$wl_class" == "hotfix" ]]; then
+      if <<< "$wl_content" grep -qiE 'Gate:[[:space:]]*(review|ship)[[:space:]]*\|'; then
+        if ! <<< "$wl_content" grep -qE '^## Security Findings'; then
+          security_findings_missing=$((security_findings_missing + 1))
+        fi
+      fi
+    fi
+    # (#288) Loaded-Sections receipt audit — engineering_guardrails.md requires
+    # bootstrap (Full Mode) echo a `Guardrails loaded:` receipt in ## Session Info.
+    # Scope to the CURRENT-branch log only: historical/archived logs predate the
+    # convention and would flood WARNs (mirrors the AC-6 is_current_branch gate).
+    # tiny-fix skips Full Mode, so it is exempt. WARN-tier: presence, not proof.
+    if [[ "$is_current_branch" -eq 1 && -n "$wl_class" && "$wl_class" != "tiny-fix" ]]; then
+      if ! <<< "$wl_content" grep -qiE 'Guardrails loaded:'; then
+        guardrails_receipt_missing=$((guardrails_receipt_missing + 1))
+      fi
+    fi
     # MEDIUM-1 (review PASS with UNPROVEN rows): check for review PASS receipt alongside
     # unresolved UNPROVEN table rows — review.md §Burden of Proof requires NOT READY in this case.
     # Direct approach: flag if review PASS co-exists with any UNPROVEN row not tagged [NEEDS_HUMAN].
@@ -1816,6 +1840,18 @@ PYEOF
     record_result WARN "feature/architecture-change work logs missing Test Gate Results section (engineering_guardrails.md §12.2): ${test_gate_results_missing}"
   elif [[ "$worklog_count" -gt 0 ]]; then
     record_result PASS "test gate results evidence present in applicable work logs"
+  fi
+  # (#288) Security Findings section presence (security_guardrails.md §Work Log).
+  if [[ "$security_findings_missing" -gt 0 ]]; then
+    record_result WARN "feature-tier work logs at review/ship missing ## Security Findings section (security_guardrails.md §Work Log): ${security_findings_missing}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "security findings section present in applicable work logs"
+  fi
+  # (#288) Loaded-Sections receipt presence in current-branch log (engineering_guardrails.md bootstrap receipt).
+  if [[ "$guardrails_receipt_missing" -gt 0 ]]; then
+    record_result WARN "current-branch work log missing 'Guardrails loaded:' receipt in ## Session Info (engineering_guardrails.md bootstrap receipt): ${guardrails_receipt_missing}"
+  elif [[ "$worklog_count" -gt 0 ]]; then
+    record_result PASS "loaded-sections receipt present in current-branch work log"
   fi
   if [[ "$current_phase_incoherent" -gt 0 ]]; then
     record_result WARN "work logs with ship PASS receipt but Current Phase != ship (header not updated): ${current_phase_incoherent}"
