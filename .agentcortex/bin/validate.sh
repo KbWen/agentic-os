@@ -1616,9 +1616,14 @@ PYEOF
     # Parse classification from list form ("- Classification:") or table form ("| Classification |")
     if [[ -n "$PYTHON_BIN" ]]; then
       # Python via single-quoted heredoc -> variable (verbatim; no bash metachar parsing)
+      # (#336) sys.stdin.read() drains the pipe fully BEFORE the early `break`.
+      # Iterating `sys.stdin` line-by-line and breaking on the first match leaves
+      # printf with unwritten bytes on a >64 KB Work Log; printf then takes
+      # SIGPIPE (141), pipefail promotes it, and errexit aborts validate.sh
+      # mid-run with no Summary line. Draining first makes the break byte-safe.
       _acx_wlclass_py=$(cat <<'PYEOF'
 import re,sys
-for l in sys.stdin:
+for l in sys.stdin.read().splitlines():
     m=re.match(r'^-\s+\*{0,2}[Cc]lassification\*{0,2}\s*:\s*\x60?([a-zA-Z][\w-]*)',l)
     if not m: m=re.match(r'^\|\s*\*{0,2}[Cc]lassification\*{0,2}\s*\|\s*\x60?([a-zA-Z][\w-]*)',l)
     if m: print(m.group(1).lower()); break
@@ -1626,8 +1631,13 @@ PYEOF
 )
       wl_class="$(printf '%s' "$wl_content" | "$PYTHON_BIN" -c "$_acx_wlclass_py" 2>/dev/null)"
     else
-      # Python unavailable: list-form-only fallback
-      wl_class="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | head -n 1 | tr -d '\r\`')"
+      # Python unavailable: list-form-only fallback.
+      # (#336) Capture ALL matches then take the first line in bash. Piping sed
+      # into `head -n 1` closes the pipe after one line, so sed/printf take
+      # SIGPIPE (141) on a >64 KB log and pipefail aborts the run before the
+      # Summary prints. sed here reads to EOF, so nothing closes the pipe early.
+      _wl_class_all="$(printf '%s' "$wl_content" | sed -n 's/^- \(**\)\?Classification\1\?:[[:space:]]*//p' | tr -d '\r\`')"
+      wl_class="${_wl_class_all%%$'\n'*}"
     fi
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
       if printf '%s' "$wl_content" | grep -qi 'Gate: implement'; then
