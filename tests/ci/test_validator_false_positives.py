@@ -650,6 +650,104 @@ def test_adr010_shipped_spec_not_indexed_fails_ps1() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Spec Index reverse/phantom check — format-robust path extraction.
+#
+# The reverse check ("indexed spec path no longer on disk") extracted paths
+# with a bracket-anchored pattern that required "] " BEFORE the .md path. Real
+# Spec Index entries put the path BEFORE the [Shipped] tag
+# (`- docs/specs/X.md — ..., [Shipped ...]`), so the pattern matched nothing and
+# the check was silently dead — a deleted-but-still-indexed spec PASSed. Fix:
+# anchor extraction on the spec dirs (docs/specs | .agentcortex/specs), mirroring
+# the ADR reverse check. Surfaced by behavioral simulation, not by reading.
+# ---------------------------------------------------------------------------
+
+SPEC_PHANTOM_FAIL_MSG = "not on disk"
+# Real-repo entry format: the path precedes the [Shipped] tag (the format the
+# old bracket-anchored extraction was blind to).
+_REALFMT_GHOST_ENTRY = (
+    "  - docs/specs/ghost-does-not-exist.md — Sim ghost, [Shipped 2026-01-01] (backlog #0)\n"
+)
+_REALFMT_REAL_ENTRY = (
+    "  - docs/specs/test-feature.md — Sim real, [Shipped 2026-01-01] (backlog #0)\n"
+)
+
+
+def test_spec_phantom_extraction_format_robust_sh() -> None:
+    """validate.sh must extract indexed spec paths anchored on the spec dirs,
+    not on a preceding ']' (dead-check regression guard)."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    assert r"(docs/specs|\.agentcortex/specs)/[^[:space:]]+\.md" in sh, (
+        "validate.sh spec phantom extraction must anchor on the spec dirs"
+    )
+    assert r"sed -n 's/.*\] \([^ ]*\.md\) .*/\1/p'" not in sh, (
+        "validate.sh must not use the dead bracket-anchored phantom extraction"
+    )
+
+
+def test_spec_phantom_extraction_format_robust_ps1() -> None:
+    """validate.ps1 must extract indexed spec paths anchored on the spec dirs
+    (sh/ps1 parity)."""
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    assert r"(?:docs/specs|\.agentcortex/specs)/[\w./-]+\.md" in ps1, (
+        "validate.ps1 spec phantom extraction must anchor on the spec dirs"
+    )
+    assert r"'(?m)\]\s+([\w./-]+\.md)\s'" not in ps1, (
+        "validate.ps1 must not use the dead bracket-anchored phantom extraction"
+    )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_spec_phantom_realfmt_deleted_spec_fails_sh() -> None:
+    """A Spec Index entry (real format: path before [Shipped]) pointing to a
+    spec NOT on disk must FAIL validate.sh's reverse check."""
+    with tempfile.TemporaryDirectory() as td:
+        # test-feature.md is status:frozen → skipped by the forward check, so
+        # only the phantom (ghost) entry can drive the FAIL.
+        target = _make_minimal_repo(
+            Path(td), spec_status="frozen", index_entry=_REALFMT_GHOST_ENTRY
+        )
+        out = _run_validate(target)
+        assert SPEC_PHANTOM_FAIL_MSG in out, (
+            "validate.sh must FAIL when an indexed spec path (real format) is not "
+            f"on disk. Output:\n{out[-600:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_spec_phantom_realfmt_existing_spec_passes_sh() -> None:
+    """A Spec Index entry (real format) pointing to a spec that DOES exist on
+    disk must NOT trigger a phantom FAIL (no false positive)."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(
+            Path(td), spec_status="shipped", index_entry=_REALFMT_REAL_ENTRY
+        )
+        out = _run_validate(target)
+        assert SPEC_PHANTOM_FAIL_MSG not in out, (
+            "validate.sh must NOT phantom-FAIL a real-format entry whose spec "
+            f"exists on disk. Output:\n{out[-600:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+def test_spec_phantom_realfmt_deleted_spec_fails_ps1() -> None:
+    """sh/ps1 parity: a real-format indexed spec not on disk must FAIL validate.ps1."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _make_minimal_repo(
+            Path(td), spec_status="frozen", index_entry=_REALFMT_GHOST_ENTRY
+        )
+        out = _run_validate_ps1(target)
+        assert SPEC_PHANTOM_FAIL_MSG in out, (
+            "validate.ps1 must FAIL when an indexed spec path (real format) is not "
+            f"on disk. Output:\n{out[-600:]}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # AC-6: current-branch gate-evidence FAIL (dev-flow-hardening spec)
 #
 # Structural: verify the cur_key resolution and FAIL message are present in

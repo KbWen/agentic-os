@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.13] - 2026-07-15
+
+Validator correctness fix: the Spec Index reverse/phantom check is restored to working order.
+
+- **Spec Index phantom check un-blinded (`validate.sh` + `validate.ps1`)**: the "indexed spec path no longer on disk" reverse check extracted candidate paths with a bracket-anchored pattern (sh `sed 's/.*\] \([^ ]*\.md\) .*/\1/p'`, ps1 `\]\s+([\w./-]+\.md)\s`) that required a `]` *before* the `.md` path. But real Spec Index entries put the path *before* the `[Shipped]` tag (`- docs/specs/X.md — ..., [Shipped ...]`), so the pattern matched nothing and the reverse check was silently dead — a spec deleted from disk but left in the Index passed validation with a green `[PASS]`. Extraction is now anchored on the spec dirs (`docs/specs` | `.agentcortex/specs`), mirroring the already-correct ADR reverse check; sh and ps1 are fixed identically (parity). Surfaced by behavioral simulation, not by reading. 5 new regression tests (2 structural anti-regression + 3 behavioral: real-format deleted-spec → FAIL, real-format existing-spec → no false positive, sh/ps1 parity). Full CI-equivalent **720 passed**.
+
+No downstream ceremony change: the fix only makes an existing SSoT-integrity check do what it already advertised (zero new gates/phases/always-loaded rules).
+
 ## [1.8.12] - 2026-07-11
 
 Governance-hardening release packaging the 2026-07-11 codex-audit remediation wave (PRs #337–#342). All 10 audit findings were independently verified real before remediation; the fixes tighten enforcement without adding gates, phases, or always-loaded rules (lifecycle token aggregate unchanged at 354,937).

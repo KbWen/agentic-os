@@ -2327,7 +2327,12 @@ if [[ -f "$CURRENT_STATE" ]]; then
       spec_phantom_count=$((spec_phantom_count + 1))
       spec_phantom_list="$spec_phantom_list  phantom index entry: $indexed_spec\n"
     fi
-  done < <(printf '%s' "$spec_index_section" | sed -n 's/.*\] \([^ ]*\.md\) .*/\1/p')
+    # Extract indexed spec paths format-robustly: anchor on the spec dirs, NOT
+    # on a preceding "]" — real index entries put the path before the [Shipped]
+    # tag (`- docs/specs/X.md — ..., [Shipped ...]`), so the old bracket-anchored
+    # sed matched nothing and this reverse check was silently dead. Mirror the
+    # ADR reverse check's robust extraction.
+  done < <(printf '%s' "$spec_index_section" | grep -oE '(docs/specs|\.agentcortex/specs)/[^[:space:]]+\.md')
   if [[ "$spec_missing_count" -gt 0 || "$spec_phantom_count" -gt 0 ]]; then
     spec_msg=""
     [[ "$spec_missing_count" -gt 0 ]] && spec_msg="${spec_missing_count} shipped/living spec(s) not in index"

@@ -2178,7 +2178,10 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         }
     }
     $specMissing = @($diskSpecFiles | Where-Object { $_ -and ($specIndexSection -notmatch [regex]::Escape($_)) })
-    $indexedSpecPaths = @([regex]::Matches($specIndexSection, '(?m)\]\s+([\w./-]+\.md)\s') | ForEach-Object { $_.Groups[1].Value.Trim() })
+    # Format-robust extraction: anchor on the spec dirs, NOT on a preceding "]"
+    # (real entries put the path before the [Shipped] tag, so the old bracket-
+    # anchored pattern silently matched nothing — sh/ps1 parity fix).
+    $indexedSpecPaths = @([regex]::Matches($specIndexSection, '(?:docs/specs|\.agentcortex/specs)/[\w./-]+\.md') | ForEach-Object { $_.Value.Trim() })
     $specPhantom = @($indexedSpecPaths | Where-Object { $_ -and -not (Test-Path -Path (Join-NormalPath $root $_) -PathType Leaf) })
     if ($specMissing.Count -gt 0 -or $specPhantom.Count -gt 0) {
         $specMsg = @()
