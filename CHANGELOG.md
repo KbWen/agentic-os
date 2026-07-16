@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.8.14] - 2026-07-16
+
+Decision-capture wave: product decisions can no longer silently evaporate at ship.
+
+- **Decision Disposition at `/ship` (ship.md §State Update 2b, backlog #138, PR #349)**: every Work Log `## Decisions` entry is tagged before archival — `→ promoted: ADR-<id>` / `→ consolidated: L2 <domain>` / `→ local` — on all tiers except tiny-fix, with headless self-marking and a tripwire (`→ local` is illegal for entries naming an ADR or reversing a durable decision). `decide.md §5` rewritten to promise only what ship actually does (its "promote to ADR during /ship" was an untriggered orphan); the worklog template gains an optional `## Decisions` section; `bootstrap.md:143` gains a none-guard. Net always-loaded cost: ship.md **shrank 147 chars** — in-file prose compression funded the new step; the 355k lifecycle ceiling literal is unchanged.
+- **New WARN-tier check `check_decision_disposition.py`** (ADR-006 seam, sh+ps1 twin wiring, deployed downstream + manifest golden): **Signal A** flags post-cutoff archived logs with unmarked entries — the WARN names the legal remediation (archives are immutable; forward-fix via a new ADR/L2 entry, never a log edit) and states it is meant to persist after that fix; **Signal A2** flags ADR-naming `→ local` rubber-stamps for review. Date-grandfathered via `document_lifecycle.decision_disposition_since` (absent/empty = silent no-op); fenced examples ignored; ASCII `->` accepted (strict-emit `→`). 23 guard tests.
+- **Durable homes for orphaned decisions (backlog #139, PR #348)**: ADR-001 gained a record-only D2 amendment — the 2026-07-08 unanimous rejection of the `design_tool` capability-seam escape ("do NOT retry" absent a superseding ADR) — plus an always-loaded SSoT ADR-Index annotation and a `document-governance.log.md` entry batch (SSoT-caps rationale, point-in-time archival precedent). A read-path replay simulation confirmed the original drift scenario is now hard-stopped and rotation-proof.
+- Provenance: `docs/reviews/2026-07-16-govern-audit-decision-capture.md` (verified findings, dispositions, dropped false alarms). Verified by 第十人 + 事前驗屍 adversarial passes and a 4-scenario behavioral simulation wave (write-path, drift replay, violation loop, real downstream deploys ×4).
+
+Downstream delta: the check ships active-by-default at cutoff `2026-07-16` (advisory WARN only, never FAIL; forks that never use `## Decisions` see a single OK line; empty key = full opt-out).
+
 ## [1.8.13] - 2026-07-15
 
 Validator correctness fix: the Spec Index reverse/phantom check is restored to working order.
