@@ -171,3 +171,39 @@ finding was primary-verified against the actual code path before delegation
 - [CONSTRAINT] `check_routing_actions.py` is deliberately NOT in the deploy
   runtime_tools whitelist yet — downstream keeps the native backstop;
   promotion is a tracked follow-up (backlog #137), not an accident.
+
+### [document-governance][2026-07-16][chore/orphan-decision-homes]
+
+Source: 2026-07-16 decision-capture govern-audit
+(docs/reviews/2026-07-16-govern-audit-decision-capture.md, F2). Three product
+decisions had landed only on rotating/temporal surfaces — the SSoT Ship
+History (cap-10), a rejected-ADR gap, and archived work logs / oral tradition
+— with no durable home, so a later session could re-derive or re-propose them.
+This entry, plus the ADR-001 Amendment (2026-07-16), gives them one.
+
+- [DECISION] `design_tool` capability-seam gate escape — the 2026-07-08
+  roundtable UNANIMOUSLY rejected it; DO NOT retry this seam. Canonical record is the
+  ADR-001 Amendment (2026-07-16); full rejection log at
+  docs/reviews/2026-07-08-design-gate-roundtable.md. No content is duplicated
+  here — the ADR amendment governs.
+- [DECISION] SSoT section caps (PR #328, 2026-07-10): config
+  `ship_history_max_entries: 10` mechanizes ship.md's pre-existing documented
+  cap (ship.md:208 — "keep only the latest 10"); it is enforced WARN-tier-only
+  via `check_ssot_caps.py` (advisory, never a hard FAIL — a size cap must not
+  red-X a downstream fork's CI; rationale reconstructed 2026-07-16 from the
+  framework's WARN-tier degradation pattern — the 2026-07-10 config comment
+  records only the *what*). It landed a one-time 67→10 Ship
+  History rotation into archive/ship-history-2026.md and gave the previously
+  consumer-less `spec_index_max_entries: 30` cap its first validator consumer.
+- [DECISION] NOT-READY re-review remediation hint (PR #328): a message-only
+  hint was added to both validators' gate parser while the illegal `plan→review`
+  FAIL verdict was deliberately preserved — the hint educates, the gate keeps
+  its teeth (the config comment carries the *what*; this records the *why*).
+- [DECISION] Point-in-time archival precedent (documented instance:
+  archive/ship-history-2026.md — PR #315, 2026-07-02,
+  Ship-chore-archive-stale-worklogs; the practice predates that PR): incomplete Work Logs (e.g. no ship
+  receipt) are archived AS-IS — kept verbatim, not edited; receipts are never
+  fabricated retroactively; and historical gate gaps stay visible as validator
+  WARNs rather than laundered. Reapplied repeatedly since — each archival
+  records an INDEX.jsonl chain entry (e.g. the 2026-07-11 wave, "as-is per
+  point-in-time precedent").
