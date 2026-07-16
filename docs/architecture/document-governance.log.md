@@ -207,3 +207,59 @@ This entry, plus the ADR-001 Amendment (2026-07-16), gives them one.
   WARNs rather than laundered. Reapplied repeatedly since — each archival
   records an INDEX.jsonl chain entry (e.g. the 2026-07-11 wave, "as-is per
   point-in-time precedent").
+
+### [document-governance][2026-07-16][feat/decision-capture-hardening]
+source_spec: docs/specs/decision-capture-hardening.md
+source_sha: (ship commit on feat/decision-capture-hardening — squash-merged via PR)
+
+- [DECISION] Disposition happens at /ship, in the ACTIVE log, immediately
+  before the archival MOVE — markers must exist in the file that gets
+  archived. Impact gates promotion, not tier: quick-win/hotfix are included
+  (F1's leak), and a quick-win CAN be promote-worthy (the design_tool
+  rejection was). Vocabulary: `→ promoted: ADR-<id>` / `→ consolidated: L2
+  <domain>` / `→ local`.
+- [DECISION] The durable surfaced home for non-promoted decisions is the
+  INDEX.jsonl `decisions[]` 1-liner (read at bootstrap on module overlap),
+  NOT an L2 auto-append — L2 is bootstrap-invisible (write-only sink, audit
+  F3); spending headless ceremony on an unread surface was rejected.
+- [DECISION] Enforcement = `check_decision_disposition.py`, WARN-tier via the
+  ADR-006 seam with the tool ALWAYS exiting 0 (WARN-tier is a property of the
+  tool's exit contract, not of `missing_python_level`); no native backstop;
+  ratchet untouched (mirrors check_ssot_caps, not check_routing_actions).
+- [DECISION] Scan surface = tracked archive ROOT logs only: active `work/`
+  logs are gitignored (CI-blind) and legitimately undisposed pre-ship;
+  `archive/work/` holds compaction offloads of still-active logs — both
+  excluded by design.
+- [DECISION] Grandfathering hangs on one switch:
+  `document_lifecycle.decision_disposition_since` (INDEX.jsonl `shipped` date;
+  filename `-YYYYMMDD` fallback; undatable → skip). Absent/empty key = silent
+  no-op (source-mode/BYO opt-out). Deployed forks inherit the key SET
+  (config.yaml is deploy-tier core, force-updated — a deploy-time strip was
+  REJECTED: force-update would wipe a fork's own opt-in value every upgrade);
+  they simultaneously receive ship.md 2b + the template, so only pre-upgrade
+  post-cutoff logs can WARN, once, with remediation text. Reopen trigger: a
+  real fork reports an upgrade WARN-flood → revisit deploy-time cutoff
+  anchoring.
+- [DECISION] decide.md §5 is REWRITTEN, not deleted — the promote-worthy
+  heuristic survives; the section now promises only what ship.md 2b executes.
+  Token funding is intra-ship.md (Knowledge Nudge prose compression, semantics
+  preserved) because decide.md/template are lifecycle-uncounted and cannot fund
+  a counted file.
+- [TRADEOFF] Teeth are structural (marker presence + the syntactic A2
+  tripwire), not fully semantic. SIM-W quantified the gap: a hurried agent
+  rubber-stamps all entries `→ local` (2/3 flips vs a diligent agent) — the
+  tripwire + A2 close the machine-checkable half (ADR-naming entries cannot
+  legally be `→ local`); prose-fuzzy cases (e.g. doctrine-affirming entries
+  with no ADR number) stay honor-system. Accepted ceiling per the
+  [enforcement] Global Lesson; gain is ~0–5% → 100% forced judgment + flagged
+  ADR-naming locals. Reopen: audit shows systematic mis-`local` beyond the
+  A2-checkable class.
+- [CONSTRAINT] The 3-marker vocabulary is a regex-stable API across exactly 4
+  surfaces (decide.md §5, worklog template hint, ship.md 2b, check tool) —
+  any wording change is a 4-surface sync, guard-tested by the vocabulary
+  exactness case (AC-8). Emit is strictly `→` (U+2192); the check ACCEPTS
+  ASCII `->` as equivalent (Postel) because a false WARN lands on an immutable
+  archived file and would be permanent.
+- [CONSTRAINT] Every validator-wired tool ships in deploy.sh runtime_tools
+  (both whitelist sites) + regenerated manifest golden in the SAME change —
+  the #334 downstream-SKIP gap class must not recur.

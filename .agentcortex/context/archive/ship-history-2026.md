@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-ask-local-discovery-surfaces-2026-07-04
+- **Branch `fix/ask-local-discovery-surfaces`** (quick-win, document-governance) — merged PR #319 (squash `0efab29`). Post-v1.8.8 wrap-up driven by two fresh-context AI-adopter sims (discovery walkthrough + 6-scenario discipline dry-run): the module routes and governs correctly (6/6 discipline cases decided by quoted text), but three enumeration/readability gaps were fixed — `templates/current_state.md` Canonical Commands seed was missing `ask-local` AND pre-existing `claude-cli` (fresh adopters' SSoT would never mention local-model delegation); both validators' optional-module file group +`ask-local.md` (parity, 3→4 items, same single check); `ask-local.md §2.4` clarified "auto-execute" = cost-pause only, never gate-skip (the one mid-tier misread risk found). Also filed backlog **#117** (P2): Global Lessons cap-archival vs hash-chain contradiction — retro.md §3's archive-oldest-LOW procedure is unexecutable (chain breaks on any removal; first hit at cap 20/20 while attempting the registry-surface-sync lesson append); chain left untouched, lesson content preserved in #117. SSoT sequence 113→114.
+- Tests: full CI-equiv 574 passed; validate.sh/.ps1 parity pass=97 warn=3 fail=0; PR #319 CI 18 pass. Rollback = revert PR #319.
+
 ### Ship-chore-v1.8.8-release-2026-07-04
 - Feature shipped: v1.8.8 packages the 2026-07-04 local-model delegation wave (PRs #316–#317): `/ask-local` optional module (#115) + codex `--oss` variant + the HANDEDOFF→IMPLEMENTING validator reverse-edge fix. Version banners 1.8.7→1.8.8 across 7 files (deploy.sh ACX_VERSION, CITATION.cff [+date-released], Model Guide EN+zh-TW, Testing Protocol EN+zh-TW, antigravity-v5-runtime.md); CHANGELOG [1.8.8]. No engine/test/logic change in the release cut itself. SSoT sequence 112→113.
 - Tests: Pass (docs-only release chore; both packaged PRs individually CI-green)

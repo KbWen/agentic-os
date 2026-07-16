@@ -74,8 +74,8 @@ A feature-tier task replaced the Epic→Feature hierarchy with label-based clust
 routing_actions:
   - finding: "decide.md §5 ADR-promotion never triggered at /ship; quick-win/hotfix decisions have no durable capture channel (enforce-or-delete §5 + ship-time decision disposition + WARN-tier validator)"
     target_doc: "docs/architecture/document-governance.md"
-    status: pending
-    owner: "unassigned"
+    status: merged
+    owner: "fable-20260716"
   - finding: "design_tool/ADR-011 unanimous rejection lacks a canonical home (fix vehicle: ADR-001 amendment + document-governance.log.md L2 entry) before Ship History rotation ejects it (~4 ships)"
     target_doc: "docs/architecture/document-governance.md"
     status: merged

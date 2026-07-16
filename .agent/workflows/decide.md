@@ -66,14 +66,15 @@ During `/bootstrap`, if a Work Log contains `## Decisions`:
 
 This prevents the most common cross-session token waste: Agent B spending 500+ tokens re-deriving a conclusion Agent A already reached.
 
-## 5. Promotion to ADR
+## 5. Promotion & Disposition
 
-If a decision has project-wide impact (affects multiple branches, modules, or future tasks), it SHOULD be promoted to a formal ADR during `/ship`:
+At `/ship` (all classifications except `tiny-fix`), every `## Decisions` entry receives one disposition marker per `ship.md §State Update` step 2b:
 
-1. Copy the decision entry to `docs/adr/ADR-[ID]-[kebab-case].md`.
-2. Expand with full ADR structure (Context, Decision, Consequences).
-3. Add to `current_state.md` ADR Index.
-4. Remove from Work Log Decisions section (replace with pointer: `→ Promoted to ADR-[ID]`).
+- `→ promoted: ADR-<id>` — project-wide impact (multiple branches/modules/future tasks, a reusable precedent, or reversing a durable decision): author/amend that ADR + its ADR Index line in the same ship.
+- `→ consolidated: L2 <domain>` — folded into the ship L2 domain-log entry.
+- `→ local` — task-scoped; survives via the archived log + the INDEX.jsonl `decisions[]` 1-liner.
+
+`check_decision_disposition` WARNs on post-cutoff archived logs whose entries lack markers.
 
 ## 6. Compaction Rule
 

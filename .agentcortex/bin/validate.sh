@@ -635,6 +635,12 @@ fi
 # (run_python_check handles both). Caps live in .agent/config.yaml §document_lifecycle.
 run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.agentcortex/tools/check_ssot_caps.py" --root "$ROOT"
 
+# ADR-006: advisory decision-disposition check (archived Work Log `## Decisions`
+# entries missing a ship-time marker) as a Python tool behind run_python_check.
+# WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op until a fork sets
+# document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
+run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then

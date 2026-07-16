@@ -767,6 +767,10 @@ if (Test-Path $safetyNucleusGen) {
 # than a failure; fix = the rotation procedure it names. No-python -> WARN; tool absent
 # -> SKIP (Invoke-PythonCheck handles both).
 Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_ssot_caps.py') -Arguments @('--root', $root)
+# ADR-006: advisory decision-disposition check (archived Work Log `## Decisions`
+# entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
+# silent no-op until a fork sets document_lifecycle.decision_disposition_since.
+Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
