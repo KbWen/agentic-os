@@ -50,9 +50,7 @@ Run these BEFORE evaluating Ship Checklist. Both are ADVISORY — warn, do not h
 
 ### Rollback Plan Check (feature / architecture-change only)
 
-Skip for `quick-win`, `hotfix`, `tiny-fix`. For `feature` and `architecture-change`: scan Work Log `## Known Risk` for any line containing "rollback" or "revert". If none found, output:
-`"⚠️ No rollback plan found in ## Known Risk. Add at least one line describing rollback/revert strategy before shipping."`
-Record the warning in `## Known Risk` if the section is otherwise empty.
+Scan Work Log `## Known Risk` for "rollback"/"revert"; if absent, output `"⚠️ No rollback plan found in ## Known Risk. Add at least one line describing rollback/revert strategy before shipping."` and record the warning there if the section is otherwise empty.
 
 ### Gate Receipt Audit (/ship only)
 
@@ -67,7 +65,7 @@ Scan Work Log `## Gate Evidence` for receipts from required prior phases:
 
 ### Confidence Trace Audit (/ship only)
 
-Scan Work Log `## Phase Summary` and the plan's compact block for a `Confidence:` entry. If the recorded confidence is `<80%` and no clarification/assumption is documented in `## Known Risk`, output: `"⚠️ Plan confidence was <80% with no recorded clarification. Verify before shipping."` This is advisory — it warns but does not hard-block, matching `engineering_guardrails.md` §4.1.
+Scan Work Log `## Phase Summary` + the plan block for `Confidence:`. If `<80%` with no clarification/assumption in `## Known Risk`, output: `"⚠️ Plan confidence was <80% with no recorded clarification. Verify before shipping."` Advisory — warns, never hard-blocks (`engineering_guardrails.md` §4.1).
 
 ## Ship Checklist (mandatory — skip = ship fail)
 
@@ -80,19 +78,9 @@ Scan Work Log `## Phase Summary` and the plan's compact block for a `Confidence:
 
 ## Quick-win / Hotfix Knowledge Nudge (advisory)
 
-**Scope**: `quick-win` and `hotfix` only. Skipped for `tiny-fix`, `feature`, `architecture-change`.
+**Scope**: `quick-win` / `hotfix` only. Infer `<affected module>`/`<domain>` from (a) Work Log Task Description keywords, then (b) top-level changed-file paths (`src/auth/*` → `auth`); if unclear, ask the user which domain (list existing `docs/architecture/*.log.md` names, or `new:<name>`) — never guess silently.
 
-**Domain inference**: Derive `<affected module>` and `<domain>` from (in order): (a) Work Log Task Description keywords, (b) top-level path of changed files in the diff (e.g., `src/auth/*` → domain `auth`). If neither yields a clear answer, ask the user: `"Which domain does this fix belong to? (list existing docs/architecture/*.log.md names, or 'new:<name>')"`. Do NOT guess silently.
-
-After evidence is recorded, output this prompt once per ship (not re-prompted on retry):
-
-> "Did this fix change how `<affected module>` works in a non-obvious way? If yes, consider appending one line to `docs/architecture/<domain>.log.md` — no spec required, just a timestamped note."
-
-If the user confirms yes:
-- If `docs/architecture/<domain>.log.md` exists: append a minimal L2 entry (date, branch, one-line decision/constraint).
-- If it does not exist: offer `"No domain doc for '<domain>' yet. Create docs/architecture/<domain>.log.md now? (yes/no)"` — create only on confirmation.
-
-If the user says no: skip silently. This is never a gate — it only surfaces the option.
+After evidence is recorded, prompt once per ship (not re-prompted on retry): *"Did this fix change how `<affected module>` works in a non-obvious way? If yes, consider one timestamped line in `docs/architecture/<domain>.log.md` — no spec required."* On yes: append a minimal L2 entry (date, branch, 1-line decision/constraint); if the file is missing, create it only on explicit (yes/no) confirmation. On no: skip silently. Never a gate — it only surfaces the option.
 
 ## Observability Readiness Check (feature / architecture-change only)
 
@@ -172,8 +160,7 @@ Archive: <path> | <pending>
 Compression rules:
 - One line per field. No decorative headers when the whole block is < 10 lines.
 - Evidence goes by reference (`Ref: Work Log §Evidence`), never re-pasted in chat.
-- Rollback strategy: 1 line. Full rollback plan lives in Work Log `## Known Risk`.
-- Known risks: the **unresolved** count and 1-line summary. Resolved risks do not appear in chat.
+- Rollback + risks: 1 line each (unresolved only); full detail lives in Work Log `## Known Risk`.
 - If the user asks for the full commit body, change summary, or test output, expand. Default is terse.
 
 ## Phase Summary Update
@@ -206,7 +193,8 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 
    - NEVER edit, reorder, or delete previous entries in the `## Ship History`.
    - If Ship History exceeds 10 entries, archive older entries to `.agentcortex/context/archive/ship-history-YYYY.md` and keep only the latest 10 in `current_state.md`.
-   - **Relative-link depth hazard**: `current_state.md` lives at depth 2 (`.agentcortex/context/`); `archive/` is at depth 3. Any relative links whose destination starts with `../` or `../../` in content copied from `current_state.md` to `archive/` will resolve one level too shallow and produce broken links caught by CI. **Before committing archived content that originated in `current_state.md`, strip or convert those links to plain text or absolute URLs.** `validate.sh` M8 also flags these as WARN.
+   - **Relative-link depth hazard**: content copied from `current_state.md` (depth 2) into `archive/` (depth 3) shifts `../` links one level shallow — broken links are CI-caught; M8 also WARNs. **Strip/convert them to plain text or absolute URLs before committing archived content.**
+2b. **Decision Disposition** (all tiers except `tiny-fix`; skip if `## Decisions` absent/empty): append one marker per entry — `→ promoted: ADR-<id>` (project-wide impact, new precedent, or reversal → author/amend that ADR + its Index line this ship) / `→ consolidated: L2 <domain>` (the ship L2 entry) / `→ local`. `→ local` is illegal for an entry naming an `ADR-<n>` or reversing a durable decision — use promoted/consolidated. Populate step-3 `decisions[]` with each entry's title. Headless: self-mark; `check_decision_disposition` WARNs on unmarked logs and ADR-naming locals.
 3. **Move** (not copy) `.agentcortex/context/work/<worklog-key>.md` to `.agentcortex/context/archive/<worklog-key>-<YYYYMMDD>.md` (the **root** of `archive/`, if task complete) — delete the `work/` original, else the validator WARNs "shipped work logs still in active work/ directory". This is **final archival** of the whole log — distinct from `/handoff §6` compaction, which offloads stale detail of a *still-active* log into the `archive/work/` subdir. The `-<YYYYMMDD>` suffix is required: it prevents a reused branch (e.g. a downstream that does all work on `main`) from overwriting its own prior archive on the next ship. Record the resulting filename in the `INDEX.jsonl` `log` field below.
     - Do NOT duplicate `/retro`-promoted Global Lessons during ship. `/retro` owns structured Global Lesson promotion.
     - **Archive Index Update**: After archiving, append a structured record to `.agentcortex/context/archive/INDEX.jsonl`. The archive index is a hash-chained audit log — every append MUST add `prev_sha` (computed by the helper) so the chain stays intact. Use:

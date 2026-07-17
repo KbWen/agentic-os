@@ -82,6 +82,7 @@ core .agentcortex/tools/append_chain_entry.py
 core .agentcortex/tools/append_lesson.py
 core .agentcortex/tools/check_adr_coverage.py
 core .agentcortex/tools/check_command_sync.py
+core .agentcortex/tools/check_decision_disposition.py
 core .agentcortex/tools/check_lesson_chain.py
 core .agentcortex/tools/check_lifecycle_frontmatter.py
 core .agentcortex/tools/check_ssot_caps.py

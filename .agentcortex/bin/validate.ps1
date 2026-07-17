@@ -767,6 +767,10 @@ if (Test-Path $safetyNucleusGen) {
 # than a failure; fix = the rotation procedure it names. No-python -> WARN; tool absent
 # -> SKIP (Invoke-PythonCheck handles both).
 Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_ssot_caps.py') -Arguments @('--root', $root)
+# ADR-006: advisory decision-disposition check (archived Work Log `## Decisions`
+# entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
+# silent no-op until a fork sets document_lifecycle.decision_disposition_since.
+Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
@@ -2178,7 +2182,10 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         }
     }
     $specMissing = @($diskSpecFiles | Where-Object { $_ -and ($specIndexSection -notmatch [regex]::Escape($_)) })
-    $indexedSpecPaths = @([regex]::Matches($specIndexSection, '(?m)\]\s+([\w./-]+\.md)\s') | ForEach-Object { $_.Groups[1].Value.Trim() })
+    # Format-robust extraction: anchor on the spec dirs, NOT on a preceding "]"
+    # (real entries put the path before the [Shipped] tag, so the old bracket-
+    # anchored pattern silently matched nothing — sh/ps1 parity fix).
+    $indexedSpecPaths = @([regex]::Matches($specIndexSection, '(?:docs/specs|\.agentcortex/specs)/[\w./-]+\.md') | ForEach-Object { $_.Value.Trim() })
     $specPhantom = @($indexedSpecPaths | Where-Object { $_ -and -not (Test-Path -Path (Join-NormalPath $root $_) -PathType Leaf) })
     if ($specMissing.Count -gt 0 -or $specPhantom.Count -gt 0) {
         $specMsg = @()
