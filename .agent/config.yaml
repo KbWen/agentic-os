@@ -151,6 +151,15 @@ document_lifecycle:
   # check_ssot_caps.py as a validator WARN, never a hard FAIL.
   ship_history_max_entries: 10
 
+  # Consumer: check_decision_disposition.py (WARN-tier, spec AC-5/AC-7).
+  # Archived Work Logs shipped on/after this date must carry disposition
+  # markers (ship.md 2b); earlier logs are date-grandfathered. Absent/empty =
+  # the check is a silent no-op (source-mode/BYO opt-out). NOTE: config.yaml
+  # deploys core-tier with this key SET — deployed forks inherit the framework
+  # cutoff and are active-by-default; a fork's pre-upgrade post-cutoff logs may
+  # WARN once (advisory, never FAIL; the WARN text names the legal forward-fix).
+  decision_disposition_since: "2026-07-16"
+
   # _raw-intake*.md files: MUST be deleted (not archived) by /ship when
   # all features from the intake are Shipped or Cancelled.
   raw_intake_cleanup: must_delete

@@ -635,6 +635,12 @@ fi
 # (run_python_check handles both). Caps live in .agent/config.yaml §document_lifecycle.
 run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.agentcortex/tools/check_ssot_caps.py" --root "$ROOT"
 
+# ADR-006: advisory decision-disposition check (archived Work Log `## Decisions`
+# entries missing a ship-time marker) as a Python tool behind run_python_check.
+# WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op until a fork sets
+# document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
+run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then
@@ -2363,7 +2369,12 @@ if [[ -f "$CURRENT_STATE" ]]; then
       spec_phantom_count=$((spec_phantom_count + 1))
       spec_phantom_list="$spec_phantom_list  phantom index entry: $indexed_spec\n"
     fi
-  done < <(printf '%s' "$spec_index_section" | sed -n 's/.*\] \([^ ]*\.md\) .*/\1/p')
+    # Extract indexed spec paths format-robustly: anchor on the spec dirs, NOT
+    # on a preceding "]" — real index entries put the path before the [Shipped]
+    # tag (`- docs/specs/X.md — ..., [Shipped ...]`), so the old bracket-anchored
+    # sed matched nothing and this reverse check was silently dead. Mirror the
+    # ADR reverse check's robust extraction.
+  done < <(printf '%s' "$spec_index_section" | grep -oE '(docs/specs|\.agentcortex/specs)/[^[:space:]]+\.md')
   if [[ "$spec_missing_count" -gt 0 || "$spec_phantom_count" -gt 0 ]]; then
     spec_msg=""
     [[ "$spec_missing_count" -gt 0 ]] && spec_msg="${spec_missing_count} shipped/living spec(s) not in index"

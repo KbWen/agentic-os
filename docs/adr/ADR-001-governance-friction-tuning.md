@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-04-23
+amended: 2026-07-16
 deciders: "@kbwen, AI Agent (Claude Opus 4.6)"
 classification: architecture-change
 applies_to:
@@ -106,6 +107,36 @@ A "Prototyping Mode" flag that developers could set to bypass rules. Rejected be
 | `engineering_guardrails.md` §4.4 | Add "Scope Exemption" subsection defining exempt directories |
 | `engineering_guardrails.md` §5.2a | Add note: "Scope: This rule applies to application/service code. **Files in `tools/`, `scripts/`, `scratch/`, and test directories are exempt.**" (Note: line 173 already says "Test-only code and CLI dev tools are exempt" — this formalizes the exact paths) |
 | `.agent/config.yaml` | Add optional `production_paths` configuration key |
+
+### Amendment (2026-07-16, record-only): D2 reaffirmed — capability-seam `design_tool` escape rejected
+
+Backlog #119 flagged that the §4.4 Design-First gate hard-blocks a solo / tool-less downstream
+adopter from planning UI work. The proposed fix (path A) was a capability-seam escape: an opt-in
+`design_tool` key in `downstream-capabilities.yaml`, plus a prospective ADR-011 superseding this
+Decision. A 5-seat roundtable — its seats including a 第十人 (refute-only) and a 事前驗屍
+(pre-mortem) — reviewed it on 2026-07-08; all agents were same-vendor, so the human operator was the external signal per the
+`[audit-method]` Global Lesson. Path A was UNANIMOUSLY rejected on three verified grounds:
+
+- **The problem barely existed.** §4.4 step 1 already accepts a linkable artifact ("URL or file
+  path"); a committed wireframe file always qualified — only the tool-centric wording hid it, so
+  the shipped fix un-hides an existing allowance rather than opening a new escape.
+- **The seam forbids gate-relaxation by construction.** `validate_downstream_capabilities.py` is a
+  strict top-level-key allowlist (docstring: "Makes gate-relaxation UNREPRESENTABLE") — an unknown
+  `design_tool` key rejects the whole file (breaking the adopter's real skills/KB), and
+  `design_tool: none` *is* the forbidden FAIL→WARN relaxation the ADR-007/ADR-009 invariant bars.
+- **D2's own rationale applies harder.** A repo-level, self-declared `design_tool` flag is exactly
+  the self-declared intent D2 chose directory-scope to avoid; it reincarnates the "Prototyping
+  Mode" flag rejected above, and "nothing more permanent than a temporary workaround" binds worse.
+
+Shipped instead: **R1**, a framing clarification (v1.8.9, PR #324) — §4.4 and the `/plan` Design
+Gate now name a committed `docs/design/<screen>.md` wireframe as a valid artifact; the gate stays
+**HARD** (a UI task with no artifact still hard-stops at `/plan`). R2 (enforce-vs-delete the
+honor-system gate) folded into backlog #122. **Do NOT retry** the capability-seam escape absent
+new evidence invalidating the three grounds above (a superseding ADR would be required); full
+rejection record at `docs/reviews/2026-07-08-design-gate-roundtable.md`. Recorded here by the
+2026-07-16 decision-capture audit, because the rejection previously lived only on rotating
+(SSoT Ship History, cap-10) or un-metabolized (a routing-action-less review snapshot) surfaces,
+and a rejected ADR leaves no ADR Index entry.
 
 ---
 
