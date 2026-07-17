@@ -1595,8 +1595,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         # (#288) Loaded-Sections receipt audit — current-branch, non-tiny-fix logs
         # must carry a `Guardrails loaded:` receipt (engineering_guardrails.md
         # bootstrap). Scoped to current branch to avoid WARN-flooding historical
-        # logs (mirrors AC-6 $isCurrentBranch). WARN-tier: presence, not proof.
-        if ($isCurrentBranch -and -not [string]::IsNullOrEmpty($wlClass) -and $wlClass -ne 'tiny-fix') {
+        # logs (mirrors AC-6 $isCurrentBranch). Full-Mode tiers ONLY
+        # (feature/architecture-change/hotfix): quick-win runs Quick Mode and
+        # tiny-fix runs Lite — the receipt rule does not apply to them.
+        # WARN-tier: presence, not proof.
+        if ($isCurrentBranch -and ($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change' -or $wlClass -eq 'hotfix')) {
             if ($content -notmatch '(?i)Guardrails loaded:') {
                 $guardrailsReceiptMissing++
             }

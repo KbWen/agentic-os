@@ -1683,8 +1683,10 @@ PYEOF
     # bootstrap (Full Mode) echo a `Guardrails loaded:` receipt in ## Session Info.
     # Scope to the CURRENT-branch log only: historical/archived logs predate the
     # convention and would flood WARNs (mirrors the AC-6 is_current_branch gate).
-    # tiny-fix skips Full Mode, so it is exempt. WARN-tier: presence, not proof.
-    if [[ "$is_current_branch" -eq 1 && -n "$wl_class" && "$wl_class" != "tiny-fix" ]]; then
+    # Full-Mode tiers ONLY (feature/architecture-change/hotfix): quick-win runs
+    # Quick Mode and tiny-fix runs Lite — neither loads Full-Mode guardrails, so
+    # the receipt rule does not apply to them. WARN-tier: presence, not proof.
+    if [[ "$is_current_branch" -eq 1 && ( "$wl_class" == "feature" || "$wl_class" == "architecture-change" || "$wl_class" == "hotfix" ) ]]; then
       if ! <<< "$wl_content" grep -qiE 'Guardrails loaded:'; then
         guardrails_receipt_missing=$((guardrails_receipt_missing + 1))
       fi

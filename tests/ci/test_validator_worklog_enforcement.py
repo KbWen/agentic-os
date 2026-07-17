@@ -290,6 +290,26 @@ def test_288_current_branch_with_guardrails_receipt_no_warn_sh(tmp_path: Path) -
 
 @pytest.mark.slow
 @requires_bash
+def test_288_quickwin_without_guardrails_receipt_no_warn_sh(tmp_path: Path) -> None:
+    """Gap 2 is scoped to Full-Mode tiers (feature/architecture-change/hotfix):
+    quick-win runs Quick Mode and never loads Full-Mode guardrails, so a
+    current-branch quick-win log without the receipt must NOT WARN."""
+    branch = "fix/gap2-quickwin"
+    target = _deploy_with_git_branch(tmp_path, branch)
+    _write_worklog(
+        target, "fix-gap2-quickwin.md",
+        classification="quick-win", phase="implement",
+        gates=("bootstrap", "plan", "implement"),
+        guardrails_receipt=False,
+    )
+    out = _run_validate(target)
+    assert GUARDRAILS_WARN not in out, (
+        f"quick-win (Quick Mode) must be exempt from the Guardrails-loaded receipt audit (#288):\n{out[-800:]}"
+    )
+
+
+@pytest.mark.slow
+@requires_bash
 def test_288_historical_log_without_guardrails_receipt_no_warn_sh(tmp_path: Path) -> None:
     """No git repo → no current-branch log → Gap 2 must NOT fire (historical logs
     predate the receipt convention and must not flood WARNs)."""
