@@ -1981,10 +1981,10 @@ $archiveDir = Join-NormalPath $root '.agentcortex/context/archive'
 $phaseSummaryViolations = 0
 $phaseSummaryViolationList = New-Object System.Collections.Generic.List[string]
 if (Test-Path -Path $archiveDir -PathType Container) {
-    # Exclude ship-history-*.md: compacted ship-history archives are not Work
-    # Logs and have no '## Phase Summary' contract (#171).
+    # Exclude ship-history-*.md (#171) and global-lessons-archive*.md (#141):
+    # neither is a Work Log; neither carries a '## Phase Summary' contract.
     $archivedLogs = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -notlike '.gitkeep*' -and $_.Name -notlike 'ship-history-*' }
+        Where-Object { $_.Name -notlike '.gitkeep*' -and $_.Name -notlike 'ship-history-*' -and $_.Name -notlike 'global-lessons-archive*' }
     foreach ($wl in $archivedLogs) {
         $content = Get-Content -Path $wl.FullName -Raw -Encoding utf8
         $classification = ''

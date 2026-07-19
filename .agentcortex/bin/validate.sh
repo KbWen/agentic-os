@@ -2137,7 +2137,9 @@ if [[ -d "$ARCHIVE_DIR" ]]; then
   # Exclude ship-history-*.md (case-insensitive `-iname` for parity with the PS
   # `-notlike` filter): compacted ship-history archives are not Work Logs and
   # carry no `## Phase Summary` contract (#171).
-  done < <(find "$ARCHIVE_DIR" -name '*.md' -not -name '.gitkeep*' -not -iname 'ship-history-*' -print0 2>/dev/null || true)
+  # Also exclude global-lessons-archive*.md: the /retro chain-aware lesson
+  # archive is not a Work Log and has no '## Phase Summary' contract (#141).
+  done < <(find "$ARCHIVE_DIR" -name '*.md' -not -name '.gitkeep*' -not -iname 'ship-history-*' -not -iname 'global-lessons-archive*' -print0 2>/dev/null || true)
 fi
 if [[ "$phase_summary_violations" -gt 0 ]]; then
   record_result WARN "archived Work Logs with empty Phase Summary: ${phase_summary_violations}"

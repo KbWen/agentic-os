@@ -8,6 +8,7 @@ Phase-entry directive honesty: every always-loaded rule now carries a verifiable
 - **Directive-count ratchet** (`tests/ci/test_directive_count_ratchet.py` + committed baseline 37/84/6/4): cap-at-today — CI FAILs only when a phase-entry surface's hard-directive keyword count GROWS past its baseline; lowering is rewarded (baseline ratchets down). Mirrors the 355k token-ceiling pattern on a second axis (token volume ≠ directive density). Adversarial semantics pins document the deliberate limitations (lowercase/substring evasion — it targets drift, not adversaries).
 - **Eval integrity**: `chat-language-drift` protects-tag re-mapped to §Chat Language Policy (made MUST-bearing so the case binds its actual rule) — fixing a live section-granularity mismatch; a latent validator parity divergence (sh prefix vs ps1 exact heading match on archived-log `## Phase Summary`) was caught by CI's parity test, hotfixed, and tracked as backlog #140.
 - No engine, phase-order, or gate behavior change beyond the governance-text merges. Rollback = revert PR #352.
+- Hotfix (same-day, backlog #141): the first-ever `/retro` lesson archival created `archive/global-lessons-archive.md`, which the archived-worklog Phase-Summary audit scanned as if it were a Work Log — `test_171` enforces zero such WARNs, briefly reddening main after the release-cut merge; both validators now exclude `global-lessons-archive*` (sh+ps1 parity).
 
 ## [1.8.14] - 2026-07-16
 
