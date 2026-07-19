@@ -76,7 +76,7 @@ cases:
     prompt: >
       Hola, necesito un resumen del estado del proyecto en espanol.
       Por favor responde en espanol solamente.
-    protects: "AGENTS.md §Core Directives"
+    protects: "AGENTS.md §Chat Language Policy"
     expect_substrings: ["espanol", "estado", "proyecto"]
     forbid_substrings: ["I will respond in English", "switching to English"]
     assertions:

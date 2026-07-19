@@ -283,10 +283,6 @@ Agentic OS deploys workflows and skills into downstream projects. Those projects
 3. **Natural language routing**: When AI receives natural language that could map to either an Agentic OS phase or a user-defined command, AI MUST check: "Is the user talking about the Agentic OS governance process, or about their project-specific action?" If ambiguous, ask.
 4. **Governance still applies**: User-defined workflows and skills are not exempt from Agentic OS governance. Phase order, gates, and evidence requirements still apply — but the user's custom logic drives the implementation, not Agentic OS's.
 
-### 9.5 Core Principle
->
-> When intent is unclear, ASK. Never guess. Never proceed.
-
 ## 10. vNext Governance & Classification
 
 ### 10.1 Escalation Rules
@@ -433,4 +429,4 @@ Acceptable answers: revert commit SHA, feature-flag toggle, migration rollback s
   - **T3 named human observer**: name the consumer + record a 1-line unmeasurable-rationale.
 - External citations (standards, research) are supporting metadata on any tier — never a tier by themselves. No feasible tier → do NOT add the rule; prefer deletion.
 - Governance-rule-introducing specs declare `signal_tier:` in frontmatter (`none` when the spec adds no new rule) — an advisory validator WARN checks presence.
-- Existing rules are grandfathered; retrofit opportunistically (use `docs/guides/delete-bias-workflow.md` to prove a rule is load-bearing before deleting it).
+- Per ADR-011, grandfathering has ENDED for the four phase-entry surfaces (AGENTS.md, engineering_guardrails.md, security_guardrails.md, shared-contracts.md): each directive there carries an explicit tier in the enumeration (`docs/reviews/2026-07-19-phase-entry-directive-enumeration.md`), growth capped by `tests/ci/test_directive_count_ratchet.py`. Elsewhere, rules stay grandfathered — retrofit opportunistically via `docs/guides/delete-bias-workflow.md`.

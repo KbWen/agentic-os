@@ -1,0 +1,10 @@
+{
+  "_doc": "Directive-count ratchet baseline (backlog #69 / Strand D, AC-11, docs/specs/directive-enforcement-audit.md). Per-file hard-directive keyword-hit counts for the four phase-entry surfaces, produced by counting `pattern` (tests/ci/test_directive_count_ratchet.py::count_directives) against each file with CRLF/CR normalized to LF first. GROWTH beyond a file's committed count is drift: test_real_surfaces_within_baseline FAILs. Equal or lower always passes — lowering the count is advisory (baseline could be ratcheted down) and requires a deliberate re-run of the counting function to update this file, mirroring the repo's lifecycle-baseline.json / update_lifecycle_baseline.py cap-at-today pattern.",
+  "pattern": "MUST NOT|MUST|NEVER|PROHIBITED|STRICTLY|Gate FAIL",
+  "date": "2026-07-19",
+  "note": "cap-at-today ratchet; lower-only; not a target; keyword rewording can evade - targets drift, not adversaries",
+  "AGENTS.md": 37,
+  ".agent/rules/engineering_guardrails.md": 84,
+  ".agent/rules/security_guardrails.md": 6,
+  ".agent/workflows/shared-contracts.md": 4
+}
