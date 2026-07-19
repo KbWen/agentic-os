@@ -10,7 +10,9 @@
 - Evidence at bootstrap: issue's 2026-06-03 measurement ~90 directives; 2026-07-19 recount 132 keyword hits (38/84/6/4) — grown through v1.8.9→v1.8.14 additive waves.
 - Full phase chain: [/brainstorm →] /spec (ADR) → /plan → /implement → /review → /test → /handoff → /ship. Brainstorm skipped (strands A–E in `_research-rpi-qrspi-corroboration.md` provide the divergence; Drift-logged).
 
-## Phase Summary (full entries)
+## Phase Summary
+
+> Full-length phase entries moved here by /handoff §6 compaction.
 
 - test: PASS — full CI-equiv 656 passed 0 failed (new: 1 adversarial counting-semantics pin test + citation fix, commit 3004d88); AC coverage map recorded in §Test Gate Results; adversarial cases landed as executable tests; validators fail=2 both = expected pre-ship. 5-Gate: scope✓ quality✓ evidence✓ risk✓(rollback=revert branch) communication✓. Next: /handoff (mandatory for feature). | Confidence: 95% — high ⚡ ACX
 - review: PASS (Ready: yes) — fresh-context acx-reviewer (opus, freshness invariant honored: diff+spec+standards only). Burden of Proof: AC-1..AC-11 ✅ PROVEN with self-run evidence (ratchet 7/7, nucleus --check 0, coverage clean, fence 0-line diff, scan_credentials --range clean, baseline==live counts 37/84/6/4), AC-12 ⚠️ PARTIAL (ship-phase gap, by design). 10-row enumeration spot-verify: 0 refuted. Red Team Full: 0 CRIT/HIGH. Findings adjudicated by primary: 1 LOW→no-defect (bootstrap-sanctioned SSoT metadata write), 1 NIT→ship-prep fix (tests/guard/ dir prefix in 3 citations, fixed in 3004d88). Domain Decisions 10/10 tagged. Scope: 13/13 files map to ACs. ⚡ ACX

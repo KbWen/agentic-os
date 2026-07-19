@@ -112,8 +112,10 @@ A "Prototyping Mode" flag that developers could set to bypass rules. Rejected be
 
 Backlog #119 flagged that the §4.4 Design-First gate hard-blocks a solo / tool-less downstream
 adopter from planning UI work. The proposed fix (path A) was a capability-seam escape: an opt-in
-`design_tool` key in `downstream-capabilities.yaml`, plus a prospective ADR-011 superseding this
-Decision. A 5-seat roundtable — its seats including a 第十人 (refute-only) and a 事前驗屍
+`design_tool` key in `downstream-capabilities.yaml`, plus a prospective successor ADR superseding this
+Decision (referred to at the time as "ADR-011" — the next free number, which was NEVER authored for
+this rejected escape; the number was later taken by the unrelated
+`ADR-011-phase-entry-directive-enforcement.md`, accepted 2026-07-19). A 5-seat roundtable — its seats including a 第十人 (refute-only) and a 事前驗屍
 (pre-mortem) — reviewed it on 2026-07-08; all agents were same-vendor, so the human operator was the external signal per the
 `[audit-method]` Global Lesson. Path A was UNANIMOUSLY rejected on three verified grounds:
 
