@@ -243,3 +243,27 @@ def test_enumeration_table_structure() -> None:
                 f"disposition=delete row must cite observability-only in its "
                 f"note column: {row!r}"
             )
+
+
+# --- 7. adversarial counting-semantics pins (documented limitations) ------
+
+
+def test_adversarial_counting_semantics() -> None:
+    """Pin the ratchet's DOCUMENTED limitations (/test Step 4 adversarial
+    cases, red-team Full) so any semantic change to the counting function is
+    a conscious, reviewed edit rather than silent drift. Honest-limitation
+    pins, not aspirations: the ratchet targets drift, not adversaries (AC-11).
+    """
+    # Lowercase evades the case-sensitive pattern (rewording escape hatch).
+    assert count_directives("you must not do this, never ever") == 0
+    # No word boundary: substrings count. The baseline is captured with the
+    # same semantics, so this can only loosen the cap, never false-FAIL it.
+    assert count_directives("MUSTARD") == 1
+    assert count_directives("UNPROHIBITED") == 1
+    # Fenced code is NOT excluded — raw grep-style counting on both sides
+    # (live count and baseline include fenced examples identically).
+    assert count_directives("```\nMUST\n```") == 1
+    # CRLF and LF checkouts count identically across a keyword boundary.
+    assert count_directives("Gate FAIL\r\nMUST") == count_directives(
+        "Gate FAIL\nMUST"
+    )
