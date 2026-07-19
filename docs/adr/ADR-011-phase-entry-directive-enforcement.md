@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-07-19
 classification: architecture-change
 primary_domain: governance
@@ -22,7 +22,7 @@ lifecycle:
 
 ## Status
 
-Proposed (2026-07-19). Accepted at `/ship` of `docs/specs/directive-enforcement-audit.md`
+Accepted (2026-07-19, at `/ship` of `docs/specs/directive-enforcement-audit.md`
 (backlog #69 / issue #176, Strand D).
 
 ## Context

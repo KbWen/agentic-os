@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 title: Phase-Entry Directive Enforcement Audit + Prune
 date: 2026-07-19
 classification: feature
