@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.15] - 2026-07-19
+
+Phase-entry directive honesty: every always-loaded rule now carries a verifiable enforcement tier — or an honest label that it has none.
+
+- **ADR-011 — enforcement-backed phase-entry surfaces (backlog #69, issue #176, PR #352)**: §13 ADD-Gate grandfathering ends for `AGENTS.md`, `engineering_guardrails.md`, `security_guardrails.md`, `shared-contracts.md`. A 112-row semantic census (`docs/reviews/2026-07-19-phase-entry-directive-enumeration.md`, point-in-time) tier-marks every directive — T1=39 (validator/test/hook, cited `file:line`), T2=21 (eval-backed), T3=0, NONE=52 retained under the new honest `keep-honest-unenforced` disposition instead of being deleted or given fabricated observers. **Clean deletions = 0** — the honest census result. Two false gate advertisements removed (§Shared Phase Contracts claimed a "Gate FAIL" no validator implements) and three duplicate directives merged (Runtime v1 #9/#10, guardrails §9.5); AGENTS.md net −200 chars; the ADR-008 safety fence stayed byte-identical. The issue's original "cut below ~85" goal was retired pre-freeze: the instruction-consistency threshold is a **150–200 range** and the max co-loaded set (~102) sits under it — count is a measured outcome, never a target.
+- **Directive-count ratchet** (`tests/ci/test_directive_count_ratchet.py` + committed baseline 37/84/6/4): cap-at-today — CI FAILs only when a phase-entry surface's hard-directive keyword count GROWS past its baseline; lowering is rewarded (baseline ratchets down). Mirrors the 355k token-ceiling pattern on a second axis (token volume ≠ directive density). Adversarial semantics pins document the deliberate limitations (lowercase/substring evasion — it targets drift, not adversaries).
+- **Eval integrity**: `chat-language-drift` protects-tag re-mapped to §Chat Language Policy (made MUST-bearing so the case binds its actual rule) — fixing a live section-granularity mismatch; a latent validator parity divergence (sh prefix vs ps1 exact heading match on archived-log `## Phase Summary`) was caught by CI's parity test, hotfixed, and tracked as backlog #140.
+- No engine, phase-order, or gate behavior change beyond the governance-text merges. Rollback = revert PR #352.
+
 ## [1.8.14] - 2026-07-16
 
 Decision-capture wave: product decisions can no longer silently evaporate at ship.
