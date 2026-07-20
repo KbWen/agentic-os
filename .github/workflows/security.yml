@@ -98,7 +98,7 @@ jobs:
       # On push to main: scans github.event.before..github.sha range.
       # Requires branch protection to block force-pushes (event.before = 0000... edge case).
       - name: Scan for secrets
-        uses: trufflesecurity/trufflehog@00155c9dc586f34d189adc83d3ac2698c2ec551f  # v3.95.8
+        uses: trufflesecurity/trufflehog@27b0417c16317ca9a472a9a8092acce143b49c55  # v3.95.9
         with:
           extra_args: --only-verified
 
