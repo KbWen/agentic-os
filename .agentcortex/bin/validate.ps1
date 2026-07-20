@@ -771,6 +771,11 @@ Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -Missi
 # entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
 # silent no-op until a fork sets document_lifecycle.decision_disposition_since.
 Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
+# ADR-006: advisory archive-growth check (issue #141). WARN-tier / never-FAIL
+# (tool ALWAYS exits 0); counts top-level *.md bodies in the archive dir vs
+# document_lifecycle.archive_max_files. INDEX.jsonl (append-only witness) excluded;
+# body rotation deferred to the lifecycle engine (#140).
+Invoke-PythonCheck -Label 'archive directory growth' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_archive_growth.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),

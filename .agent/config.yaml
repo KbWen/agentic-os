@@ -164,6 +164,14 @@ document_lifecycle:
   # all features from the intake are Shipped or Cancelled.
   raw_intake_cleanup: must_delete
 
+  # Archive directory growth advisory (#141). Count of top-level `*.md` files in
+  # .agentcortex/context/archive/ above which the validators emit a WARN. The
+  # archive accumulates one file per ship/handoff with no rotation; unbounded
+  # growth inflates the read cost of every archive-scanning check. Advisory only
+  # -- WARN, never FAIL. Body rotation/compaction is deferred to the lifecycle
+  # engine (#140); INDEX.jsonl is append-only (witness integrity) and NOT counted.
+  archive_max_files: 50
+
 # Governance Exemption Scope
 # Directories considered production code where Design-First and Error Observability rules apply.
 # All other directories (e.g., tools/, scripts/, scratch/, tests/) are exempt.

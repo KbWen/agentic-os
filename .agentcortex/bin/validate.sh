@@ -641,6 +641,13 @@ run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.ag
 # document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
 run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
 
+# ADR-006: advisory archive-growth check (issue #141) as a Python tool behind
+# run_python_check. WARN-tier / never-FAIL (tool ALWAYS exits 0); counts top-level
+# *.md bodies in .agentcortex/context/archive/ vs document_lifecycle.archive_max_files.
+# INDEX.jsonl (append-only witness) is excluded; body rotation is deferred to the
+# lifecycle engine (#140). No-python -> WARN; tool absent -> SKIP.
+run_python_check "archive directory growth" WARN "$ROOT/.agentcortex/tools/check_archive_growth.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then
