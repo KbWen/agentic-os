@@ -58,6 +58,8 @@ Copy-Item .githooks\pre-commit.guard-ssot.sample .githooks\pre-commit
 git config core.hooksPath .githooks
 ```
 
+> **Note:** `git config core.hooksPath .githooks` makes Git use **only** `.githooks/`. If you already use husky, lefthook, or a `.git/hooks/` setup, this replaces it — integrate the ACX check into your existing hook instead of overwriting.
+
 The hook runs `validate.ps1` from Git Bash on Windows when PowerShell is available, otherwise it runs `validate.sh`. Validator failures block the commit; guarded SSoT receipt warnings remain advisory.
 
 <details>

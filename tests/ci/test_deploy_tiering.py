@@ -936,3 +936,77 @@ def test_deploy_manifest_snapshot(request: pytest.FixtureRequest) -> None:
                 "If this change is intentional, regenerate with --regen-golden.\n"
                 "Diff:\n" + "\n".join(diff_lines)
             )
+
+
+# ---------------------------------------------------------------------------
+# Deploy-end enforcement onboarding (backlog #120,
+# docs/specs/deploy-enforcement-onboarding.md) — surfacing-only.
+# The deploy-end block MUST name the 3 already-shipped on-ramps, show BOTH shell
+# forms for hook activation, carry the hooksPath-clobber caveat, and scope the CI
+# floor honestly. Pinned so the block cannot silently drift from docs/INSTALL.md
+# (README-canary discipline: user-facing text is pinned in a test).
+# ---------------------------------------------------------------------------
+
+_ENFORCE_BLOCK_PINS = (
+    "TURN ON ENFORCEMENT",                               # AC-1 visually-distinct header
+    ".agentcortex/bin/validate.sh",                      # AC-1 run-now self-check
+    "cp .githooks/pre-commit.guard-ssot.sample",         # AC-2 bash activation form
+    "Copy-Item .githooks/pre-commit.guard-ssot.sample",  # AC-2 PowerShell activation form
+    "core.hooksPath replaces any existing hooks",        # AC-3 clobber caveat
+    "REQUIRED status check",                             # AC-1 CI-floor recipe
+    "work logs are gitignored",                          # AC-4 honest CI scope
+)
+
+
+def test_deploy_source_surfaces_enforcement_onramps() -> None:
+    """AC-1..AC-5/AC-7: deploy.sh source pins the enforcement block and drops the
+    old 'optional validation' framing. Fast drift canary (no bash required)."""
+    src = DEPLOY_SH.read_text(encoding="utf-8")
+    for pin in _ENFORCE_BLOCK_PINS:
+        assert pin in src, f"deploy-end enforcement block missing pin: {pin!r}"
+    assert "Validate the installation (optional" not in src, (
+        "deploy-end still frames validate.sh as optional (AC-5 reframe regressed)"
+    )
+    # AC-4 honesty: validate.sh does NOT scan secrets (that is the pre-commit
+    # hook's job) and security.yml is not deployed downstream — the block must
+    # not attribute secret scanning to validate.sh / CI.
+    assert "secret scanning in CI" not in src, (
+        "CI-floor over-promises secret scanning from validate.sh (AC-4)"
+    )
+    assert "credential checks work on this repo" not in src, (
+        "self-check step mis-attributes credential scanning to validate.sh (AC-4)"
+    )
+    assert "secret scanning stays in the hook" in src, (
+        "block must attribute secret scanning to the pre-commit hook (AC-4 honesty)"
+    )
+
+
+def test_enforcement_clobber_caveat_is_consistent_across_surfaces() -> None:
+    """AC-8: the hooksPath-clobber caveat is present on every activation surface
+    (deploy block asserted above + INSTALL.md + hook sample header), so none
+    prints the bare command while another warns."""
+    install = INSTALL.read_text(encoding="utf-8")
+    sample = (ROOT / ".githooks" / "pre-commit.guard-ssot.sample").read_text(
+        encoding="utf-8"
+    )
+    assert "core.hooksPath" in install and "replaces it" in install, (
+        "INSTALL.md missing the hooksPath-clobber caveat (AC-8)"
+    )
+    assert "core.hooksPath makes Git use ONLY" in sample, (
+        "hook sample header missing the hooksPath-clobber caveat (AC-8)"
+    )
+
+
+@requires_bash
+def test_deploy_stdout_renders_enforcement_block() -> None:
+    """AC-1: a real deploy actually prints the enforcement block (proves the
+    source pins reach stdout, not just the file)."""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        target.mkdir()
+        result = _deploy(target)
+        assert result.returncode == 0, f"deploy failed:\n{result.stderr}"
+        assert "TURN ON ENFORCEMENT" in result.stdout
+        assert "Copy-Item .githooks/pre-commit.guard-ssot.sample" in result.stdout
+        assert "work logs are gitignored" in result.stdout
+        assert "Validate the installation (optional" not in result.stdout

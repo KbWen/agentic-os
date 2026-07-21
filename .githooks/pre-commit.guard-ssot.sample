@@ -7,6 +7,8 @@
 #          update, re-run the INSTALL copy to pick up hook improvements (e.g. the
 #          no-python credential floor). The floor/scanner scripts themselves force-update.
 #
+# NOTE: core.hooksPath makes Git use ONLY .githooks/. If you already use husky/
+#       lefthook/.git/hooks, this replaces them — integrate, do not overwrite.
 # Validator failures block commits. Guarded SSoT receipt checks remain advisory.
 
 set -u
