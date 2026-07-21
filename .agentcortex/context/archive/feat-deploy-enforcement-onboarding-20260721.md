@@ -115,19 +115,25 @@ Backlog #120 (P1, conversion wedge): a default install ends with ZERO active mac
 ### D-1: Ship Option A — print-only deploy-end enforcement surfacing
 - **Decision**: #120 ships as a print-only reframe of the deploy-end output (deploy.sh tail ~L1457–1479), surfacing the 3 already-shipped on-ramps — (1) run-now `validate.sh` self-check, (2) pre-commit hook activation, (3) a CI-floor recipe — plus a "paste to your AI" escape hatch. NO new flag, NO written CI file, NO interactive prompt.
 - **Reason**: Unanimous roundtable + external evidence. The comparable-tool category converged on prominent copy-paste activation, NOT magic install: husky v9 REMOVED auto-install (maintainer post-mortem: auto-install hides the confirmation new devs rely on); pre-commit.com requires explicit `pre-commit install` (its famous footgun = agentic-os's exact disease); lefthook/semantic-release default manual/print-degrade. All 3 primitives already ship downstream → #120's gap is surfacing (= `echo`). deploy.ps1 execs deploy.sh → cross-platform for free; no stdout golden test exists → zero required test churn.
-- **Alternatives rejected**: B (`--with-hooks` flag) — a flag only fires if the adopter already knew it exists, so it serves the already-converted and does nothing for the discovered-not-converting cohort (can't fix an awareness gap); + full 3-file ps1 parity tax. C (hybrid) — inherits B's tax for a convenience the copy-paste line already delivers. D (write `.github/workflows/*.yml`) — ADR-005 imposition (core-tier clobbers an adopter's existing CI; scaffold-tier dead-sidecars to `.acx-incoming` so the floor never activates → defeats the goal), reddens the manifest golden, crosses surfacing→mechanism.
+- **Alternatives rejected**: B (`--with-hooks` flag) — a flag only fires if the adopter already knew it exists, so it serves the already-converted and does nothing for the discovered-not-converting cohort (can't fix an awareness gap); + full 3-file ps1 parity tax. C (hybrid) — inherits B's tax for a convenience the copy-paste line already delivers. D (write `.github/workflows/*.yml`) — preservation-tiering imposition (core-tier clobbers an adopter's existing CI; scaffold-tier dead-sidecars to `.acx-incoming` so the floor never activates → defeats the goal), reddens the manifest golden, crosses surfacing→mechanism.
 - **Impact**: adopter sees enforcement activation as the deploy headline instead of today's "Validate the installation (optional)"; conversion lever added at zero new mechanism / zero parity / zero governance weight.
+
+-> local
 
 ### D-2: Right-size the block (~15–18 lines), reframe not append
 - **Decision**: block sits between the minimalism 4-liner and the conversion ~30-liner: a cost-of-nothing header + 3 inline-actionable ramps (one short why each) + the AI-paste escape hatch; it REPLACES the weak "Next steps → validate (optional)" framing rather than adding a parallel block; existing git-add / run-/bootstrap / docs lines are folded in, not duplicated.
 - **Reason**: 4 lines drops the skimmer-catching cost-of-nothing framing + the AI-lever (both give print teeth per the husky evidence); the ~30-line version is terminal-noise. Reframe (not append) because the current "validate optional" line IS the defect #120 names. CI ramp prints a described recipe, NOT a full YAML block or an error-prone `gh api` incantation.
 - **Impact**: honest, scannable, ~15–18 lines; single edit point.
 
+-> local
+
 ### D-3: De-risk mechanisms are FOLLOW-ON, not bundled (scope discipline)
 - **Decision**: the conversion seat's higher-leverage de-risks — (a) wire `/bootstrap` to detect `git config core.hooksPath != .githooks` and offer activation, (b) make `validate.sh` self-advertise the hook nudge when inactive — are explicitly OUT of #120 scope, flagged as a separate follow-on candidate.
 - **Reason**: both ADD mechanism/behavior (bootstrap detection logic; validate output logic) → collide with the "don't make governance heavier / don't make the AI dumber" north-star; (a) is an honor-system bootstrap instruction (the [enforcement] Global Lesson class — a should/MUST with no machine backing = theatre + permanent token cost on an always-loaded surface). The "paste to your AI" print line already captures most of the AI-lever value at zero mechanism.
 - **Alternatives**: bundle them (rejected — scope creep + mechanism weight); drop entirely (rejected — real levers worth their own enforce-vs-honest evaluation).
 - **Impact**: #120 remains light; de-risk deferred to a separate backlog candidate.
+
+-> local
 
 ### D-4: 第十人 adjudication + user scope ruling (2026-07-21) — FINAL locked design
 - **Verified defects adopted** (folded into spec AC): #1 bash+PowerShell activation forms (INSTALL.md:48-59 precedent), #2 hooksPath-clobber caveat, #5 honest CI-floor wording (downstream CI can't read gitignored work logs), #6 +1 substring test pinning the block.
@@ -138,6 +144,8 @@ Backlog #120 (P1, conversion wedge): a default install ends with ZERO active mac
 - **Classification stays `feature`**: user-facing default deploy-output change + spec written + /handoff will run. Process rigor kept; product kept light (per user north-star — the two are compatible).
 
 ---
+
+-> local
 
 ## Conflict Resolution
 
