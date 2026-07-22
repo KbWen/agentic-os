@@ -93,7 +93,7 @@ Before executing any implementation step, AI MUST internally assess and state:
 
 **Narrative vs structured receipt**: "Silent above 90%" means no free-text narrative or chat prose. It does NOT mean silent in structured phase outputs — `/plan`, `/implement`, and `/ship` compact blocks MUST always include a `Confidence:` field (e.g., `Confidence: 95% — high`) so the gate is auditable in the Work Log. This keeps chat output terse while making the gate traceable.
 
-### §4.5 Anti-Rationalization Rule
+### 4.5 Anti-Rationalization Rule
 
 Before emitting any verdict (phase pass/fail, classification, completion claim), the agent MUST form conclusions from evidence first — not construct evidence to support a pre-formed conclusion. Operationally: every PASS verdict requires a traceable evidence citation (`file:line`, test name, or tool output) **written to the Work Log before the verdict appears in the same response**. A narrative argument with no concrete citation is a rationalization, not evidence. If no citation can be written to the Work Log first, the verdict MUST be `UNPROVEN` until evidence is recorded.
 

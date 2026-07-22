@@ -103,6 +103,29 @@ def _normalize_anchor(anchor: str) -> str:
     return re.sub(r"\s+", " ", anchor.strip().lower())
 
 
+def _protects_matches_rule(norm_protects: str, norm_rule: str) -> bool:
+    """Return True iff a case's normalized `protects:` tag resolves to this
+    rule anchor: exact match, or an explicit sub-anchor reference where the
+    protects tag extends the full rule anchor with a "/<item>" suffix (e.g. a
+    single heading like "AGENTS.md §Core Directives" carries several
+    MUST-bearing bullets, each citable as
+    "AGENTS.md §Core Directives/No Bypass Rule").
+
+    This replaces a prior bidirectional substring test (`a in b or b in a`),
+    which could mis-attribute a case to an unrelated longer/shorter sibling
+    anchor whenever one anchor's text happened to contain another's as a
+    substring — e.g. a protects tag for a heading named "Alpha" would also
+    match a sibling heading "Alpha Extended" merely because "Alpha" is a
+    literal prefix of "Alpha Extended". Requiring either an exact match or an
+    explicit "/" delimiter immediately after the full rule text keeps the one
+    legitimate abbreviation pattern in use (sub-bullet citation) while
+    rejecting accidental/naked substring collisions.
+    """
+    if norm_protects == norm_rule:
+        return True
+    return norm_protects.startswith(norm_rule + "/")
+
+
 # ---------------------------------------------------------------------------
 # Case scoring
 # ---------------------------------------------------------------------------
@@ -230,11 +253,7 @@ def _run_coverage(cases: list[dict[str, Any]], gov_files: list[Path]) -> int:
             continue
         norm_protects = _normalize_anchor(protects)
         for rule in inventory:
-            if _normalize_anchor(rule) == norm_protects:
-                counts[rule] += 1
-                break
-            # Partial match: the protects tag may embed a longer anchor
-            if norm_protects in _normalize_anchor(rule) or _normalize_anchor(rule) in norm_protects:
+            if _protects_matches_rule(norm_protects, _normalize_anchor(rule)):
                 counts[rule] += 1
                 break
 
