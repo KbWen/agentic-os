@@ -1758,3 +1758,206 @@ def test_f7_f9_source_parity_messages() -> None:
     for token in ("missing/unparseable Timestamp", "differs from header Classification"):
         assert token in sh, f"validate.sh missing token: {token!r}"
         assert token in ps1, f"validate.ps1 missing token: {token!r}"
+
+
+# ---------------------------------------------------------------------------
+# (#113) Reduced-assurance top-line labeling on a no-Python host.
+#
+# The bug: when python-dependent checks are skipped (--no-python) or degraded
+# (python unavailable), both validators used to print an UNQUALIFIED top-line
+# "Agentic OS integrity check passed" as long as FAIL==0 — even though the
+# gate-progression ordering/completeness check (the strongest work-log gate) did
+# NOT run on validate.sh. A feature Work Log that claims completion (ship PASS
+# receipt) but skips review/test/handoff therefore produced a clean top-line
+# pass; the only tell was the SKIP-count jump.
+#
+# The fix (labeling, NOT a new gate — exit code unchanged): when the run ends
+# FAIL==0 AND python was off, the top-line surfaces "reduced assurance". The
+# unqualified line remains ONLY for full-assurance runs. Byte-parallel in both
+# validators.
+#
+# Honest cross-platform note documented by test (c): validate.ps1's gate-
+# progression parser is NATIVE (runs without Python), so on the same malformed
+# corpus ps1 FAILs where sh can only SKIP+label. ps1 is STRONGER here; this is
+# the honest statement, not a bug to erase (equalization is out of scope — see
+# backlog #113 scope note / #136 / #140).
+# ---------------------------------------------------------------------------
+
+REDUCED_ASSURANCE_LINE = (
+    "Agentic OS integrity check passed (reduced assurance: python-dependent checks skipped)"
+)
+UNQUALIFIED_PASS_LINE = "Agentic OS integrity check passed"
+
+# A Resume block carrying the three ### sub-headings validate.sh enforces, so the
+# corpus/clean fixtures never trip an unrelated Resume WARN.
+_FIXTURE_RESUME = (
+    "- State: SHIPPED\n"
+    "- Completed: fixture\n"
+    "- Next: none\n"
+    "- Context: fixture\n\n"
+    "### Read Map (for next agent)\n- fixture.md -> full\n\n"
+    "### Skip List\n- none\n\n"
+    "### Context Snapshot (<= 200 tokens)\nfixture"
+)
+
+
+def _run_validate_no_python(cwd: Path) -> str:
+    proc = subprocess.run(
+        [bash, str(cwd / ".agentcortex" / "bin" / "validate.sh"), "--no-python"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(cwd),
+    )
+    return proc.stdout + proc.stderr
+
+
+def _run_validate_ps1_no_python(cwd: Path) -> str:
+    proc = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+         str(cwd / ".agentcortex" / "bin" / "validate.ps1"), "-NoPython"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(cwd),
+    )
+    return proc.stdout + proc.stderr
+
+
+def _write_shipped_feature_missing_middle_phases(target: Path) -> None:
+    """The #113 malformed corpus: a feature-tier Work Log that claims completion
+    (ship PASS receipt) but skips review/test/handoff. Deterministic — only the
+    middle gate receipts are absent; every other required section is well-formed.
+    Full Python FAILs it (incomplete gate receipts); the bash --no-python fallback
+    (M9) only catches ship-without-plan/implement, so it can only SKIP the check."""
+    _write_worklog(
+        target,
+        "feature-shipped-missing-middle.md",
+        classification="feature",
+        phase="ship",
+        gates=("bootstrap", "plan", "implement", "ship"),
+        resume=_FIXTURE_RESUME,
+    )
+
+
+def _write_clean_shipped_quickwin(target: Path) -> None:
+    """A fully well-formed quick-win Work Log (bootstrap/plan/implement/ship — the
+    quick-win required set is exactly {bootstrap,plan,implement}, and implement->ship
+    is a legal quick-win transition). Passes under full Python with FAIL==0."""
+    _write_worklog(
+        target,
+        "clean-quickwin-shipped.md",
+        classification="quick-win",
+        phase="ship",
+        gates=("bootstrap", "plan", "implement", "ship"),
+        resume=_FIXTURE_RESUME,
+    )
+
+
+def test_113_reduced_assurance_marker_parity() -> None:
+    """(#113) Structural (fast, no subprocess): both validators carry the issue
+    marker and the byte-identical reduced-assurance top-line label."""
+    sh = VALIDATE_SH.read_text(encoding="utf-8")
+    ps1 = VALIDATE_PS1.read_text(encoding="utf-8")
+    for token in ("(#113)", REDUCED_ASSURANCE_LINE):
+        assert token in sh, f"validate.sh missing {token!r}"
+        assert token in ps1, f"validate.ps1 missing {token!r} (parity)"
+
+
+@pytest.mark.slow
+@requires_bash
+def test_113_no_python_corpus_reduced_assurance_not_unqualified_sh() -> None:
+    """(a) On the #113 corpus, validate.sh --no-python must surface reduced
+    assurance and must NOT print the bare unqualified pass line. This is the RED
+    test pre-fix (today emits the bare line) → GREEN post-fix."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_shipped_feature_missing_middle_phases(target)
+        out = _run_validate_no_python(target)
+        lines = [ln.strip() for ln in out.splitlines()]
+        assert REDUCED_ASSURANCE_LINE in lines, (
+            "validate.sh --no-python must print the reduced-assurance qualifier "
+            f"(python-dependent gate-progression check was skipped):\n{out[-1000:]}"
+        )
+        assert UNQUALIFIED_PASS_LINE not in lines, (
+            "validate.sh --no-python must NOT print the bare unqualified pass line "
+            f"— that is the #113 defect:\n{out[-1000:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_113_full_python_clean_top_line_unqualified_sh() -> None:
+    """(b) Full-Python on a clean fixture keeps the byte-identical UNQUALIFIED
+    pass line — the label is reduced-assurance-only, never a blanket suffix."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_clean_shipped_quickwin(target)
+        out = _run_validate(target)
+        if "python unavailable" in out or "python checks disabled" in out:
+            pytest.skip("python unavailable in this env — full-assurance path untestable")
+        lines = [ln.strip() for ln in out.splitlines()]
+        assert UNQUALIFIED_PASS_LINE in lines, (
+            f"full-Python clean run must print the unqualified pass line:\n{out[-1000:]}"
+        )
+        assert "reduced assurance" not in out, (
+            f"full-Python run must NOT carry the reduced-assurance label:\n{out[-1000:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_bash
+def test_113_corpus_fails_under_full_python_sh() -> None:
+    """Asymmetry proof: the same corpus that validate.sh --no-python only SKIPs is
+    a real FAIL under full Python (incomplete gate receipts). Guards the corpus's
+    malformed-ness so the #113 demonstration cannot silently rot into a valid log."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_shipped_feature_missing_middle_phases(target)
+        out = _run_validate(target)
+        if "python unavailable" in out or "python checks disabled" in out:
+            pytest.skip("python unavailable in this env — full-assurance path untestable")
+        assert "Agentic OS integrity check failed" in out, (
+            f"full-Python must FAIL the ship-without-review/test/handoff corpus:\n{out[-1000:]}"
+        )
+        assert ("incomplete gate receipts" in out or ILLEGAL_PROGRESSION_MARK in out), (
+            f"the FAIL must name the missing middle phases:\n{out[-1000:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_powershell
+def test_113_no_python_clean_reduced_assurance_ps1() -> None:
+    """(c-parity) On a CLEAN log, validate.ps1 -NoPython surfaces the same
+    reduced-assurance top-line as validate.sh — python-only checks (spec drift,
+    eval coverage, token lifecycle) did not run even though ps1's gate parser is
+    native. Byte-identical label."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_clean_shipped_quickwin(target)
+        out = _run_validate_ps1_no_python(target)
+        lines = [ln.strip() for ln in out.splitlines()]
+        assert REDUCED_ASSURANCE_LINE in lines, (
+            f"validate.ps1 -NoPython must print the reduced-assurance qualifier:\n{out[-1000:]}"
+        )
+        assert UNQUALIFIED_PASS_LINE not in lines, (
+            f"validate.ps1 -NoPython clean run must not print the bare line:\n{out[-1000:]}"
+        )
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_powershell
+def test_113_no_python_corpus_ps1_is_stronger_fails() -> None:
+    """(c) On the SAME #113 corpus, validate.ps1 -NoPython FAILs where validate.sh
+    can only SKIP — ps1's gate-progression parser is native and still runs. This
+    documents ps1 as STRONGER on a no-Python host (the honest cross-platform
+    statement); full sh<->ps1 verdict equalization is out of scope for #113."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_shipped_feature_missing_middle_phases(target)
+        out = _run_validate_ps1_no_python(target)
+        assert "Agentic OS integrity check failed" in out, (
+            "validate.ps1 -NoPython must FAIL the ship-without-review/test/handoff "
+            f"corpus (native parser runs without Python):\n{out[-1000:]}"
+        )
+        assert "incomplete gate receipts" in out, (
+            f"the ps1 FAIL must name the incomplete gate receipts:\n{out[-1000:]}"
+        )

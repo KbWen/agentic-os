@@ -2745,4 +2745,14 @@ if ($script:FailCount -gt 0) {
     exit 1
 }
 
-Write-Output 'Agentic OS integrity check passed'
+# (#113) Reduced-assurance labeling (byte-parallel with validate.sh).
+# $script:PythonCommand is $null under -NoPython or when python is unavailable.
+# validate.ps1's gate-progression parser is native and still runs here, but the
+# python-only checks (spec-drift lint, eval coverage, token lifecycle, ...) did
+# NOT — so a FAIL==0 run is still reduced-assurance and the top-line must say so.
+# Labeling only — exit stays 0 (not a new gate).
+if (-not $script:PythonCommand) {
+    Write-Output 'Agentic OS integrity check passed (reduced assurance: python-dependent checks skipped)'
+} else {
+    Write-Output 'Agentic OS integrity check passed'
+}

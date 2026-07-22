@@ -2907,4 +2907,15 @@ if [[ "$FAIL_COUNT" -gt 0 ]]; then
   exit 1
 fi
 
-echo "Agentic OS integrity check passed"
+# (#113) Reduced-assurance labeling. PYTHON_BIN is empty in exactly two states:
+# the --no-python flag, or python genuinely unavailable. In both, python-dependent
+# checks did not run — most importantly the gate-progression ordering/completeness
+# check degrades to a SKIP here (the native bash M9 fallback only catches a ship
+# receipt missing plan/implement, NOT one missing review/test/handoff). A clean
+# FAIL==0 run in that state has NOT verified those gates, so the top-line MUST NOT
+# claim an unqualified pass. Labeling only — exit stays 0 (not a new gate).
+if [[ -z "${PYTHON_BIN:-}" ]]; then
+  echo "Agentic OS integrity check passed (reduced assurance: python-dependent checks skipped)"
+else
+  echo "Agentic OS integrity check passed"
+fi
