@@ -202,9 +202,29 @@ $script:SkipCount = 0
 if ($NoPython) {
     $script:PythonCommand = $null
 } else {
-    $script:PythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
-    if (-not $script:PythonCommand) {
-        $script:PythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    # Python discovery by STARTABILITY, not mere existence (#144). Get-Command
+    # finds the stock-Windows %LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe App
+    # Execution Alias stub even with no Python installed; invoked with args it
+    # prints "Python was not found" and exits 9009 (no Store UI when given args),
+    # so an existence-only pick would shadow a working `python`. Probe each
+    # candidate (python3 then python) with a silent `-c "import sys"` and select
+    # only the first that starts and exits 0. -NoPython short-circuits above;
+    # neither candidate startable leaves $PythonCommand $null (behavior unchanged).
+    $script:PythonCommand = $null
+    foreach ($_pyCandidate in @('python3', 'python')) {
+        $_pyCmd = Get-Command $_pyCandidate -ErrorAction SilentlyContinue
+        if (-not $_pyCmd) { continue }
+        $_pyStartable = $false
+        try {
+            & $_pyCmd.Source '-c' 'import sys' *> $null
+            $_pyStartable = ($LASTEXITCODE -eq 0)
+        } catch {
+            $_pyStartable = $false
+        }
+        if ($_pyStartable) {
+            $script:PythonCommand = $_pyCmd
+            break
+        }
     }
 }
 
