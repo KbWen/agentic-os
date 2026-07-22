@@ -872,5 +872,40 @@ class TestTranscriptDirIntegration(unittest.TestCase):
             self.assertIn(field, data["summary"])
 
 
+class TestProtectsMatchesRuleUnit(unittest.TestCase):
+    """Direct unit pins on the production `_protects_matches_rule` helper
+    (2026-07-22 post-ship review follow-up): the class-level tests above
+    exercise it end-to-end via `_run_coverage`; these pin the helper's
+    contract at the unit level, including the malformed empty-suffix
+    citation (`<anchor>/` with nothing after the delimiter), which must NOT
+    count as coverage."""
+
+    def _helper(self):
+        sys.path.insert(0, str(TOOLS))
+        import run_governance_eval as rge
+
+        return rge._protects_matches_rule
+
+    def test_exact_match_resolves(self) -> None:
+        f = self._helper()
+        self.assertTrue(f("agents.md §core directives", "agents.md §core directives"))
+
+    def test_explicit_subitem_resolves(self) -> None:
+        f = self._helper()
+        self.assertTrue(f("agents.md §core directives/no bypass rule", "agents.md §core directives"))
+
+    def test_naked_prefix_rejected(self) -> None:
+        f = self._helper()
+        self.assertFalse(f("agents.md §core direct", "agents.md §core directives"))
+
+    def test_longer_sibling_not_matched_by_short_tag(self) -> None:
+        f = self._helper()
+        self.assertFalse(f("agents.md §alpha", "agents.md §alpha extended"))
+
+    def test_empty_slash_suffix_rejected_as_malformed(self) -> None:
+        f = self._helper()
+        self.assertFalse(f("agents.md §core directives/", "agents.md §core directives"))
+
+
 if __name__ == "__main__":
     unittest.main()

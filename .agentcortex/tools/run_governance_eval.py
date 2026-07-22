@@ -123,7 +123,10 @@ def _protects_matches_rule(norm_protects: str, norm_rule: str) -> bool:
     """
     if norm_protects == norm_rule:
         return True
-    return norm_protects.startswith(norm_rule + "/")
+    # The "/" delimiter must introduce a NON-EMPTY sub-item: a bare trailing
+    # "<anchor>/" is a malformed citation, not a sub-bullet reference, and
+    # must not count as coverage.
+    return norm_protects.startswith(norm_rule + "/") and len(norm_protects) > len(norm_rule) + 1
 
 
 # ---------------------------------------------------------------------------
