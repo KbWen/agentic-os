@@ -268,14 +268,28 @@ required_dirs=(
   "$ROOT/.agent/skills"
 )
 
+# Python discovery by STARTABILITY, not mere existence (#144). On stock Windows,
+# %LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe is an App Execution Alias stub
+# that EXISTS on PATH even with no Python installed; invoked with args it prints
+# "Python was not found" and exits 9009 (it does NOT open the Store UI when given
+# args). An existence-only check would select that broken stub and shadow a
+# working `python`, so every python-backed check would spuriously fail. Probe
+# each candidate (python3 then python) with a silent `-c "import sys"` and select
+# only the first that starts and exits 0. --no-python short-circuits before any
+# probe; neither candidate startable leaves PYTHON_BIN empty (SKIP/WARN/reduced-
+# assurance behavior unchanged).
 if [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
   PYTHON_BIN=
-elif command -v python3 >/dev/null 2>&1; then
-  PYTHON_BIN=python3
-elif command -v python >/dev/null 2>&1; then
-  PYTHON_BIN=python
 else
   PYTHON_BIN=
+  for _py_candidate in python3 python; do
+    if command -v "$_py_candidate" >/dev/null 2>&1 \
+      && "$_py_candidate" -c "import sys" >/dev/null 2>&1; then
+      PYTHON_BIN="$_py_candidate"
+      break
+    fi
+  done
+  unset _py_candidate
 fi
 
 if [[ "$LIST_CHECKS_ONLY" -eq 1 ]]; then
