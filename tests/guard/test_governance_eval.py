@@ -7,7 +7,9 @@ Run: python -m pytest tests/guard/test_governance_eval.py -q
 
 from __future__ import annotations
 
+import contextlib
 import importlib
+import io
 import json
 import subprocess
 import sys
@@ -526,6 +528,121 @@ class TestCoverageZeroDetection(unittest.TestCase):
                 self.assertEqual(zero_count, total)
         finally:
             Path(tf_path).unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Backlog #107: coverage-matching precision (exact-or-explicit-prefix)
+# ---------------------------------------------------------------------------
+
+class TestCoverageMatchPrecision(unittest.TestCase):
+    """`_run_coverage`'s protects-to-anchor matcher must be exact-or-explicit-
+    prefix, not a bidirectional substring test. A bidirectional substring test
+    can mis-attribute a case to an unrelated longer/shorter sibling anchor
+    whenever one anchor's text happens to contain another's as a substring
+    (backlog #107, docs/specs/_product-backlog.md row 107)."""
+
+    def _write_synthetic_gov(self, tdir: str, body: str) -> Path:
+        p = Path(tdir) / "synthetic_gov.md"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def _run_coverage_capture(self, cases: list[dict[str, Any]], gov_files: list[Path]) -> str:
+        sys.path.insert(0, str(TOOLS))
+        import run_governance_eval as rge
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rge._run_coverage(cases, gov_files)
+        return buf.getvalue()
+
+    def test_short_protects_is_not_mis_attributed_to_longer_sibling_anchor(self) -> None:
+        """A case protecting the short 'Alpha' heading must count Alpha —
+        never the unrelated longer 'Alpha Extended' sibling whose anchor text
+        happens to start with 'Alpha'. 'Alpha Extended' is ordered FIRST in
+        the synthetic file so a bidirectional-substring matcher would wrongly
+        absorb the case via `break` before ever reaching the true exact
+        match."""
+        with tempfile.TemporaryDirectory() as tdir:
+            gov = self._write_synthetic_gov(
+                tdir,
+                "## Alpha Extended\n\nAgents MUST do the extended thing.\n\n"
+                "## Alpha\n\nAgents MUST do the alpha thing.\n",
+            )
+            cases = [{"id": "c1", "prompt": "p", "protects": "synthetic_gov.md §Alpha",
+                      "expect_substrings": ["x"]}]
+            out = self._run_coverage_capture(cases, [gov])
+
+        self.assertIn("Rule inventory: 2 MUST-bearing section(s)", out)
+        self.assertIn("Zero-coverage rules: 1", out)
+        self.assertIn("synthetic_gov.md §Alpha Extended", out)
+        zero_section = out.split("Rules with zero guarding cases:", 1)[1]
+        self.assertNotIn("synthetic_gov.md §Alpha\n", zero_section)
+
+    def test_no_delimiter_naked_prefix_no_longer_matches(self) -> None:
+        """A truncated/typo'd protects tag that happens to be a naked prefix
+        of a real anchor (no explicit '/' sub-anchor delimiter) must NOT
+        match — only exact or explicit '<anchor>/<item>' resolves."""
+        with tempfile.TemporaryDirectory() as tdir:
+            gov = self._write_synthetic_gov(
+                tdir, "## Core Directives\n\nAgents MUST do many things here.\n"
+            )
+            cases = [{"id": "c1", "prompt": "p", "protects": "synthetic_gov.md §Core Direct",
+                      "expect_substrings": ["x"]}]
+            out = self._run_coverage_capture(cases, [gov])
+
+        self.assertIn("Zero-coverage rules: 1", out)
+        self.assertIn("synthetic_gov.md §Core Directives", out)
+
+    def test_explicit_subanchor_delimiter_still_resolves_to_parent(self) -> None:
+        """The one real usage pattern in governance.yaml — citing a specific
+        bullet inside a heading as '<anchor>/<bullet>' — must still count
+        towards the parent anchor exactly once."""
+        with tempfile.TemporaryDirectory() as tdir:
+            gov = self._write_synthetic_gov(
+                tdir, "## Core Directives\n\nAgents MUST do many things here.\n"
+            )
+            cases = [{"id": "c1", "prompt": "p",
+                      "protects": "synthetic_gov.md §Core Directives/No Bypass Rule",
+                      "expect_substrings": ["x"]}]
+            out = self._run_coverage_capture(cases, [gov])
+
+        self.assertIn("Zero-coverage rules: 0", out)
+
+    def test_real_anti_rationalization_anchor_has_single_section_sign(self) -> None:
+        """The real engineering_guardrails.md heading must no longer emit a
+        doubled '§§4.5' anchor — the literal '§' character in the source
+        heading text was the root cause of backlog #107's special case."""
+        sys.path.insert(0, str(TOOLS))
+        import run_governance_eval as rge
+
+        inventory = rge._extract_rule_inventory(GOVERNANCE_FILES)
+        matches = [r for r in inventory if "Anti-Rationalization" in r]
+        self.assertEqual(len(matches), 1, matches)
+        self.assertEqual(matches[0], "engineering_guardrails.md §4.5 Anti-Rationalization Rule")
+        self.assertNotIn("§§", matches[0])
+
+    def test_real_anti_rationalization_rule_is_not_zero_coverage(self) -> None:
+        """The one rule this backlog item's guarding case protects
+        (engineering_guardrails.md §4.5 Anti-Rationalization Rule) must not
+        appear in the real repo's zero-coverage list — i.e. the heading
+        normalization (single '§') and the case's updated `protects:` tag
+        resolve to each other correctly together.
+
+        NOTE (verified, out of scope for this fix): the real repo currently
+        has ~28 OTHER zero-coverage MUST-bearing sections, identically
+        present on unmodified `main` (confirmed by running `--coverage`
+        before and after this change and diffing byte-for-byte identical
+        output) — new headings added across several later ships were never
+        paired with a guarding eval case. That pre-existing gap is unrelated
+        to backlog #107 (a matching-precision bug) and is not asserted here;
+        asserting a repo-wide "zero zero-coverage rules" invariant would be
+        false on `main` today, independent of this PR.
+        """
+        result = _run_runner("--coverage")
+        self.assertEqual(result.returncode, 0)
+        parts = result.stdout.split("Rules with zero guarding cases:", 1)
+        if len(parts) > 1:
+            self.assertNotIn("Anti-Rationalization", parts[1])
 
 
 # ---------------------------------------------------------------------------
