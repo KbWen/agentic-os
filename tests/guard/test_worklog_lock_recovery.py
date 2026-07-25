@@ -196,6 +196,8 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
             self.assertEqual(cli.returncode, 2)
@@ -224,6 +226,8 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
             self.assertEqual(first.returncode, 0)
@@ -247,6 +251,8 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
 
@@ -278,6 +284,8 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
             self.assertEqual(first.returncode, 0)
@@ -301,6 +309,8 @@ class TestWorklogLockRecovery(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
             )
 

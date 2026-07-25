@@ -36,6 +36,8 @@ def _run(root: Path) -> tuple[int, str]:
     proc = subprocess.run(
         [sys.executable, str(TOOL), "--root", str(root)],
         capture_output=True, text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     return proc.returncode, proc.stdout + proc.stderr
 

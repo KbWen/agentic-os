@@ -58,6 +58,8 @@ def run(tool: Path, *args: str, cwd: Path | None = None) -> subprocess.Completed
         cwd=str(cwd) if cwd else None,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
 

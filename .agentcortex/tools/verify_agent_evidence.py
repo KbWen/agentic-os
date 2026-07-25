@@ -211,6 +211,8 @@ def changed_files(root: Path, base_sha: str, head_sha: str) -> list[str]:
         cwd=root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=False,
     )
     if result.returncode != 0:
@@ -385,7 +387,7 @@ def rerun_evidence(root: Path, entry: EvidenceEntry) -> tuple[str, bool]:
     if expected is None:
         return f"UNVERIFIED: result marker for `{command}` is narrative-only.", False
     try:
-        result = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False)
+        result = subprocess.run(argv, cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
     except OSError as exc:
         return f"UNVERIFIED: could not execute `{command}` ({exc}).", False
     actual = result.returncode == 0

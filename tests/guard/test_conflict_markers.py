@@ -83,7 +83,7 @@ class ConflictMarkerDetection(unittest.TestCase):
         env.setdefault("GIT_COMMITTER_NAME", "t")
         env.setdefault("GIT_COMMITTER_EMAIL", "t@t")
         return subprocess.run(
-            ["git", *args], cwd=cwd, capture_output=True, text=True, env=env
+            ["git", *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env
         )
 
     def _grep(self, root: Path) -> subprocess.CompletedProcess:
@@ -92,6 +92,8 @@ class ConflictMarkerDetection(unittest.TestCase):
         return subprocess.run(
             ["git", "grep", "-I", "-n", "-E", MARKER_PATTERN, "--", "."],
             cwd=root, capture_output=True, text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
     def _init_repo(self, root: Path) -> None:

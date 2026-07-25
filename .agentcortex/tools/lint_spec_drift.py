@@ -112,7 +112,7 @@ def changed_files(root: Path, base: str | None = None, head: str | None = None) 
         args = ["git", "diff", "--name-only", base]
     else:
         args = ["git", "diff", "--name-only", "HEAD"]
-    result = subprocess.run(args, cwd=root, capture_output=True, text=True, check=False)
+    result = subprocess.run(args, cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or "git diff failed")
     files = {line.strip() for line in result.stdout.splitlines() if line.strip()}
@@ -122,6 +122,8 @@ def changed_files(root: Path, base: str | None = None, head: str | None = None) 
             cwd=root,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=False,
         )
         if untracked.returncode != 0:

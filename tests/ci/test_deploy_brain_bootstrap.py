@@ -96,6 +96,8 @@ def _cache_origin(project: Path) -> str:
     out = subprocess.run(
         ["git", "-C", str(project / ".agentcortex-src"), "remote", "get-url", "origin"],
         capture_output=True, text=True, check=True,
+        encoding="utf-8",
+        errors="replace",
     )
     return out.stdout.strip()
 
