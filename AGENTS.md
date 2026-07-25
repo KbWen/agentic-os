@@ -110,6 +110,7 @@ If conversation context changes (e.g., branch switch), AI MUST re-confirm intent
 - Non-Linear Resilience: `.agentcortex/docs/NONLINEAR_SCENARIOS.md` | Platform Guide: `.agentcortex/docs/CODEX_PLATFORM_GUIDE.md`
 - Doc Lifecycle: `.agentcortex/docs/guides/doc-governance.md` — **one topic, one canonical file** (no duplicates in `docs/`).
 - Skills: `.agent/skills/<name>` (Antigravity metadata stub) | `.agents/skills/<name>/SKILL.md` (canonical full body, read on cache-miss).
+- Repo Gotchas: `.agent/rules/repo-gotchas.md` — repo-specific mechanical traps (README pinning, validator/deploy wiring, gitignored-log FAILs, release steps). Conditional read before touching those surfaces; not a rule surface.
 
 - Override Layer: per-fork/per-user `AGENTS.override.md` is **active** — loaded present-only by `bootstrap.md §1a`; MAY narrow/disable directives but MUST NOT relax gates. Spec: `.agentcortex/docs/guides/doc-governance.md §Override Layer`.
 

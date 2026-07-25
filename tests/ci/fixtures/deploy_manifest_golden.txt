@@ -2,6 +2,7 @@ core .agent/config.yaml
 core .agent/rules/ai-development-pitfalls.md
 core .agent/rules/engineering_guardrails.md
 core .agent/rules/methodology.md
+core .agent/rules/repo-gotchas.md
 core .agent/rules/rules.md
 core .agent/rules/security_guardrails.md
 core .agent/rules/skill_conflict_matrix.md
