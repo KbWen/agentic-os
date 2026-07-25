@@ -44,7 +44,7 @@ requires_git_bash = pytest.mark.skipif(
 def _make_repo(tmp_path: Path, validate_exit: int) -> Path:
     root = tmp_path / "repo"
     root.mkdir()
-    subprocess.run([git, "init"], cwd=root, check=True, capture_output=True, text=True)
+    subprocess.run([git, "init"], cwd=root, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     hooks_dir = root / ".githooks"
     hooks_dir.mkdir()

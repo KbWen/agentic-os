@@ -56,6 +56,8 @@ def _run_runner(*args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(RUNNER), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=str(ROOT),
     )
 
@@ -713,7 +715,7 @@ class TestMalformedYaml(unittest.TestCase):
         try:
             result = subprocess.run(
                 [sys.executable, str(RUNNER), "--eval", str(eval_file), "--coverage"],
-                capture_output=True, text=True, cwd=str(ROOT), env=env,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT), env=env,
             )
             self.assertNotEqual(result.returncode, 0, "Malformed spec must exit non-zero on the subset-parser path")
             self.assertIn("malformed eval spec", (result.stdout + result.stderr).lower())

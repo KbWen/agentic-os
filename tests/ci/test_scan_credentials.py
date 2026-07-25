@@ -100,9 +100,9 @@ def test_main_exit_codes(tmp_path):
     clean = tmp_path / "clean.txt"
     clean.write_text("just some normal text without secrets\n", encoding="utf-8")
     r_dirty = subprocess.run([sys.executable, str(TOOL), str(dirty)],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8", errors="replace")
     r_clean = subprocess.run([sys.executable, str(TOOL), str(clean)],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r_dirty.returncode == 1 and r_clean.returncode == 0
     assert ("Z" * 36) not in (r_dirty.stdout + r_dirty.stderr)
     assert "github-token" in r_dirty.stderr
@@ -158,7 +158,7 @@ def test_range_mode(tmp_path):
     (backlog #73). Shares the _diff_added_lines/parse_staged_diff path with --staged,
     so this just confirms CLI wiring + range diff end to end in an isolated repo."""
     def git(*a):
-        subprocess.run(["git", *a], cwd=tmp_path, capture_output=True, text=True, check=True)
+        subprocess.run(["git", *a], cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace", check=True)
     git("init", "-q")
     git("config", "user.email", "t@example.com")
     git("config", "user.name", "t")
@@ -167,9 +167,9 @@ def test_range_mode(tmp_path):
     (tmp_path / "b.txt").write_text("key = " + "ghp_" + "A" * 36 + "\n", encoding="utf-8")
     git("add", "."), git("commit", "-qm", "head")
     dirty = subprocess.run([sys.executable, str(TOOL), "--range", "HEAD~1..HEAD"],
-                           cwd=tmp_path, capture_output=True, text=True)
+                           cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace")
     clean = subprocess.run([sys.executable, str(TOOL), "--range", "HEAD..HEAD"],
-                           cwd=tmp_path, capture_output=True, text=True)
+                           cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert dirty.returncode == 1 and "github-token" in dirty.stderr
     assert clean.returncode == 0
 
@@ -187,5 +187,5 @@ def test_allowlist_pragma():
 def test_staged_git_failure_returns_3(tmp_path):
     """A git failure must fail-CLOSED with exit 3 (warn), never 0 (silent 'clean')."""
     r = subprocess.run([sys.executable, str(TOOL), "--staged"],
-                       cwd=str(tmp_path), capture_output=True, text=True)
+                       cwd=str(tmp_path), capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r.returncode == 3

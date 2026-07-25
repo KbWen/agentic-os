@@ -188,13 +188,13 @@ class TestRelease(unittest.TestCase):
                 [sys.executable, str(TOOLS / "recover_worklog_lock.py"), "ensure",
                  "--lock", str(lock), "--owner", "agent-a", "--session", "session-a",
                  "--branch", "demo", "--phase", "bootstrap"],
-                capture_output=True, text=True, check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
             )
             self.assertEqual(create.returncode, 0)
             release = subprocess.run(
                 [sys.executable, str(TOOLS / "recover_worklog_lock.py"), "release",
                  "--lock", str(lock), "--owner", "agent-a", "--session", "session-a"],
-                capture_output=True, text=True, check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
             )
             self.assertEqual(release.returncode, 0)
             self.assertIn("released", release.stdout)
@@ -207,7 +207,7 @@ class TestRelease(unittest.TestCase):
             release = subprocess.run(
                 [sys.executable, str(TOOLS / "recover_worklog_lock.py"), "release",
                  "--lock", str(lock), "--owner", "claude", "--session", "claude-session"],
-                capture_output=True, text=True, check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
             )
             self.assertEqual(release.returncode, 2)
             self.assertTrue(lock.exists())
@@ -247,7 +247,7 @@ class TestTakeover(unittest.TestCase):
                 [sys.executable, str(TOOLS / "recover_worklog_lock.py"), "ensure",
                  "--lock", str(lock), "--owner", "claude", "--session", "claude-session",
                  "--branch", "demo", "--phase", "implement", "--takeover"],
-                capture_output=True, text=True, check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
             )
             self.assertNotEqual(cli.returncode, 0)
             self.assertIn("--worklog", cli.stdout + cli.stderr)
