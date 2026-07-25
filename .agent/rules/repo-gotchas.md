@@ -146,25 +146,27 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 gh release create vX.Y.Z --latest
 ```
 
-## 13. Six tests fail locally on a non-UTF-8 Windows console and are green in CI
+## 13. `TypeError: 'NoneType' is not a container` from a subprocess helper means locale, not logic
 
-On a Windows box whose ANSI code page is not UTF-8 (e.g. `cp950`, Traditional Chinese), some
-tests read subprocess output with the system codec. The tools emit UTF-8 (an em-dash is enough
-— byte `0xe2`), decoding raises `UnicodeDecodeError`, `result.stdout` / `result.stderr` come
-back as `None`, and the assertion dies with `TypeError: argument of type 'NoneType' is not a
-container` rather than anything resembling the real cause.
+On a Windows box whose ANSI code page is not UTF-8 (e.g. `cp950`, Traditional Chinese),
+`subprocess.run(..., text=True)` without an explicit `encoding=` decodes the child's output
+with the system codec. One UTF-8 byte — an em-dash is enough, `0xe2` — raises
+`UnicodeDecodeError` inside subprocess, `stdout` / `stderr` come back as `None`, and the line
+that reads them dies naming nothing about encoding. Six tests were red locally and green in CI
+on the identical commit, which reads exactly like "you broke something".
 
-Confirmed on clean `main` @ `1627852` (2026-07-25): `test_lesson_chain_archival.py` ×2,
-`test_verify_agent_evidence.py` ×3, `test_trigger_metadata_tools.py::test_command_sync_rejects_alias_directive_retarget`.
-Same commit is green in CI.
+**Fixed in Python**: every call site was corrected and `tests/ci/test_subprocess_encoding.py`
+now caps new ones at zero, so this should not recur here. The fix is always
+`encoding="utf-8", errors="replace"`. If you meet the same signature somewhere the ratchet
+does not reach — a shell script, a file read, a new dependency — suspect the same cause.
 
-Before assuming you broke something, re-run the failing files in a clean worktree of `main`:
+The general technique that isolated it is worth keeping regardless: when local tests are red
+and CI is green on the same commit, re-run them in a clean worktree before assuming you broke
+something.
 
 ```bash
 git worktree add ../baseline main
 ```
-
-If they fail there too, it is this trap. Tracked as backlog #146.
 
 ---
 
