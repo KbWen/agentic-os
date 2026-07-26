@@ -4,8 +4,7 @@ Execute the canonical workflow: `.agent/workflows/test.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives
-3. Active Work Log — must contain implementation evidence
+1. Active Work Log — must contain implementation evidence
 
 ## Execution
 

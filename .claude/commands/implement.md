@@ -4,9 +4,8 @@ Execute the canonical workflow: `.agent/workflows/implement.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives
-3. `.agent/rules/security_guardrails.md` — auto-enforced during implementation
-4. Active Work Log — must contain plan reference before proceeding
+1. `.agent/rules/security_guardrails.md` — auto-enforced during implementation
+2. Active Work Log — must contain plan reference before proceeding
 
 ## Execution
 

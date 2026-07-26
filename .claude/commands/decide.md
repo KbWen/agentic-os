@@ -4,8 +4,7 @@ Execute the canonical workflow: `.agent/workflows/decide.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives
-2. Active Work Log at `.agentcortex/context/work/<worklog-key>.md`
+1. Active Work Log at `.agentcortex/context/work/<worklog-key>.md`
 
 ## Execution
 

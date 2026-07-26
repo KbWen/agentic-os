@@ -3,6 +3,13 @@
 Offloaded from the active Work Log per `handoff.md §6` (16.3 KB > `worklog.max_kb: 12`).
 This is compaction overflow of a STILL-ACTIVE log, not final archival.
 
+## Phase Summary
+
+- Compaction overflow only. The authoritative phase record stays in the ACTIVE log at
+  `.agentcortex/context/work/feat-conflicting-directive-scan.md`; this file holds offloaded
+  detail. Retained here so the archived-log scan has a section to read.
+
+
 ## Evidence (pre-review, full detail)
 
 - Branch from `main` @ `f765a594bd5a14fd83762e968e31b78371c6db27`.

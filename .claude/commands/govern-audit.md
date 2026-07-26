@@ -2,10 +2,6 @@
 
 Execute the canonical workflow: `.agent/workflows/govern-audit.md`
 
-## Required reads before execution
-
-1. `AGENTS.md` — global directives (Intent Router, Gate Engine, Sentinel)
-
 ## Execution
 
 Follow every step in `.agent/workflows/govern-audit.md` sequentially.

@@ -4,8 +4,7 @@ Execute the canonical workflow: `.agent/workflows/adr.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives (Intent Router, Gate Engine, Sentinel)
-2. `.agentcortex/context/current_state.md` — SSoT
+1. `.agentcortex/context/current_state.md` — SSoT
 
 ## Execution
 

@@ -1,5 +1,5 @@
 ---
-status: draft
+status: shipped
 title: Conflicting-Directive Scan + Resolution
 date: 2026-07-26
 revised: 2026-07-26
@@ -45,7 +45,7 @@ row. The refuted rows are retained in the census so they are not re-proposed.
 
 ADR-011 swept the phase-entry surfaces for **enforcement backing**. It never asked whether
 directives **contradict each other**. The census
-(`docs/reviews/2026-07-26-conflicting-directive-scan.md`) records **7 surviving findings**,
+(`docs/reviews/2026-07-26-conflicting-directive-scan.md`) records **8 surviving findings**,
 each `file:line`-cited and re-verified by the primary after review.
 
 **Honest ceiling on record**: `[audit-method][HIGH]` requires an external signal for an
@@ -56,7 +56,7 @@ validated.
 
 ## Goals
 
-- Resolve the 7 surviving findings by **correcting or deleting text**. No new directive.
+- Resolve the 8 surviving findings by **correcting or deleting text**. No new directive.
 - Prevent recurrence of the single error class that has now bitten three separate sessions
   (writing a `Gate:` receipt for a receipt-less entry in the `§10.2` gate table).
 - Stay within a **zero-headroom** ratchet: `AGENTS.md` is at 37/37.
@@ -86,6 +86,7 @@ Tier is stated **per row** (ADR-011 Decision 2). Honest `NONE` is allowed and us
 | **S5** | Documented `implement → review → test` vs `LEGAL_STRICT` allowing `implement → test` | **verify-then-correct** | First verify whether the M10 stale-review check (named in `validate.sh:1385-1394`) already closes the gap. If it does → annotate `§10.2` to cite it. If it does not → correct `§10.2` to describe the enforced order. Decided by evidence at implement, not assumed here. | NONE until AC-7 resolves which branch applies |
 | **S6** | `§10.2` lists `spec`, `ADR`, and "check Spec Index" in a **Mandatory Gates** column though none produces a receipt | **correct** | Annotate all three with the table's own existing convention, `(advisory, no gate receipt)` — already used at `:309` for hotfix research. **Highest-value row**: this exact ambiguity produced an identical agent error in three separate sessions (2026-07-02, 2026-07-19, and this one). | NONE (annotation) — but it is the mitigation for a thrice-observed failure |
 | **S7** | `AGENTS.md:35` SSoT Recovery Exception + `bootstrap.md:99` Last Verified write vs the `:43-47` "exhaustive" list | **correct** | Add both to the exhaustive list. Names only, no governance keyword → ratchet-safe. **Must re-verify `governance.yaml:93` `ssot-write-isolation`**, whose `expect_substrings` includes "only /ship updates SSoT". | NONE (doc truth) + AC-8 pins the eval case |
+| **S8** | `handoff.md §6` compaction produces an overflow file with no `## Phase Summary`, which the archived-log scan warns on and a CI test asserts never happens | **correct** | Add a fourth step to `§6`: give the overflow file a short `## Phase Summary` pointing at the active log. | **T1** — `test_171_ship_history_no_phase_summary_warn` already fails without it |
 | — | ~~C1, C2, C4, C5, C6, D1, E1, F1, M1-as-drafted, A1, A2~~ | **refuted** | See census "REFUTED" table. Two would have disabled live checks. | — |
 
 **Also dropped by the primary, against a reviewer's recommendation**: `## Global Lessons
@@ -123,6 +124,8 @@ retained only as evidence for AC-9's fenced-block requirement.
   `AGENTS.md` directive edits with per-directive tiers, per ADR-011's own `review_trigger`.
 - **AC-12** The Work Log `## Decisions` section carries the §13 net-add justification before
   implement begins.
+- **AC-13** `handoff.md §6` instructs a `## Phase Summary` in the overflow file, and
+  `test_171_ship_history_no_phase_summary_warn` passes with a real compaction on disk.
 
 ## Domain Decisions
 

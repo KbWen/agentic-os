@@ -140,7 +140,7 @@ Rules:
 - Each step MUST be **Functionally Atomic** — one logical unit of change (e.g., "Implement Data Schema"), NOT a 2-paragraph explanation.
 - Each step MUST have a 1-line verification method (test command, grep, or logic check). No 3-bullet sub-checklists per step.
 - List ONLY files being modified (prevent scope creep).
-- Detail that belongs in the Work Log (cited spec sections, rejected alternatives, design doc links) goes to `## Risks` and `## External References` sections of the Work Log — NOT the chat block. Reference by `Ref: Work Log §<section>`.
+- Detail that belongs in the Work Log (cited spec sections, rejected alternatives, design doc links) goes to `## Known Risk` and `## External References` sections of the Work Log — NOT the chat block. Reference by `Ref: Work Log §<section>`.
 - If the user asks for more detail, expand. Default is terse.
 
 ## Quality Gates (ALL MUST PASS)
@@ -166,7 +166,7 @@ Rules:
 After plan is approved, AI MUST append to the current Work Log:
 
 ```markdown
-## Risks
+## Known Risk
 - [Risk 1]: [brief description + mitigation]
 - [Risk 2]: ...
 - [Risk 3]: ...

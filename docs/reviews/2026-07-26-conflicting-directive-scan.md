@@ -9,7 +9,7 @@
 > claimed 11 confirmed conflicts. A 4-seat roundtable refuted **9 of them**, two with fixes
 > that would have been actively harmful. The refuted rows are retained below with their
 > refutations so they are not re-proposed. Six findings the first draft missed were added.
-> Net: **7 findings, down from 11, and a different set.**
+> Net: **8 findings, down from 11, and a different set.**
 >
 > No `routing_actions` block: `check_routing_actions.py` restricts `target_doc` to
 > `docs/(architecture|specs)/*.md` and every disposition targets a governance file.
@@ -125,6 +125,18 @@ through the tool `AGENTS.md:37` names — so the defect is the list's completene
 **Caution for any fix**: `governance.yaml:93` `ssot-write-isolation` carries
 `expect_substrings: [… "only /ship updates SSoT" …]`. Broadening the list without re-checking
 that case orphans it (`[eval-mapping]`).
+
+### S8 · `handoff.md §6` produces an artifact its own validator warns about
+
+`handoff.md §6` compaction moves detail to `.agentcortex/context/archive/work/<key>-<date>.md`
+and lists three steps, none of which mentions a `## Phase Summary`. But `validate.sh` scans
+**every** file under `archive/` for that section, so an overflow file created exactly as §6
+instructs raises `archived Work Logs with empty Phase Summary` — and
+`tests/ci/test_validator_false_positives.py::test_171_ship_history_no_phase_summary_warn`
+asserts that WARN never appears, so the whole test goes red.
+
+Found by walking into it: this task's own compaction, performed to §6's letter, turned that
+test red. Same shape as S6 — an instruction that produces something the enforcement rejects.
 
 ---
 
