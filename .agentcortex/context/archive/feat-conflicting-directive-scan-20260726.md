@@ -137,6 +137,8 @@ isn't one. That question is the spec's job.
 
 ### D-1: §13 Deletion-First — the revised change set is deletion-funded, not waived
 
+→ promoted: ADR-011 (2026-07-26 record-only amendment — per-directive tiers table)
+
 **Decision**: no net-add justification is claimed, because the change set is net-negative.
 **Reason**: S3 deletes a Required-read line from 23 command stubs plus two
 `security_guardrails.md` lines; S1/S4/S6 are rewordings at ≈0 char delta; S7 adds two short
