@@ -2,156 +2,151 @@
 status: draft
 title: Conflicting-Directive Scan + Resolution
 date: 2026-07-26
+revised: 2026-07-26
 classification: feature
 source: backlog #145
 primary_domain: governance
 secondary_domains: [tooling]
 signal_tier: T1
 signal_tier_note: >
-  The durable instrument is a section-reference consistency test in tests/ci/
-  (AC-7): every Work-Log-scoped `## Section` cited by a governance surface must
-  exist in .agentcortex/templates/worklog.md, capped at today via a committed
-  allowlist. That covers Category C only — the one slice of the conflict axis
-  that is machine-checkable. Categories M/A/B/D/E are resolved by EDIT (delete
-  or correct the contradicting text), not by adding a watcher: per
-  [enforcement], a rule with no feasible tier should be deleted rather than
-  left as honor-system theatre, and per this repo's north star, resolving a
-  conflict by adding a clarifying rule is the densification the external
-  guidance warns against.
+  ONE narrow machine check (AC-9): a fenced-block-aware consistency test pinning
+  the `## Known Risk` naming across .agent/workflows/*, .agentcortex/docs/guides/*
+  and the worklog template. That is the only surviving finding with a real
+  recurrence risk. Every other disposition is a text correction with an honest
+  per-directive tier of NONE recorded in the table below -- not a blanket claim.
+  The first draft asserted a blanket T1 that its own note conceded covered one
+  category; ADR-011 Decision 2 requires per-directive tiers, so this revision
+  states them individually.
 applies_to:
   - "AGENTS.md"
   - ".agent/rules/engineering_guardrails.md"
-  - ".agent/rules/security_guardrails.md"
-  - ".agent/workflows/bootstrap.md"
   - ".agent/workflows/plan.md"
+  - ".agent/workflows/bootstrap.md"
   - ".agent/workflows/handoff.md"
-  - ".agentcortex/templates/worklog.md"
+  - ".claude/commands/*.md"
+  - ".agentcortex/docs/guides/token-governance.md"
   - "docs/reviews/2026-07-26-conflicting-directive-scan.md"
 ---
 
 # Conflicting-Directive Scan + Resolution
 
+## Revision note
+
+The first draft of this spec proposed 11 dispositions. A 4-seat adversarial roundtable refuted
+**9 of the underlying findings**, and showed that **two of the proposed fixes were actively
+harmful** — adding `## Security Findings` and `## Lessons` to the Work Log template would each
+have silently disabled a live check. One "headline finding" turned out to be an error this
+repo had already recorded and closed **twice**.
+
+This revision is smaller, touches no template, adds no directive, and states an honest tier per
+row. The refuted rows are retained in the census so they are not re-proposed.
+
 ## Problem
 
 ADR-011 swept the phase-entry surfaces for **enforcement backing**. It never asked whether
 directives **contradict each other**. The census
-(`docs/reviews/2026-07-26-conflicting-directive-scan.md`) found **10 confirmed conflicts and
-1 negative result**, every row carrying a `file:line` citation and passing the precedence
-test (a candidate counts only if the declared chain does not resolve it, or resolves it
-silently with no gate).
+(`docs/reviews/2026-07-26-conflicting-directive-scan.md`) records **7 surviving findings**,
+each `file:line`-cited and re-verified by the primary after review.
 
-Three facts frame the work:
-
-1. **The root cause is a two-line omission.** `AGENTS.md §Skill Safety & Precedence` item 2
-   declares `AGENTS.md > .agent/workflows/ > .agent/skills/` and omits `.agent/rules/*`,
-   `.agentcortex/templates/*`, and `docs/adr/*` — the surfaces carrying most directives
-   (`engineering_guardrails.md` alone holds 84 hard-directive keyword hits). For most census
-   rows there is no declared tie-breaker at all.
-2. **Three findings are live, not theoretical.** C3 and C4 were violated silently by this
-   task's own Work Logs; B1 was found by walking into it mid-bootstrap; E1 fired twice during
-   the session that produced this spec. None was caught by any gate, validator, or review.
-3. **The ADR-011 durable pattern does not transfer.** Conflicts are semantic and cannot be
-   counted. Only Category C admits a machine check.
+**Honest ceiling on record**: `[audit-method][HIGH]` requires an external signal for an
+architecture-level audit. The `ask-openrouter` path was live but six free-tier models failed
+across two attempts, and a paid model is high-cost (§8.2 → needs user confirmation, not
+obtained). All review seats were same-vendor. The judgment calls below are **not** externally
+validated.
 
 ## Goals
 
-- Resolve every confirmed census row by **editing the contradicting text**, preferring
-  deletion or correction over clarification.
-- Close the root cause (M1) so future conflicts have a declared tie-breaker.
-- Ship one durable machine check for the one slice that supports it (Category C).
-- Keep the change **token-neutral or negative** on the always-loaded surfaces (§13
-  Deletion-First), funded by a real deletion rather than a waiver.
+- Resolve the 7 surviving findings by **correcting or deleting text**. No new directive.
+- Prevent recurrence of the single error class that has now bitten three separate sessions
+  (writing a `Gate:` receipt for a receipt-less entry in the `§10.2` gate table).
+- Stay within a **zero-headroom** ratchet: `AGENTS.md` is at 37/37.
 
 ## Non-goals
 
-- A general-purpose semantic conflict detector. Not feasible; claiming otherwise would be the
-  false-confidence failure `[enforcement]` names.
-- Re-running the ADR-011 enforcement census. Different axis, already done.
-- Rewriting `§9.2` (vague inputs) or any rule the census did not flag.
-- Adding a periodic re-scan duty. That is the observer honor-system process ADR-011 retired.
+- Any change to `.agentcortex/templates/worklog.md`. Verified harmful (disables
+  `validate.sh:1691` and `§10.6` item 3) and budget-hostile (+4 sections ≈ 74% of the 300-line
+  compaction budget at zero content).
+- A general semantic conflict detector. Infeasible; claiming otherwise is the false-confidence
+  failure `[enforcement]` names.
+- Re-proposing any refuted row. The census records why each fails.
+- Tightening `LEGAL_STRICT` to force `implement → review`. Reverse edges are deliberate
+  (`validate.sh:1385-1394` comments); changing them risks breaking real flows for a docs
+  mismatch.
 
 ## Dispositions
 
-Every row resolves to **delete · correct · add-artifact**. No `defer` (repo norm).
+Tier is stated **per row** (ADR-011 Decision 2). Honest `NONE` is allowed and used.
 
-| # | Finding | Disposition | Change |
-|---|---|---|---|
-| **M1** | Precedence chain omits `.agent/rules/`, templates, ADRs | **correct** | `AGENTS.md` item 2 becomes `AGENTS.md > .agent/rules/ > .agent/workflows/ > .agent/skills/`, plus one clause: an accepted ADR governs within its declared `applies_to` scope. No new MUST keyword — the ratchet baseline (AGENTS.md 37) stays flat. |
-| **A1** | Read-Once vs the guardrails' own conditional-load design | **correct** | Extend the existing Read-Once exemption — which already names `shared-contracts.md` — to cover guardrails sections the file itself marks conditional. Reuses the established carve-out shape; adds no rule. |
-| **B1** | Exhaustive SSoT-write list excludes `/bootstrap`, which writes | **correct** | Add `/bootstrap` (Last Verified only) to the exhaustive list in `AGENTS.md`. The write is intentional and feeds the 14-day staleness advisory; the list is simply wrong. An honest list beats a clean false one. |
-| **C1** | `## Security Findings` MUST-recorded, absent from template | **add-artifact** | Add the section to `worklog.md`. The template is lifecycle-uncounted, so this costs nothing against the 355k ceiling. |
-| **C2** | `## Lessons` read by the §10.6 Completion Guard, absent from template | **add-artifact** | Same. Without it the retro check can never pass on a conformant log. |
-| **C3** | `## Risks` (3 workflows) vs `## Known Risk` (template + contract + validator) | **correct** | Rename the 3 workflow mentions to `## Known Risk`. Changing 3 citations is smaller than changing the template, the `AGENTS.md` Work Log Contract, and the validator. |
-| **C4** | `bootstrap.md` says write `## Recommended Skills` as a section; template has a header field | **correct** | Fix the `bootstrap.md` wording to name the header field. |
-| **C5/C6** | `## Spec Seeds`, `## Research Findings` absent from template | **add-artifact** | Add both. They are written by `/retro` and `/research` respectively and are currently undeclared ad-hoc headings. |
-| **D1** | "DEFER" carries two opposite senses | **correct** | Reword `guardrails §8` / `§8.1` to "escalate to user", leaving ADR-011's `no defer` unambiguous. Pure ambiguity removal, no net-add. |
-| **E1** | `§9.1` says `好` MUST NOT execute; Runtime item 6 says explicit intent executes | **delete** | Delete `§9.1`. It is already dead text — unenforced, unnoticed, and overridden in practice twice this session. `§9.2` (vague inputs) stays. |
-| **F1** | `spec` is a mandatory gate that no validator transition table accepts | **correct** | Add the node to all three tables in both validators: `'bootstrap': ['plan','spec']` and `'spec': ['plan']`. Makes the documented flow recordable. **Alternative (flagged below)**: drop `spec` from the `§10.2` gate list instead and state that its evidence is the spec ARTIFACT, not a receipt. |
+| # | Finding | Disposition | Change | Tier |
+|---|---|---|---|---|
+| **S1** | `AGENTS.md` ranks surfaces in a skill-scoped rule while designating `.agent/rules/` as Constitution elsewhere | **correct (scope, not extend)** | Reword `AGENTS.md:94` item 2 so its scope is explicit — it resolves **skill-vs-workflow** conflicts. Do **not** insert `.agent/rules/` into the order: that would rank the Constitution below `AGENTS.md` and loop through the 4 ADRs declaring `applies_to: AGENTS.md`. Keyword-free, net char delta ≈ 0. | NONE (wording clarity; nothing can gate a precedence reading) |
+| **S2** | `## Risks` vs `## Known Risk` across 5 sites | **correct** | Rename `plan.md:143`, `plan.md:169` (bare heading **inside a fenced block**), `bootstrap.md:142`, `handoff.md:148`, `token-governance.md:115` to `## Known Risk`. Resolves the `handoff.md:141`↔`:148` intra-file contradiction. | **T1** — AC-9 |
+| **S3** | 23 of 30 command stubs require re-reading `AGENTS.md`, which `CLAUDE.md:5` says is already `@import`ed and `AGENTS.md:27` makes a Token Leak violation to re-read | **delete** | Remove the redundant `AGENTS.md` Required-read line from the 23 stubs, and the `security_guardrails.md` line from `implement.md:8` / `ship.md:8`. This is #126's fix applied to the class it actually missed. **Net-negative tokens** — funds the rest under §13. | NONE (stub content is unpinned; the deletion removes the conflict rather than watching it) |
+| **S4** | `§10.6` item 2 probes for a `## Resume` block the template always ships → already vacuous | **correct** | Change both probes from presence to content (`## Resume` / `## Lessons` containing more than `none`). Fixes the broken probe **without** breaking the working one — the inverse of the refuted C2. | NONE (honor-system self-check by construction; labelled honestly) |
+| **S5** | Documented `implement → review → test` vs `LEGAL_STRICT` allowing `implement → test` | **verify-then-correct** | First verify whether the M10 stale-review check (named in `validate.sh:1385-1394`) already closes the gap. If it does → annotate `§10.2` to cite it. If it does not → correct `§10.2` to describe the enforced order. Decided by evidence at implement, not assumed here. | NONE until AC-7 resolves which branch applies |
+| **S6** | `§10.2` lists `spec`, `ADR`, and "check Spec Index" in a **Mandatory Gates** column though none produces a receipt | **correct** | Annotate all three with the table's own existing convention, `(advisory, no gate receipt)` — already used at `:309` for hotfix research. **Highest-value row**: this exact ambiguity produced an identical agent error in three separate sessions (2026-07-02, 2026-07-19, and this one). | NONE (annotation) — but it is the mitigation for a thrice-observed failure |
+| **S7** | `AGENTS.md:35` SSoT Recovery Exception + `bootstrap.md:99` Last Verified write vs the `:43-47` "exhaustive" list | **correct** | Add both to the exhaustive list. Names only, no governance keyword → ratchet-safe. **Must re-verify `governance.yaml:93` `ssot-write-isolation`**, whose `expect_substrings` includes "only /ship updates SSoT". | NONE (doc truth) + AC-8 pins the eval case |
+| — | ~~C1, C2, C4, C5, C6, D1, E1, F1, M1-as-drafted, A1, A2~~ | **refuted** | See census "REFUTED" table. Two would have disabled live checks. | — |
 
-**Token funding**: the E1 deletion and the D1 reword are net-negative on
-`engineering_guardrails.md`; M1/A1/B1 are single clauses on `AGENTS.md`. Template additions
-are lifecycle-uncounted. The change is expected to land net-neutral or negative on the
-counted surfaces — verified at implement, not assumed.
+**Also dropped by the primary, against a reviewer's recommendation**: `## Global Lessons
+Candidate` (`retro.md:55`) was offered as a new Category-C row. It is the **same shape** as C5
+and C6 — a *create* instruction, and `engineering_guardrails.md:314` calls the section list a
+"**minimum** runtime contract". Accepting it while refuting C5/C6 would be inconsistent. It is
+retained only as evidence for AC-9's fenced-block requirement.
 
 ## Acceptance Criteria
 
-- **AC-1** `AGENTS.md` precedence clause names `.agent/rules/` in order, and states the ADR
-  scope rule. Directive-count ratchet stays at or below the committed baseline (37).
-- **AC-2** Read-Once exemption covers the guardrails' self-declared conditional sections.
-- **AC-3** The `AGENTS.md` non-ship SSoT exception list includes `/bootstrap` (Last Verified
-  only), and `bootstrap.md §1` is unchanged — the list was the wrong side.
-- **AC-4** `worklog.md` contains `## Security Findings`, `## Lessons`, `## Spec Seeds`,
-  `## Research Findings`. Existing sections unchanged.
-- **AC-5** Zero remaining `## Risks` references in `.agent/workflows/*`; all read
-  `## Known Risk`.
-- **AC-6** `bootstrap.md §3.6` names `Recommended Skills` as a header field, not a `##`
-  section.
-- **AC-7** `tests/ci/test_worklog_section_refs.py` exists and passes: every Work-Log-scoped
-  `` `## X` `` reference across `AGENTS.md`, `.agent/rules/*`, `.agent/workflows/*`,
-  `.claude/commands/*` resolves to a section in `worklog.md`, with a committed allowlist for
-  references that legitimately name `current_state.md` / spec / ADR sections. Cap-at-today;
-  FAILs on a new unresolved reference. Carries an anti-vacuity guard proving the detector
-  fires on a synthetic bad reference.
-- **AC-8** `§9.1` is deleted; `§9.2` is intact; no replacement rule is added.
-- **AC-9** The census snapshot is committed unchanged as the point-in-time record. No
-  re-snapshot duty is created.
-- **AC-10** Net token delta on the lifecycle-counted surfaces is ≤ 0, measured with
-  `analyze_token_lifecycle.py`, not estimated.
+- **AC-1** `AGENTS.md:94` item 2 states its skill-vs-workflow scope; the surface ordering is
+  **not** extended. `.agent/rules/` is not inserted into the chain.
+- **AC-2** `test_directive_count_ratchet.py` passes with `AGENTS.md` at **≤ 37**, re-run after
+  **all** `AGENTS.md` edits together (S1 + S7), not per-edit.
+- **AC-3** Zero `## Risks` references remain in `.agent/workflows/*` **or**
+  `.agentcortex/docs/guides/*`, including headings inside fenced blocks.
+- **AC-4** The 23 stubs no longer list `AGENTS.md` as a Required read; `implement.md` and
+  `ship.md` no longer list `security_guardrails.md`. Stub count stays 30 and
+  `check_command_sync.py` still passes.
+- **AC-5** `§10.6` items 2 and 3 both test content, not presence.
+- **AC-6** `§10.2` annotates `spec`, `ADR`, and "check Spec Index" as advisory/no-receipt,
+  using the wording already at `:309`.
+- **AC-7** The S5 branch is decided by executing the M10 check against a fixture, and the
+  chosen branch is applied. Evidence recorded in the Work Log.
+- **AC-8** `run_governance_eval.py` still resolves `ssot-write-isolation` after the S7 edit,
+  and the case's `expect_substrings` are re-read against the new list text.
+- **AC-9** `tests/ci/test_worklog_risk_section_naming.py` exists and passes: no governance
+  surface under `.agent/**`, `.agentcortex/docs/guides/**`, or `.claude/commands/**` names a
+  Work Log `## Risks` section, **including bare headings inside fenced blocks**. Carries an
+  anti-vacuity guard proving it fires on a synthetic fenced `## Risks`.
+- **AC-10** Net byte delta across the changed governance surfaces is **≤ 0**, measured with a
+  per-file char count. `analyze_token_lifecycle.py` is **not** used — verified to contain 0
+  references to `AGENTS.md`, `rules/`, or `templates/`.
+- **AC-11** An ADR-011 amendment (or successor ADR) records the `§10.6`, `§10.2`, and
+  `AGENTS.md` directive edits with per-directive tiers, per ADR-011's own `review_trigger`.
+- **AC-12** The Work Log `## Decisions` section carries the §13 net-add justification before
+  implement begins.
 
 ## Domain Decisions
 
-- **[DECISION] Fix by edit, not by watcher.** Categories M/A/B/D/E get no detector. A
-  semantic conflict detector is infeasible, and a rule-about-rules with no teeth is the
-  false-confidence pattern `[enforcement]` names. The edits remove the contradictions; nothing
-  needs to keep watching for them.
-- **[DECISION] Delete `§9.1` rather than carve out an exception.** A carve-out ("unless it
-  answers a question the agent asked") is a third rule about two rules — denser surface, same
-  failure mode. The rule is already unenforced and already overridden; deleting it makes the
-  written state match the real state.
-- **[TRADEOFF] Adding `/bootstrap` to the "exhaustive" SSoT list weakens the
-  only-`/ship`-writes principle** in exchange for the list being true. Accepted: a false
-  exhaustive list is worse than a slightly broader true one, and the alternative (deleting
-  bootstrap's Last Verified write) would silently disable the 14-day staleness advisory.
-- **[CONSTRAINT] Category C's check needs a hand-maintained allowlist** for non-Work-Log
-  section references. That allowlist is itself drift-prone — an honest ceiling recorded here,
-  not hidden. It is still strictly better than the current state, which has no check at all.
+- **[DECISION] Scope the precedence rule; do not extend it.** Extending creates two new
+  defects (Constitution demoted, ADR loop) to fix one reading error. Scoping removes the false
+  universality with no ranking change.
+- **[DECISION] No template changes, at all.** Two independent seats verified that adding a
+  section satisfies a bare-grep check forever. The general principle: **a presence check and a
+  template that supplies the thing being checked cannot coexist.**
+- **[DECISION] The most valuable output is an annotation, not a mechanism.** S6 costs six words
+  and prevents an error three sessions have now made. No detector proposed here would have
+  caught it.
+- **[TRADEOFF] `AGENTS.md` fixes reach only adopters who never edited it.** `AGENTS.md` is
+  `scaffold` (`deploy.sh:112`), so a modified copy gets `.acx-incoming` and keeps the old text.
+  The adopters most exposed to these conflicts are the least likely to receive the fix.
+  Accepted — the alternative is forcing overwrites onto a file adopters are explicitly expected
+  to modify.
+- **[CONSTRAINT] All review was same-vendor.** The external signal failed and was not retried
+  at cost. Every judgment call here is unvalidated externally, and the census says so.
 
 ## Open for human decision
 
-Two dispositions change agent-visible behaviour and are flagged rather than assumed:
-
-1. **E1 delete vs carve-out.** The spec recommends deletion on doctrine (`[enforcement]` +
-   DELETE-bias + the external guidance). A reader who values the "don't act on a bare 好"
-   intent may prefer a carve-out. The census shows the rule is already not doing that work.
-2. **M1's ADR clause.** Stating that an accepted ADR governs within its `applies_to` scope is
-   a genuine precedence decision, not a clarification. If it is judged to be an
-   architecture-level change it should be recorded as its own ADR rather than an `AGENTS.md`
-   clause.
-
-3. **F1 — teach the validator `spec`, or stop calling it a gate.** Adding the node makes the
-   documented flow recordable and every future `feature` log honest, at the cost of touching
-   both validators (sh + ps1 parity mandatory). Dropping `spec` from the `§10.2` gate list
-   instead is a smaller edit and arguably more truthful — the Spec Gate really is enforced by
-   the artifact on disk, not by a receipt — but it makes the guardrails table stop describing
-   the phase sequence agents actually walk. The census cannot decide this one; it is a
-   question about what a "gate" means in this framework.
+1. **S5 branch.** Annotate `§10.2` to match the enforced order, or correct the docs to describe
+   it? AC-7 gathers the evidence; the choice of which side moves is a question about whether
+   documentation or enforcement is authoritative here.
+2. **AC-11's form.** ADR-011 amendment versus a successor ADR. Its `review_trigger` fires
+   either way; which vehicle is a house-style call.
