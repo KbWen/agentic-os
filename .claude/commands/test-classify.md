@@ -4,8 +4,7 @@ Execute the canonical workflow: `.agent/workflows/test-classify.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives
-3. Active Work Log — must contain classification
+1. Active Work Log — must contain classification
 
 ## Execution
 

@@ -4,9 +4,8 @@ Execute the canonical workflow: `.agent/workflows/ship.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives (Delivery Gates, No Evidence = No Ship)
-3. `.agent/rules/security_guardrails.md` — final security check
-4. Active Work Log — must contain handoff references:
+1. `.agent/rules/security_guardrails.md` — final security check
+2. Active Work Log — must contain handoff references:
    `ship:[doc=<path>][code=<path>][log=<path>]`
 
 ## Execution

@@ -302,12 +302,14 @@ Agentic OS deploys workflows and skills into downstream projects. Those projects
 | Category | Mandatory Gates | Min Evidence Required |
 | --- | --- | --- |
 | **tiny-fix** | classify → plan (inline) → execute | diff summary + 1-line verification |
-| **quick-win** | bootstrap → check Spec Index → plan → implement → evidence → ship (review and test are optional when evidence is inline) | diff + before/after behavior statement |
-| **feature** | bootstrap → spec → plan → implement → review → test → handoff → ship | test output + verifiable demo steps |
-| **architecture-change** | bootstrap → ADR → spec → plan → implement → review → test → handoff → ship | migration plan + rollback verification |
+| **quick-win** | bootstrap → check Spec Index (advisory, no gate receipt) → plan → implement → evidence → ship (review and test are optional when evidence is inline) | diff + before/after behavior statement |
+| **feature** | bootstrap → spec (advisory, no gate receipt) → plan → implement → review → test → handoff → ship | test output + verifiable demo steps |
+| **architecture-change** | bootstrap → ADR (advisory, no gate receipt) → spec (advisory, no gate receipt) → plan → implement → review → test → handoff → ship | migration plan + rollback verification |
 | **hotfix** | bootstrap → research (advisory, no gate receipt) → plan → implement → review → test → ship | root cause + fix verification + retro |
 
 AI self-enforces the phase order above. Users may invoke phases via slash commands (as shortcuts) or natural language.
+
+**Receipt vocabulary is the 7 gate phases** — bootstrap, plan, implement, review, test, handoff, ship. Entries marked *(advisory, no gate receipt)* are evidenced by their artifact (a frozen spec, an ADR file, a Spec Index read), never by a `Gate:` line; writing one for them is rejected by the validator's progression check. The transition table also permits `implement → test` as a reverse-edge accommodation — review-before-test remains the order above, held by the stale-review check rather than by the edge list.
 
 For non-`tiny-fix` Work Logs, the minimum runtime contract is:
 
@@ -357,8 +359,8 @@ If a section is not applicable, write `none` instead of omitting it. This keeps 
 When AI detects a task is nearing completion (e.g., user says "done", "完成了", "差不多了", or AI has finished all planned steps), AI MUST self-check BEFORE responding:
 
 1. Is the task classified as `quick-win` or higher?
-2. Has the handoff phase been executed? (Check: does Work Log have a `## Resume` block?)
-3. Has the retro phase been executed? (Check: does Work Log have a `## Lessons` block?)
+2. Has the handoff phase been executed? (Check: does `## Resume` hold more than `none`? The template ships the heading, so presence alone proves nothing.)
+3. Has the retro phase been executed? (Check: does `## Lessons` hold more than `none`?)
 
 **For `feature` / `architecture-change`**: If handoff or retro is missing, AI MUST remind: "📋 Before closing: handoff and retro haven't run yet. Want me to proceed with them now?"
 

@@ -4,8 +4,7 @@ Execute the canonical workflow: `.agent/workflows/govern-docs.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives (Intent Router, Gate Engine, Sentinel)
-3. `.agentcortex/context/current_state.md` — SSoT
+1. `.agentcortex/context/current_state.md` — SSoT
 
 ## Execution
 

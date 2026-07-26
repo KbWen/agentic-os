@@ -4,9 +4,8 @@ Execute the canonical workflow: `.agent/workflows/review.md`
 
 ## Required reads before execution
 
-1. `AGENTS.md` — global directives
-2. `.agent/rules/security_guardrails.md` — auto-enforced during review
-3. Active Work Log — must contain implementation evidence
+1. `.agent/rules/security_guardrails.md` — auto-enforced during review
+2. Active Work Log — must contain implementation evidence
 
 ## Execution
 

@@ -139,7 +139,7 @@ Tool exit codes:
      - If metadata differs (another agent/user owns it) → note the differing owner/session in chat, but do NOT prompt here — the §2a lock verdict is the single authoritative concurrency check (under `worklog_lock.mode: blocking`, an active other-holder lock is a Gate FAIL at §2a; duplicate prompts with different semantics are prohibited). If the lock verdict permits proceeding (stale/recovered/takeover), use the multi-person variant `<owner>-<worklog-key>.md` instead of writing to another session's log.
      - If metadata is missing → warn "⚠️ Legacy Work Log detected, verify ownership".
    - If Work Log has `## Lessons` block (from prior retro): acknowledge relevant patterns in your bootstrap output.
-   - If Work Log has `## Risks` block: include in your bootstrap context summary.
+   - If Work Log has `## Known Risk` block: include in your bootstrap context summary.
    - If Work Log has a `## Decisions` block with ≥1 `### D-` entry (skip when `none`/empty): read the decisions, then **surface them to the user for confirmation** before treating them as binding: "📋 This Work Log contains [N] inherited decision(s) from a prior session: [list D-IDs and 1-line summaries]. Confirm these still apply? (yes/no/review)". Only after user confirms, acknowledge them per `/decide` §4. This prevents a compromised or stale Work Log from silently bypassing gates.
 2a. SPEC SCOPE: From the **Spec Index** in `current_state.md`, identify which specs are relevant to this task.
    - Read ONLY those explicitly mapped specs.

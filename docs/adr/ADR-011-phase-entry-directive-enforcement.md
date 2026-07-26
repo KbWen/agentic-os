@@ -186,3 +186,37 @@ value despite the T2 backing, the correct disposition is `merge` (fold the
 per-response requirement into the Work-Log audit rule), retiring the
 `sentinel-omission` case in the same change per AC-5. Deletion is NOT
 recommended (would orphan the eval case).
+
+## Amendment (2026-07-26, record-only): conflicting-directive scan — per-directive tiers
+
+Backlog #145 swept the same four surfaces for a **different axis**: not "is each directive
+enforcement-backed?" (this ADR) but "do the directives contradict each other?". This
+amendment exists because this ADR's own `review_trigger` fires whenever a directive on a
+phase-entry surface changes. Census:
+`docs/reviews/2026-07-26-conflicting-directive-scan.md`; spec:
+`docs/specs/conflicting-directive-scan.md`.
+
+**Nothing was deleted.** Decision 2's dispositions all stand — in particular **row 90
+(`§9.1` Acknowledgment Inputs, `NONE` / `keep-honest-unenforced`) is untouched.** The scan's
+first draft proposed deleting it; adversarial review established that this ADR had already run
+the `[enforcement]` test on that exact directive and chosen KEEP, and that its reopen trigger
+is "an incident traced to a pruned advisory rule", not "an agent overrode it". The proposal was
+withdrawn. The enumeration rows therefore remain accurate as a dated snapshot.
+
+Per Decision 2, each changed directive carries an explicit tier:
+
+| Change | Surface | Tier | Backing |
+|---|---|---|---|
+| `§Skill Safety & Precedence` item 2 rescoped to skill-vs-workflow, and stated to be **not** a document hierarchy | `AGENTS.md` | **NONE** | Nothing can gate how a precedence sentence is read. Rescoping removes a contradiction with `§Core Directives`, which designates `.agent/rules/` the Constitution — the first draft's proposal to *extend* the chain would have demoted it and looped through the 4 ADRs declaring `applies_to: AGENTS.md`. |
+| `/bootstrap` added to the non-ship SSoT-write exception list | `AGENTS.md` | **NONE** for the list text | The write itself is unchanged and remains T1 (`guard_context_write.py` + the guard race tests). Only the list's completeness changed — it had omitted both `bootstrap.md`'s `Last Verified` refresh and `AGENTS.md`'s own SSoT Recovery Exception eight lines above it. |
+| `§10.6` completion probes changed from section **presence** to section **content** | `engineering_guardrails.md` | **NONE** (honest, per this ADR's `keep-honest-unenforced` vocabulary) | An AI self-check by construction. The fix is that item 2 was already vacuous: the template ships `## Resume` in every log, so "does the log have a `## Resume` block?" was always true. |
+| `§10.2` gate table annotates `spec`, `ADR`, `check Spec Index` as *(advisory, no gate receipt)*, and records that receipt vocabulary is the 7 gate phases | `engineering_guardrails.md` | **T1** | The validator's gate-progression check already rejects a `Gate: spec` receipt. The annotation makes the table describe that enforcement instead of contradicting it. Three separate sessions (2026-07-02, 2026-07-19, 2026-07-26) wrote the receipt the un-annotated table implied and were caught by the validator; this closes the ambiguity that produced all three. |
+
+Counts held at baseline: `AGENTS.md` 37/37, `engineering_guardrails.md` 84/84 — the
+directive-count ratchet passes without a baseline change.
+
+**Honest ceiling**: `[audit-method]` requires an external signal for an architecture-level
+audit. The `ask-openrouter` path was live but six free-tier models failed across two attempts,
+and a paid model needs user confirmation per `§8.2`. All review seats were same-vendor. Their
+value is nonetheless on record: they refuted 9 of the scan's 11 original findings, two with
+fixes that would have silently disabled live checks.

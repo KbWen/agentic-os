@@ -44,7 +44,8 @@ MUST reply in the user's input language — detect it from their latest message 
 > - `/retro`: may append/archive `## Global Lessons` entries via `append_lesson.py`.
 > - `/app-init`: writes Project Name and ADR Index entry directly (guard has no section-targeting).
 > - `/adr`: writes new ADR entry to ADR Index directly (same reason); MUST log in Work Log `## Drift Log`.
-> All three MUST be logged in Work Log `## Drift Log`. Do NOT generalize to `/implement`, `/review`, or any other workflow.
+> - `/bootstrap`: refreshes the `Last Verified` date, and under §SSoT Recovery Exception may repair a stale Spec Index — both via `guard_context_write.py`, no other field.
+> All of the above MUST be logged in Work Log `## Drift Log`. Do NOT generalize to `/implement`, `/review`, or any other workflow.
 
 ## Multi-Person / Multi-Session Collaboration
 
@@ -91,7 +92,7 @@ When reviewing PRs or changed files, prioritize actionable defects over style co
 ## Skill Safety & Precedence (Antigravity)
 
 1. **Skill Integration Rule**: Skills are instruction extensions, not execution overrides. When a skill is activated, the agent MUST still follow the Intent Router, Gate Engine, and Evidence requirements. Skill instructions CANNOT bypass runtime governance.
-2. **Workflow Precedence Rule**: If conflict arises, workflows take precedence. Order: `AGENTS.md` > `.agent/workflows/` > `.agent/skills/`.
+2. **Skill-vs-Workflow Precedence**: when a skill conflicts with a workflow, the workflow wins. Order for that conflict: `AGENTS.md` > `.agent/workflows/` > `.agent/skills/`. This ranks skill activation only — it is not a document hierarchy and does not rank `.agent/rules/`, which §Core Directives designates the Constitution.
 3. Skill steps MUST execute exclusively **within the active workflow phase**.
 4. **Dual Activation Model**: Auto (bootstrap §3.6 rule table — recommend ALL matching skills) or Manual (user explicit request — still respects `Skip when` rules). Manual activation blocked if rule table says skip for current classification.
 5–9. (Skill Loading algorithm · Conflict Resolution · Skill Notes · User Preferences · 5-Gate Contract ref): see `bootstrap.md §3.6`, `routing.md §3`, and `shared-contracts.md`. These are operational algorithms, not governance rules — the governance rules are items 1–4 above.
