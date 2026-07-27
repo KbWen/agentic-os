@@ -1815,6 +1815,16 @@ PYEOF
       fi
     fi
   done
+  # Backlog #149: every check below is guarded by `worklog_count -gt 0`, so with
+  # no active work logs the whole family emitted NOTHING — not a SKIP, absent
+  # from the run — while the summary still printed "integrity check passed".
+  # A fresh clone or a downstream install has no logs (the directory ships only
+  # a dotfile placeholder, which the *.md glob does not match), so ~18 checks
+  # silently disappeared and the run-to-run result count became unusable as a
+  # regression signal. One family-level SKIP makes the absence visible.
+  if [[ "$worklog_count" -eq 0 ]]; then
+    record_result SKIP "active work-log checks -- no active work logs in .agentcortex/context/work/ (18 checks not applicable)"
+  fi
   if [[ "$phase_field_missing" -gt 0 ]]; then
     record_result WARN "work logs missing Current Phase field: ${phase_field_missing}"
   elif [[ "$worklog_count" -gt 0 ]]; then
