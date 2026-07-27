@@ -89,9 +89,11 @@ Fix backlog #149: with `.agentcortex/context/work/` empty, the 18 active-work-lo
 ### D-1: Family-level SKIP, not per-check, and no top-line qualifier
 
 - **Decision**: emit exactly one SKIP for the whole absent work-log family; leave the summary top line unqualified.
-- **Reason**: per-check SKIPs would grow the ADR-006 native count by ~18 and buy no information a single line does not carry. The top-line qualifier is reserved for capability gaps (#113), not for checks whose input legitimately does not exist.
+- **Reason**: per-check SKIPs would grow the validator native-site count by ~18 and buy no information a single line does not carry. The top-line qualifier is reserved for capability gaps (#113), not for checks whose input legitimately does not exist.
 - **Alternatives**: (a) one SKIP per check — rejected on ratchet cost and noise; (b) qualify the top line — rejected as above; (c) a Python tool behind `run_python_check` — impossible, the wrapper cannot express SKIP.
+- **Disposition**: this is an implementation decision governed BY the native-site ratchet, not a new architectural precedent amending it — its durable homes are the baseline justification entry, `test_emission_is_family_level_not_per_check`, and backlog row #149. Ratchet context stays in `## Known Risk` above.
 - **Impact**: `skip` goes 2→3 on a repo with no active logs; no verdict, exit code, or gate semantics change.
+- → local
 
 ---
 
