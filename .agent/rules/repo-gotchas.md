@@ -168,6 +168,35 @@ something.
 git worktree add ../baseline main
 ```
 
+## 14. Isolate a validator count shift by stashing, not by a clean worktree
+
+`validate.sh` / `validate.ps1` end with `pass=N warn=N fail=N skip=N`. When that line moves
+and you want to know whether your diff caused it, the clean-worktree technique from #13 does
+**not** transfer. The reason is specific: roughly **20 result lines come from the active
+work-log checks**, and those emit nothing at all when `.agentcortex/context/work/` is empty —
+they do not report `SKIP`, they simply vanish from the run. A fresh worktree has no work logs
+(the directory is gitignored), so its totals are structurally lower than yours.
+
+Measured 2026-07-27 on one commit: a clean `main` worktree reported `pass=99 warn=3`; the real
+tree with two active logs reported `pass=116 warn=4`; after archiving both logs the real tree
+reported `pass=99 warn=3` as well. Nothing in that gap was a diff.
+
+Stash only your own change and re-run in place instead, then compare the result **lines**
+rather than the totals:
+
+```bash
+git stash push -- path/to/changed-file && bash .agentcortex/bin/validate.sh > after.txt
+```
+
+An identical result-line set proves a zero delta far better than an identical count does.
+
+One culprit worth checking first, because it is self-inflicted and easy to miss: if you
+reclassified mid-task, your own gitignored work log now carries a `## Gate Evidence` receipt
+whose `Classification:` disagrees with the header. That surfaces as
+`active work log gate receipts with schema violations: 1` and one fewer PASS — a real finding
+about your session, not about the tree. Re-issue the receipt at the new tier and keep the
+original classification in `## Drift Log`, since the receipt grammar is pipe-field-strict.
+
 ---
 
 ## Adding to this file
