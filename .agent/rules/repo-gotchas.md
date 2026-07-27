@@ -172,14 +172,19 @@ git worktree add ../baseline main
 
 `validate.sh` / `validate.ps1` end with `pass=N warn=N fail=N skip=N`. When that line moves
 and you want to know whether your diff caused it, the clean-worktree technique from #13 does
-**not** transfer. The reason is specific: roughly **20 result lines come from the active
-work-log checks**, and those emit nothing at all when `.agentcortex/context/work/` is empty —
-they do not report `SKIP`, they simply vanish from the run. A fresh worktree has no work logs
-(the directory is gitignored), so its totals are structurally lower than yours.
+**not** transfer. The reason is specific: roughly **18 PASS lines come from the active
+work-log checks**, and those do not run when `.agentcortex/context/work/` holds no `*.md` log
+(the shipped `.gitkeep.md` placeholder does not count — both validators exclude dotfiles). A
+fresh worktree has no work logs, so its totals are structurally lower than yours no matter
+what you changed.
 
 Measured 2026-07-27 on one commit: a clean `main` worktree reported `pass=99 warn=3`; the real
 tree with two active logs reported `pass=116 warn=4`; after archiving both logs the real tree
 reported `pass=99 warn=3` as well. Nothing in that gap was a diff.
+
+Since backlog #149 the run at least *says* so — one `SKIP` line reading `active work-log
+checks -- no active work logs`. That marks the absence; it does not restore the missing PASS
+lines, so the totals still are not comparable across trees.
 
 Stash only your own change and re-run in place instead, then compare the result **lines**
 rather than the totals:
