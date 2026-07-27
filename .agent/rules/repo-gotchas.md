@@ -56,6 +56,19 @@ Clear them by **archiving tracked logs**, not by editing the validator. `/ship` 
 MOVE, not a copy. Before assuming a validator bug, check whether the offending path is
 gitignored.
 
+The inverse bites harder, because it turns CI red rather than green. **Archiving flips a log
+from gitignored to tracked**, so checks that skipped it while it lived in `work/` start
+judging it — `check_decision_disposition.py` is the one that catches people, since it excludes
+`work/` entirely and enforces a date cutoff on the archive. A `## Decisions` entry that never
+received its ship-time disposition marker (`ship.md` 2b: `→ promoted: ADR-<id>` /
+`→ consolidated: L2 <domain>` / `→ local`) passes every local run right up until the moment
+you archive it.
+
+Consequence for ordering: a full-suite run taken **before** archival does not cover the
+archived state. Run it after the move, or at minimum re-run the guard suite. Confirmed
+2026-07-27 — a green 813-test local run preceded the archival, and CI went red on `main`
+immediately after (PR #374 → #375).
+
 ## 4. The 355k lifecycle ceiling does not count `AGENTS.md` or `CLAUDE.md`
 
 A widely-assumed premise that is false. `.agentcortex/tests/test_lifecycle_token_consumption.py`
