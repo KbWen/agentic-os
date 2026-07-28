@@ -223,6 +223,8 @@ def test_dependency_free_scalar_corpus_never_accepts_pyyaml_invalid_or_non_strin
             "description: >",
             "description: >\n\tinvalid tab indent",
             "description: >\n  first line\n second line",
+            "name:alpha-skill\ndescription: valid text",
+            "name: alpha-skill\ndescription:valid text",
         ]
     )
 

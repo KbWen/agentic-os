@@ -94,6 +94,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         if raw.startswith((" ", "\t")) or ":" not in raw:
             raise ValueError(f"unsupported or invalid YAML line: {raw!r}")
         key, _, raw_value = raw.partition(":")
+        if raw_value and not raw_value.startswith(" "):
+            raise ValueError(f"mapping colon must be followed by whitespace: {raw!r}")
         key = key.strip()
         if not re.fullmatch(r"[A-Za-z0-9_-]+", key) or key in fields:
             raise ValueError(f"invalid or duplicate YAML key: {key!r}")
