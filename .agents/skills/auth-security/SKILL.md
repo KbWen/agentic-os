@@ -3,8 +3,8 @@ name: auth-security
 description: Apply secure authentication and authorization patterns when a task touches login, credentials, tokens, sessions, roles, or permissions.
 ---
 
-<!-- This is a SCAFFOLD skill. When /app-init runs in a downstream project, -->
-<!-- it customizes this file based on the project's ADR tech stack. -->
+<!-- This is a SCAFFOLD skill -->
+<!-- When /app-init runs in a downstream project, it customizes this file based on the project's ADR tech stack. -->
 <!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
 
 # Auth & Security

@@ -3,8 +3,8 @@ name: frontend-patterns
 description: Apply project frontend conventions when a task creates or changes components, pages, client state, forms, or data-driven UI.
 ---
 
-<!-- This is a SCAFFOLD skill. When /app-init runs in a downstream project, -->
-<!-- it customizes this file based on the project's ADR tech stack. -->
+<!-- This is a SCAFFOLD skill -->
+<!-- When /app-init runs in a downstream project, it customizes this file based on the project's ADR tech stack. -->
 <!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
 
 # Frontend Patterns

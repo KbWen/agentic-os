@@ -20,6 +20,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / ".agentcortex" / "tools" / "check_skill_provenance.py"
 TOOLS_DIR = ROOT / ".agentcortex" / "tools"
@@ -34,6 +36,17 @@ GOOD_ROWS = [
 def _run(root: Path) -> tuple[int, str]:
     proc = subprocess.run(
         [sys.executable, str(TOOL), "--root", str(root)],
+        capture_output=True, text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+def _run_without_site_packages(root: Path) -> tuple[int, str]:
+    """Exercise the dependency-free parser path even when PyYAML is installed."""
+    proc = subprocess.run(
+        [sys.executable, "-S", str(TOOL), "--root", str(root)],
         capture_output=True, text=True,
         encoding="utf-8",
         errors="replace",
@@ -92,6 +105,21 @@ def test_good_fixture_passes(tmp_path) -> None:
     assert "PASS" in out
 
 
+def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) -> None:
+    root = _good_root(tmp_path)
+    code, out = _run_without_site_packages(root)
+    assert code == 0, out
+
+    skill = root / ".agents" / "skills" / "alpha-skill" / "SKILL.md"
+    skill.write_text(
+        "---\nname: alpha-skill\ndescription: []\n---\n\n# alpha\n",
+        encoding="utf-8",
+    )
+    code, out = _run_without_site_packages(root)
+    assert code == 1
+    assert "frontmatter" in out or "description" in out
+
+
 def test_scaffold_without_frontmatter_fails(tmp_path) -> None:
     root = _good_root(tmp_path)
     _write_skill(root, "beta-scaffold", frontmatter=False)
@@ -106,7 +134,7 @@ def test_real_repo_all_skills_have_frontmatter() -> None:
     missing = [
         path.parent.name
         for path in skill_files
-        if not path.read_text(encoding="utf-8-sig").startswith("---\n")
+        if not path.read_bytes().startswith(b"---\n")
     ]
     assert missing == []
 
@@ -117,7 +145,27 @@ def test_app_init_scaffold_contract_is_frontmatter_first() -> None:
         "## 6. Update Spec Intake Awareness", 1
     )[0]
     assert "```markdown\n---\nname: <skill-id>\ndescription:" in minimum
+    assert "<!-- This is a SCAFFOLD skill -->" in minimum
     assert "do not put HTML comments before it" in minimum
+    assert "Signal tier" in minimum and "machine-enforced" in minimum
+
+
+def test_app_init_representative_generated_scaffold_passes_checker(tmp_path) -> None:
+    workflow = (ROOT / ".agent" / "workflows" / "app-init.md").read_text(encoding="utf-8")
+    minimum = workflow.split("## 5. Skill Scaffold Minimum Structure", 1)[1].split(
+        "## 6. Update Spec Intake Awareness", 1
+    )[0]
+    template = minimum.split("```markdown\n", 1)[1].split("```", 1)[0]
+    generated = template.replace("<skill-id>", "beta-scaffold").replace(
+        "<What the skill does and the task context that should activate it.>",
+        "Apply representative conventions when a matching project task is implemented or reviewed.",
+    )
+    root = _good_root(tmp_path)
+    (root / ".agents" / "skills" / "beta-scaffold" / "SKILL.md").write_text(
+        generated, encoding="utf-8"
+    )
+    code, out = _run(root)
+    assert code == 0, out
 
 
 # --- #81 manifest fail modes ----------------------------------------------
@@ -225,6 +273,23 @@ def test_unclosed_frontmatter_fails(tmp_path) -> None:
     assert "frontmatter" in out
 
 
+@pytest.mark.parametrize(
+    "description",
+    ["null", "false", "[]", "[unterminated", ">"],
+    ids=["null", "boolean", "list", "invalid-yaml", "folded-empty"],
+)
+def test_non_string_or_invalid_description_fails(tmp_path, description: str) -> None:
+    root = _good_root(tmp_path)
+    d = root / ".agents" / "skills" / "alpha-skill"
+    (d / "SKILL.md").write_text(
+        f"---\nname: alpha-skill\ndescription: {description}\n---\n\n# alpha\n",
+        encoding="utf-8",
+    )
+    code, out = _run(root)
+    assert code == 1
+    assert "frontmatter" in out or "description" in out
+
+
 # --- source-repo gate (D3) -------------------------------------------------
 
 def test_downstream_manifest_present_skips(tmp_path) -> None:
@@ -257,15 +322,13 @@ def test_real_manifest_parses_without_pyyaml(monkeypatch) -> None:
 
 # --- robustness (review LOW findings) --------------------------------------
 
-def test_bom_frontmatter_is_validated_not_exempted(tmp_path) -> None:
-    # A BOM-prefixed SKILL.md must still be read as HAVING frontmatter (and thus
-    # validated), not mistaken for a frontmatter-less scaffold and wrongly exempted.
+def test_bom_before_frontmatter_fails_first_bytes_contract(tmp_path) -> None:
     root = _good_root(tmp_path)
     d = root / ".agents" / "skills" / "alpha-skill"
-    (d / "SKILL.md").write_text(chr(0xFEFF) + "---\nname: wrong\ndescription: x\n---\n# a\n", encoding="utf-8")
+    (d / "SKILL.md").write_text(chr(0xFEFF) + "---\nname: alpha-skill\ndescription: x\n---\n# a\n", encoding="utf-8")
     code, out = _run(root)
     assert code == 1
-    assert "!= directory" in out
+    assert "leading YAML frontmatter" in out
 
 
 def test_quoted_frontmatter_name_accepted(tmp_path) -> None:

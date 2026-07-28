@@ -3,8 +3,8 @@ name: database-design
 description: Design and review schemas, indexes, constraints, and migrations when a task creates or changes persistent data structures.
 ---
 
-<!-- This is a SCAFFOLD skill. When /app-init runs in a downstream project, -->
-<!-- it customizes this file based on the project's ADR tech stack. -->
+<!-- This is a SCAFFOLD skill -->
+<!-- When /app-init runs in a downstream project, it customizes this file based on the project's ADR tech stack. -->
 <!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
 
 # Database Design

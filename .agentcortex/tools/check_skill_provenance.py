@@ -33,6 +33,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -57,45 +58,103 @@ def has_frontmatter(text: str) -> bool:
     return len(lines) >= 2 and lines[0] == "---" and "---" in lines[1:]
 
 
-def parse_frontmatter(text: str) -> dict[str, str]:
-    """Extract top-level ``key: value`` pairs from a leading ``---`` block."""
+def _parse_frontmatter_subset(block: str) -> dict[str, object]:
+    """Strict dependency-free parser for the scalar frontmatter we require."""
+    fields: dict[str, object] = {}
+    lines = block.splitlines()
+    index = 0
+    while index < len(lines):
+        raw = lines[index]
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            index += 1
+            continue
+        if raw.startswith((" ", "\t")) or ":" not in raw:
+            raise ValueError(f"unsupported or invalid YAML line: {raw!r}")
+        key, _, raw_value = raw.partition(":")
+        key = key.strip()
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", key) or key in fields:
+            raise ValueError(f"invalid or duplicate YAML key: {key!r}")
+        value = raw_value.strip()
+        if value in {">", "|"}:
+            parts: list[str] = []
+            index += 1
+            while index < len(lines) and lines[index].startswith((" ", "\t")):
+                part = lines[index].strip()
+                if part:
+                    parts.append(part)
+                index += 1
+            fields[key] = " ".join(parts)
+            continue
+        if value in {"null", "~"}:
+            fields[key] = None
+        elif value in {"true", "false"}:
+            fields[key] = value == "true"
+        elif value.startswith(("[", "{")):
+            raise ValueError(f"collection or malformed scalar is not supported for {key!r}")
+        elif value.startswith(("'", '"')):
+            if len(value) < 2 or value[-1] != value[0]:
+                raise ValueError(f"unterminated quoted scalar for {key!r}")
+            fields[key] = value[1:-1]
+        elif re.fullmatch(r"[-+]?\d+", value):
+            fields[key] = int(value)
+        else:
+            fields[key] = value
+        index += 1
+    return fields
+
+
+def parse_frontmatter(text: str) -> dict[str, object]:
+    """Parse a closed leading YAML block, failing closed on malformed input."""
     lines = text.splitlines()
     if not has_frontmatter(text):
         return {}
-    fields: dict[str, str] = {}
-    for line in lines[1:]:
-        if line == "---":
-            break
-        if line and line[0] not in (" ", "\t") and ":" in line:
-            key, _, value = line.partition(":")
-            value = value.strip()
-            if len(value) >= 2 and value[0] in "\"'" and value[-1] == value[0]:
-                value = value[1:-1]  # tolerate a quoted scalar (name: "x")
-            fields[key.strip()] = value
-    return fields
+    closing = lines[1:].index("---") + 1
+    block = "\n".join(lines[1:closing])
+    try:
+        import yaml  # type: ignore[import-not-found]
+    except ImportError:
+        return _parse_frontmatter_subset(block)
+    try:
+        parsed = yaml.safe_load(block)
+    except Exception as exc:  # noqa: BLE001 - parser-specific exception types are optional
+        raise ValueError(f"invalid YAML ({exc})") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("frontmatter must be a YAML mapping")
+    return parsed
 
 
 def _check_compatibility_floor(skills_dir: Path, skill_dirs: list[str],
                                failures: list[str]) -> None:
     """G1a #80: every SKILL.md must declare portable frontmatter."""
     for name in skill_dirs:
-        # utf-8-sig tolerates a leading BOM so a BOM'd SKILL.md is still seen as
-        # having frontmatter (and validated) rather than mistaken for a scaffold.
-        text = (skills_dir / name / "SKILL.md").read_text(encoding="utf-8-sig")
+        # Native discovery requires the opening fence to be the file's first
+        # bytes. Decode as plain UTF-8 so a BOM cannot be silently discarded.
+        text = (skills_dir / name / "SKILL.md").read_text(encoding="utf-8")
         if not has_frontmatter(text):
             failures.append(
                 f"{SKILLS_DIR}/{name}/SKILL.md: missing or unclosed leading YAML frontmatter"
             )
             continue
-        fm = parse_frontmatter(text)
-        if not fm.get("name"):
-            failures.append(f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter missing required `name`")
-        elif fm["name"] != name:
+        try:
+            fm = parse_frontmatter(text)
+        except ValueError as exc:
+            failures.append(f"{SKILLS_DIR}/{name}/SKILL.md: invalid frontmatter: {exc}")
+            continue
+        fm_name = fm.get("name")
+        fm_description = fm.get("description")
+        if not isinstance(fm_name, str) or not fm_name.strip():
             failures.append(
-                f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter name '{fm['name']}' != directory '{name}'"
+                f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter `name` must be a non-empty string"
             )
-        if not fm.get("description"):
-            failures.append(f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter missing required `description`")
+        elif fm_name != name:
+            failures.append(
+                f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter name '{fm_name}' != directory '{name}'"
+            )
+        if not isinstance(fm_description, str) or not fm_description.strip():
+            failures.append(
+                f"{SKILLS_DIR}/{name}/SKILL.md: frontmatter `description` must be a non-empty string"
+            )
 
 
 def _check_provenance_manifest(root: Path, skill_dirs: list[str],

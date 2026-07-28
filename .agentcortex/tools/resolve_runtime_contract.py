@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -21,10 +22,14 @@ def resolve(
     worklog_path: str | None = None,
 ) -> dict[str, Any]:
     """Delegate resolution to the single canonical runtime implementation."""
-    sys.path.insert(0, str(root / ".agentcortex" / "tools"))
-    from trigger_runtime_core import resolve_runtime_contract
+    module_path = root / ".agentcortex" / "tools" / "trigger_runtime_core.py"
+    spec = importlib.util.spec_from_file_location("_agentcortex_trigger_runtime_core", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load canonical resolver: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-    return resolve_runtime_contract(
+    artifact = module.resolve_runtime_contract(
         root,
         classification=classification,
         phase=phase,
@@ -34,6 +39,11 @@ def resolve(
         failure_signals=failure_signals,
         worklog_path=worklog_path,
     )
+    workflow = artifact.get("resolved_workflow")
+    return {
+        "resolved_workflow": Path(str(workflow)).name if workflow else None,
+        "activated_skills": sorted(artifact.get("activated_skills", [])),
+    }
 
 
 def _comma_list(value: str) -> list[str]:

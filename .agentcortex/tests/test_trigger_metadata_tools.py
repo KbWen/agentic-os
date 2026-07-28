@@ -18,6 +18,7 @@ from trigger_runtime_core import (
     package_content_hash,
     parse_frontmatter,
     parse_simple_yaml,
+    resolve_runtime_contract,
     resolve_skill_execution_policy,
     resolve_skill_lockfile,
     validate_skill_manifest_authority,
@@ -325,6 +326,9 @@ agentcortex:
         self.assertEqual(outputs[1]["resolved_workflow"], outputs[2]["resolved_workflow"])
         self.assertEqual(outputs[0]["activated_skills"], outputs[1]["activated_skills"])
         self.assertEqual(outputs[1]["activated_skills"], outputs[2]["activated_skills"])
+        self.assertEqual(set(outputs[0]), {"resolved_workflow", "activated_skills"})
+        self.assertEqual(outputs[0]["resolved_workflow"], "implement.md")
+        self.assertEqual(outputs[0]["activated_skills"], sorted(outputs[0]["activated_skills"]))
         self.assertIn("test-driven-development", outputs[0]["activated_skills"])
         self.assertIn("auth-security", outputs[0]["activated_skills"])
 
@@ -343,6 +347,39 @@ agentcortex:
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertIn("systematic-debugging", payload["activated_skills"])
+
+    def test_resolver_cli_activation_matches_canonical_core_exactly(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "codex",
+            "--manual-skills",
+            "api-design",
+            "--scope-signals",
+            "testable logic",
+            "--failure-signals",
+            "test-failure",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        core = resolve_runtime_contract(
+            ROOT,
+            classification="feature",
+            phase="implement",
+            platform="codex",
+            manual_skills=["api-design"],
+            scope_signals=["testable logic"],
+            failure_signals=["test-failure"],
+        )
+        self.assertEqual(
+            json.loads(result.stdout)["activated_skills"],
+            sorted(core["activated_skills"]),
+        )
 
     def test_resolver_cli_supports_direct_manual_activation(self) -> None:
         result = run_tool(
@@ -380,7 +417,7 @@ agentcortex:
         payload = json.loads(result.stdout)
         self.assertIn("systematic-debugging", payload["activated_skills"])
 
-    def test_resolver_cli_near_neighbor_without_signal_does_not_activate_contextual_skills(self) -> None:
+    def test_resolver_cli_ambiguous_no_signal_activates_only_phase_entry_skills(self) -> None:
         result = run_tool(
             ".agentcortex/tools/resolve_runtime_contract.py",
             "--root",
@@ -393,11 +430,62 @@ agentcortex:
             "antigravity",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        payload = json.loads(result.stdout)
-        self.assertNotIn("api-design", payload["activated_skills"])
-        self.assertNotIn("auth-security", payload["activated_skills"])
-        self.assertNotIn("database-design", payload["activated_skills"])
-        self.assertNotIn("frontend-patterns", payload["activated_skills"])
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {"verification-before-completion", "karpathy-principles"},
+        )
+
+    def test_resolver_cli_near_neighbor_signal_does_not_activate_domain_skills(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "antigravity",
+            "--scope-signals",
+            "api documentation",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {"verification-before-completion", "karpathy-principles"},
+        )
+
+    def test_resolver_cli_isolates_each_scope_signal_across_platform_labels(self) -> None:
+        """Resolver-label parity only; not native-host discovery or model effectiveness."""
+        cases = {
+            "api endpoint": "api-design",
+            "token": "auth-security",
+            "schema migration": "database-design",
+            "ui component": "frontend-patterns",
+            "testable logic": "test-driven-development",
+        }
+        phase_entry = {"verification-before-completion", "karpathy-principles"}
+        for platform in ("claude", "codex", "antigravity"):
+            for signal, contextual_skill in cases.items():
+                with self.subTest(platform=platform, signal=signal):
+                    result = run_tool(
+                        ".agentcortex/tools/resolve_runtime_contract.py",
+                        "--root",
+                        ".",
+                        "--classification",
+                        "feature",
+                        "--phase",
+                        "implement",
+                        "--platform",
+                        platform,
+                        "--scope-signals",
+                        signal,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        set(json.loads(result.stdout)["activated_skills"]),
+                        phase_entry | {contextual_skill},
+                    )
 
     def test_resolver_cli_coexists_for_api_auth_database_and_tdd(self) -> None:
         result = run_tool(
@@ -414,11 +502,17 @@ agentcortex:
             "api endpoint,token,schema migration,testable logic",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        activated = set(json.loads(result.stdout)["activated_skills"])
-        self.assertTrue(
-            {"api-design", "auth-security", "database-design", "test-driven-development"}.issubset(activated)
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {
+                "verification-before-completion",
+                "test-driven-development",
+                "api-design",
+                "database-design",
+                "auth-security",
+                "karpathy-principles",
+            },
         )
-        self.assertNotIn("frontend-patterns", activated)
 
     def test_resolver_prefers_hash_cache_when_worklog_matches(self) -> None:
         compact_index = json.loads((ROOT / ".agentcortex/metadata/trigger-compact-index.json").read_text(encoding="utf-8"))

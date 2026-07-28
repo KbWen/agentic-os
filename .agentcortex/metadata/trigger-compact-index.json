@@ -261,7 +261,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "4500f919"
+      "content_hash": "1392aaed"
     },
     {
       "id": "database-design",
@@ -286,7 +286,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "b338fb7d"
+      "content_hash": "3e93ceea"
     },
     {
       "id": "frontend-patterns",
@@ -309,7 +309,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "79e770d1"
+      "content_hash": "6b04a9a4"
     },
     {
       "id": "auth-security",
@@ -338,7 +338,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "6cffa380"
+      "content_hash": "cc132894"
     },
     {
       "id": "doc-lookup",
