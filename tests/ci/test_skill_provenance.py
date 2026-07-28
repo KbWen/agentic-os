@@ -111,7 +111,23 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
     assert code == 0, out
 
     skill = root / ".agents" / "skills" / "alpha-skill" / "SKILL.md"
-    for invalid_description in ("[]", "valid: invalid", "# comment", "&anchor", "*alias"):
+    for valid_description in ('"quoted text"', "'quoted text'", "'don''t'"):
+        skill.write_text(
+            f"---\nname: alpha-skill\ndescription: {valid_description}\n---\n\n# alpha\n",
+            encoding="utf-8",
+        )
+        code, out = _run_without_site_packages(root)
+        assert code == 0, (valid_description, out)
+
+    for invalid_description in (
+        "[]",
+        "valid: invalid",
+        "# comment",
+        "&anchor",
+        "*alias",
+        r'"bad\q"',
+        "'don't'",
+    ):
         skill.write_text(
             f"---\nname: alpha-skill\ndescription: {invalid_description}\n---\n\n# alpha\n",
             encoding="utf-8",

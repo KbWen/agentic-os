@@ -33,6 +33,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -92,10 +93,21 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
             fields[key] = value == "true"
         elif value.startswith(("[", "{")):
             raise ValueError(f"collection or malformed scalar is not supported for {key!r}")
-        elif value.startswith(("'", '"')):
-            if len(value) < 2 or value[-1] != value[0]:
-                raise ValueError(f"unterminated quoted scalar for {key!r}")
-            fields[key] = value[1:-1]
+        elif value.startswith('"'):
+            try:
+                parsed_value = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid double-quoted scalar for {key!r}") from exc
+            if not isinstance(parsed_value, str):
+                raise ValueError(f"invalid double-quoted scalar for {key!r}")
+            fields[key] = parsed_value
+        elif value.startswith("'"):
+            if len(value) < 2 or value[-1] != "'":
+                raise ValueError(f"unterminated single-quoted scalar for {key!r}")
+            inner = value[1:-1]
+            if "'" in inner.replace("''", ""):
+                raise ValueError(f"invalid single-quoted scalar for {key!r}")
+            fields[key] = inner.replace("''", "'")
         elif re.fullmatch(r"[-+]?\d+", value):
             fields[key] = int(value)
         else:
