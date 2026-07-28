@@ -140,6 +140,14 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
     assert code == 1
     assert "frontmatter" in out
 
+    skill.write_text(
+        "---\nname: alpha-skill\ndescription: >\n  first line\n second line\n---\n\n# alpha\n",
+        encoding="utf-8",
+    )
+    code, out = _run_without_site_packages(root)
+    assert code == 1
+    assert "frontmatter" in out
+
     for invalid_description in (
         "[]",
         "valid: invalid",
@@ -154,6 +162,7 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         "yes",
         "on",
         "bad\x01value",
+        "bad\u0080value",
     ):
         skill.write_text(
             f"---\nname: alpha-skill\ndescription: {invalid_description}\n---\n\n# alpha\n",

@@ -59,6 +59,20 @@ def has_frontmatter(text: str) -> bool:
     return len(lines) >= 2 and lines[0] == "---" and "---" in lines[1:]
 
 
+def _has_forbidden_yaml_character(text: str) -> bool:
+    """Return whether *text* contains a character excluded by YAML 1.2."""
+    for char in text:
+        codepoint = ord(char)
+        if codepoint in {0x09, 0x0A, 0x0D} or 0x20 <= codepoint <= 0x7E or codepoint == 0x85:
+            continue
+        if 0xA0 <= codepoint <= 0xD7FF or 0xE000 <= codepoint <= 0xFFFD:
+            continue
+        if 0x10000 <= codepoint <= 0x10FFFF:
+            continue
+        return True
+    return False
+
+
 def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     """Strict dependency-free parser for the scalar frontmatter we require."""
     fields: dict[str, object] = {}
@@ -66,7 +80,7 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     index = 0
     while index < len(lines):
         raw = lines[index]
-        if any((ord(char) < 0x20 and char != "\t") or ord(char) == 0x7F for char in raw):
+        if _has_forbidden_yaml_character(raw):
             raise ValueError(f"control character is not valid YAML: {raw!r}")
         indent_prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
         if "\t" in indent_prefix:
@@ -84,13 +98,11 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         value = raw_value.strip()
         if value in {">", "|"}:
             parts: list[str] = []
+            block_indent: int | None = None
             index += 1
             while index < len(lines) and lines[index].startswith((" ", "\t")):
                 continuation = lines[index]
-                if any(
-                    (ord(char) < 0x20 and char != "\t") or ord(char) == 0x7F
-                    for char in continuation
-                ):
+                if _has_forbidden_yaml_character(continuation):
                     raise ValueError(
                         f"control character is not valid YAML: {continuation!r}"
                     )
@@ -99,6 +111,13 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
                     raise ValueError(f"tab indentation is not valid YAML: {continuation!r}")
                 part = continuation.strip()
                 if part:
+                    current_indent = len(indent_prefix)
+                    if block_indent is None:
+                        block_indent = current_indent
+                    elif current_indent < block_indent:
+                        raise ValueError(
+                            f"decreasing block indentation is not valid YAML: {continuation!r}"
+                        )
                     parts.append(part)
                 index += 1
             fields[key] = " ".join(parts)
@@ -117,6 +136,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
                 raise ValueError(f"invalid double-quoted scalar for {key!r}") from exc
             if not isinstance(parsed_value, str):
                 raise ValueError(f"invalid double-quoted scalar for {key!r}")
+            if _has_forbidden_yaml_character(parsed_value):
+                raise ValueError(f"control character is not valid YAML for {key!r}")
             fields[key] = parsed_value
         elif value.startswith("'"):
             if len(value) < 2 or value[-1] != "'":
