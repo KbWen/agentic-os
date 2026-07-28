@@ -117,7 +117,9 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
     skill = root / ".agents" / "skills" / "alpha-skill" / "SKILL.md"
     for valid_description in (
         '"quoted text"',
+        '"quoted # text"',
         "'quoted text'",
+        "'quoted # text'",
         "'don''t'",
         "hello",
         "on call",
@@ -168,6 +170,10 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         "bad\tvalue",
         "bad\x01value",
         "bad\u0080value",
+        "1 # comment",
+        "true # comment",
+        "null # comment",
+        "0x10 # comment",
     ):
         skill.write_text(
             f"---\nname: alpha-skill\ndescription: {invalid_description}\n---\n\n# alpha\n",
@@ -215,6 +221,10 @@ def test_dependency_free_scalar_corpus_never_accepts_pyyaml_invalid_or_non_strin
         "bad\tvalue",
         "bad\x01value",
         "bad\u0080value",
+        "1 # comment",
+        "true # comment",
+        "null # comment",
+        "0x10 # comment",
     ]
     blocks = [f"description: {value}" for value in values]
     blocks.extend(

@@ -100,6 +100,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         if not re.fullmatch(r"[A-Za-z0-9_-]+", key) or key in fields:
             raise ValueError(f"invalid or duplicate YAML key: {key!r}")
         value = raw_value.strip()
+        if not value.startswith(("'", '"')) and re.search(r"(?:^| )#", value):
+            raise ValueError(f"inline comments are not supported by the YAML fallback: {raw!r}")
         if value in {">", "|"}:
             parts: list[str] = []
             block_indent: int | None = None
