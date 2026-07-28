@@ -119,6 +119,21 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         code, out = _run_without_site_packages(root)
         assert code == 0, (valid_description, out)
 
+    skill.write_text(
+        "---\nname: alpha-skill\ndescription: >\n  valid folded text\n---\n\n# alpha\n",
+        encoding="utf-8",
+    )
+    code, out = _run_without_site_packages(root)
+    assert code == 0, out
+
+    skill.write_text(
+        "---\nname: alpha-skill\ndescription: >\n\tinvalid tab indent\n---\n\n# alpha\n",
+        encoding="utf-8",
+    )
+    code, out = _run_without_site_packages(root)
+    assert code == 1
+    assert "frontmatter" in out
+
     for invalid_description in (
         "[]",
         "valid: invalid",

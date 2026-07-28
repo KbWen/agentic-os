@@ -66,6 +66,9 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     index = 0
     while index < len(lines):
         raw = lines[index]
+        indent_prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
+        if "\t" in indent_prefix:
+            raise ValueError(f"tab indentation is not valid YAML: {raw!r}")
         stripped = raw.strip()
         if not stripped or stripped.startswith("#"):
             index += 1
@@ -81,7 +84,11 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
             parts: list[str] = []
             index += 1
             while index < len(lines) and lines[index].startswith((" ", "\t")):
-                part = lines[index].strip()
+                continuation = lines[index]
+                indent_prefix = continuation[: len(continuation) - len(continuation.lstrip(" \t"))]
+                if "\t" in indent_prefix:
+                    raise ValueError(f"tab indentation is not valid YAML: {continuation!r}")
+                part = continuation.strip()
                 if part:
                     parts.append(part)
                 index += 1
