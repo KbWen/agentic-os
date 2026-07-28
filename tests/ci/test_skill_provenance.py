@@ -111,7 +111,13 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
     assert code == 0, out
 
     skill = root / ".agents" / "skills" / "alpha-skill" / "SKILL.md"
-    for valid_description in ('"quoted text"', "'quoted text'", "'don''t'"):
+    for valid_description in (
+        '"quoted text"',
+        "'quoted text'",
+        "'don''t'",
+        "hello",
+        "on call",
+    ):
         skill.write_text(
             f"---\nname: alpha-skill\ndescription: {valid_description}\n---\n\n# alpha\n",
             encoding="utf-8",
@@ -142,6 +148,12 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         "*alias",
         r'"bad\q"',
         "'don't'",
+        "1.25",
+        "2026-07-28",
+        "2026-07-28 09:30:00",
+        "yes",
+        "on",
+        "bad\x01value",
     ):
         skill.write_text(
             f"---\nname: alpha-skill\ndescription: {invalid_description}\n---\n\n# alpha\n",

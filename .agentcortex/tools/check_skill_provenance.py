@@ -66,6 +66,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     index = 0
     while index < len(lines):
         raw = lines[index]
+        if any((ord(char) < 0x20 and char != "\t") or ord(char) == 0x7F for char in raw):
+            raise ValueError(f"control character is not valid YAML: {raw!r}")
         indent_prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
         if "\t" in indent_prefix:
             raise ValueError(f"tab indentation is not valid YAML: {raw!r}")
@@ -85,6 +87,13 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
             index += 1
             while index < len(lines) and lines[index].startswith((" ", "\t")):
                 continuation = lines[index]
+                if any(
+                    (ord(char) < 0x20 and char != "\t") or ord(char) == 0x7F
+                    for char in continuation
+                ):
+                    raise ValueError(
+                        f"control character is not valid YAML: {continuation!r}"
+                    )
                 indent_prefix = continuation[: len(continuation) - len(continuation.lstrip(" \t"))]
                 if "\t" in indent_prefix:
                     raise ValueError(f"tab indentation is not valid YAML: {continuation!r}")
@@ -94,10 +103,11 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
                 index += 1
             fields[key] = " ".join(parts)
             continue
-        if value in {"null", "~"}:
+        lowered = value.lower()
+        if lowered in {"null", "~"}:
             fields[key] = None
-        elif value in {"true", "false"}:
-            fields[key] = value == "true"
+        elif lowered in {"true", "false", "yes", "no", "on", "off"}:
+            fields[key] = lowered in {"true", "yes", "on"}
         elif value.startswith(("[", "{")):
             raise ValueError(f"collection or malformed scalar is not supported for {key!r}")
         elif value.startswith('"'):
@@ -120,6 +130,13 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         else:
             if not value[0].isalnum() or re.search(r":(?:[ \t]|$)", value):
                 raise ValueError(f"unsafe or invalid plain scalar for {key!r}")
+            if re.match(r"^\d{4}-\d{1,2}-\d{1,2}(?:$|[Tt \t])", value):
+                raise ValueError(f"implicit timestamp is not a string for {key!r}")
+            if not any(char.isspace() for char in value) and not (
+                value[0].isalpha()
+                and all(char.isalpha() or char in "_-" for char in value)
+            ):
+                raise ValueError(f"plain scalar is not provably a string for {key!r}")
             fields[key] = value
         index += 1
     return fields
