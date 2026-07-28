@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 title: "Skill Runtime Discovery Modernization"
 created: 2026-07-28
 primary_domain: skill-ecosystem
