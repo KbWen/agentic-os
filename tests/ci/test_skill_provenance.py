@@ -16,6 +16,7 @@ removed from the tool, that test would go green-on-broken (i.e. fail to fail).
 
 from __future__ import annotations
 
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -106,6 +107,9 @@ def test_good_fixture_passes(tmp_path) -> None:
 
 
 def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) -> None:
+    code, out = _run_without_site_packages(ROOT)
+    assert code == 0, out
+
     root = _good_root(tmp_path)
     code, out = _run_without_site_packages(root)
     assert code == 0, out
@@ -171,6 +175,76 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         code, out = _run_without_site_packages(root)
         assert code == 1, invalid_description
         assert "frontmatter" in out or "description" in out
+
+
+def test_dependency_free_scalar_corpus_never_accepts_pyyaml_invalid_or_non_string() -> None:
+    yaml = pytest.importorskip("yaml")
+    parse_subset = runpy.run_path(str(TOOL))["_parse_frontmatter_subset"]
+    values = [
+        "A capability used when a matching task runs.",
+        "hello",
+        "on call",
+        '"quoted text"',
+        "'don''t'",
+        "null",
+        "NULL",
+        "true",
+        "YES",
+        "off",
+        "1",
+        "1.25",
+        "1e3",
+        "0x10",
+        "012",
+        "1:20",
+        ".inf",
+        ".NaN",
+        "2026-07-28",
+        "2026-07-28 09:30:00",
+        "[]",
+        "{}",
+        "[unterminated",
+        "valid: invalid",
+        "# comment",
+        "&anchor",
+        "*alias",
+        "!tag value",
+        r'"bad\q"',
+        "'don't'",
+        "bad\x01value",
+        "bad\u0080value",
+    ]
+    blocks = [f"description: {value}" for value in values]
+    blocks.extend(
+        [
+            "description: >\n  valid folded text",
+            "description: >",
+            "description: >\n\tinvalid tab indent",
+            "description: >\n  first line\n second line",
+        ]
+    )
+
+    for block in blocks:
+        try:
+            parsed = yaml.safe_load(block)
+            pyyaml_accepts_string = (
+                isinstance(parsed, dict)
+                and isinstance(parsed.get("description"), str)
+                and bool(parsed["description"].strip())
+            )
+        except yaml.YAMLError:
+            pyyaml_accepts_string = False
+
+        try:
+            fallback = parse_subset(block)
+            fallback_accepts_string = (
+                isinstance(fallback.get("description"), str)
+                and bool(fallback["description"].strip())
+            )
+        except ValueError:
+            fallback_accepts_string = False
+
+        assert not fallback_accepts_string or pyyaml_accepts_string, block
 
 
 def test_scaffold_without_frontmatter_fails(tmp_path) -> None:
