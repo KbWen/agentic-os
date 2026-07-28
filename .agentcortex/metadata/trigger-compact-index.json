@@ -261,7 +261,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "1392aaed"
+      "content_hash": "3bb02b81"
     },
     {
       "id": "database-design",
@@ -286,7 +286,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "3e93ceea"
+      "content_hash": "31eb0d40"
     },
     {
       "id": "frontend-patterns",
@@ -309,7 +309,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "6b04a9a4"
+      "content_hash": "209451ab"
     },
     {
       "id": "auth-security",
@@ -338,7 +338,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "cc132894"
+      "content_hash": "ad3e61e3"
     },
     {
       "id": "doc-lookup",
@@ -364,7 +364,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "294c6e4e"
+      "content_hash": "6bdb1299"
     },
     {
       "id": "dispatching-parallel-agents",
