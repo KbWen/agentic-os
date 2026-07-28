@@ -165,6 +165,7 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
         "2026-07-28 09:30:00",
         "yes",
         "on",
+        "bad\tvalue",
         "bad\x01value",
         "bad\u0080value",
     ):
@@ -211,6 +212,7 @@ def test_dependency_free_scalar_corpus_never_accepts_pyyaml_invalid_or_non_strin
         "!tag value",
         r'"bad\q"',
         "'don't'",
+        "bad\tvalue",
         "bad\x01value",
         "bad\u0080value",
     ]

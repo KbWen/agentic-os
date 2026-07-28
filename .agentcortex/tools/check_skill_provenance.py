@@ -80,6 +80,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     index = 0
     while index < len(lines):
         raw = lines[index]
+        if "\t" in raw:
+            raise ValueError(f"raw tab is not supported by the YAML fallback: {raw!r}")
         if _has_forbidden_yaml_character(raw):
             raise ValueError(f"control character is not valid YAML: {raw!r}")
         indent_prefix = raw[: len(raw) - len(raw.lstrip(" \t"))]
@@ -102,6 +104,10 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
             index += 1
             while index < len(lines) and lines[index].startswith((" ", "\t")):
                 continuation = lines[index]
+                if "\t" in continuation:
+                    raise ValueError(
+                        f"raw tab is not supported by the YAML fallback: {continuation!r}"
+                    )
                 if _has_forbidden_yaml_character(continuation):
                     raise ValueError(
                         f"control character is not valid YAML: {continuation!r}"
