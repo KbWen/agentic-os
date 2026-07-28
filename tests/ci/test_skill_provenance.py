@@ -111,13 +111,14 @@ def test_dependency_free_parser_passes_valid_scalars_and_fails_closed(tmp_path) 
     assert code == 0, out
 
     skill = root / ".agents" / "skills" / "alpha-skill" / "SKILL.md"
-    skill.write_text(
-        "---\nname: alpha-skill\ndescription: []\n---\n\n# alpha\n",
-        encoding="utf-8",
-    )
-    code, out = _run_without_site_packages(root)
-    assert code == 1
-    assert "frontmatter" in out or "description" in out
+    for invalid_description in ("[]", "valid: invalid", "# comment", "&anchor", "*alias"):
+        skill.write_text(
+            f"---\nname: alpha-skill\ndescription: {invalid_description}\n---\n\n# alpha\n",
+            encoding="utf-8",
+        )
+        code, out = _run_without_site_packages(root)
+        assert code == 1, invalid_description
+        assert "frontmatter" in out or "description" in out
 
 
 def test_scaffold_without_frontmatter_fails(tmp_path) -> None:

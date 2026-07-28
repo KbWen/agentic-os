@@ -99,6 +99,8 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         elif re.fullmatch(r"[-+]?\d+", value):
             fields[key] = int(value)
         else:
+            if not value[0].isalnum() or re.search(r":(?:[ \t]|$)", value):
+                raise ValueError(f"unsafe or invalid plain scalar for {key!r}")
             fields[key] = value
         index += 1
     return fields
