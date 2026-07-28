@@ -4,8 +4,7 @@ Runs the REAL tool against temp fixture roots and asserts:
   - a complete manifest + conformant skills PASS;
   - each fail mode is caught (missing/orphan row, bad enum, bad/missing
     frontmatter, name!=dir, unknown/missing key, absent manifest file);
-  - a SCAFFOLD SKILL.md (HTML-comment header, no frontmatter) is EXEMPT from the
-    compatibility floor (its metadata lives in the flat .agent/skills stub);
+  - every SKILL.md, including scaffolds, has standards-compatible frontmatter;
   - the source-repo gate: a present .agentcortex-manifest (downstream) SKIPS even
     a broken manifest;
   - the REAL repo manifest parses under the no-PyYAML subset parser (D1 guard);
@@ -74,7 +73,7 @@ def _write_manifest(root: Path, rows: list[dict[str, str]]) -> None:
 def _good_root(tmp: Path) -> Path:
     root = tmp / "proj"
     _write_skill(root, "alpha-skill", frontmatter=True)
-    _write_skill(root, "beta-scaffold", frontmatter=False)
+    _write_skill(root, "beta-scaffold", frontmatter=True)
     _write_manifest(root, [dict(r) for r in GOOD_ROWS])
     return root
 
@@ -93,12 +92,32 @@ def test_good_fixture_passes(tmp_path) -> None:
     assert "PASS" in out
 
 
-def test_scaffold_without_frontmatter_is_exempt(tmp_path) -> None:
-    # beta-scaffold has no frontmatter; with a valid manifest the run still PASSes
-    # (the compatibility floor must NOT fail a scaffold for missing name/description).
-    code, out = _run(_good_root(tmp_path))
-    assert code == 0, out
-    assert "beta-scaffold" in out and "exempt" in out
+def test_scaffold_without_frontmatter_fails(tmp_path) -> None:
+    root = _good_root(tmp_path)
+    _write_skill(root, "beta-scaffold", frontmatter=False)
+    code, out = _run(root)
+    assert code == 1
+    assert "frontmatter" in out and "beta-scaffold" in out
+
+
+def test_real_repo_all_skills_have_frontmatter() -> None:
+    skill_files = sorted((ROOT / ".agents" / "skills").glob("*/SKILL.md"))
+    assert len(skill_files) == 14
+    missing = [
+        path.parent.name
+        for path in skill_files
+        if not path.read_text(encoding="utf-8-sig").startswith("---\n")
+    ]
+    assert missing == []
+
+
+def test_app_init_scaffold_contract_is_frontmatter_first() -> None:
+    workflow = (ROOT / ".agent" / "workflows" / "app-init.md").read_text(encoding="utf-8")
+    minimum = workflow.split("## 5. Skill Scaffold Minimum Structure", 1)[1].split(
+        "## 6. Update Spec Intake Awareness", 1
+    )[0]
+    assert "```markdown\n---\nname: <skill-id>\ndescription:" in minimum
+    assert "do not put HTML comments before it" in minimum
 
 
 # --- #81 manifest fail modes ----------------------------------------------
@@ -186,6 +205,24 @@ def test_missing_description_fails(tmp_path) -> None:
     code, out = _run(root)
     assert code == 1
     assert "description" in out
+
+
+def test_empty_description_fails(tmp_path) -> None:
+    root = _good_root(tmp_path)
+    d = root / ".agents" / "skills" / "alpha-skill"
+    (d / "SKILL.md").write_text("---\nname: alpha-skill\ndescription:\n---\n\n# alpha\n", encoding="utf-8")
+    code, out = _run(root)
+    assert code == 1
+    assert "description" in out
+
+
+def test_unclosed_frontmatter_fails(tmp_path) -> None:
+    root = _good_root(tmp_path)
+    d = root / ".agents" / "skills" / "alpha-skill"
+    (d / "SKILL.md").write_text("---\nname: alpha-skill\ndescription: broken\n# alpha\n", encoding="utf-8")
+    code, out = _run(root)
+    assert code == 1
+    assert "frontmatter" in out
 
 
 # --- source-repo gate (D3) -------------------------------------------------

@@ -46,6 +46,21 @@ def _manifest_hash(manifest: Path, rel: str) -> str | None:
             return h.removeprefix("sha256:") if h.startswith("sha256:") else h
     return None
 
+
+def _set_manifest_hash(manifest: Path, rel: str, digest: str) -> None:
+    lines = manifest.read_text(encoding="utf-8").splitlines()
+    for index, line in enumerate(lines):
+        parts = line.split()
+        if len(parts) >= 3 and parts[1] == rel:
+            parts[2] = f"sha256:{digest}"
+            lines[index] = " ".join(parts)
+            break
+    else:
+        raise AssertionError(f"manifest row not found: {rel}")
+    # Keep the manifest LF-only. Bash's batch reader treats a trailing CR as
+    # part of the hash token, which would turn this fixture into a false local edit.
+    manifest.write_bytes(("\n".join(lines) + "\n").encode("utf-8"))
+
 # Every test here shells out to real deploy.sh/validate.sh (fidelity by design).
 pytestmark = pytest.mark.slow
 
@@ -224,6 +239,8 @@ def test_skill_edit_sidecars_and_core_rule_force_updates() -> None:
         rule = target / ".agent" / "rules" / "engineering_guardrails.md"
         assert skill.exists(), "framework skill not deployed"
         assert rule.exists(), "framework rule not deployed"
+        assert skill.read_text(encoding="utf-8-sig").startswith("---\n"), \
+            "clean-deployed canonical skills must start with YAML frontmatter"
 
         # User customizes a framework skill (the R1 scenario) and a core rule.
         skill.write_text(skill.read_text(encoding="utf-8") + "\n<!-- downstream edit -->\n", encoding="utf-8")
@@ -240,6 +257,8 @@ def test_skill_edit_sidecars_and_core_rule_force_updates() -> None:
         # AC-6: edited framework skill is PRESERVED via sidecar (not silently lost).
         assert skill.with_name("SKILL.md.acx-incoming").exists(), \
             "edited framework skill should produce a .acx-incoming sidecar"
+        assert skill.with_name("SKILL.md.acx-incoming").read_text(encoding="utf-8-sig").startswith("---\n"), \
+            "the incoming upstream scaffold must carry standards-compatible frontmatter"
         assert "<!-- downstream edit -->" in skill.read_text(encoding="utf-8"), \
             "user's skill edit must be preserved, not overwritten"
 
@@ -252,6 +271,37 @@ def test_skill_edit_sidecars_and_core_rule_force_updates() -> None:
             "core rule must NOT produce a sidecar (governance must force-update)"
         assert "<!-- downstream edit -->" not in rule.read_text(encoding="utf-8"), \
             "core rule edit must be overwritten by the framework version"
+
+
+@requires_bash
+def test_unmodified_legacy_scaffold_upgrades_to_frontmatter_without_sidecar() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        target.mkdir()
+
+        first = _deploy(target)
+        assert first.returncode == 0, first.stderr
+
+        rel = ".agents/skills/api-design/SKILL.md"
+        skill = target / rel
+        text = skill.read_text(encoding="utf-8")
+        if text.startswith("---\n"):
+            closing = text.find("\n---\n", 4)
+            assert closing != -1, "source frontmatter must be closed"
+            legacy_text = text[closing + len("\n---\n"):].lstrip("\n")
+        else:
+            legacy_text = text
+        skill.write_text(legacy_text, encoding="utf-8")
+        manifest = target / ".agentcortex-manifest"
+        legacy_hash = _lf_sha256(skill)
+        _set_manifest_hash(manifest, rel, legacy_hash)
+        assert _manifest_hash(manifest, rel) == legacy_hash
+
+        second = _deploy(target)
+        assert second.returncode == 0, second.stderr
+        assert skill.read_text(encoding="utf-8-sig").startswith("---\n"), second.stdout
+        assert not skill.with_name("SKILL.md.acx-incoming").exists(), \
+            "a file unchanged from its recorded legacy baseline should update in place"
 
 
 @requires_bash
@@ -344,6 +394,9 @@ def test_deploy_ps1_entrypoint_resolves_real_bash() -> None:
             f"deploy.ps1 failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         assert (target / ".agentcortex-manifest").exists(), "deploy.ps1 should create manifest"
+        skill_files = sorted((target / ".agents" / "skills").glob("*/SKILL.md"))
+        assert len(skill_files) == 14
+        assert all(path.read_text(encoding="utf-8-sig").startswith("---\n") for path in skill_files)
 
 
 @requires_bash

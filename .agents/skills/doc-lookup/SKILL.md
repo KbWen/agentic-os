@@ -1,3 +1,8 @@
+---
+name: doc-lookup
+description: Verify framework APIs, configuration, and version-sensitive patterns against official documentation before implementation or review.
+---
+
 <!-- This is a SCAFFOLD skill -->
 <!-- When /app-init runs in a downstream project, it customizes this file -->
 <!-- with the project's tech stack and official doc URLs. -->

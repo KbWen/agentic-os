@@ -11,11 +11,9 @@ Two source-repo-only checks over first-party skills in ``.agents/skills/``:
     license-status) via a strict, fail-closed allowlist.
 
   (G1a / backlog #80) Compatibility floor: every ``.agents/skills/<name>/
-    SKILL.md`` that HAS YAML frontmatter must declare ``name`` + ``description``
-    and ``name`` must equal the directory name. SCAFFOLD skills (whose SKILL.md
-    leads with an HTML comment and carries no ``---`` frontmatter block -- their
-    metadata lives in the flat ``.agent/skills/<name>`` stub, already validated
-    by validate_trigger_metadata.py) are EXEMPT.
+    SKILL.md`` must begin with closed YAML frontmatter, declare ``name`` +
+    ``description``, and use a ``name`` equal to the directory name. Scaffold
+    Skills follow the same portable discovery contract as every other Skill.
 
 Scope: SOURCE REPO ONLY. When a ``.agentcortex-manifest`` is present (a deployed
 downstream project), this check is skipped (returns 0): the manifest is a
@@ -54,29 +52,19 @@ REQUIRED_ENTRY_KEYS = {"skill", "origin", "source", "license", "license-status"}
 
 
 def has_frontmatter(text: str) -> bool:
-    """True if the file's first non-empty line is a ``---`` frontmatter fence."""
-    for line in text.splitlines():
-        if line.strip() == "":
-            continue
-        return line.strip() == "---"
-    return False
+    """True when a closed ``---`` block starts at the first decoded byte."""
+    lines = text.splitlines()
+    return len(lines) >= 2 and lines[0] == "---" and "---" in lines[1:]
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
     """Extract top-level ``key: value`` pairs from a leading ``---`` block."""
     lines = text.splitlines()
-    opening = None
-    for i, line in enumerate(lines):
-        if line.strip() == "":
-            continue
-        if line.strip() == "---":
-            opening = i
-        break
-    if opening is None:
+    if not has_frontmatter(text):
         return {}
     fields: dict[str, str] = {}
-    for line in lines[opening + 1:]:
-        if line.strip() == "---":
+    for line in lines[1:]:
+        if line == "---":
             break
         if line and line[0] not in (" ", "\t") and ":" in line:
             key, _, value = line.partition(":")
@@ -88,16 +76,15 @@ def parse_frontmatter(text: str) -> dict[str, str]:
 
 
 def _check_compatibility_floor(skills_dir: Path, skill_dirs: list[str],
-                               failures: list[str], notes: list[str]) -> None:
-    """G1a #80: frontmatter-present SKILL.md must declare name+description, name==dir."""
+                               failures: list[str]) -> None:
+    """G1a #80: every SKILL.md must declare portable frontmatter."""
     for name in skill_dirs:
         # utf-8-sig tolerates a leading BOM so a BOM'd SKILL.md is still seen as
         # having frontmatter (and validated) rather than mistaken for a scaffold.
         text = (skills_dir / name / "SKILL.md").read_text(encoding="utf-8-sig")
         if not has_frontmatter(text):
-            notes.append(
-                f"{name}: scaffold SKILL.md (no frontmatter) -- compatibility floor "
-                f"exempt (metadata in flat .agent/skills/{name})"
+            failures.append(
+                f"{SKILLS_DIR}/{name}/SKILL.md: missing or unclosed leading YAML frontmatter"
             )
             continue
         fm = parse_frontmatter(text)
@@ -192,12 +179,9 @@ def main() -> int:
     )
 
     failures: list[str] = []
-    notes: list[str] = []
-    _check_compatibility_floor(skills_dir, skill_dirs, failures, notes)
+    _check_compatibility_floor(skills_dir, skill_dirs, failures)
     _check_provenance_manifest(root, skill_dirs, failures)
 
-    for note in notes:
-        print(f"  note: {note}")
     if failures:
         print(f"FAIL: {len(failures)} skill provenance/compatibility finding(s):")
         for finding in failures:
