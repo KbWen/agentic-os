@@ -463,7 +463,14 @@ def test_deployed_governance_referenced_tools_are_deployed() -> None:
         target.mkdir()
         assert _deploy(target).returncode == 0, "deploy failed"
 
-        gov_files: list[Path] = [target / "AGENTS.md", target / "CLAUDE.md"]
+        # GEMINI.md ships alongside AGENTS.md/CLAUDE.md (deploy.sh tiers all three as
+        # scaffold and copies them at the same site) but was missing from this scan
+        # set, so a dangling tool path cited from the Gemini adapter shipped green.
+        gov_files: list[Path] = [
+            target / "AGENTS.md",
+            target / "CLAUDE.md",
+            target / "GEMINI.md",
+        ]
         for sub in (".agent/workflows", ".agent/rules"):
             d = target / sub
             if d.exists():

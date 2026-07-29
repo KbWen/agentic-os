@@ -73,6 +73,32 @@ def _has_forbidden_yaml_character(text: str) -> bool:
     return False
 
 
+# A plain (unquoted) space-free scalar is a STRING unless YAML's implicit
+# resolver would read it as a number. Mirroring the resolver is what makes the
+# fallback safe to widen: anything this pattern does NOT match cannot come back
+# from PyYAML as a non-string, so accepting it cannot break the differential
+# oracle in tests/ci/test_skill_provenance.py. Null/bool/int/timestamp forms are
+# handled by their own branches before this is consulted.
+_IMPLICIT_NUMERIC = re.compile(
+    r"""^[-+]?(?:
+          0[bB][01_]+                                   # binary
+        | 0[xX][0-9a-fA-F_]+                            # hex
+        | 0[oO][0-7_]+                                  # octal (YAML 1.2)
+        | [0-9][0-9_]*(?::[0-5]?[0-9])+(?:\.[0-9_]*)?   # sexagesimal (YAML 1.1)
+        | [0-9][0-9_]*\.[0-9_]*(?:[eE][-+]?[0-9]+)?     # float
+        | \.[0-9][0-9_]*(?:[eE][-+]?[0-9]+)?            # .5
+        | [0-9][0-9_]*(?:[eE][-+]?[0-9]+)?              # int / exponent
+        | \.(?:inf|Inf|INF|nan|NaN|NAN)                 # specials
+    )$""",
+    re.VERBOSE,
+)
+
+# Characters that cannot open a YAML plain scalar. Anything else may, so the
+# old "first character must be alphanumeric" rule rejected ordinary values such
+# as "(beta) applies when ..." or "_internal".
+_PLAIN_SCALAR_FORBIDDEN_FIRST = set("-?:,[]{}#&*!|>'\"%@`")
+
+
 def _parse_frontmatter_subset(block: str) -> dict[str, object]:
     """Strict dependency-free parser for the scalar frontmatter we require."""
     fields: dict[str, object] = {}
@@ -102,7 +128,7 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         value = raw_value.strip()
         if not value.startswith(("'", '"')) and re.search(r"(?:^| )#", value):
             raise ValueError(f"inline comments are not supported by the YAML fallback: {raw!r}")
-        if value in {">", "|"}:
+        if re.fullmatch(r"[>|][-+]?", value):
             parts: list[str] = []
             block_indent: int | None = None
             index += 1
@@ -133,7 +159,11 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
             fields[key] = " ".join(parts)
             continue
         lowered = value.lower()
-        if lowered in {"null", "~"}:
+        # `key:` with nothing after it is YAML null. Without this branch the
+        # empty string fell through to the plain-scalar arm and crashed on
+        # value[0]; a nested block or sequence underneath still fails on its
+        # own indented line, which is the message the reader needs.
+        if not value or lowered in {"null", "~"}:
             fields[key] = None
         elif lowered in {"true", "false", "yes", "no", "on", "off"}:
             fields[key] = lowered in {"true", "yes", "on"}
@@ -159,14 +189,11 @@ def _parse_frontmatter_subset(block: str) -> dict[str, object]:
         elif re.fullmatch(r"[-+]?\d+", value):
             fields[key] = int(value)
         else:
-            if not value[0].isalnum() or re.search(r":(?:[ \t]|$)", value):
+            if value[0] in _PLAIN_SCALAR_FORBIDDEN_FIRST or re.search(r":(?:[ \t]|$)", value):
                 raise ValueError(f"unsafe or invalid plain scalar for {key!r}")
             if re.match(r"^\d{4}-\d{1,2}-\d{1,2}(?:$|[Tt \t])", value):
                 raise ValueError(f"implicit timestamp is not a string for {key!r}")
-            if not any(char.isspace() for char in value) and not (
-                value[0].isalpha()
-                and all(char.isalpha() or char in "_-" for char in value)
-            ):
+            if _IMPLICIT_NUMERIC.match(value):
                 raise ValueError(f"plain scalar is not provably a string for {key!r}")
             fields[key] = value
         index += 1

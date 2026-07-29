@@ -261,6 +261,79 @@ def test_dependency_free_scalar_corpus_never_accepts_pyyaml_invalid_or_non_strin
         assert not fallback_accepts_string or pyyaml_accepts_string, block
 
 
+def test_fallback_does_not_reject_frontmatter_pyyaml_accepts() -> None:
+    """The REVERSE direction of the oracle above.
+
+    The one-directional assert (`not fallback_accepts_string or pyyaml_accepts_string`)
+    is structurally incapable of catching a fallback that REJECTS valid YAML, which is
+    the failure that actually reaches contributors: `Framework Validation` runs
+    `validate.sh` on a bare `actions/setup-python` with no `pip install`, so PyYAML is
+    absent and the fallback IS the checker for a gate wired at FAIL severity. A skill
+    named `oauth2-hardening` used to pass locally and fail in CI with a message that
+    named neither the digit nor PyYAML.
+    """
+    yaml = pytest.importorskip("yaml")
+    parse_subset = runpy.run_path(str(TOOL))["_parse_frontmatter_subset"]
+
+    descriptions = [
+        "Apply when reviewing auth flows.",
+        "(beta) Apply when reviewing auth flows.",
+        "_internal helper applied during review.",
+        "/api/v2 conventions applied when editing routes.",
+        ".env handling applied when configuring deploys.",
+        "Applies to x.y.z releases.",
+        "Applies when handling key#values in configs.",
+        "Inf",
+        "NaN",
+    ]
+    blocks = [f"name: oauth2-hardening\ndescription: {d}" for d in descriptions]
+    blocks.extend(
+        [
+            "name: web3-signing\ndescription: Apply when signing transactions.",
+            "name: s3-buckets\ndescription: Apply when provisioning storage.",
+            "name: alpha\ndescription: >-\n  Folded with a strip chomping indicator.",
+            "name: alpha\ndescription: >+\n  Folded with a keep chomping indicator.",
+            "name: alpha\ndescription: |-\n  Literal with a strip chomping indicator.",
+            "name: alpha\ndescription: |+\n  Literal with a keep chomping indicator.",
+        ]
+    )
+
+    for block in blocks:
+        parsed = yaml.safe_load(block)
+        assert isinstance(parsed.get("description"), str), f"test corpus bug: {block!r}"
+        fallback = parse_subset(block)
+        assert isinstance(fallback.get("description"), str), (
+            f"fallback rejected frontmatter that PyYAML reads as a string: {block!r}"
+        )
+        assert isinstance(fallback.get("name"), str), block
+
+
+def test_fallback_empty_value_does_not_crash() -> None:
+    """`key:` with no value reached the plain-scalar arm and raised IndexError.
+
+    `_check_compatibility_floor` catches only ValueError, so this escaped as a raw
+    traceback where a finding belonged.
+    """
+    parse_subset = runpy.run_path(str(TOOL))["_parse_frontmatter_subset"]
+
+    assert parse_subset("name: alpha\ndescription:")["description"] is None
+
+    # A nested sequence underneath must still fail, but on its own indented line
+    # and with a message that points at the unsupported construct.
+    with pytest.raises(ValueError, match="unsupported or invalid YAML line"):
+        parse_subset("name: alpha\ndescription: ok\nallowed-tools:\n  - Read")
+
+
+def test_fallback_still_rejects_implicit_non_strings() -> None:
+    """Widening the plain-scalar rule must not let a number through as a string."""
+    parse_subset = runpy.run_path(str(TOOL))["_parse_frontmatter_subset"]
+
+    for value in ["1.5", ".5", "1e3", "0x1f", "0b1011", "0o17", "12:30", ".inf", ".nan",
+                  "3.14159", "1_000", "2026-07-29"]:
+        with pytest.raises(ValueError):
+            parse_subset(f"name: alpha\ndescription: {value}")
+
+
 def test_scaffold_without_frontmatter_fails(tmp_path) -> None:
     root = _good_root(tmp_path)
     _write_skill(root, "beta-scaffold", frontmatter=False)
