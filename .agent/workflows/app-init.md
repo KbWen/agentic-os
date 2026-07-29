@@ -199,7 +199,7 @@ description: <What the skill does and the task context that should activate it.>
 
 The frontmatter `name` MUST equal the `.agents/skills/<skill-id>/` directory name. `description` MUST be non-empty and include both capability and activation context. The first `---` MUST be the file's first bytes; do not put HTML comments before it.
 
-**Signal tier — machine-enforced**: `tests/ci/test_skill_provenance.py` pins this template and instantiates a representative scaffold through the real compatibility checker; checked-in first-party Skills are fail-closed by `.agentcortex/tools/check_skill_provenance.py`. Downstream generation remains validator-verifiable rather than runtime-intercepted.
+**Signal tier — machine-enforced upstream**: the framework repo's own CI pins this template and instantiates a representative scaffold through the real compatibility checker, and its checked-in first-party Skills are fail-closed against the same contract. That checker is a source-repo-only validator and is deliberately NOT deployed, so downstream generation stays validator-verifiable rather than runtime-intercepted — a generated Skill that breaks the contract above is caught by review, not blocked at write time.
 
 ---
 

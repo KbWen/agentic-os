@@ -46,6 +46,14 @@ naively (ADR-006):
 
 `check_ssot_caps.py` is the working template — copy its wiring, not just its logic.
 
+The inverse trips people who never touched `deploy` at all. Every governance doc that ships
+downstream — `AGENTS.md`, `CLAUDE.md`, and everything under `.agent/workflows/` and
+`.agent/rules/` — gets scanned by `test_deployed_governance_referenced_tools_are_deployed` for
+tool paths under the runtime-tools directory, and a cited tool that `deploy` does not ship fails
+the test. Not every checker is meant to ship: the skill-provenance one self-skips as soon as a
+deploy manifest is present, so shipping it would only add a permanent no-op downstream. Source-only
+checkers belong in these docs as prose, not as a path a downstream reader cannot run anyway.
+
 ## 3. Local `validate` FAILs about work logs are usually invisible to CI
 
 Work logs under `.agentcortex/context/work/` are gitignored. Local FAILs about work-log
