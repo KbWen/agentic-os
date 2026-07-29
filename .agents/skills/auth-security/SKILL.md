@@ -1,6 +1,9 @@
-<!-- This is a SCAFFOLD skill. When /app-init runs in a downstream project, -->
-<!-- it customizes this file based on the project's ADR tech stack. -->
-<!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
+---
+name: auth-security
+description: Secure authentication and authorization when credentials, sessions, roles, or permissions change.
+---
+
+<!-- This is a SCAFFOLD skill -->
 
 # Auth & Security
 

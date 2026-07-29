@@ -4,20 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
 from typing import Any
-
-
-def _signal_matches(user_signal: str, entry_signal: str) -> bool:
-    """Check if a user scope signal matches a registry scope signal.
-
-    Uses bidirectional substring matching (case-insensitive).
-    """
-    u = user_signal.lower()
-    e = entry_signal.lower()
-    return u in e or e in u
 
 
 def resolve(
@@ -26,61 +17,37 @@ def resolve(
     phase: str,
     platform: str,
     scope_signals: list[str],
+    manual_skills: list[str] | None = None,
+    failure_signals: list[str] | None = None,
+    worklog_path: str | None = None,
 ) -> dict[str, Any]:
-    sys.path.insert(0, str(root / ".agentcortex" / "tools"))
-    from _yaml_loader import load_data
+    """Delegate resolution to the single canonical runtime implementation."""
+    module_path = root / ".agentcortex" / "tools" / "trigger_runtime_core.py"
+    spec = importlib.util.spec_from_file_location("_agentcortex_trigger_runtime_core", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load canonical resolver: {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-    registry = load_data(root / ".agentcortex/metadata/trigger-registry.yaml")
-
-    resolved_workflow = f"{phase}.md"
-    activated_skills: list[str] = []
-
-    for entry in registry["entries"]:
-        if entry["kind"] != "skill":
-            continue
-
-        detect = entry.get("detect_by", {})
-
-        # Classification gate.
-        classifications = detect.get("classification", [])
-        if classifications and classification not in classifications:
-            continue
-
-        # Phase gate.
-        phases = entry.get("phase_scope", [])
-        if phase not in phases:
-            continue
-
-        # Platform gate.
-        platforms = entry.get("platforms", [])
-        if platforms and platform not in platforms:
-            continue
-
-        # Determine activation based on load policy.
-        load_policy = entry.get("load_policy", "on-match")
-
-        if load_policy in ("always", "phase-entry"):
-            # Mandatory / phase-entry skills activate without scope signals.
-            activated_skills.append(entry["id"])
-            continue
-
-        # For on-match / on-failure: require scope signal match.
-        entry_signals = detect.get("scope_signals", [])
-        if entry_signals and scope_signals:
-            for user_sig in scope_signals:
-                matched = False
-                for entry_sig in entry_signals:
-                    if _signal_matches(user_sig, entry_sig):
-                        matched = True
-                        break
-                if matched:
-                    activated_skills.append(entry["id"])
-                    break
-
+    artifact = module.resolve_runtime_contract(
+        root,
+        classification=classification,
+        phase=phase,
+        platform=platform,
+        manual_skills=manual_skills,
+        scope_signals=scope_signals,
+        failure_signals=failure_signals,
+        worklog_path=worklog_path,
+    )
+    workflow = artifact.get("resolved_workflow")
     return {
-        "resolved_workflow": resolved_workflow,
-        "activated_skills": sorted(activated_skills),
+        "resolved_workflow": Path(str(workflow)).name if workflow else None,
+        "activated_skills": sorted(artifact.get("activated_skills", [])),
     }
+
+
+def _comma_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def main() -> None:
@@ -92,12 +59,22 @@ def main() -> None:
     parser.add_argument("--phase", required=True)
     parser.add_argument("--platform", required=True)
     parser.add_argument("--scope-signals", default="")
+    parser.add_argument("--manual-skills", default="")
+    parser.add_argument("--failure-signals", default="")
+    parser.add_argument("--worklog-path")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
-    signals = [s.strip() for s in args.scope_signals.split(",") if s.strip()]
-
-    payload = resolve(root, args.classification, args.phase, args.platform, signals)
+    payload = resolve(
+        root,
+        args.classification,
+        args.phase,
+        args.platform,
+        _comma_list(args.scope_signals),
+        manual_skills=_comma_list(args.manual_skills),
+        failure_signals=_comma_list(args.failure_signals),
+        worklog_path=args.worklog_path,
+    )
     json.dump(payload, sys.stdout, indent=2)
     print()
 

@@ -9,10 +9,10 @@ This template applies to both:
 
 ## File Placement Standards (Codex Web / App / Google Antigravity)
 
-To avoid procedural complexity, all three platforms share the same skill source and mirrored paths:
+To avoid procedural complexity, all three platforms share the same canonical Skill body and compact metadata stub:
 
-1. Canonical skill source: `.agent/skills/<skill>/SKILL.md` (Primary path for Antigravity; maintain 1:1 sync).
-2. Codex Compatibility Path: `.agents/skills/<skill>/SKILL.md` (Codex mirror).
+1. Canonical Skill body: `.agents/skills/<skill>/SKILL.md` (shared standards-compatible path for supported hosts).
+2. Compact Agentic OS metadata stub: `.agent/skills/<skill>` (flat file; points to the canonical body and carries phase/trigger metadata).
 3. Platform Workflow Files: `.agent/workflows/*.md` and `.agent/rules/*.md` (No duplication).
 
 Minimum Check Recommendations:
