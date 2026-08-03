@@ -210,6 +210,49 @@ class SSOTCompletenessTests(unittest.TestCase):
             self.assertEqual(validate.returncode, 0, validate.stdout)
             self.assertNotIn("not indexed", validate.stdout)
 
+    def test_spec_path_in_prose_after_heading_does_not_count_as_indexed(self) -> None:
+        """A spec path in prose below a `##` heading must NOT satisfy the index (#143).
+
+        `validate.sh`'s live-index awk used to stop only at the next `- **` bullet,
+        so it read straight through an intervening `## ` heading and any spec path
+        mentioned in prose there counted as "indexed" — a false PASS. `validate.ps1`
+        already stopped at `\\n##`, so the two platforms disagreed: PASS on Linux,
+        FAIL on Windows. Both now stop at `^##`. This pins the stricter, converged
+        behavior so the loose bash form cannot come back.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            deploy = run_deploy(target)
+            self.assertEqual(deploy.returncode, 0, deploy.stderr or deploy.stdout)
+            sanitize_deployed_ssot(target)
+            init_git_repo(target)
+
+            (target / "docs/specs").mkdir(parents=True, exist_ok=True)
+            (target / "docs/specs/prose-only.md").write_text(
+                "---\nstatus: shipped\ntitle: Prose Only\n---\n\n# Prose Only\n",
+                encoding="utf-8",
+            )
+
+            # Insert a `##` section between the Spec Index block and the next
+            # top-level bullet, mentioning the spec path in prose only.
+            ssot = target / ".agentcortex" / "context" / "current_state.md"
+            content = ssot.read_text(encoding="utf-8")
+            marker = "- **Canonical Commands**"
+            self.assertIn(marker, content, "fixture precondition: template shape changed")
+            ssot.write_text(
+                content.replace(
+                    marker,
+                    "## Ship Notes\n\n- shipped docs/specs/prose-only.md earlier\n\n" + marker,
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            validate = run_validate(target)
+            self.assertNotEqual(validate.returncode, 0, validate.stdout)
+            self.assertIn("docs/specs/prose-only.md", validate.stdout)
+            self.assertIn("not indexed", validate.stdout)
+
     def test_phantom_spec_in_archive_section_fails(self) -> None:
         """Archived index line whose spec file is gone → still a phantom → FAIL.
 

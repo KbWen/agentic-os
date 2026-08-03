@@ -64,6 +64,48 @@ def run_tool(tmp_path: Path, content: str, config: str | None = STD_CONFIG):
     return subprocess.run(args, capture_output=True, text=True, encoding="utf-8")
 
 
+def with_archive(content: str, archive_n: int) -> str:
+    """Append a `## Spec Index Archive` section holding `archive_n` folded lines."""
+    rows = "\n".join(
+        f"  - docs/specs/old{i}.md — old spec {i}, [Shipped]" for i in range(archive_n)
+    )
+    return content + "\n## Spec Index Archive\n\n" + rows + "\n"
+
+
+def test_over_folded_spec_index_warns(tmp_path):
+    """Folding MORE than the overflow hollows out the live index -> WARN (#143).
+
+    Regression guard for a gate-laundering path: `count_spec_index` reads only the
+    live block, so an index folded entirely into the archive reports 0/30 and the
+    cap WARN could never fire again, while the validators' completeness check
+    (which reads live ∪ archive) still PASSes. ship.md says "keep the newest 30
+    inline"; this test is that sentence being machine-checked instead of trusted.
+    """
+    r = run_tool(tmp_path, with_archive(make_ssot(ship_n=3, spec_n=0), archive_n=26))
+    assert r.returncode == 0
+    assert "Spec Index over-folded" in r.stdout
+    assert "live index has 0 entries" in r.stdout
+    # Never asks for more entries back than the archive actually holds.
+    assert "Restore the 26 newest" in r.stdout
+
+
+def test_archive_at_cap_does_not_warn(tmp_path):
+    """Legitimate steady state: live index exactly at cap + overflow archived."""
+    r = run_tool(tmp_path, with_archive(make_ssot(ship_n=3, spec_n=30), archive_n=7))
+    assert r.returncode == 0
+    assert "over-folded" not in r.stdout
+    assert "Spec Index has" not in r.stdout
+    assert "(+7 archived)" in r.stdout
+
+
+def test_no_archive_section_is_silent(tmp_path):
+    """Capability-by-presence: no archive section -> no over-fold finding at all."""
+    r = run_tool(tmp_path, make_ssot(ship_n=3, spec_n=5))
+    assert r.returncode == 0
+    assert "over-folded" not in r.stdout
+    assert "archived)" not in r.stdout
+
+
 def test_over_cap_ship_history_warns(tmp_path):
     r = run_tool(tmp_path, make_ssot(ship_n=12, spec_n=5))
     assert r.returncode == 0
