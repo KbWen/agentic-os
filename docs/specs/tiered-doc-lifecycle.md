@@ -70,7 +70,7 @@ These documents are **never** candidates for compaction or tier transition:
 ### SSoT Bloat Caps (addresses F-01, F-03)
 
 2. [INFERRED] `current_state.md` Global Lessons: when exceeding `global_lessons_max_entries`, `/retro` MUST archive oldest LOW-severity lessons to `.agentcortex/context/archive/global-lessons-archive.md` before appending new ones. HIGH-severity lessons are pinned until manually demoted.
-3. [INFERRED] `current_state.md` Spec Index: when exceeding `spec_index_max_entries`, `/ship` MUST move oldest `shipped` spec entries to an archive section at bottom of Spec Index (collapsed, not auto-read).
+3. [INFERRED] `current_state.md` Spec Index: when exceeding `spec_index_max_entries`, `/ship` MUST move the oldest `shipped` spec **index lines** to a `## Spec Index Archive` section at the bottom of `current_state.md`. Spec bodies stay in `docs/specs/` — relocating a shipped spec body turns its entry into a phantom and FAILs the Spec Index completeness check. Both validators read the live index and the archive section as one set (#143). NOTE: this bounds the *live index*, not the SSoT read — `bootstrap.md §1` reads `current_state.md` whole, so an in-file archive section saves tokens only for readers that scope to the Spec Index per `context-budget.md`. An out-of-file archive (as AC-2 does for Global Lessons) would be needed for a real bootstrap saving.
 
 ### Archive GC (addresses F-02)
 

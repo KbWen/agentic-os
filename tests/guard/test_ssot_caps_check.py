@@ -85,7 +85,13 @@ def test_spec_index_over_cap_warns(tmp_path):
     r = run_tool(tmp_path, make_ssot(ship_n=3, spec_n=31))
     assert r.returncode == 0
     assert "Spec Index has 31 entries (cap 30)" in r.stdout
-    assert "ship.md:197" in r.stdout
+    # Heading anchor, not a line number: the old `ship.md:197` pointer had already
+    # drifted (the Spec Index Cap bullet sits at ~184) and any edit to ship.md moved
+    # it further. Anchors survive line-number drift (#143).
+    assert "ship.md §State Update & Archival" in r.stdout
+    # ...but an anchor rots too if the heading is renamed, so pin the heading itself.
+    ship_md = Path(__file__).resolve().parents[2] / ".agent/workflows/ship.md"
+    assert "## State Update & Archival" in ship_md.read_text(encoding="utf-8")
     # ship history (3) is under cap -> no ship warn
     assert "Ship History has" not in r.stdout
 

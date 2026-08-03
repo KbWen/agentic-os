@@ -176,6 +176,67 @@ class SSOTCompletenessTests(unittest.TestCase):
             validate = run_validate(target)
             self.assertEqual(validate.returncode, 0, validate.stderr or validate.stdout)
 
+    def test_spec_folded_into_archive_section_passes(self) -> None:
+        """Shipped spec whose index line was collapsed into `## Spec Index Archive` → PASS.
+
+        This is the `/ship` Spec Index Cap remedy (ship.md §State Update & Archival).
+        Before #143 the completeness check read only the live index block, so following
+        the documented remedy produced `N shipped/living spec(s) not in index` — a hard
+        FAIL. The remedy had never been executed, so the defect went unnoticed. The spec
+        body deliberately stays in `docs/specs/`; only the index line moves.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            deploy = run_deploy(target)
+            self.assertEqual(deploy.returncode, 0, deploy.stderr or deploy.stdout)
+            sanitize_deployed_ssot(target)
+            init_git_repo(target)
+
+            (target / "docs/specs").mkdir(parents=True, exist_ok=True)
+            (target / "docs/specs/folded-feature.md").write_text(
+                "---\nstatus: shipped\ntitle: Folded Feature\n---\n\n# Folded Feature\n",
+                encoding="utf-8",
+            )
+
+            ssot = target / ".agentcortex" / "context" / "current_state.md"
+            ssot.write_text(
+                ssot.read_text(encoding="utf-8")
+                + "\n## Spec Index Archive\n\n"
+                + "  - docs/specs/folded-feature.md — Folded Feature, [Shipped 2026-01-01]\n",
+                encoding="utf-8",
+            )
+
+            validate = run_validate(target)
+            self.assertEqual(validate.returncode, 0, validate.stdout)
+            self.assertNotIn("not indexed", validate.stdout)
+
+    def test_phantom_spec_in_archive_section_fails(self) -> None:
+        """Archived index line whose spec file is gone → still a phantom → FAIL.
+
+        The archive section is in scope for the reverse check too, so collapsing an
+        entry must not become a way to hide a dangling reference (#143).
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            deploy = run_deploy(target)
+            self.assertEqual(deploy.returncode, 0, deploy.stderr or deploy.stdout)
+            sanitize_deployed_ssot(target)
+            init_git_repo(target)
+
+            ssot = target / ".agentcortex" / "context" / "current_state.md"
+            ssot.write_text(
+                ssot.read_text(encoding="utf-8")
+                + "\n## Spec Index Archive\n\n"
+                + "  - docs/specs/never-existed.md — Ghost, [Shipped 2026-01-01]\n",
+                encoding="utf-8",
+            )
+
+            validate = run_validate(target)
+            self.assertNotEqual(validate.returncode, 0, validate.stdout)
+            # Assert the spec path, not just "phantom index entry" — the ADR branch
+            # (validate.sh:2349 / validate.ps1:2220) emits the identical string.
+            self.assertIn("docs/specs/never-existed.md", validate.stdout)
+
     def test_backlog_exists_but_ssot_says_none_fails(self) -> None:
         """Backlog file exists on disk but SSoT Active Backlog is 'none' → validator must fail."""
         with tempfile.TemporaryDirectory() as tmpdir:

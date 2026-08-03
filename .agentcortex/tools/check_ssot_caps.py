@@ -11,8 +11,8 @@ rotation procedure:
     (ship.md §State Update).
   * `**Spec Index**`    — indented child entries; cap
     `document_lifecycle.spec_index_max_entries` (default 30). Collapse the
-    oldest shipped entries into a `## Spec Index Archive` section
-    (ship.md:197).
+    oldest shipped index lines into a `## Spec Index Archive` section
+    (ship.md §State Update & Archival). Spec bodies stay in `docs/specs/`.
 
 ADVISORY-ONLY contract (mirrors the run_python_check / Invoke-PythonCheck
 WARN-tier wiring used by the downstream-capabilities and safety-nucleus
@@ -167,8 +167,9 @@ def main() -> int:
     if spec_count > spec_cap:
         findings.append(
             f"WARN: Spec Index has {spec_count} entries (cap {spec_cap}); "
-            f"collapse the oldest shipped entries into a `## Spec Index Archive` "
-            f"section per ship.md:197."
+            f"collapse the oldest shipped index lines into a `## Spec Index Archive` "
+            f"section per ship.md §State Update & Archival (Spec Index Cap) — "
+            f"index lines only, spec bodies stay in docs/specs/."
         )
 
     if findings:
