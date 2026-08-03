@@ -2224,10 +2224,18 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         Add-Result -Level 'PASS' -Message 'SSoT ADR Index completeness: all disk ADRs are indexed'
     }
 
-    # Spec Index completeness
+    # Spec Index completeness.
+    # Scope = the live index block PLUS the `## Spec Index Archive` section, which
+    # ship.md §State Update collapses over-cap shipped entries into. A folded entry
+    # is still an index entry here; it is only excluded from the bootstrap auto-read.
+    # Without the second match the documented collapse remedy turns this check into
+    # a FAIL, so the remedy was un-executable and had never been run (#143).
     $specIndexSection = ''
     if ($csContent -match '(?ms)\*\*Spec Index\*\*[^:]*:(.*?)(?=\n-\s*\*\*|\n##|\z)') {
         $specIndexSection = $Matches[1]
+    }
+    if ($csContent -match '(?ms)^## Spec Index Archive[^\n]*\n(.*?)(?=\n##|\z)') {
+        $specIndexSection += "`n" + $Matches[1]
     }
     $diskSpecFiles = @()
     foreach ($specGlob in @('docs/specs', '.agentcortex/specs')) {

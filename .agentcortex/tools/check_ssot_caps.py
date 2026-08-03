@@ -11,8 +11,8 @@ rotation procedure:
     (ship.md §State Update).
   * `**Spec Index**`    — indented child entries; cap
     `document_lifecycle.spec_index_max_entries` (default 30). Collapse the
-    oldest shipped entries into a `## Spec Index Archive` section
-    (ship.md:197).
+    oldest shipped index lines into a `## Spec Index Archive` section
+    (ship.md §State Update & Archival). Spec bodies stay in `docs/specs/`.
 
 ADVISORY-ONLY contract (mirrors the run_python_check / Invoke-PythonCheck
 WARN-tier wiring used by the downstream-capabilities and safety-nucleus
@@ -41,6 +41,7 @@ DEFAULT_SPEC_INDEX_CAP = 30
 SHIP_HISTORY_HEADER = "## Ship History"
 SHIP_ENTRY_RE = re.compile(r"^### Ship-")
 SPEC_INDEX_PARENT_RE = re.compile(r"^- \*\*Spec Index\*\*")
+SPEC_INDEX_ARCHIVE_RE = re.compile(r"^## Spec Index Archive")
 INDENTED_BULLET_RE = re.compile(r"^\s+- ")
 TOP_LEVEL_BULLET_RE = re.compile(r"^- ")
 
@@ -105,6 +106,27 @@ def count_spec_index(lines: list[str]) -> int:
     return count
 
 
+def count_spec_index_archive(lines: list[str]) -> int:
+    """Count indented child entries under the `## Spec Index Archive` header.
+
+    Mirrors the validators' archive-section scope: first matching header only,
+    terminated by the next `##` heading of any depth.
+    """
+    in_section = False
+    count = 0
+    for line in lines:
+        stripped = line.rstrip("\n")
+        if not in_section:
+            if SPEC_INDEX_ARCHIVE_RE.match(stripped):
+                in_section = True
+            continue
+        if stripped.startswith("##"):
+            break
+        if INDENTED_BULLET_RE.match(stripped):
+            count += 1
+    return count
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description=(
@@ -155,6 +177,7 @@ def main() -> int:
     lines = text.splitlines()
     ship_count = count_ship_history(lines)
     spec_count = count_spec_index(lines)
+    spec_archive_count = count_spec_index_archive(lines)
 
     findings = []
     if ship_count > ship_cap:
@@ -167,8 +190,24 @@ def main() -> int:
     if spec_count > spec_cap:
         findings.append(
             f"WARN: Spec Index has {spec_count} entries (cap {spec_cap}); "
-            f"collapse the oldest shipped entries into a `## Spec Index Archive` "
-            f"section per ship.md:197."
+            f"collapse the oldest shipped index lines into a `## Spec Index Archive` "
+            f"section per ship.md §State Update & Archival (Spec Index Cap) — "
+            f"index lines only, spec bodies stay in docs/specs/."
+        )
+
+    # Over-fold guard. The archive section holds OVERFLOW only: collapsing more
+    # than the overflow hollows out the live index that `bootstrap.md §2a` and
+    # the `context-budget.md` scoped readers rely on to find relevant specs, and
+    # it silences this very cap (count_spec_index reads the live block only, so a
+    # fully-folded index reports 0/cap and can never WARN again). ship.md says
+    # "keep the newest N inline"; this is that sentence, machine-checked.
+    if spec_archive_count > 0 and spec_count < spec_cap:
+        findings.append(
+            f"WARN: Spec Index over-folded — live index has {spec_count} entries "
+            f"(below cap {spec_cap}) while {spec_archive_count} sit in "
+            f"`## Spec Index Archive`; the archive holds overflow only. Restore the "
+            f"{min(spec_cap - spec_count, spec_archive_count)} newest archived "
+            f"entries inline per ship.md §State Update & Archival (Spec Index Cap)."
         )
 
     if findings:
@@ -177,7 +216,9 @@ def main() -> int:
     else:
         print(
             f"ssot caps OK — ship history {ship_count}/{ship_cap}, "
-            f"spec index {spec_count}/{spec_cap}."
+            f"spec index {spec_count}/{spec_cap}"
+            + (f" (+{spec_archive_count} archived)" if spec_archive_count else "")
+            + "."
         )
     return 0
 
