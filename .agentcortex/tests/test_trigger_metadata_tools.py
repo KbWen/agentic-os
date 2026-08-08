@@ -930,5 +930,82 @@ class SnapshotRootPathFormTests(unittest.TestCase):
             self.assertIn("beta-skill", ids)
 
 
+class AppendLessonLfBytesTests(unittest.TestCase):
+    """External-review follow-up to the #160 LF fix: byte-level regression
+    coverage for the OTHER fixed writers — append_lesson.py's append path
+    (rewrites current_state.md) and archive path (rewrites current_state.md,
+    creates + appends global-lessons-archive.md). Same rationale as the
+    generator test: assert emitted bytes into a tmp tree; asserting on
+    committed files is vacuous (git checks them out LF regardless), and the
+    bug only manifests where os.linesep is CRLF."""
+
+    @staticmethod
+    def _chain_fixture(tmp: Path) -> tuple[Path, Path, Path]:
+        from check_lesson_chain import chain_sha
+
+        entries = [
+            ("cat-a", "MEDIUM", "trig-a", "First entry (genesis-anchored)."),
+            ("cat-b", "LOW", "trig-b", "Second entry, oldest LOW."),
+        ]
+        lines = [
+            "# Project Current State (vNext)",
+            "",
+            "- **Project Intent**: test fixture.",
+            "",
+            "## Global Lessons (AI Error Pattern Registry)",
+            "",
+        ]
+        prev = "GENESIS"
+        for cat, sev, trig, body in entries:
+            lines.append(
+                f"- [Category: {cat}][Severity: {sev}][Trigger: {trig}][prev: {prev}] {body}"
+            )
+            prev = chain_sha(cat, sev, trig, body)
+        lines += ["", "## Ship History", "", "### Ship-fixture", "- Feature shipped: none", ""]
+        ctx = tmp / ".agentcortex" / "context"
+        arc = ctx / "archive"
+        arc.mkdir(parents=True, exist_ok=True)
+        cs = ctx / "current_state.md"
+        # 3.9-safe fixture write (write_text gained newline= only in 3.10 — #164);
+        # fixture EOL is irrelevant anyway: the tool rewrites the whole file.
+        with cs.open("w", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n".join(lines) + "\n")
+        return cs, arc / "INDEX.jsonl", arc / "global-lessons-archive.md"
+
+    @staticmethod
+    def _run_tool(*args: str) -> subprocess.CompletedProcess:
+        tool = ROOT / ".agentcortex" / "tools" / "append_lesson.py"
+        return subprocess.run(
+            [sys.executable, str(tool), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
+    def test_append_path_emits_lf_only_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cs, _idx, _arc = self._chain_fixture(Path(td))
+            res = self._run_tool(
+                "--path", str(cs),
+                "--category", "cat-c", "--severity", "LOW",
+                "--trigger", "trig-c", "--body", "Appended by LF byte test.",
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertNotIn(b"\r", cs.read_bytes())
+
+    def test_archive_path_emits_lf_only_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cs, idx, arc_md = self._chain_fixture(Path(td))
+            res = self._run_tool(
+                "--archive", "--index", "2",
+                "--path", str(cs), "--archive-path", str(arc_md),
+                "--index-jsonl", str(idx), "--date", "2026-08-08",
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertNotIn(b"\r", cs.read_bytes())
+            self.assertNotIn(b"\r", arc_md.read_bytes())
+
+
 if __name__ == "__main__":
     unittest.main()
