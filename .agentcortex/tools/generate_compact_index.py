@@ -39,7 +39,13 @@ def main() -> int:
         return 0
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(rendered, encoding="utf-8")
+    # newline="\n" forces LF on all platforms; Path.write_text()'s own `newline=`
+    # kwarg needs Python >=3.10 and this repo's CI floor is 3.9 (validate.yml),
+    # so control it via .open() instead. Without this, Windows text-mode write
+    # translates \n -> CRLF into a tracked eol=lf JSON artifact (repo-gotchas
+    # class: the 2026-08-03 ship.md CRLF incident had the same root cause).
+    with output_path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(rendered)
     print(f"wrote compact index: {output_path.relative_to(root).as_posix()}")
     return 0
 

@@ -142,7 +142,10 @@ def append_lesson(
     # Insert with surrounding blank handling: the existing pattern is
     # `<lesson>\n<lesson>\n\n## Ship History`. Preserve the trailing blank.
     new_lines = lines[:insert_at] + [new_bullet] + lines[insert_at:]
-    path.write_text("\n".join(new_lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
+    # newline="\n" forces LF on all platforms (path is tracked eol=lf); plain
+    # write_text() text-mode would translate \n -> CRLF on Windows.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(new_lines) + ("\n" if text.endswith("\n") else ""))
 
     return {
         "status": "ok",
@@ -237,23 +240,29 @@ def archive_lesson(
             )
 
     del lines[target_line_idx]
-    path.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
+    # newline="\n": same LF-stability rationale as append_lesson() above.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines) + ("\n" if text.endswith("\n") else ""))
 
     # ---- 2) Move the removed bullet to the archive surface ----
     when = date or datetime.date.today().isoformat()
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     header = "# Global Lessons Archive\n"
+    # newline="\n" on both opens below: archive_path is tracked eol=lf. The
+    # create-on-first-use write and the very next append below both write
+    # into the same file, so both need LF control -- fixing only the first
+    # would be immediately undone by an unguarded second write.
     if not archive_path.exists():
-        archive_path.write_text(
-            header
-            + "\n> Chain-aware archival target for §Global Lessons overflow "
-            "(config.yaml §document_lifecycle.global_lessons_max_entries).\n"
-            "> Each entry below was removed from current_state.md by "
-            "`append_lesson.py --archive` and is authorized by a matching "
-            "`lesson_archive` record in `INDEX.jsonl`.\n",
-            encoding="utf-8",
-        )
-    with archive_path.open("a", encoding="utf-8") as fh:
+        with archive_path.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(
+                header
+                + "\n> Chain-aware archival target for §Global Lessons overflow "
+                "(config.yaml §document_lifecycle.global_lessons_max_entries).\n"
+                "> Each entry below was removed from current_state.md by "
+                "`append_lesson.py --archive` and is authorized by a matching "
+                "`lesson_archive` record in `INDEX.jsonl`.\n"
+            )
+    with archive_path.open("a", encoding="utf-8", newline="\n") as fh:
         fh.write(f"\n## Archived {when} (prev: {bridge_prev}, body-sha: {archived_body_sha})\n\n")
         fh.write(removed_line.rstrip() + "\n")
 
