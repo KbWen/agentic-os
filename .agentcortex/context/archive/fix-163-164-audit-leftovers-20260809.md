@@ -86,6 +86,7 @@ Close the two open leftovers from the 2026-08-08 govern-audit wave. **#164**: `P
 - Reason: folding an every-phase doc into a per-phase-scenario aggregate changes what the 355k ratchet measures and forces a semantic ceiling rewrite; the size ratchet delivers the same protection (growth is visible and deliberate) at ~40 lines.
 - Alternatives: A (true-multiplier fold — rejected above); B-pure (prose only — `[enforcement]` theatre).
 - Impact: shared-contracts edits now trip a test unless the cap is bumped in-commit; the aggregate's meaning is unchanged.
+- → local (durable rationale + enforcement live in `token-governance.md §5.1` and `test_shared_contracts_size_ratchet.py`; no ADR/L2 promotion needed — the decision is fully machine-backed where it lands)
 
 ---
 
