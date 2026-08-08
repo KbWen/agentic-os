@@ -213,6 +213,29 @@ agentcortex:
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("compact index is fresh", result.stdout)
 
+    def test_generate_compact_index_emits_lf_only_bytes(self) -> None:
+        """Backlog #160: output_path.write_text(rendered, encoding="utf-8") with no
+        newline= control lets Windows text-mode translate \\n -> os.linesep (CRLF)
+        into a tracked eol=lf JSON artifact. MUST assert on the emitted BYTES from a
+        scratch run: asserting on the checked-out repo file is vacuous, because git
+        normalizes the checkout to LF regardless of whether the generator itself is
+        LF-stable. Proven red pre-fix / green post-fix on a real Windows box: the
+        unfixed pattern (`path.write_text(rendered, encoding="utf-8")`) wrote 475
+        CRLF pairs into this fixture's rendered content; the fixed pattern
+        (`.open("w", encoding="utf-8", newline="\\n")`) wrote zero."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            registry_dir = root / ".agentcortex" / "metadata"
+            registry_dir.mkdir(parents=True)
+            (registry_dir / "trigger-registry.yaml").write_text(
+                "version: 1\nentries: []\n", encoding="utf-8"
+            )
+            result = run_tool(".agentcortex/tools/generate_compact_index.py", "--root", str(root))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output_bytes = (registry_dir / "trigger-compact-index.json").read_bytes()
+        self.assertNotIn(b"\r", output_bytes, "generator must emit LF-only bytes on every platform")
+        self.assertTrue(output_bytes.endswith(b"\n"))
+
     def test_query_returns_compact_skill_slice(self) -> None:
         result = run_tool(
             ".agentcortex/tools/query_trigger_metadata.py",
