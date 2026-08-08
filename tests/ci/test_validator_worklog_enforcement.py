@@ -130,7 +130,7 @@ def _write_worklog(
         if guardrails_receipt else "- Session started.\n"
     )
     sec_section = "\n## Security Findings\n\nnone\n\n---\n" if security_findings else ""
-    (work_dir / name).write_text(
+    (work_dir / name).write_bytes(
         f"""# Work Log: {name}
 
 ## Header
@@ -174,8 +174,7 @@ none
 ## Evidence
 
 - Fixture evidence.
-""",
-        encoding="utf-8", newline="\n",
+""".encode("utf-8")
     )
 
 

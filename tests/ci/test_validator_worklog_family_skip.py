@@ -230,7 +230,7 @@ def test_fresh_install_announces_the_absent_family_and_regains_it() -> None:
         )
         absent_counts = _summary(absent)
 
-        (work_dir / "fixture.md").write_text(_WORKLOG, encoding="utf-8", newline="\n")
+        (work_dir / "fixture.md").write_bytes(_WORKLOG.encode("utf-8"))
         present = _run_validate(target)
         assert SKIP_MARKER not in present, (
             "with an active work log the family runs, so the SKIP must disappear"

@@ -181,7 +181,7 @@ def _write_worklog(target: Path, pad_lines: int) -> int:
     wd = target / ".agentcortex" / "context" / "work"
     wd.mkdir(parents=True, exist_ok=True)
     p = wd / "w.md"
-    p.write_text(_worklog_text(pad_lines), encoding="utf-8", newline="\n")
+    p.write_bytes(_worklog_text(pad_lines).encode("utf-8"))
     return p.stat().st_size
 
 
