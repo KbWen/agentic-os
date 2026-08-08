@@ -35,6 +35,16 @@ fixed by correcting the Work Log, not by this tool.
 Exit codes:
   0  always (advisory -- never fails the validator). Findings, if any, are printed
      to stdout as `WARN: ...` lines.
+
+Nested-advisory contract (external-review clarification): run_python_check /
+Invoke-PythonCheck map tool exit codes 0->PASS and nonzero->FAIL only -- the seam
+has NO WARN exit mapping (validate.sh:192-196), so findings from this tool appear
+as indented `WARN:` lines under a `[PASS] ... advisory` wrapper line and do NOT
+increment the summary's warn count. The counted-WARN lines in the summary all come
+from grandfathered native `record_result WARN` sites (e.g. governance eval
+coverage, validate.sh:~2853). Promoting seam-check findings into counted WARNs is
+the WARN-taxonomy design decision tracked as backlog #103(d) -- deliberately not
+decided unilaterally here.
 """
 
 from __future__ import annotations
@@ -77,12 +87,24 @@ def find_external_references_rows(lines: list[str]) -> list[list[str]]:
     this tool is the SOLE parser invoked by both validators (no sh/ps1 split to
     diverge, unlike the backlog #140 class of bug), but staying prefix-tolerant of
     a suffixed heading costs nothing.
+
+    Fence-aware (external-review fix, backlog #156 decoy family): lines inside
+    ``` / ~~~ fenced blocks are invisible — a fenced example containing the
+    heading cannot open (or shadow) the section, and fenced example tables are
+    never scanned as live rows. Fence markers toggle regardless of info string.
     """
     rows: list[list[str]] = []
     in_section = False
+    in_fence = False
     header_row_seen = False
     for raw in lines:
         line = raw.rstrip("\n")
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         if not in_section:
             if EXTERNAL_REFS_HEADER_RE.match(line):
                 in_section = True

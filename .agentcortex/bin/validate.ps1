@@ -796,7 +796,7 @@ Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPy
 # network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when
 # no active Work Log exists. Backlog #161 (2026-08-08 govern-audit F7): a log
 # citing a nonexistent spec path or PR previously passed both validators untouched.
-Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root)
+Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence, advisory)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),

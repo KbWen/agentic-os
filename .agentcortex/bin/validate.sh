@@ -662,7 +662,7 @@ run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentc
 # (docs/reviews/2026-08-08-govern-audit-task-simulation.md F7): a log citing a
 # nonexistent spec path or PR previously passed both validators untouched.
 # No-python -> WARN; tool absent -> SKIP.
-run_python_check "worklog external references (spec/ADR existence)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
+run_python_check "worklog external references (spec/ADR existence, advisory)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
 
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"

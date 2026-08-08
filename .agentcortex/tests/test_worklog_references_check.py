@@ -257,3 +257,67 @@ def test_unknown_row_type_is_ignored(tmp_path):
     r = run_tool(tmp_path, work)
     assert r.returncode == 0
     assert "WARN:" not in r.stdout
+
+
+def write_raw_log(work_dir: Path, name: str, content: str) -> Path:
+    """Write a Work Log fixture with full content control (fence tests)."""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    p = work_dir / name
+    p.write_text(content, encoding="utf-8")
+    return p
+
+
+def test_fenced_decoy_heading_does_not_shadow_real_section(tmp_path):
+    """External-review P1 (backlog #156 decoy family): a fenced example
+    containing the heading + a plausible table must NOT bind the parser —
+    the REAL section's bogus path is the one that has to WARN, and the
+    decoy's path must not be reported at all."""
+    work = tmp_path / "work"
+    write_raw_log(
+        work,
+        "a.md",
+        "# Work Log: decoy\n\nExample of the section format:\n\n"
+        "```\n## External References\n\n| Type | Path / URL | Notes |\n"
+        "|---|---|---|\n| Spec | docs/specs/decoy-only.md | fenced example |\n```\n\n"
+        "## External References\n\n| Type | Path / URL | Notes |\n|---|---|---|\n"
+        "| Spec | docs/specs/does-not-exist.md | real section |\n\n## Known Risk\n\nnone\n",
+    )
+    r = run_tool(tmp_path, work)
+    assert r.returncode == 0
+    assert "Spec path 'docs/specs/does-not-exist.md' does not exist" in r.stdout
+    assert "decoy-only.md" not in r.stdout
+
+
+def test_fenced_example_rows_inside_real_section_are_ignored(tmp_path):
+    """A fenced example table INSIDE the real section is documentation,
+    not live rows — only the unfenced row may WARN."""
+    work = tmp_path / "work"
+    write_raw_log(
+        work,
+        "a.md",
+        "## External References\n\nFormat example:\n\n"
+        "```\n| Spec | docs/specs/fenced-example.md | doc |\n```\n\n"
+        "| Type | Path / URL | Notes |\n|---|---|---|\n"
+        "| Spec | docs/specs/really-missing.md | live |\n\n## Known Risk\n\nnone\n",
+    )
+    r = run_tool(tmp_path, work)
+    assert r.returncode == 0
+    assert "really-missing.md" in r.stdout
+    assert "fenced-example.md" not in r.stdout
+
+
+def test_fenced_only_heading_yields_no_findings(tmp_path):
+    """A log whose ONLY `## External References` heading sits inside a fence
+    has no real section — the tool must stay silent, not scan the fence."""
+    work = tmp_path / "work"
+    write_raw_log(
+        work,
+        "a.md",
+        "# Work Log: fenced only\n\n"
+        "```\n## External References\n\n| Type | Path / URL | Notes |\n"
+        "|---|---|---|\n| Spec | docs/specs/ghost.md | fenced |\n```\n\n"
+        "## Known Risk\n\nnone\n",
+    )
+    r = run_tool(tmp_path, work)
+    assert r.returncode == 0
+    assert "WARN:" not in r.stdout
