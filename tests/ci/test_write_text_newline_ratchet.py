@@ -29,33 +29,56 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-EXCLUDED_PARTS = {".git", ".claude", "node_modules", "__pycache__", ".pytest_cache"}
+EXCLUDED_PARTS = {"node_modules", "__pycache__"}
 
 
 def _repo_python_files() -> list[Path]:
     files = []
     for p in ROOT.rglob("*.py"):
-        if any(part in EXCLUDED_PARTS for part in p.parts):
+        # Exclude any dot-directory segment (.git, .claude, .venv, .tox, ...)
+        # — mirrors test_subprocess_encoding.py so a developer venv cannot
+        # false-FAIL the scan (tenth-man R3 finding on the first draft).
+        # Filter on ROOT-relative parts: the checkout itself may live under a
+        # dot-directory (this repo does — `.gemini/...`), and absolute-part
+        # filtering empties the scan (caught by the scan-reach guard below).
+        rel_dirs = p.relative_to(ROOT).parts[:-1]
+        if any(part.startswith(".") or part in EXCLUDED_PARTS for part in rel_dirs):
             continue
         files.append(p)
     return files
 
 
+def _first_arg_is_bytes_like(call: ast.Call) -> bool:
+    """Accident-shape detector for `write_text(<bytes>)` (tenth-man R3: the
+    half-converted-call regression the newline check alone cannot see — a
+    closer gains `.encode("utf-8")` while the opener stays `write_text`)."""
+    if not call.args:
+        return False
+    arg = call.args[0]
+    if isinstance(arg, ast.Constant) and isinstance(arg.value, bytes):
+        return True
+    return (
+        isinstance(arg, ast.Call)
+        and isinstance(arg.func, ast.Attribute)
+        and arg.func.attr == "encode"
+    )
+
+
 def _violations_in(path: Path) -> list[str]:
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except SyntaxError as exc:  # a broken file is its own problem; surface it
+    except SyntaxError as exc:  # a broken repo file is its own problem; surface it
         return [f"{path}: SyntaxError during ratchet scan: {exc}"]
     hits = []
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Attribute)
-            and node.func.attr == "write_text"
-            and any(kw.arg == "newline" for kw in node.keywords)
-        ):
-            rel = path.relative_to(ROOT)
-            hits.append(f"{rel}:{node.lineno}")
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+            continue
+        rel = path.relative_to(ROOT)
+        if node.func.attr == "write_text":
+            if any(kw.arg == "newline" for kw in node.keywords):
+                hits.append(f"{rel}:{node.lineno} [write_text(newline=) is 3.10+]")
+            elif _first_arg_is_bytes_like(node):
+                hits.append(f"{rel}:{node.lineno} [bytes passed to write_text — use write_bytes]")
     return hits
 
 

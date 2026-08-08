@@ -1173,7 +1173,7 @@ def _write_not_ready_re_review_worklog(target: Path) -> None:
             "- Gate: review | Verdict: PASS | Classification: feature | Timestamp: 2026-07-10T04:00:00Z",
         ]
     )
-    (work_dir / "feature-not-ready-re-review.md").write_text(
+    (work_dir / "feature-not-ready-re-review.md").write_bytes(
         f"""# Work Log: feature-not-ready-re-review
 
 ## Header
@@ -1295,7 +1295,7 @@ def _write_receipt_schema_worklog(
     prefer whichever line comes first, masking the intended override."""
     work_dir = target / ".agentcortex" / "context" / "work"
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / name).write_text(
+    (work_dir / name).write_bytes(
         f"""# Work Log: {name}
 
 ## Header
