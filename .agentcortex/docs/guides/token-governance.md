@@ -59,6 +59,10 @@ When a new version claims to "reduce token consumption for document reading," at
 
 If any check fails, it is considered "breaking governance for efficiency" and must be corrected before success is declared.
 
+### 5.1 `shared-contracts.md` and the 355k instrument (deliberate exclusion, ratchet-bounded)
+
+`analyze_token_lifecycle.py`'s `PHASE_WORKFLOW_MAP` maps the 8 phase workflow files only; `shared-contracts.md` — loaded at every non-`tiny-fix` phase entry per `AGENTS.md §Shared Phase Contracts` — carries **zero weight** in the 355k aggregate (empirically: a +400-char probe moves the aggregate by 0, while `implement.md` multiplies ×12). This exclusion is **deliberate and recorded** (backlog #163, decided 2026-08-08): folding an every-phase doc into a per-phase-scenario instrument would redefine the aggregate's semantics and force a ~10k-token one-time ceiling rewrite; the real per-task load it would price in is deliberately left un-priced there and bounded here instead. The loophole it would otherwise open — moving governance text into `shared-contracts.md` to dodge the ratchet while still paying its real ~6×/task runtime cost — is closed **mechanically instead**: `tests/ci/test_shared_contracts_size_ratchet.py` caps the file's size at today's baseline + small slack, so any addition there is a visible, deliberate, cap-bumping edit rather than free hosting. When editing `shared-contracts.md`, bump that cap minimally in the same commit and say why — same discipline as the lifecycle ceiling (see the `[enforcement]` Global Lesson: unenforced prose is theatre; this section is the honest label, the test is the enforcement).
+
 ## 6. Context Caching (Provider-Level Optimization)
 
 Modern LLM providers support **context caching** — reusing attention computation for stable parts of the prompt (system instructions, AGENTS.md, guardrails) across calls. In practice this project achieves a **97-98% cache hit rate** (measured 2026-05-13 ~ 05-26), meaning ~97% of input tokens are served at 0.1× price.
