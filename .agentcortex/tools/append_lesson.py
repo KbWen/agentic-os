@@ -58,6 +58,7 @@ from check_lesson_chain import (  # noqa: E402
     LESSON_ARCHIVE_TYPE,
     canonical,
     chain_sha,
+    find_malformed_lesson_lines,
     lesson_body_sha,
     parse_lessons,
 )
@@ -106,6 +107,30 @@ def append_lesson(
         raise ValueError("category, trigger, body all required (non-empty)")
 
     lessons = parse_lessons(path)
+
+    # Strict/loose parity guard (backlog #162). parse_lessons() is a STRICT
+    # parser: a format-mangled bullet (e.g. a deleted [Severity:] token) still
+    # matches the loose "- [Category:" prefix but silently drops out of
+    # `lessons`. Left unchecked, the `prev` computed below would anchor past
+    # the mangled bullet -- cementing it outside the hash chain forever even
+    # though it stays physically in the file -- and the cap check right below
+    # would under-count the section (strict count < physical bullet count),
+    # letting an append through that the cap should refuse. Refuse fail-closed
+    # on any mismatch, before computing `prev` or evaluating the cap.
+    malformed = find_malformed_lesson_lines(path)
+    if malformed:
+        loose_count = len(lessons) + len(malformed)
+        raise ValueError(
+            f"Global Lessons section has {loose_count} bullet-prefixed line(s) "
+            f"but only {len(lessons)} parse strictly -- line {malformed[0]} is "
+            f"format-mangled (e.g. a missing [Severity:] or [Trigger:] token) "
+            f"and would be silently skipped, permanently cementing it outside "
+            f"the hash chain once this append's [prev:] anchors past it. "
+            f"Refusing to append. Run "
+            f"`python .agentcortex/tools/check_lesson_chain.py` to diagnose, "
+            f"fix the malformed bullet, then retry."
+        )
+
     if len(lessons) >= GLOBAL_LESSONS_CAP:
         raise ValueError(
             f"Global Lessons at cap ({len(lessons)} >= {GLOBAL_LESSONS_CAP}); "
