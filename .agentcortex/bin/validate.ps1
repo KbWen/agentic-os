@@ -791,6 +791,12 @@ Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -Missi
 # entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
 # silent no-op until a fork sets document_lifecycle.decision_disposition_since.
 Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
+# ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
+# referents must exist on disk; PR/Issue referents are format-checked only, no
+# network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when
+# no active Work Log exists. Backlog #161 (2026-08-08 govern-audit F7): a log
+# citing a nonexistent spec path or PR previously passed both validators untouched.
+Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
