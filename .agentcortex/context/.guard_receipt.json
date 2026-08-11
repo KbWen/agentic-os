@@ -1,7 +1,7 @@
 {
-  "expected_sha": "9f2a8d8a739f25d80fb73703f5b6b7d6ef0961205fe8dad00b49997fc6777994",
+  "expected_sha": "7e21d6cb1329469df4022f4e3c9aa9fac722a47ed03c31290fcfa3071209316e",
   "mode": "replace",
-  "new_sha": "230fbacca41c5efb74d5acdc31d3a0cdc52cdb9ab7ccdbbc54ad3b1ffec738eb",
-  "target": ".agentcortex/context/current_state.md",
-  "timestamp": 1786205506
+  "new_sha": "4e8a8a26bf2fff96acef242a8dfb466184c729a1098cba4e1fa9be3e1c401439",
+  "target": ".agentcortex/context/archive/ship-history-2026.md",
+  "timestamp": 1786459496
 }
