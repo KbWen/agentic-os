@@ -199,6 +199,11 @@ class TestTruffleHogJob(unittest.TestCase):
                       "TruffleHog must use --only-verified in extra_args")
 
     def test_ac3_checkout_full_depth(self):
+        # NOTE (#166): this asserts full history is FETCHED, which the wrapper
+        # needs so `--since-commit <base>` can resolve. It does NOT assert that
+        # a full-history scan occurs — the wrapper scans the push/PR range only.
+        # AC-3's wording was corrected to match; do not read this test as
+        # certifying scan breadth.
         checkout_steps = [
             s for s in (self.job.get("steps") or [])
             if "checkout" in str(s.get("uses", ""))
@@ -208,26 +213,60 @@ class TestTruffleHogJob(unittest.TestCase):
         fetch_depth = (checkout.get("with") or {}).get("fetch-depth", 1)
         self.assertEqual(fetch_depth, 0, "TruffleHog checkout must use fetch-depth: 0")
 
-    def test_ac5_trufflehog_version_pinned(self):
+    def test_ac5_trufflehog_scanner_pinned_by_digest(self):
+        """#166: the action SHA pins the wrapper; the composed image reference
+        must pin the SCANNER, and by digest rather than tag.
+
+        This asserts immutability *by form*, not agreement between two editable
+        strings: a `@sha256:<64 hex>` reference is content-addressed, so no edit
+        to a comment or a release tag can change what executes.
+        """
         th_steps = [
             s for s in (self.job.get("steps") or [])
             if "trufflehog" in str(s.get("uses", "")).lower()
         ]
         self.assertTrue(th_steps, "No TruffleHog action step found")
-        uses = th_steps[0].get("uses", "")
-        self.assertNotEqual(uses, "", "TruffleHog step missing 'uses' field")
-        self.assertFalse(
-            _FLOATING_REF_RE.search(uses),
-            f"TruffleHog action uses floating ref: {uses!r} — must pin to tag or SHA",
+        with_block = th_steps[0].get("with") or {}
+        image = str(with_block.get("image", "")).strip()
+        version = str(with_block.get("version", "")).strip()
+
+        self.assertNotEqual(
+            version, "",
+            "TruffleHog step must set `version:` — the wrapper's own default is "
+            "`latest`, so the action SHA pin does not bind the scanner image "
+            "that actually runs (backlog #166)",
         )
-        # Third-party actions (non actions/*) MUST use a 40-char commit SHA per AC-5.
-        # Semver tags are mutable and do not provide supply-chain immutability.
-        self.assertIn("@", uses)
-        tag = uses.split("@")[1]
+        # The wrapper composes `docker run "${IMAGE}:${VERSION}"`. Reproduce that
+        # join here and require the result to be a digest reference.
+        composed = f"{image}:{version}"
         self.assertRegex(
-            tag,
-            r"^[0-9a-fA-F]{40}$",
-            f"TruffleHog tag {tag!r} must be a 40-char commit SHA — semver tags are mutable (AC-5)",
+            composed,
+            r"^[a-z0-9./-]+@sha256:[0-9a-f]{64}$",
+            "The composed scanner reference must be a digest "
+            "(`<image>@sha256:<64 hex>`), not a tag. Tags are mutable and can be "
+            f"re-pointed; only a digest is content-addressed. Got: {composed!r}",
+        )
+
+    def test_ac5_trufflehog_release_comment_present(self):
+        """Human-readable provenance for the digest above.
+
+        Deliberately weaker than the digest assertion and NOT relied on for
+        immutability: an external review demonstrated that comment/input
+        equality can stay green while the wrapper SHA and the scanner diverge,
+        because a comment is display metadata, not provenance. Its only job is
+        to tell a reader which release the digest belongs to.
+        """
+        raw = SECURITY_YML.read_text(encoding="utf-8")
+        self.assertRegex(
+            raw,
+            r"uses:\s*trufflesecurity/trufflehog@[0-9a-f]{40}\s*#\s*v\d+\.\d+\.\d+",
+            "TruffleHog `uses:` line must carry a `# vX.Y.Z` release comment (AC-5)",
+        )
+        self.assertRegex(
+            raw,
+            r"#\s*sha256:[0-9a-f]{6,}.*release v\d+\.\d+\.\d+",
+            "A comment must state which release the pinned digest corresponds to, "
+            "so a reader can map the opaque digest back to a version",
         )
 
 

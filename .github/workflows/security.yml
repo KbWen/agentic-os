@@ -97,9 +97,24 @@ jobs:
       # On pull_request: scans base..head range automatically.
       # On push to main: scans github.event.before..github.sha range.
       # Requires branch protection to block force-pushes (event.before = 0000... edge case).
+      # The action SHA pins only the WRAPPER. Its composite step runs
+      # `docker run "${IMAGE}:${VERSION}"`, and `version` defaults to `latest`,
+      # so a SHA-pinned step still pulled a mutable image (backlog #166).
+      #
+      # `image` + `version` below are split so they compose into a DIGEST
+      # reference — `…/trufflehog@sha256:<64 hex>` — not a tag. A tag, even an
+      # exact release tag, is mutable by design and can be re-pointed; only a
+      # digest is content-addressed. This is the same argument AC-5 already
+      # makes against semver refs for actions.
+      #
+      # If upstream ever changes that join, the composed string stops being a
+      # valid image reference and `docker run` fails — loudly, not silently.
+      # sha256:aa821cf4… is the manifest digest published for release v3.96.0.
       - name: Scan for secrets
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11  # v3.96.0
         with:
+          image: ghcr.io/trufflesecurity/trufflehog@sha256
+          version: "aa821cf4ace8861c7d096d83818cdf7bb9719028a52d37a52eaad44086a52577"
           extra_args: --only-verified
 
   credential-scan:
