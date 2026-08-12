@@ -56,7 +56,7 @@ These rules override the initial classification. AI MUST apply them during `/boo
   1. ✅ `.agentcortex/` artifact path
   2. ✅ modified code path
   3. Resolved active work log path (`.agentcortex/context/work/<worklog-key>.md`)
-- `quick-win` and `hotfix` are exempt from `/handoff` but MUST provide evidence (diff + behavior verification).
+- `quick-win` and `hotfix` are exempt from `/handoff` but MUST provide evidence (diff + behavior verification) and MUST keep a Work Log whose `## Gate Evidence` carries the required receipts — `quick-win`: bootstrap, plan, implement; `hotfix`: those plus review, test. A missing receipt is a validator FAIL, not a WARN.
 - `tiny-fix` allows fast-path but MUST provide minimal evidence (diff + one-line verification).
 
 ## Legacy State Mapping (Migration)

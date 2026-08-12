@@ -75,7 +75,10 @@ def write_baseline(path: Path, snapshot: dict[str, Any], slack: float) -> None:
         "baselines": snapshot["baselines"],
         "aggregate": snapshot["aggregate"],
     }
-    path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8", newline="\n")
+    # 3.9-safe LF write: Path.write_text() gained newline= only in Python 3.10,
+    # and this repo's CI floor is 3.9 (backlog #164; same pattern as the #160 fix).
+    with path.open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(doc, indent=2) + "\n")
 
 
 def load_baseline(path: Path) -> dict[str, Any]:

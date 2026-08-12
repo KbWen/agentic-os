@@ -225,6 +225,77 @@ class LessonChainArchivalTests(unittest.TestCase):
             self.assertEqual(res.returncode, 1, "HIGH archival must be refused")
             self.assertIn("HIGH", res.stderr)
 
+    # ---- Backlog #162: format-mangled tail bullet must not be cemented ----
+    def _mangled_tail_fixture(self, tmp: Path) -> tuple[Path, Path, Path, int]:
+        """Build a fixture whose tail bullet is tag-mangled: its [Severity:]
+        token is deleted entirely. The line still starts with '- [Category:'
+        (loose prefix match) but fails strict LESSON_RE (no [Severity:] token
+        between [Category:] and [Trigger:]) -- the exact backlog #162
+        mechanism. Its own [prev:] is set to chain correctly from the last
+        well-formed entry, so it is invisible-but-plausible: a naive next
+        append would silently anchor past it. Returns (cs, idx, arc_md,
+        mangled_line_no).
+        """
+        ctx = tmp / ".agentcortex" / "context"
+        arc = ctx / "archive"
+        arc.mkdir(parents=True, exist_ok=True)
+        cs = ctx / "current_state.md"
+
+        entries = self._entries()
+        text = build_current_state(entries)
+        last_cat, last_sev, last_trig, last_body = entries[-1]
+        tail_prev = chain_sha(last_cat, last_sev, last_trig, last_body)
+        mangled = (
+            f"- [Category: cat-mangled][Trigger: trig-mangled]"
+            f"[prev: {tail_prev}] Tail bullet with its Severity tag deleted."
+        )
+        text = text.replace("\n## Ship History", f"\n{mangled}\n\n## Ship History")
+        cs.write_text(text, encoding="utf-8")
+
+        mangled_line_no = next(
+            i + 1 for i, ln in enumerate(text.splitlines()) if ln == mangled
+        )
+
+        idx = arc / "INDEX.jsonl"
+        arc_md = arc / "global-lessons-archive.md"
+        return cs, idx, arc_md, mangled_line_no
+
+    def test_mangled_tail_append_refused(self):
+        """(a) A mangled tail must refuse the next append rather than silently
+        anchoring [prev:] past it (which would cement it outside the chain)."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            cs, _idx, _arc_md, mangled_line_no = self._mangled_tail_fixture(tmp)
+            before = cs.read_text(encoding="utf-8")
+
+            res = run(
+                APPEND_LESSON, "--path", str(cs),
+                "--category", "cat-new", "--severity", "LOW",
+                "--trigger", "trig-new", "--body", "Should be refused: tail is mangled.",
+            )
+            self.assertEqual(res.returncode, 1, "append past a mangled tail must be refused")
+            self.assertIn(str(mangled_line_no), res.stderr)
+            self.assertIn("check_lesson_chain.py", res.stderr)
+            # Refusal happens before the cap/prev computation or any write.
+            self.assertEqual(cs.read_text(encoding="utf-8"), before, "refused append must not touch the file")
+
+    def test_mangled_tail_chain_check_reports_broken(self):
+        """(b) check_lesson_chain.py must report the mangled tail as broken
+        instead of silently skipping it and re-verifying intact."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            cs, idx, _arc_md, mangled_line_no = self._mangled_tail_fixture(tmp)
+
+            chk = self._check(cs, idx)
+            self.assertEqual(chk.returncode, 1, "chain check must report broken, not intact")
+            combined = chk.stdout + chk.stderr
+            self.assertIn(f"line {mangled_line_no}", combined)
+            self.assertIn("BROKEN", chk.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

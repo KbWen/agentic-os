@@ -1,6 +1,9 @@
+---
+name: doc-lookup
+description: Check official docs when framework APIs or configuration may be version-sensitive.
+---
+
 <!-- This is a SCAFFOLD skill -->
-<!-- When /app-init runs in a downstream project, it customizes this file -->
-<!-- with the project's tech stack and official doc URLs. -->
 <!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
 
 # Doc Lookup

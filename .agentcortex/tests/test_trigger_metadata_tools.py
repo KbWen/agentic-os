@@ -18,6 +18,7 @@ from trigger_runtime_core import (
     package_content_hash,
     parse_frontmatter,
     parse_simple_yaml,
+    resolve_runtime_contract,
     resolve_skill_execution_policy,
     resolve_skill_lockfile,
     validate_skill_manifest_authority,
@@ -212,6 +213,29 @@ agentcortex:
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("compact index is fresh", result.stdout)
 
+    def test_generate_compact_index_emits_lf_only_bytes(self) -> None:
+        """Backlog #160: output_path.write_text(rendered, encoding="utf-8") with no
+        newline= control lets Windows text-mode translate \\n -> os.linesep (CRLF)
+        into a tracked eol=lf JSON artifact. MUST assert on the emitted BYTES from a
+        scratch run: asserting on the checked-out repo file is vacuous, because git
+        normalizes the checkout to LF regardless of whether the generator itself is
+        LF-stable. Proven red pre-fix / green post-fix on a real Windows box: the
+        unfixed pattern (`path.write_text(rendered, encoding="utf-8")`) wrote 475
+        CRLF pairs into this fixture's rendered content; the fixed pattern
+        (`.open("w", encoding="utf-8", newline="\\n")`) wrote zero."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            registry_dir = root / ".agentcortex" / "metadata"
+            registry_dir.mkdir(parents=True)
+            (registry_dir / "trigger-registry.yaml").write_text(
+                "version: 1\nentries: []\n", encoding="utf-8"
+            )
+            result = run_tool(".agentcortex/tools/generate_compact_index.py", "--root", str(root))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output_bytes = (registry_dir / "trigger-compact-index.json").read_bytes()
+        self.assertNotIn(b"\r", output_bytes, "generator must emit LF-only bytes on every platform")
+        self.assertTrue(output_bytes.endswith(b"\n"))
+
     def test_query_returns_compact_skill_slice(self) -> None:
         result = run_tool(
             ".agentcortex/tools/query_trigger_metadata.py",
@@ -325,8 +349,193 @@ agentcortex:
         self.assertEqual(outputs[1]["resolved_workflow"], outputs[2]["resolved_workflow"])
         self.assertEqual(outputs[0]["activated_skills"], outputs[1]["activated_skills"])
         self.assertEqual(outputs[1]["activated_skills"], outputs[2]["activated_skills"])
+        self.assertEqual(set(outputs[0]), {"resolved_workflow", "activated_skills"})
+        self.assertEqual(outputs[0]["resolved_workflow"], "implement.md")
+        self.assertEqual(outputs[0]["activated_skills"], sorted(outputs[0]["activated_skills"]))
         self.assertIn("test-driven-development", outputs[0]["activated_skills"])
         self.assertIn("auth-security", outputs[0]["activated_skills"])
+
+    def test_resolver_cli_uses_hotfix_failure_policy_without_signals(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "hotfix",
+            "--phase",
+            "implement",
+            "--platform",
+            "codex",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("systematic-debugging", payload["activated_skills"])
+
+    def test_resolver_cli_activation_matches_canonical_core_exactly(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "codex",
+            "--manual-skills",
+            "api-design",
+            "--scope-signals",
+            "testable logic",
+            "--failure-signals",
+            "test-failure",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        core = resolve_runtime_contract(
+            ROOT,
+            classification="feature",
+            phase="implement",
+            platform="codex",
+            manual_skills=["api-design"],
+            scope_signals=["testable logic"],
+            failure_signals=["test-failure"],
+        )
+        self.assertEqual(
+            json.loads(result.stdout)["activated_skills"],
+            sorted(core["activated_skills"]),
+        )
+
+    def test_resolver_cli_supports_direct_manual_activation(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "codex",
+            "--manual-skills",
+            "api-design",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("api-design", payload["activated_skills"])
+
+    def test_resolver_cli_supports_failure_signal_activation(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "review",
+            "--platform",
+            "claude",
+            "--failure-signals",
+            "test-failure",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("systematic-debugging", payload["activated_skills"])
+
+    def test_resolver_cli_ambiguous_no_signal_activates_only_phase_entry_skills(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "antigravity",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {"verification-before-completion", "karpathy-principles"},
+        )
+
+    def test_resolver_cli_near_neighbor_signal_does_not_activate_domain_skills(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "antigravity",
+            "--scope-signals",
+            "api documentation",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {"verification-before-completion", "karpathy-principles"},
+        )
+
+    def test_resolver_cli_isolates_each_scope_signal_across_platform_labels(self) -> None:
+        """Resolver-label parity only; not native-host discovery or model effectiveness."""
+        cases = {
+            "api endpoint": "api-design",
+            "token": "auth-security",
+            "schema migration": "database-design",
+            "ui component": "frontend-patterns",
+            "testable logic": "test-driven-development",
+        }
+        phase_entry = {"verification-before-completion", "karpathy-principles"}
+        for platform in ("claude", "codex", "antigravity"):
+            for signal, contextual_skill in cases.items():
+                with self.subTest(platform=platform, signal=signal):
+                    result = run_tool(
+                        ".agentcortex/tools/resolve_runtime_contract.py",
+                        "--root",
+                        ".",
+                        "--classification",
+                        "feature",
+                        "--phase",
+                        "implement",
+                        "--platform",
+                        platform,
+                        "--scope-signals",
+                        signal,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        set(json.loads(result.stdout)["activated_skills"]),
+                        phase_entry | {contextual_skill},
+                    )
+
+    def test_resolver_cli_coexists_for_api_auth_database_and_tdd(self) -> None:
+        result = run_tool(
+            ".agentcortex/tools/resolve_runtime_contract.py",
+            "--root",
+            ".",
+            "--classification",
+            "feature",
+            "--phase",
+            "implement",
+            "--platform",
+            "codex",
+            "--scope-signals",
+            "api endpoint,token,schema migration,testable logic",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            set(json.loads(result.stdout)["activated_skills"]),
+            {
+                "verification-before-completion",
+                "test-driven-development",
+                "api-design",
+                "database-design",
+                "auth-security",
+                "karpathy-principles",
+            },
+        )
 
     def test_resolver_prefers_hash_cache_when_worklog_matches(self) -> None:
         compact_index = json.loads((ROOT / ".agentcortex/metadata/trigger-compact-index.json").read_text(encoding="utf-8"))
@@ -719,6 +928,83 @@ class SnapshotRootPathFormTests(unittest.TestCase):
                 os.chdir(cwd)
             ids = [p["id"] for p in snapshot.get("packages", [])]
             self.assertIn("beta-skill", ids)
+
+
+class AppendLessonLfBytesTests(unittest.TestCase):
+    """External-review follow-up to the #160 LF fix: byte-level regression
+    coverage for the OTHER fixed writers — append_lesson.py's append path
+    (rewrites current_state.md) and archive path (rewrites current_state.md,
+    creates + appends global-lessons-archive.md). Same rationale as the
+    generator test: assert emitted bytes into a tmp tree; asserting on
+    committed files is vacuous (git checks them out LF regardless), and the
+    bug only manifests where os.linesep is CRLF."""
+
+    @staticmethod
+    def _chain_fixture(tmp: Path) -> tuple[Path, Path, Path]:
+        from check_lesson_chain import chain_sha
+
+        entries = [
+            ("cat-a", "MEDIUM", "trig-a", "First entry (genesis-anchored)."),
+            ("cat-b", "LOW", "trig-b", "Second entry, oldest LOW."),
+        ]
+        lines = [
+            "# Project Current State (vNext)",
+            "",
+            "- **Project Intent**: test fixture.",
+            "",
+            "## Global Lessons (AI Error Pattern Registry)",
+            "",
+        ]
+        prev = "GENESIS"
+        for cat, sev, trig, body in entries:
+            lines.append(
+                f"- [Category: {cat}][Severity: {sev}][Trigger: {trig}][prev: {prev}] {body}"
+            )
+            prev = chain_sha(cat, sev, trig, body)
+        lines += ["", "## Ship History", "", "### Ship-fixture", "- Feature shipped: none", ""]
+        ctx = tmp / ".agentcortex" / "context"
+        arc = ctx / "archive"
+        arc.mkdir(parents=True, exist_ok=True)
+        cs = ctx / "current_state.md"
+        # 3.9-safe fixture write (write_text gained newline= only in 3.10 — #164);
+        # fixture EOL is irrelevant anyway: the tool rewrites the whole file.
+        with cs.open("w", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n".join(lines) + "\n")
+        return cs, arc / "INDEX.jsonl", arc / "global-lessons-archive.md"
+
+    @staticmethod
+    def _run_tool(*args: str) -> subprocess.CompletedProcess:
+        tool = ROOT / ".agentcortex" / "tools" / "append_lesson.py"
+        return subprocess.run(
+            [sys.executable, str(tool), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+
+    def test_append_path_emits_lf_only_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cs, _idx, _arc = self._chain_fixture(Path(td))
+            res = self._run_tool(
+                "--path", str(cs),
+                "--category", "cat-c", "--severity", "LOW",
+                "--trigger", "trig-c", "--body", "Appended by LF byte test.",
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertNotIn(b"\r", cs.read_bytes())
+
+    def test_archive_path_emits_lf_only_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cs, idx, arc_md = self._chain_fixture(Path(td))
+            res = self._run_tool(
+                "--archive", "--index", "2",
+                "--path", str(cs), "--archive-path", str(arc_md),
+                "--index-jsonl", str(idx), "--date", "2026-08-08",
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertNotIn(b"\r", cs.read_bytes())
+            self.assertNotIn(b"\r", arc_md.read_bytes())
 
 
 if __name__ == "__main__":

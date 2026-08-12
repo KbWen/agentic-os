@@ -655,6 +655,15 @@ run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.ag
 # document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
 run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
 
+# ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
+# referents must exist on disk; PR/Issue referents are format-checked only, no
+# network call) as a Python tool behind run_python_check. WARN-tier / never-FAIL
+# (tool ALWAYS exits 0); silent no-op when no active Work Log exists. Backlog #161
+# (docs/reviews/2026-08-08-govern-audit-task-simulation.md F7): a log citing a
+# nonexistent spec path or PR previously passed both validators untouched.
+# No-python -> WARN; tool absent -> SKIP.
+run_python_check "worklog external references (spec/ADR existence, advisory)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then
@@ -2364,8 +2373,20 @@ if [[ -f "$CURRENT_STATE" ]]; then
     record_result PASS "SSoT ADR Index completeness: all disk ADRs are indexed"
   fi
 
-  # Spec Index completeness
-  spec_index_section="$(awk '/\*\*Spec Index\*\*/{found=1; next} found && /^- \*\*/{exit} found{print}' <<<"$cs_content")"
+  # Spec Index completeness.
+  # Scope = the live index block PLUS the `## Spec Index Archive` section, which
+  # ship.md §State Update collapses over-cap shipped entries into. A folded entry
+  # is still an index entry here; it is only excluded from the bootstrap auto-read.
+  # Without the second pass the documented collapse remedy turns this check into a
+  # FAIL, so the remedy was un-executable and had never been run (#143).
+  # The live-index pass also stops at `^##` (any heading depth, matching
+  # validate.ps1's `\n##` lookahead) — otherwise an archive section placed adjacent
+  # to the index rather than at file bottom is read on one platform only.
+  # `!found` on the archive header keeps a duplicated header from re-arming capture:
+  # awk would otherwise union every such section while ps1's -match takes the first,
+  # so a second section would be indexed on Linux and FAIL on Windows.
+  spec_index_section="$(awk '/\*\*Spec Index\*\*/{found=1; next} found && (/^- \*\*/ || /^##/){exit} found{print}' <<<"$cs_content")
+$(awk '!found && /^## Spec Index Archive/{found=1; next} found && /^##/{exit} found{print}' <<<"$cs_content")"
   spec_missing_count=0
   spec_missing_list=""
   for spec_dir in "$ROOT/docs/specs" "$ROOT/.agentcortex/specs"; do

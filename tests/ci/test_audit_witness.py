@@ -189,9 +189,7 @@ def _append_entry(target: Path, log_name: str) -> None:
         capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     assert proc.returncode == 0, f"append_chain_entry failed:\n{proc.stderr}"
-    (idx.parent / log_name).write_text(
-        f"# archived log {log_name}\n", encoding="utf-8", newline="\n"
-    )
+    (idx.parent / log_name).write_bytes(f"# archived log {log_name}\n".encode("utf-8"))
 
 
 def _build_witness_fixture(td: Path) -> Path:
@@ -264,7 +262,7 @@ def test_witness_fails_on_tail_truncation() -> None:
         target = _build_witness_fixture(Path(td))
         idx = target / ".agentcortex" / "context" / "archive" / "INDEX.jsonl"
         lines = idx.read_text(encoding="utf-8").splitlines(keepends=True)
-        idx.write_text("".join(lines[:-1]), encoding="utf-8", newline="")
+        idx.write_bytes("".join(lines[:-1]).encode("utf-8"))
 
         line = _witness_line(_run_validate(target))
         assert WITNESS_FAIL_TRUNCATION in line, (
@@ -286,7 +284,7 @@ def test_witness_fails_on_published_entry_edit() -> None:
             f"fixture precondition: first entry should carry branch 't'; got {lines[0]!r}"
         )
         lines[0] = lines[0].replace('"branch": "t"', '"branch": "EDITED"')
-        idx.write_text("".join(lines), encoding="utf-8", newline="")
+        idx.write_bytes("".join(lines).encode("utf-8"))
 
         line = _witness_line(_run_validate(target))
         assert WITNESS_FAIL_EDIT in line, (

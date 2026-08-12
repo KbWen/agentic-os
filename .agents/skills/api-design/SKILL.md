@@ -1,6 +1,9 @@
-<!-- This is a SCAFFOLD skill. When /app-init runs in a downstream project, -->
-<!-- it customizes this file based on the project's ADR tech stack. -->
-<!-- If this file has NOT been customized, the AI should treat it as generic guidance. -->
+---
+name: api-design
+description: Design or review REST/GraphQL APIs when endpoints or contracts change.
+---
+
+<!-- This is a SCAFFOLD skill -->
 
 # API Design
 

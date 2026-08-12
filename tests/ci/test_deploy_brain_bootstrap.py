@@ -63,9 +63,7 @@ def _make_source_repo(path: Path, marker: str) -> str:
     """
     canonical = path / ".agentcortex" / "bin"
     canonical.mkdir(parents=True)
-    (canonical / "deploy.sh").write_text(
-        f'#!/usr/bin/env bash\necho "{marker}"\n', encoding="utf-8", newline="\n"
-    )
+    (canonical / "deploy.sh").write_bytes(f'#!/usr/bin/env bash\necho "{marker}"\n'.encode("utf-8"))
     _git("init", "-b", "main", cwd=path)
     _git("add", "-A", cwd=path)
     _git("commit", "-m", "stub source", cwd=path)
@@ -77,9 +75,7 @@ def _make_project(path: Path, source_url: str) -> Path:
     installers = path / "installers"
     installers.mkdir(parents=True)
     shutil.copy2(DEPLOY_BRAIN_SH, installers / "deploy_brain.sh")
-    (path / ".agentcortex-manifest").write_text(
-        f"source_repo: {source_url}\n", encoding="utf-8", newline="\n"
-    )
+    (path / ".agentcortex-manifest").write_bytes(f"source_repo: {source_url}\n".encode("utf-8"))
     return path
 
 

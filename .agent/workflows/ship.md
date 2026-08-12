@@ -61,7 +61,7 @@ Scan Work Log `## Gate Evidence` for receipts from required prior phases:
 
 **Direct-file-access platforms** (Work Log readable): a missing required receipt for `feature`/`architecture-change` is a hard **`verdict: fail`** (also enforced by `validate.sh`). Output: `"FAIL: Missing required gate receipt for: [phase]."`
 **No-file-access platforms** (Codex Web, API-only): **reduced-assurance mode** — paste the `## Gate Evidence` section into chat for manual verification. Output: `"[reduced assurance] Gate receipt for [phase] not verified from file."`
-`quick-win`/`hotfix`: missing receipts are a WARN (fast-paths may omit handoff).
+`quick-win`/`hotfix`: a missing required receipt is also a hard **`verdict: fail`** — both validators count it in the FAIL-tier gate-progression counter against the sets above. The fast-paths omit `/handoff`, not receipts.
 
 ### Confidence Trace Audit (/ship only)
 
@@ -181,19 +181,19 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 - Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot) via `.agentcortex/tools/guard_context_write.py`.
 - Use the helper as documented in `.agentcortex/docs/guides/guarded-context-writes.md`. In Stage 1, missing guard receipts are a validation warning, not a hard runtime block.
 - **No-Python fallback** (all SSoT writes here incl. §8 heartbeat): direct write + Drift Log entry (AGENTS.md §Write Isolation).
-   - **Spec Index Cap**: Before updating Spec Index, count existing entries. If count ≥ `document_lifecycle.spec_index_max_entries` (default: 30 from `.agent/config.yaml`), move the oldest `shipped` entries to a `## Spec Index Archive` section at the bottom of `current_state.md`. Archived entries are not auto-read during bootstrap.
-   - MUST add the completion record at the **top** of the `## Ship History` section — immediately after the `## Ship History` header, newest-first, matching the established convention (the most recent ship is the first entry; older entries follow below). Use `.agentcortex/tools/guard_context_write.py --mode replace` (snapshot → insert the entry right after the header → write with `--expected-sha`), or a surgical anchored Edit. **Do NOT use `--mode append`**: it is `O_APPEND` (writes at file-end), which drops the entry at the *bottom* — the oldest position — silently breaking newest-first ordering. See `.agentcortex/docs/guides/guarded-context-writes.md`. **Note**: The Work Log `SSoT Sequence` header field is a bootstrap-time snapshot and is NOT incremented at ship — do not attempt to update it.
-   - Use the format:
+- **Spec Index Cap**: on the `check_ssot_caps.py` over-cap WARN, move the oldest `shipped` **index lines** into the single `## Spec Index Archive` section at the bottom of `current_state.md`, keeping cap-many inline (over-folding re-WARNs). Spec bodies stay in `docs/specs/` — moving one makes the entry a phantom and FAILs.
+- MUST add the completion record at the **top** of the `## Ship History` section — immediately after the `## Ship History` header, newest-first, matching the established convention (the most recent ship is the first entry; older entries follow below). Use `.agentcortex/tools/guard_context_write.py --mode replace` (snapshot → insert the entry right after the header → write with `--expected-sha`), or a surgical anchored Edit. **Do NOT use `--mode append`**: it is `O_APPEND` (writes at file-end), which drops the entry at the *bottom* — the oldest position — silently breaking newest-first ordering. See `.agentcortex/docs/guides/guarded-context-writes.md`. **Note**: The Work Log `SSoT Sequence` header field is a bootstrap-time snapshot and is NOT incremented at ship — do not attempt to update it.
+- Use the format:
 
-     ```markdown
-     ### Ship-<branch_name>-<YYYY-MM-DD>
-     - Feature shipped: [summary]
-     - Tests: Pass
-     ```
+  ```markdown
+  ### Ship-<branch_name>-<YYYY-MM-DD>
+  - Feature shipped: [summary]
+  - Tests: Pass
+  ```
 
-   - NEVER edit, reorder, or delete previous entries in the `## Ship History`.
-   - If Ship History exceeds 10 entries, archive older entries to `.agentcortex/context/archive/ship-history-YYYY.md` and keep only the latest 10 in `current_state.md`.
-   - **Relative-link depth hazard**: content copied from `current_state.md` (depth 2) into `archive/` (depth 3) shifts `../` links one level shallow — broken links are CI-caught; M8 also WARNs. **Strip/convert them to plain text or absolute URLs before committing archived content.**
+- NEVER edit, reorder, or delete previous entries in the `## Ship History`.
+- If Ship History exceeds 10 entries, archive older entries to `.agentcortex/context/archive/ship-history-YYYY.md` and keep only the latest 10 in `current_state.md`.
+- **Relative-link depth hazard**: content copied from `current_state.md` (depth 2) into `archive/` (depth 3) shifts `../` links one level shallow — broken links are CI-caught; M8 also WARNs. **Strip/convert them to plain text or absolute URLs before committing archived content.**
 2b. **Decision Disposition** (all tiers except `tiny-fix`; skip if `## Decisions` absent/empty): append one marker per entry — `→ promoted: ADR-<id>` (project-wide impact, new precedent, or reversal → author/amend that ADR + its Index line this ship) / `→ consolidated: L2 <domain>` (the ship L2 entry) / `→ local`. `→ local` is illegal for an entry naming an `ADR-<n>` or reversing a durable decision — use promoted/consolidated. Populate step-3 `decisions[]` with each entry's title. Headless: self-mark; `check_decision_disposition` WARNs on unmarked logs and ADR-naming locals.
 3. **Move** (not copy) `.agentcortex/context/work/<worklog-key>.md` to `.agentcortex/context/archive/<worklog-key>-<YYYYMMDD>.md` (the **root** of `archive/`, if task complete) — delete the `work/` original, else the validator WARNs "shipped work logs still in active work/ directory". This is **final archival** of the whole log — distinct from `/handoff §6` compaction, which offloads stale detail of a *still-active* log into the `archive/work/` subdir. The `-<YYYYMMDD>` suffix is required: it prevents a reused branch (e.g. a downstream that does all work on `main`) from overwriting its own prior archive on the next ship. Record the resulting filename in the `INDEX.jsonl` `log` field below.
     - Do NOT duplicate `/retro`-promoted Global Lessons during ship. `/retro` owns structured Global Lesson promotion.

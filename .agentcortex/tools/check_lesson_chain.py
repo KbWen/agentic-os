@@ -96,10 +96,43 @@ def parse_lessons(path: Path) -> list[tuple[str, str, str, str | None, str, int]
             continue
         m = LESSON_RE.match(stripped.lstrip())
         if not m:
-            continue  # skip malformed bullets (will be caught elsewhere)
+            continue  # skip malformed bullets -- surfaced by find_malformed_lesson_lines()
         cat, sev, trig, prev, body = m.groups()
         lessons.append((cat, sev, trig, prev, body, line_no))
     return lessons
+
+
+def find_malformed_lesson_lines(path: Path) -> list[int]:
+    """Return 1-based line numbers of bullets inside ## Global Lessons that match
+    the loose `- [Category:` prefix but fail the strict LESSON_RE (backlog #162).
+
+    parse_lessons() silently drops these lines (a format-mangled bullet, e.g. one
+    missing its `[Severity:]` or `[Trigger:]` token). Without this check that drop
+    is invisible: the chain walk in check_chain() never sees the line at all, so it
+    cannot flag a break, and a later append_lesson.py append would anchor its
+    `[prev:]` to the strict parser's last surviving entry -- PAST the mangled
+    bullet -- permanently cementing it outside the chain while it stays physically
+    in the file. This function makes the drop itself the detected failure.
+    """
+    bad: list[int] = []
+    if not path.is_file():
+        return bad
+    text = path.read_text(encoding="utf-8")
+    in_section = False
+    for line_no, raw in enumerate(text.splitlines(), start=1):
+        stripped = raw.rstrip("\n")
+        if stripped.startswith("## Global Lessons"):
+            in_section = True
+            continue
+        if in_section and stripped.startswith("## "):
+            break
+        if not in_section:
+            continue
+        if not stripped.lstrip().startswith("- [Category:"):
+            continue
+        if not LESSON_RE.match(stripped.lstrip()):
+            bad.append(line_no)
+    return bad
 
 
 def load_archive_bridges(index_jsonl: Path) -> dict[tuple[str, str], dict]:
@@ -216,8 +249,22 @@ def check_chain(path: Path, index_jsonl: Path | None = None) -> tuple[bool, list
     """
     errors: list[str] = []
     lessons = parse_lessons(path)
+
+    # Malformed-bullet detection (backlog #162): a line that matches the loose
+    # "- [Category:" bullet prefix but fails strict LESSON_RE parsing is dropped
+    # silently by parse_lessons() and would otherwise never appear as a chain
+    # error at all. Report it directly so the drop itself is fail-closed.
+    for bad_line in find_malformed_lesson_lines(path):
+        errors.append(
+            f"line {bad_line}: bullet matches '- [Category:' prefix but fails to "
+            f"parse (malformed tag structure, e.g. a missing [Severity:] or "
+            f"[Trigger:] token) -- this bullet would be silently skipped by the "
+            f"chain walk and permanently cemented outside the chain by the next "
+            f"append_lesson.py append; fix the bullet's tag structure"
+        )
+
     if not lessons:
-        return True, []
+        return (len(errors) == 0), errors
     if index_jsonl is None:
         index_jsonl = path.parent / "archive" / "INDEX.jsonl"
     bridges = load_archive_bridges(index_jsonl)

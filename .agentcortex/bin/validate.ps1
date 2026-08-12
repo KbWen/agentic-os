@@ -791,6 +791,12 @@ Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -Missi
 # entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
 # silent no-op until a fork sets document_lifecycle.decision_disposition_since.
 Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
+# ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
+# referents must exist on disk; PR/Issue referents are format-checked only, no
+# network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when
+# no active Work Log exists. Backlog #161 (2026-08-08 govern-audit F7): a log
+# citing a nonexistent spec path or PR previously passed both validators untouched.
+Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence, advisory)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root)
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
@@ -2224,10 +2230,18 @@ if (Test-Path -Path $currentStatePath -PathType Leaf) {
         Add-Result -Level 'PASS' -Message 'SSoT ADR Index completeness: all disk ADRs are indexed'
     }
 
-    # Spec Index completeness
+    # Spec Index completeness.
+    # Scope = the live index block PLUS the `## Spec Index Archive` section, which
+    # ship.md §State Update collapses over-cap shipped entries into. A folded entry
+    # is still an index entry here; it is only excluded from the bootstrap auto-read.
+    # Without the second match the documented collapse remedy turns this check into
+    # a FAIL, so the remedy was un-executable and had never been run (#143).
     $specIndexSection = ''
     if ($csContent -match '(?ms)\*\*Spec Index\*\*[^:]*:(.*?)(?=\n-\s*\*\*|\n##|\z)') {
         $specIndexSection = $Matches[1]
+    }
+    if ($csContent -match '(?ms)^## Spec Index Archive[^\n]*\n(.*?)(?=\n##|\z)') {
+        $specIndexSection += "`n" + $Matches[1]
     }
     $diskSpecFiles = @()
     foreach ($specGlob in @('docs/specs', '.agentcortex/specs')) {
