@@ -97,9 +97,18 @@ jobs:
       # On pull_request: scans base..head range automatically.
       # On push to main: scans github.event.before..github.sha range.
       # Requires branch protection to block force-pushes (event.before = 0000... edge case).
+      # `version` pins the SCANNER IMAGE. The action SHA above pins only the
+      # wrapper: the composite step runs `docker run <image>:${VERSION}` and
+      # its `version` input defaults to `latest`, so without this line the
+      # SHA pin does not bind the binary that actually scans (backlog #166).
+      # Keep this value equal to the `# vX.Y.Z` comment on the `uses:` line —
+      # Dependabot bumps the SHA and the comment but never this input, and
+      # test_ac5_trufflehog_scanner_version_matches_comment turns that drift
+      # into a red test instead of a silent unpin.
       - name: Scan for secrets
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11  # v3.96.0
         with:
+          version: "3.96.0"
           extra_args: --only-verified
 
   credential-scan:

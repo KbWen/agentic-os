@@ -199,6 +199,11 @@ class TestTruffleHogJob(unittest.TestCase):
                       "TruffleHog must use --only-verified in extra_args")
 
     def test_ac3_checkout_full_depth(self):
+        # NOTE (#166): this asserts full history is FETCHED, which the wrapper
+        # needs so `--since-commit <base>` can resolve. It does NOT assert that
+        # a full-history scan occurs — the wrapper scans the push/PR range only.
+        # AC-3's wording was corrected to match; do not read this test as
+        # certifying scan breadth.
         checkout_steps = [
             s for s in (self.job.get("steps") or [])
             if "checkout" in str(s.get("uses", ""))
@@ -207,6 +212,59 @@ class TestTruffleHogJob(unittest.TestCase):
         checkout = checkout_steps[0]
         fetch_depth = (checkout.get("with") or {}).get("fetch-depth", 1)
         self.assertEqual(fetch_depth, 0, "TruffleHog checkout must use fetch-depth: 0")
+
+    def test_ac5_trufflehog_scanner_image_is_pinned(self):
+        """#166: the action SHA pins the wrapper; `version` pins the scanner."""
+        th_steps = [
+            s for s in (self.job.get("steps") or [])
+            if "trufflehog" in str(s.get("uses", "")).lower()
+        ]
+        self.assertTrue(th_steps, "No TruffleHog action step found")
+        version = str((th_steps[0].get("with") or {}).get("version", "")).strip()
+        self.assertNotEqual(
+            version, "",
+            "TruffleHog step must set `version:` — the wrapper's own default is "
+            "`latest`, so the action SHA pin does not bind the scanner image "
+            "that actually runs (backlog #166)",
+        )
+        self.assertNotIn(
+            version.lower(), {"latest", "main", "master", "head"},
+            f"TruffleHog `version:` is a floating ref ({version!r}) — pin a concrete release",
+        )
+        self.assertRegex(
+            version, r"^\d+\.\d+\.\d+$",
+            f"TruffleHog `version:` must be an exact X.Y.Z release, got {version!r}",
+        )
+
+    def test_ac5_trufflehog_scanner_version_matches_comment(self):
+        """#166 drift guard: Dependabot bumps the SHA + `# vX.Y.Z` comment but
+        never the `version:` input, so the two silently diverge. Fail loudly."""
+        raw = SECURITY_YML.read_text(encoding="utf-8")
+        m = re.search(
+            r"uses:\s*trufflesecurity/trufflehog@[0-9a-f]{40}\s*#\s*v(\d+\.\d+\.\d+)",
+            raw,
+        )
+        self.assertIsNotNone(
+            m,
+            "TruffleHog `uses:` line must carry a `# vX.Y.Z` comment (AC-5) — "
+            "the drift guard reads it",
+        )
+        comment_version = m.group(1)
+
+        th_steps = [
+            s for s in (self.job.get("steps") or [])
+            if "trufflehog" in str(s.get("uses", "")).lower()
+        ]
+        self.assertTrue(th_steps, "No TruffleHog action step found")
+        pinned_version = str((th_steps[0].get("with") or {}).get("version", "")).strip()
+
+        self.assertEqual(
+            pinned_version, comment_version,
+            f"Scanner image pin ({pinned_version!r}) disagrees with the action "
+            f"version comment ({comment_version!r}). A Dependabot bump moved the "
+            f"wrapper without moving the scanner — update `version:` to match, "
+            f"or the SHA pin stops binding what actually runs (backlog #166).",
+        )
 
     def test_ac5_trufflehog_version_pinned(self):
         th_steps = [
