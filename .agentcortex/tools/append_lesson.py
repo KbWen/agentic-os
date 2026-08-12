@@ -58,6 +58,7 @@ from check_lesson_chain import (  # noqa: E402
     LESSON_ARCHIVE_TYPE,
     canonical,
     chain_sha,
+    find_malformed_lesson_lines,
     lesson_body_sha,
     parse_lessons,
 )
@@ -106,6 +107,30 @@ def append_lesson(
         raise ValueError("category, trigger, body all required (non-empty)")
 
     lessons = parse_lessons(path)
+
+    # Strict/loose parity guard (backlog #162). parse_lessons() is a STRICT
+    # parser: a format-mangled bullet (e.g. a deleted [Severity:] token) still
+    # matches the loose "- [Category:" prefix but silently drops out of
+    # `lessons`. Left unchecked, the `prev` computed below would anchor past
+    # the mangled bullet -- cementing it outside the hash chain forever even
+    # though it stays physically in the file -- and the cap check right below
+    # would under-count the section (strict count < physical bullet count),
+    # letting an append through that the cap should refuse. Refuse fail-closed
+    # on any mismatch, before computing `prev` or evaluating the cap.
+    malformed = find_malformed_lesson_lines(path)
+    if malformed:
+        loose_count = len(lessons) + len(malformed)
+        raise ValueError(
+            f"Global Lessons section has {loose_count} bullet-prefixed line(s) "
+            f"but only {len(lessons)} parse strictly -- line {malformed[0]} is "
+            f"format-mangled (e.g. a missing [Severity:] or [Trigger:] token) "
+            f"and would be silently skipped, permanently cementing it outside "
+            f"the hash chain once this append's [prev:] anchors past it. "
+            f"Refusing to append. Run "
+            f"`python .agentcortex/tools/check_lesson_chain.py` to diagnose, "
+            f"fix the malformed bullet, then retry."
+        )
+
     if len(lessons) >= GLOBAL_LESSONS_CAP:
         raise ValueError(
             f"Global Lessons at cap ({len(lessons)} >= {GLOBAL_LESSONS_CAP}); "
@@ -142,7 +167,10 @@ def append_lesson(
     # Insert with surrounding blank handling: the existing pattern is
     # `<lesson>\n<lesson>\n\n## Ship History`. Preserve the trailing blank.
     new_lines = lines[:insert_at] + [new_bullet] + lines[insert_at:]
-    path.write_text("\n".join(new_lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
+    # newline="\n" forces LF on all platforms (path is tracked eol=lf); plain
+    # write_text() text-mode would translate \n -> CRLF on Windows.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(new_lines) + ("\n" if text.endswith("\n") else ""))
 
     return {
         "status": "ok",
@@ -237,23 +265,29 @@ def archive_lesson(
             )
 
     del lines[target_line_idx]
-    path.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""), encoding="utf-8")
+    # newline="\n": same LF-stability rationale as append_lesson() above.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines) + ("\n" if text.endswith("\n") else ""))
 
     # ---- 2) Move the removed bullet to the archive surface ----
     when = date or datetime.date.today().isoformat()
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     header = "# Global Lessons Archive\n"
+    # newline="\n" on both opens below: archive_path is tracked eol=lf. The
+    # create-on-first-use write and the very next append below both write
+    # into the same file, so both need LF control -- fixing only the first
+    # would be immediately undone by an unguarded second write.
     if not archive_path.exists():
-        archive_path.write_text(
-            header
-            + "\n> Chain-aware archival target for §Global Lessons overflow "
-            "(config.yaml §document_lifecycle.global_lessons_max_entries).\n"
-            "> Each entry below was removed from current_state.md by "
-            "`append_lesson.py --archive` and is authorized by a matching "
-            "`lesson_archive` record in `INDEX.jsonl`.\n",
-            encoding="utf-8",
-        )
-    with archive_path.open("a", encoding="utf-8") as fh:
+        with archive_path.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(
+                header
+                + "\n> Chain-aware archival target for §Global Lessons overflow "
+                "(config.yaml §document_lifecycle.global_lessons_max_entries).\n"
+                "> Each entry below was removed from current_state.md by "
+                "`append_lesson.py --archive` and is authorized by a matching "
+                "`lesson_archive` record in `INDEX.jsonl`.\n"
+            )
+    with archive_path.open("a", encoding="utf-8", newline="\n") as fh:
         fh.write(f"\n## Archived {when} (prev: {bridge_prev}, body-sha: {archived_body_sha})\n\n")
         fh.write(removed_line.rstrip() + "\n")
 

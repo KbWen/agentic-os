@@ -118,7 +118,7 @@ def _write_worklog(
         "\n---\n\n## Test Gate Results\n\n- Command: `pytest tests/ci`\n- Result: pass\n"
         if include_test_results else ""
     )
-    (work_dir / name).write_text(
+    (work_dir / name).write_bytes(
         f"""# Work Log: {name}
 
 ## Header
@@ -157,9 +157,7 @@ Validator false-positive fixture. ACX
 ## Evidence
 
 - Fixture evidence.
-""",
-        encoding="utf-8",
-        newline="\n",
+""".encode("utf-8")
     )
 
 
@@ -326,7 +324,7 @@ def test_stale_pending_routing_actions_warn_sh() -> None:
         target = _deploy_for_validator_fixture(Path(td))
         review_dir = target / "docs" / "reviews"
         review_dir.mkdir(parents=True, exist_ok=True)
-        (review_dir / "2000-01-01-routing-actions.md").write_text(
+        (review_dir / "2000-01-01-routing-actions.md").write_bytes(
             """# Routing Actions Fixture
 
 ## routing_actions
@@ -338,9 +336,7 @@ routing_actions:
     status: pending
     owner: "test"
 ```
-""",
-            encoding="utf-8",
-            newline="\n",
+""".encode("utf-8")
         )
 
         out = _run_validate(target)
@@ -356,7 +352,7 @@ def test_stale_pending_routing_actions_warn_ps1() -> None:
         target = _deploy_for_validator_fixture(Path(td))
         review_dir = target / "docs" / "reviews"
         review_dir.mkdir(parents=True, exist_ok=True)
-        (review_dir / "2000-01-01-routing-actions.md").write_text(
+        (review_dir / "2000-01-01-routing-actions.md").write_bytes(
             """# Routing Actions Fixture
 
 ## routing_actions
@@ -368,9 +364,7 @@ routing_actions:
     status: pending
     owner: "test"
 ```
-""",
-            encoding="utf-8",
-            newline="\n",
+""".encode("utf-8")
         )
 
         out = _run_validate_ps1(target)
@@ -973,12 +967,11 @@ def _seed_index_jsonl(target: Path, log_name: str, *, create_file: bool) -> None
     does not remove the D4 line)."""
     archive = target / ".agentcortex" / "context" / "archive"
     archive.mkdir(parents=True, exist_ok=True)
-    (archive / "INDEX.jsonl").write_text(
-        '{"log": "%s", "prev_sha": "GENESIS", "branch": "test", "shipped": "2026-07-02"}\n' % log_name,
-        encoding="utf-8", newline="\n",
+    (archive / "INDEX.jsonl").write_bytes(
+        ('{"log": "%s", "prev_sha": "GENESIS", "branch": "test", "shipped": "2026-07-02"}\n' % log_name).encode("utf-8")
     )
     if create_file:
-        (archive / log_name).write_text("# archived fixture log\n", encoding="utf-8", newline="\n")
+        (archive / log_name).write_bytes(b"# archived fixture log\n")
 
 
 @pytest.mark.slow
@@ -1038,7 +1031,7 @@ def _write_handoff_reverse_edge_worklog(target: Path) -> None:
             for i, g in enumerate(("implement", "review", "test", "handoff"))
         ]
     )
-    (work_dir / "feature-reverse-edge.md").write_text(
+    (work_dir / "feature-reverse-edge.md").write_bytes(
         f"""# Work Log: feature-reverse-edge
 
 ## Header
@@ -1090,9 +1083,7 @@ fixture
 ## Evidence
 
 - Fixture evidence.
-""",
-        encoding="utf-8",
-        newline="\n",
+""".encode("utf-8")
     )
 
 
@@ -1182,7 +1173,7 @@ def _write_not_ready_re_review_worklog(target: Path) -> None:
             "- Gate: review | Verdict: PASS | Classification: feature | Timestamp: 2026-07-10T04:00:00Z",
         ]
     )
-    (work_dir / "feature-not-ready-re-review.md").write_text(
+    (work_dir / "feature-not-ready-re-review.md").write_bytes(
         f"""# Work Log: feature-not-ready-re-review
 
 ## Header
@@ -1221,9 +1212,7 @@ none
 ## Evidence
 
 - Fixture evidence.
-""",
-        encoding="utf-8",
-        newline="\n",
+""".encode("utf-8")
     )
 
 
@@ -1306,7 +1295,7 @@ def _write_receipt_schema_worklog(
     prefer whichever line comes first, masking the intended override."""
     work_dir = target / ".agentcortex" / "context" / "work"
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / name).write_text(
+    (work_dir / name).write_bytes(
         f"""# Work Log: {name}
 
 ## Header
@@ -1345,9 +1334,7 @@ none
 ## Evidence
 
 - Fixture evidence.
-""",
-        encoding="utf-8",
-        newline="\n",
+""".encode("utf-8")
     )
 
 

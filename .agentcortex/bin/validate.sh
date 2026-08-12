@@ -655,6 +655,15 @@ run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.ag
 # document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
 run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
 
+# ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
+# referents must exist on disk; PR/Issue referents are format-checked only, no
+# network call) as a Python tool behind run_python_check. WARN-tier / never-FAIL
+# (tool ALWAYS exits 0); silent no-op when no active Work Log exists. Backlog #161
+# (docs/reviews/2026-08-08-govern-audit-task-simulation.md F7): a log citing a
+# nonexistent spec path or PR previously passed both validators untouched.
+# No-python -> WARN; tool absent -> SKIP.
+run_python_check "worklog external references (spec/ADR existence, advisory)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
+
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
 if [[ -f "$ACTIVE_CODEX_RULES" ]]; then

@@ -202,7 +202,7 @@ Tool exit codes:
 Classification Tiers:
 
 - `tiny-fix` — No overhead. Directly execute.
-- `quick-win` — Light overhead. Plan → Execute → Evidence. No Spec/Handoff.
+- `quick-win` — Light overhead. Plan → Execute → Evidence. No Spec/Handoff. **(MUST keep a lightweight Work Log: `validate` requires bootstrap + plan + implement gate receipts.)**
   - **Confidence Gate**: Before implementation, internally assess confidence (0-100%). < 80% → STOP and ask. 80-90% → state assumption. > 90% → proceed.
   - **Bug Fix Protocol**: If fixing a bug, provide MFR (Minimal Reproducible Failure) first. 2 failed patches → STOP and defer to user.
   - **Doc Integrity**: If an existing Spec covers the target area, update it. No new Spec required, but existing ones must not decay.

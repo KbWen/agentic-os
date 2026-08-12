@@ -45,7 +45,7 @@ def _install(tmp_path):
     # check determines the outcome, not a missing validator)
     binp = repo / ".agentcortex" / "bin"
     binp.mkdir(parents=True)
-    (binp / "validate.sh").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8", newline="\n")
+    (binp / "validate.sh").write_bytes(b"#!/usr/bin/env bash\nexit 0\n")
     hooks = repo / ".githooks"
     hooks.mkdir()
     shutil.copy(HOOK, hooks / "pre-commit")

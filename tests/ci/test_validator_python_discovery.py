@@ -105,9 +105,9 @@ def _sh_shim(shim_dir: Path, name: str, *, working: bool) -> None:
     p = shim_dir / name
     if working:
         real = _posix(Path(sys.executable))
-        p.write_text(f'#!/bin/sh\nexec "{real}" "$@"\n', encoding="utf-8", newline="\n")
+        p.write_bytes(f'#!/bin/sh\nexec "{real}" "$@"\n'.encode("utf-8"))
     else:
-        p.write_text("#!/bin/sh\nexit 9\n", encoding="utf-8", newline="\n")
+        p.write_bytes(b"#!/bin/sh\nexit 9\n")
     os.chmod(p, 0o755)
 
 
@@ -118,7 +118,7 @@ def _bat_shim(shim_dir: Path, name: str, *, working: bool) -> None:
     shim_dir.mkdir(parents=True, exist_ok=True)
     p = shim_dir / f"{name}.bat"
     body = f'@"{sys.executable}" %*\r\n' if working else "@exit /b 9009\r\n"
-    p.write_text(body, encoding="utf-8", newline="")
+    p.write_bytes(body.encode("utf-8"))
 
 
 def _run_sh_with_shim(target: Path, shim_dir: Path, *args: str) -> subprocess.CompletedProcess:
