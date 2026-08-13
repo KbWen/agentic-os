@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 import pytest
 from pathlib import Path
@@ -19,29 +20,54 @@ def run_process(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
 
 
-def has_bash_launcher() -> bool:
-    candidates: list[str] = []
-    if shutil.which("bash"):
-        candidates.append(shutil.which("bash") or "")
-    candidates.extend(
-        [
-            "C:/Program Files/Git/bin/bash.exe",
-            "C:/Program Files/Git/usr/bin/bash.exe",
-            "C:/Program Files (x86)/Git/bin/bash.exe",
-        ]
-    )
-    for candidate in candidates:
-        if not candidate or not Path(candidate).is_file():
-            continue
-        probe = subprocess.run(
-            [candidate, "--version"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
+# The utilities the shipped shell scripts need at startup (deploy.sh calls
+# `dirname` on line 4 and `mktemp` on line 549). Mirrors the acceptance probe in
+# .agentcortex/bin/deploy.ps1 — see has_bash_launcher for why --version is not
+# a sufficient test.
+BASH_LAUNCHER_PROBE = "command -v dirname >/dev/null 2>&1 && command -v mktemp >/dev/null 2>&1"
+
+
+def has_bash_launcher(candidates: list[str] | None = None) -> bool:
+    """True when a bash that can actually run the shipped shell scripts exists.
+
+    Two candidate classes answer `bash --version` with exit 0 yet cannot run
+    deploy.sh: a WindowsApps `bash.exe` (a WSL placeholder when no distro is
+    installed) and a bare `<git>/usr/bin/bash.exe` (no /usr/bin on PATH, so
+    `dirname` and `mktemp` do not resolve). A broken app-execution alias can also
+    fail at process start, raising OSError. This function is evaluated at import
+    time by `skipUnless` decorators here and in test_backlog_validation.py, so an
+    uncaught raise aborts collection for both modules instead of skipping one
+    candidate.
+    """
+    if candidates is None:
+        candidates = []
+        which_bash = shutil.which("bash")
+        if which_bash:
+            candidates.append(which_bash)
+        candidates.extend(
+            [
+                "C:/Program Files/Git/bin/bash.exe",
+                "C:/Program Files/Git/usr/bin/bash.exe",
+                "C:/Program Files (x86)/Git/bin/bash.exe",
+            ]
         )
+    for candidate in candidates:
+        if not candidate or "WindowsApps" in candidate:
+            continue
+        if not Path(candidate).is_file():
+            continue
+        try:
+            probe = subprocess.run(
+                [candidate, "-c", BASH_LAUNCHER_PROBE],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+        except OSError:
+            continue
         if probe.returncode == 0:
             return True
     return False
@@ -367,6 +393,60 @@ class SSOTCompletenessTests(unittest.TestCase):
 
             validate = run_validate(target)
             self.assertEqual(validate.returncode, 0, validate.stderr or validate.stdout)
+
+
+class BashLauncherProbeTests(unittest.TestCase):
+    """has_bash_launcher is evaluated at import time by skipUnless decorators in
+    this module and in test_backlog_validation.py. A candidate that cannot be
+    started, or that starts but cannot run the shipped scripts, must be skipped
+    — never propagated as a collection error, never accepted."""
+
+    @staticmethod
+    def _touch(directory: str, name: str) -> str:
+        path = Path(directory) / name
+        path.write_bytes(b"")
+        return str(path)
+
+    def test_process_start_failure_falls_through_to_next_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            broken = self._touch(tmpdir, "broken-alias.exe")
+            usable = self._touch(tmpdir, "real-bash.exe")
+            probed: list[str] = []
+
+            def fake_run(args, **kwargs):  # noqa: ANN001, ANN003 - test double
+                probed.append(args[0])
+                if args[0] == broken:
+                    # The WindowsApps alias signature: OSError at process start.
+                    raise OSError(1312, "A specified logon session does not exist")
+                return subprocess.CompletedProcess(args, 0, "", "")
+
+            with mock.patch.object(subprocess, "run", side_effect=fake_run):
+                self.assertTrue(has_bash_launcher([broken, usable]))
+            self.assertEqual(probed, [broken, usable], "search must continue past the raising candidate")
+
+    def test_windowsapps_alias_is_never_started(self) -> None:
+        alias = "C:/Users/x/AppData/Local/Microsoft/WindowsApps/bash.exe"
+        with mock.patch.object(subprocess, "run") as runner:
+            self.assertFalse(has_bash_launcher([alias]))
+        runner.assert_not_called()
+
+    def test_launcher_without_coreutils_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bare = self._touch(tmpdir, "bare-bash.exe")
+            probes: list[list[str]] = []
+
+            def fake_run(args, **kwargs):  # noqa: ANN001, ANN003 - test double
+                probes.append(list(args))
+                # A bare <git>/usr/bin/bash.exe: bash runs, coreutils do not.
+                return subprocess.CompletedProcess(args, 127, "", "dirname: command not found")
+
+            with mock.patch.object(subprocess, "run", side_effect=fake_run):
+                self.assertFalse(has_bash_launcher([bare]))
+            self.assertEqual(probes, [[bare, "-c", BASH_LAUNCHER_PROBE]])
+
+    def test_all_candidates_failing_returns_false(self) -> None:
+        self.assertFalse(has_bash_launcher([]))
+        self.assertFalse(has_bash_launcher(["", "C:/nonexistent/bash.exe"]))
 
 
 if __name__ == "__main__":

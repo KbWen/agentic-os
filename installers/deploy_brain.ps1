@@ -44,11 +44,24 @@ function Resolve-BashLauncher {
     $bashCmd = Get-Command bash -ErrorAction SilentlyContinue
     if ($bashCmd) { $candidates += $bashCmd.Source }
 
+    # 4. Acceptance probe. `bash --version` proves only that a bash binary exists:
+    # a bare ($gitRoot)\usr\bin\bash.exe answers it with exit 0 while carrying no
+    # /usr/bin on PATH, so deploy.sh dies at `dirname` (line 4) with exit 127 and
+    # writes no manifest. Probe the utilities the script actually needs, and treat
+    # a process-start failure as an unusable candidate rather than aborting.
+    $probe = 'command -v dirname >/dev/null 2>&1 && command -v mktemp >/dev/null 2>&1'
+
     foreach ($candidate in $candidates | Select-Object -Unique) {
         if (-not (Test-Path -Path $candidate -PathType Leaf)) { continue }
         if ($candidate -like '*\WindowsApps\bash.exe') { continue }
-        & $candidate --version *> $null
-        if ($LASTEXITCODE -eq 0) { return $candidate }
+        $usable = $false
+        try {
+            & $candidate -c $probe *> $null
+            $usable = ($LASTEXITCODE -eq 0)
+        } catch {
+            $usable = $false
+        }
+        if ($usable) { return $candidate }
     }
 
     return $null
@@ -69,6 +82,8 @@ if (-not $bashLauncher) {
     Write-Host '[ERROR] Bash is required for deployment.' -ForegroundColor Red
     Write-Host ''
     Write-Host 'Agentic OS deploy uses a bash script under the hood.'
+    Write-Host 'A bash that cannot resolve dirname/mktemp is skipped on purpose:'
+    Write-Host 'the script needs a Git Bash tool environment, not just a bash binary.'
     Write-Host 'Install one of the following to get bash on Windows:'
     Write-Host ''
     Write-Host '  1. Git for Windows (recommended): https://gitforwindows.org/'
