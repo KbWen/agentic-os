@@ -36,7 +36,24 @@ DEPLOY_SH = ROOT / ".agentcortex" / "bin" / "deploy.sh"
 # is a parity bug, and the assertion below is what catches it.
 SKIP_MARKER = "active work-log checks -- no active work logs"
 
-bash = shutil.which("bash")
+# Prefer a real Git Bash over PATH `bash`: on Windows, PATH commonly exposes the
+# WindowsApps WSL placeholder, which answers `which` but cannot run deploy.sh —
+# it prints "wsl --install <Distro>" and exits 1. This module was the only one of
+# the twelve bash-using test modules without the guard, and the resulting red was
+# repeatedly written off as a local environment artifact.
+git_path = shutil.which("git")
+git_root = Path(git_path).parent.parent if git_path else None
+bash_candidates = [
+    str(git_root / "bin" / "bash.exe") if git_root else None,
+    str(git_root / "usr" / "bin" / "bash.exe") if git_root else None,
+    r"C:\Program Files\Git\bin\bash.exe",
+    r"C:\Program Files\Git\usr\bin\bash.exe",
+    shutil.which("bash"),
+]
+bash = next(
+    (c for c in bash_candidates if c and "WindowsApps" not in c and Path(c).exists()),
+    None,
+)
 requires_bash = pytest.mark.skipif(bash is None, reason="bash not available")
 
 

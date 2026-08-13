@@ -115,7 +115,7 @@ def _deploy_dry_run(target: Path) -> subprocess.CompletedProcess:
     )
 
 
-def _deploy_ps1(target: Path) -> subprocess.CompletedProcess:
+def _deploy_ps1(target: Path, env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         [
             powershell,
@@ -126,7 +126,7 @@ def _deploy_ps1(target: Path) -> subprocess.CompletedProcess:
             str(target),
         ],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
-        cwd=str(ROOT),
+        cwd=str(ROOT), env={**os.environ, **env} if env else None,
     )
 
 
@@ -444,6 +444,89 @@ def test_deploy_ps1_entrypoint_resolves_real_bash() -> None:
         assert stub_ids == canonical_ids
         assert metadata_ids == canonical_ids
         assert all(path.read_bytes().startswith(b"---\n") for path in skill_files)
+
+
+@requires_powershell
+def test_deploy_ps1_rejects_a_bash_that_cannot_run_deploy_sh() -> None:
+    """`bash --version` does not prove a candidate can run deploy.sh.
+
+    A bare `<git>/usr/bin/bash.exe` answers --version with exit 0 but resolves no
+    coreutils, so deploy.sh dies at `dirname` (line 4) with exit 127 and writes no
+    manifest. Resolve-BashLauncher lists that path second, so any Git layout
+    without `bin/bash.exe` selects it. Build a Git-shaped root whose ONLY bash is
+    the bare one, put its `cmd` directory first on PATH so the resolver derives it
+    ahead of the static fallbacks, and assert the wrapper still deploys — i.e. it
+    rejected the unusable candidate and fell through instead of selecting it.
+
+    Red before the fix: exit 127, no manifest.
+    """
+    bare = Path(r"C:\Program Files\Git\usr\bin\bash.exe")
+    good = Path(r"C:\Program Files\Git\bin\bash.exe")
+    if not bare.is_file() or not good.is_file():
+        pytest.skip("standard Git for Windows layout required")
+
+    # Premise: the bare launcher really is unusable for the shipped scripts.
+    premise = subprocess.run(
+        [str(bare), "-c", "command -v dirname"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if premise.returncode == 0:
+        pytest.skip("this Git build resolves coreutils from usr/bin/bash — hazard absent")
+
+    with tempfile.TemporaryDirectory() as td:
+        fake_root = Path(td) / "FakeGit"
+        (fake_root / "cmd").mkdir(parents=True)
+        (fake_root / "usr").mkdir()
+        # A junction, not a copy: the bare bash needs its sibling msys DLLs to run
+        # at all, and `<fake>/bin/bash.exe` must stay absent so the resolver falls
+        # to the usr/bin candidate.
+        junction = fake_root / "usr" / "bin"
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(junction), str(bare.parent)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        try:
+            if not (junction / "bash.exe").is_file():
+                pytest.skip("could not create a directory junction to build the fake Git root")
+            # Get-Command git must resolve INTO the fake root so $gitRoot derives from it.
+            (fake_root / "cmd" / "git.cmd").write_bytes(
+                b'@echo off\r\n"%ProgramFiles%\\Git\\cmd\\git.exe" %*\r\n'
+            )
+
+            target = Path(td) / "proj"
+            target.mkdir()
+            result = _deploy_ps1(target, env={"PATH": f"{fake_root / 'cmd'}{os.pathsep}{os.environ['PATH']}"})
+
+            assert result.returncode == 0, (
+                "deploy.ps1 selected a bash that cannot run deploy.sh\n"
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            )
+            assert (target / ".agentcortex-manifest").exists(), "no manifest — the unusable candidate was used"
+        finally:
+            # Drop the reparse point BEFORE TemporaryDirectory cleanup. A recursive
+            # delete that follows the junction would wipe the real Git usr/bin;
+            # os.path.islink() reports False for junctions, and only Python >=3.12
+            # shutil.rmtree recognises them, so this cannot be left to the runtime.
+            # os.rmdir removes the junction itself and never touches its target.
+            if junction.is_dir():
+                os.rmdir(junction)
+
+
+def test_both_powershell_entrypoints_share_the_launcher_acceptance_probe() -> None:
+    """`installers/deploy_brain.ps1` carries its own copy of Resolve-BashLauncher.
+    The e2e test above can only exercise `.agentcortex/bin/deploy.ps1`, so fixing
+    one copy and leaving the other is a silent regression. Pin both to the same
+    acceptance probe."""
+    probe = "command -v dirname >/dev/null 2>&1 && command -v mktemp >/dev/null 2>&1"
+    for entrypoint in (
+        ROOT / ".agentcortex" / "bin" / "deploy.ps1",
+        ROOT / "installers" / "deploy_brain.ps1",
+    ):
+        text = entrypoint.read_text(encoding="utf-8")
+        assert probe in text, f"{entrypoint.name}: launcher acceptance probe missing"
+        assert "& $candidate --version" not in text, (
+            f"{entrypoint.name}: `bash --version` accepts a launcher that cannot run deploy.sh"
+        )
 
 
 @requires_bash
