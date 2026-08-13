@@ -19,12 +19,20 @@ source_sha: 2bc0c7eb30fe3ede9d342537831b2c8bfa8b0496 (PR #405)
   skipping one candidate. It now excludes WindowsApps aliases, catches
   `OSError` and continues, and applies the same coreutils probe as the
   shipped entry points.
-- [DECISION] Fix the one outlier, do not extract a shared resolver. Inventory
-  before acting: of the **twelve** test modules that call `which("bash")`,
-  **eleven already carried the WindowsApps guard and exactly one did not**.
-  A shared `tests/` helper would have been a cross-directory refactor of
-  working code to fix a single file. The population is held together by
+- [DECISION] Fix the outliers, do not extract a shared resolver. Inventory
+  before acting: of the **twelve** test modules that call `which("bash")` at
+  `3faae10`, **ten carried the WindowsApps guard and two did not**. A shared
+  `tests/` helper would have been a cross-directory refactor of working code
+  to fix two files. The population is held together by
   `tests/ci/test_bash_resolver_parity.py` instead.
+- [CONSTRAINT] **An inventory taken mid-change is not a pre-change inventory.**
+  The line above first read "eleven carried the guard and exactly one did not"
+  — measured after the first of the two outliers had already been fixed in the
+  same session, then written into three records as the pre-existing state. It
+  survived a review, a test phase and a ship, and was caught only by a
+  same-day re-derivation at the base commit. Count against an explicit
+  revision (`git ls-tree -r --name-only <base>`), never against the working
+  tree you are editing.
 - [CONSTRAINT] **A recurring red labelled "local environment artifact" is a
   hypothesis, not a diagnosis.** `test_validator_worklog_family_skip.py`
   failed on Windows across more than one ship and was recorded each time as
