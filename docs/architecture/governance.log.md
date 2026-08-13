@@ -61,6 +61,25 @@ source_sha: (ship commit on chore/local-state-contract — squash-merged via PR)
   backing it; the pattern goes in the managed ignore block **and** the
   per-pattern `managed[]` map in `strip_managed_ignore_blocks`, since block-
   only leaves adopters with a duplicated line.
+- [DECISION] **When a deployed document promises enforcement that does not
+  exist downstream, the prose is corrected immediately and the enforcement
+  decision is routed separately.** `ship.md` told adopters a broken audit
+  chain is "caught by `check_audit_chain.py`" and "will cause `validate.sh
+  check_audit_chain` to fail" — that tool is not deployed, so neither happens.
+  The correction is true whichever way the deploy question resolves, so it
+  does not wait on that question; whether the checker should ship is
+  ADR-003-adjacent and became backlog #173. Applied twice in one wave (#172
+  routed `.guard_receipt.json` to ADR-002 the same way): **a hygiene unit
+  fixes what is unambiguously false and never decides what is genuinely
+  open.**
+- [CONSTRAINT] Downstream reach is a property to be *measured*, not assumed
+  from the fact that a control exists upstream. The deployed validators
+  reference 19 tools and 7 are absent, at least 4 deliberately, with no
+  allowlist separating intent from oversight — and the guard meant to catch
+  exactly this scans governance docs for a literal `.agentcortex/tools/<name>.py`
+  path, so a tool named in prose as a bare filename, or referenced only by the
+  deployed validator, is invisible to it. Simulate the adopter; do not read the
+  whitelist and conclude.
 - [TRADEOFF] Untracking is not free for anyone holding an existing clone: on
   the next `git pull` an identical local copy is deleted and a modified one
   makes the merge refuse. Accepted on measured blast radius (one worktree, no
