@@ -263,3 +263,27 @@ source_sha: (ship commit on feat/decision-capture-hardening — squash-merged vi
 - [CONSTRAINT] Every validator-wired tool ships in deploy.sh runtime_tools
   (both whitelist sites) + regenerated manifest golden in the SAME change —
   the #334 downstream-SKIP gap class must not recur.
+
+### [document-governance][2026-08-13][chore/ssot-drift-and-residue-cleanup]
+source_spec: (none — quick-win remediation of an external governance audit)
+source_sha: (ship commit on chore/ssot-drift-and-residue-cleanup — squash-merged via PR)
+
+- [DECISION] `current_state.md` carries NO hand-maintained count of anything
+  that lives in another file. The `Active Backlog` line held
+  `59 Pending as of 2026-08-09` while the backlog had 64; the figure went
+  stale within three days of being written and was caught only by an external
+  audit, because the validator checks the backlog *path* and never the prose
+  number (`validate.sh:2442-2450`). Removed rather than regenerated: a
+  generated-and-checked count would need a new Python tool behind
+  `run_python_check`, a `deploy.sh` whitelist entry and a golden-manifest row
+  (ADR-006 + the new-validator-check contract) — machinery whose cost exceeds
+  a low-severity prose drift. **The failure mode is deleted, not monitored.**
+  Reopen only if an owner wants a dashboard figure in SSoT badly enough to pay
+  for generation; manual carry-forward is not an option that returns.
+- [CONSTRAINT] A Work Log's `## Decisions` disposition markers must be added
+  while the log is still ACTIVE. Learned here the expensive way: this unit
+  archived first, and `check_decision_disposition.py` fired on its own fresh
+  archive — a WARN that by design never clears, because archived logs are
+  immutable. Recoverable only because the move was uncommitted; after a
+  commit it would have been a permanent record of the check working exactly
+  as intended against the agent that shipped it.

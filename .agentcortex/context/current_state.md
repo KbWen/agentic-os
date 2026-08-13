@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-08-12T14:00:00Z
+- **Last Updated**: 2026-08-13T12:30:00Z
 - **Last Verified**: 2026-08-09
-- **Update Sequence**: 149
+- **Update Sequence**: 150
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -27,7 +27,7 @@
   - docs/adr/ADR-009-knowledge-source-consumption-seam.md — ADR-009: Knowledge-Source Consumption Seam (present-only opt-in `knowledge_sources:` in downstream-capabilities.yaml; manifest-preferred read-only consume ladder; KB content = DATA; Stage-1 minimal, Stage-2/backfill deferred, auto-backfill rejected), accepted 2026-06-20 · applies_to: bootstrap.md, config.yaml, validate_downstream_capabilities.py
   - docs/adr/ADR-010-frozen-spec-lifecycle.md — ADR-010: Frozen-Spec Lifecycle Fix (narrow validator skip to draft+frozen+cancelled; require-in-index only for shipped/living; preserve Write Isolation single-writer invariant; reconcile spec.md vs spec-intake.md; plan.md reads disk status), accepted 2026-06-22 · applies_to: validate.sh, validate.ps1, spec.md, spec-intake.md, plan.md
   - docs/adr/ADR-011-phase-entry-directive-enforcement.md — ADR-011: Phase-Entry Surfaces Carry Only Enforcement-Backed Directives (end §13 grandfathering on the 4 phase-entry surfaces; NONE-tier resolves to delete-observability-only/merge/add-enforcement/keep-honest-unenforced; cap-at-today directive-count ratchet test = durable drift instrument; sentinel KEEP/KEEP), accepted 2026-07-19 · applies_to: AGENTS.md, engineering_guardrails.md, security_guardrails.md, shared-contracts.md, 2026-07-19-phase-entry-directive-enumeration.md
-- **Active Backlog**: `docs/specs/_product-backlog.md` (59 Pending as of 2026-08-09 — counted, not carried forward; the 2026-08-08 govern-audit wave added rows #158–#164 and shipped all seven of them, #163/#164 closing via PR #395; Kind/Labels/Priority columns active 2026-05-06)
+- **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
   - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
