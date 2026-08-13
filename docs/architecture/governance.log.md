@@ -34,3 +34,36 @@ source_sha: 3004d88
 - [TRADEOFF] Fewer *fake* tiers → honest labels. A behavior-shaping advisory with no teeth is now retained as `keep-honest-unenforced` (labeled `NONE` with a rationale) rather than deleted or given a manufactured observer — false confidence is removed by honest labeling, not by stripping the prompt. A rule genuinely deleted (observability-only) carries no behavioral loss. **Reopen trigger**: a post-ship incident traced to a rule this prune removed.
 - [CONSTRAINT] Every touched eval case re-maps (SECTION-level) or retires its `governance.yaml` `protects`-tag in the same change; a green eval run is NOT evidence a rule survived — the runner never reads the protected text (`[eval-mapping]`).
 - [CONSTRAINT] Burial-depth = **within-loaded-unit ordinal**, a first-class audit axis for engineering_guardrails.md. Each directive's read-moment / load-layer is marked BEFORE any move; **relocation across load-layers is forbidden for always-on rules** and merges may only hold or decrease a survivor's ordinal — moving a rule deeper transfers lost-in-the-middle risk (Strand D: ordering may matter more than count).
+
+### [governance][2026-08-13][chore/local-state-contract]
+source_spec: (none — quick-win; external audit `docs/reviews/2026-08-13-govern-audit-drift-core-health.md` F3)
+source_sha: (ship commit on chore/local-state-contract — squash-merged via PR)
+
+- [DECISION] **A file that declares itself user-local must be untracked, not
+  re-declared.** `.claude/settings.json:2` says per-operator permissions live
+  in `settings.local.json`; git tracked that file anyway, so every session's
+  permission edits dirtied the shared tree — 13 archived Work Logs record the
+  cost of routing around it. The declaration was correct and git was wrong, so
+  git changed. The inverse fix (amend the declaration to match git) was
+  rejected: it would make a genuinely per-operator artifact shared state.
+- [CONSTRAINT] **This class is not closed by fixing one instance.** Two more
+  paths carried the same contradiction more sharply — present in `.gitignore`
+  *and* tracked. Two grandfathered `.guard_receipts/*.json` blobs were cleared
+  here (`git ls-files` showed 2 tracked against 21 on disk, so the ignore rule
+  was already working for the rest). `.guard_receipt.json` was **not**: the
+  validators PASS on `-f` of that exact path, so untracking alone converts a
+  real contradiction into a permanent cosmetic WARN on every clean checkout.
+  Audit the class, then check each member for a machine dependency before
+  touching it — a contradiction is not automatically safe to resolve.
+- [CONSTRAINT] A repo-side hygiene fix that has a downstream twin MUST land
+  both halves. `deploy.sh` ships `.claude/settings.json` at scaffold tier, so
+  adopters inherited the user-local claim with none of the git behaviour
+  backing it; the pattern goes in the managed ignore block **and** the
+  per-pattern `managed[]` map in `strip_managed_ignore_blocks`, since block-
+  only leaves adopters with a duplicated line.
+- [TRADEOFF] Untracking is not free for anyone holding an existing clone: on
+  the next `git pull` an identical local copy is deleted and a modified one
+  makes the merge refuse. Accepted on measured blast radius (one worktree, no
+  persistent bot checkouts, fresh clones never had the file) and recorded
+  rather than assumed away. **Reopen trigger**: a contributor reports lost
+  local permissions.
