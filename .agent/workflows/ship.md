@@ -205,9 +205,9 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
       ```
       - The helper reads the previous entry, computes its sha256[:8], and prepends `prev_sha` to the new entry. The first (genesis) entry uses `prev_sha: "GENESIS"`.
       - **Do NOT** include `prev_sha` in the `--entry` JSON yourself; the helper rejects entries that already contain it.
-      - **Do NOT** call `guard_context_write.py append` for `INDEX.jsonl` — that path lacks chain awareness and will silently break the chain on next `validate.sh` (caught by `check_audit_chain.py`). The helper is the only correct path.
+      - **Do NOT** call `guard_context_write.py append` for `INDEX.jsonl` — that path lacks chain awareness and silently breaks the chain. `check_audit_chain.py` catches it in the **source repo only**; that tool is not deployed, so downstream the break is permanent and never reported. The helper is the only correct path.
       - If `INDEX.jsonl` does not exist, the helper creates it. If a legacy `INDEX.md` exists, keep it as a compatibility mirror but prefer `INDEX.jsonl` for new entries.
-      - **Python-unavailable fallback**: If `python` is unavailable, **skip the INDEX.jsonl write entirely** — do NOT write a `prev_sha: "GENESIS"` entry, as that breaks the chain for every subsequent append and will cause `validate.sh check_audit_chain` to fail on the next Python-available run. Record the skip in Work Log Drift Log: `"INDEX.jsonl update skipped: python unavailable"`. Chain integrity remains intact (the entry is simply absent rather than broken).
+      - **Python-unavailable fallback**: If `python` is unavailable, **skip the INDEX.jsonl write entirely** — do NOT write a `prev_sha: "GENESIS"` entry, as that breaks the chain for every subsequent append — failing `validate.sh check_audit_chain` upstream, and going undetected downstream. Record the skip in Work Log Drift Log: `"INDEX.jsonl update skipped: python unavailable"`. Chain integrity remains intact (the entry is simply absent rather than broken).
 4. **Product Backlog Update**: If `docs/specs/_product-backlog.md` exists and this feature is listed:
    - Update feature status: `In Progress` → `Shipped`
    - Update `last_updated` in frontmatter
