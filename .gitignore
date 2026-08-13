@@ -14,6 +14,10 @@
 
 # Claude Code local state
 .claude/scheduled_tasks.lock
+# Per-operator permissions. .claude/settings.json declares this file user-local;
+# it was tracked anyway until 2026-08-13, so every session's permission edits
+# dirtied the shared tree. settings.json (shared) stays tracked.
+.claude/settings.local.json
 
 # Deploy artifacts
 .agentcortex-src/
