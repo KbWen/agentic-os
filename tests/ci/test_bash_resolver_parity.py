@@ -6,11 +6,20 @@ It answers `shutil.which("bash")` and it starts, but with no distro installed it
 prints `wsl --install <Distro>` and exits 1 — so any test that hands it a shipped
 `.sh` script fails for a reason that has nothing to do with the code under test.
 
-Eleven of the twelve bash-using modules already carried the guard. The twelfth
-(`test_validator_worklog_family_skip.py`) did not, and its recurring Windows red
-was written off across more than one ship as a local environment artifact rather
-than as the missing guard it was. This test exists so the population cannot drift
-back apart silently.
+Ten of the twelve bash-using modules carried the guard before PR #405; **two did
+not**, and that unit fixed both — `.agentcortex/tests/test_ssot_completeness.py`
+(whose `has_bash_launcher()` also swallowed no `OSError`) and
+`tests/ci/test_validator_worklog_family_skip.py`, whose recurring Windows red was
+written off across more than one ship as a local environment artifact rather than
+as the missing guard it was. This test exists so the population cannot drift back
+apart silently.
+
+Re-derive with `git ls-tree -r --name-only 3faae10` + a `which("bash")` /
+`WindowsApps` scan; that returns 12 / 10 / 2. An earlier version of this docstring
+said eleven and one — a count taken mid-change, after the first of the two was
+already fixed, and recorded as if it were the pre-existing state. This file counts
+itself into the population (it contains both marker strings and satisfies its own
+assertion), so today's scan returns 13 / 13 / 0.
 
 Scope note: the guard checked here is the WindowsApps exclusion. The candidate
 lists also list `<git>/usr/bin/bash.exe`, which starts fine but resolves no
