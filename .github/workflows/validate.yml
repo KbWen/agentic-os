@@ -209,10 +209,13 @@ jobs:
           bash "$GITHUB_WORKSPACE/.agentcortex/bin/deploy.sh" .
 
       - name: Validate downstream project
-        # shell + pipefail are load-bearing, not style: GitHub runs `run:` blocks as
-        # `bash -e {0}` with NO pipefail, so `cmd | tee` reports tee's status and a
-        # FAILING downstream validator would land a green job. This step is the only
-        # place CI asserts the deployed validator's exit code.
+        # Load-bearing, not style. Without a `shell:` key GitHub runs `run:` blocks as
+        # `bash -e {0}` -- errexit but NO pipefail -- so `validate.sh | tee` reports
+        # tee's status and a FAILING downstream validator would land a green job. This
+        # step is the only place CI asserts the deployed validator's exit code.
+        # `shell: bash` alone fixes it (GitHub maps it to `bash --noprofile --norc -eo
+        # pipefail {0}`); the explicit `set -o pipefail` is belt-and-braces so the
+        # guarantee does not silently depend on that mapping staying put.
         shell: bash
         run: |
           set -o pipefail
@@ -233,8 +236,8 @@ jobs:
           # presence guard. It could NOT have caught backlog #173 -- the audit-chain check
           # sits behind [[ -f INDEX.jsonl ]], and a fresh target ships no archive, so it
           # never runs and never prints. The same blind spot covers every whitelisted tool
-          # whose call site is natively guarded (today: validate_downstream_capabilities.py,
-          # generate_safety_nucleus.py). Delete one of those and this job stays green.
+          # whose call site is natively guarded -- today three: validate_downstream_capabilities.py,
+          # generate_safety_nucleus.py, run_governance_eval.py. Delete any and this job stays green.
           # That gap is present-day, not hypothetical. Closing it needs an expected-tool
           # list, deliberately rejected (Work Log D-1); the deployed FILE SET is instead
           # pinned by tests/ci/fixtures/deploy_manifest_golden.txt, which is a strictly

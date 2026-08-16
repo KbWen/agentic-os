@@ -82,7 +82,15 @@ def test_source_only_claims_are_true() -> None:
         r'run_python_check_source_only\s+"[^"]*"\s*\\?\s*\n?\s*"[^"]*"\s+\w+\s+"([^"]+)"',
         text,
     )
-    assert calls, "validate.sh: no run_python_check_source_only call sites found"
+    # Parsing every call site is itself an assertion: a call written in a shape this
+    # regex does not match would otherwise be silently skipped, and a test that passes
+    # because it found nothing to check is worse than no test.
+    invocations = len(re.findall(r"^\s*run_python_check_source_only\s", text, re.M))
+    assert invocations, "validate.sh: no run_python_check_source_only call sites found"
+    assert len(calls) == invocations, (
+        f"validate.sh: parsed {len(calls)} source-only call sites but found {invocations} "
+        "invocations — a call site is written in an unparsed shape and is going unchecked"
+    )
 
     for script_expr in calls:
         if script_expr.startswith("$") and "/" not in script_expr:
@@ -96,6 +104,40 @@ def test_source_only_claims_are_true() -> None:
         assert name not in deployed, (
             f"validate.sh claims {name} is source-only, but deploy.sh ships it. "
             "Either drop the source-only wrapper or remove it from the whitelist."
+        )
+
+
+def test_source_only_claims_are_true_in_powershell() -> None:
+    """Same invariant on the PowerShell side — parity is mandatory (AC-X1), and a check
+    that exists only in `validate.sh` is exactly the Claude-centric drift that AC guards.
+
+    Without this, swapping a ps1 ``-AbsentReason`` onto a tool that IS deployed passes
+    every other test in this file: the reason-string count stays equal, the counter is
+    still wired, and the ubuntu-only CI grep never runs a Windows validator. A Windows
+    adopter would then read "safe to ignore downstream" over a genuinely broken install.
+    """
+    text = _read(VALIDATE_PS1)
+    deployed = _deployed_tool_names()
+
+    # Real invocations only — a comment mentioning both names is not a call site.
+    lines = [
+        ln for ln in text.splitlines()
+        if ln.lstrip().startswith("Invoke-PythonCheck") and "-AbsentReason" in ln
+    ]
+    assert lines, "validate.ps1: no -AbsentReason call sites found"
+
+    for ln in lines:
+        m = re.search(r"-ScriptPath\s+(\$\w+|\(Join-NormalPath\s+\$root\s+'([^']+)'\))", ln)
+        assert m, f"validate.ps1: could not parse -ScriptPath from: {ln.strip()[:90]}"
+        if m.group(2):
+            name = m.group(2).rsplit("/", 1)[-1]
+        else:
+            var = m.group(1)[1:]
+            asn = re.search(rf"^\${re.escape(var)}\s*=.*'([^']*\.agentcortex/tools/[\w.]+)'", text, re.M)
+            assert asn, f"validate.ps1: could not resolve {m.group(1)} to a tools path"
+            name = asn.group(1).rsplit("/", 1)[-1]
+        assert name not in deployed, (
+            f"validate.ps1 claims {name} is source-only, but deploy.sh ships it."
         )
 
 
