@@ -599,7 +599,7 @@ if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
 $lifecycleBaseline = Join-Path $root '.agentcortex/metadata/lifecycle-baseline.json'
 $lifecycleUpdater = Join-Path $root '.agentcortex/tools/update_lifecycle_baseline.py'
 if (-not (Test-Path -Path $lifecycleUpdater -PathType Leaf)) {
-    Add-Result -Level 'SKIP' -Message 'token lifecycle drift -- updater not deployed by design (source-repo advisory; safe to ignore downstream)'
+    Add-Result -Level 'SKIP' -Message 'token lifecycle drift -- updater not present; not deployed downstream by design (safe to ignore there)'
 } elseif (-not (Test-Path -Path $lifecycleBaseline -PathType Leaf)) {
     Add-Result -Level 'WARN' -Message 'token lifecycle baseline absent (.agentcortex/metadata/lifecycle-baseline.json); seed with update_lifecycle_baseline.py --init'
 } elseif (-not $script:PythonCommand) {

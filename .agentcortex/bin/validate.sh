@@ -2905,7 +2905,7 @@ fi
 ACX_LIFECYCLE_BASELINE="$ROOT/.agentcortex/metadata/lifecycle-baseline.json"
 ACX_LIFECYCLE_UPDATER="$ROOT/.agentcortex/tools/update_lifecycle_baseline.py"
 if [[ ! -f "$ACX_LIFECYCLE_UPDATER" ]]; then
-  record_result SKIP "token lifecycle drift -- updater not deployed by design (source-repo advisory; safe to ignore downstream)" || true
+  record_result SKIP "token lifecycle drift -- updater not present; not deployed downstream by design (safe to ignore there)" || true
 elif [[ ! -f "$ACX_LIFECYCLE_BASELINE" ]]; then
   record_result WARN "token lifecycle baseline absent (.agentcortex/metadata/lifecycle-baseline.json); seed with update_lifecycle_baseline.py --init" || true
 elif [[ -z "${PYTHON_BIN:-}" ]]; then

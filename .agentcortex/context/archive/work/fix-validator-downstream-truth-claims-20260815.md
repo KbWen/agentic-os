@@ -297,3 +297,79 @@ No implement-phase edit landed outside the 5 planned files.
 persisted state, and the golden fixture is regenerated from `deploy.sh`, so reverting one reverts
 the other consistently. Asymmetric half: `deploy.sh` copies rather than syncs, so a revert does not
 remove `check_audit_chain.py` from trees already upgraded (R3).
+
+---
+
+## Review round 1 — NOT READY (2026-08-16), full findings
+
+Two fresh reviewers were briefed per `/review` §Adversarial Reviewer Freshness Invariant: diff +
+binding standards only, **no implementation rationale**, no carryover from the implement context.
+They ran independently and converged on the same blocking defect. Every finding below was
+re-verified by the primary against the code before being acted on (`[audit-verification]`).
+
+- **B1 CRITICAL — `.github/workflows/validate.yml:214`.** `bash .agentcortex/bin/validate.sh | tee
+  …` discards the validator's exit status. GitHub runs `run:` blocks as `bash -e {0}` with no
+  pipefail, so the pipeline reports `tee`'s status. Primary verification:
+  `bash -e -c 'bash -c "exit 7" | tee /dev/null'` → **0**; with `set -o pipefail` → **7**. This
+  step is the only place CI asserts the deployed validator's exit code, so a *failing* downstream
+  validate would have landed a green job — introduced by the plumbing added to support the honesty
+  assertion, in a change whose entire thesis is "do not report a partial install as a pass". The
+  same file already carried the correct pattern at `:40` (`shell: bash` + `set -uo pipefail`);
+  this was a deviation from an in-file precedent, not an unknown. **Fixed**: `shell: bash` +
+  `set -o pipefail` on the step, with a comment stating why it is load-bearing.
+- **B2 HIGH — `.agent/workflows/ship.md:208,210`.** A **deployed** file whose prose this change
+  turned false: "that tool is not deployed, so downstream the break is permanent and never
+  reported" and "going undetected downstream". Same bug class as PR #410, inverted — #410 removed
+  a promise the framework did not keep; this change kept the promise and left the prose denying
+  it. **Fixed**, and deliberately with *shorter* replacement text: `ship.md` is a counted
+  lifecycle document against a hard 355,000-token ceiling with ~431 tokens of headroom, so a
+  correction there must not spend budget.
+- **B3 MEDIUM — `validate.sh` / `validate.ps1` lifecycle SKIP.** "updater not deployed **by
+  design**" is asserted in the source repo too, where a missing updater is a broken install, not a
+  decision. That is defect (b) — a string that cannot distinguish deliberate from broken —
+  reintroduced inverted by the change that exists to remove it. **Fixed** with a single factual
+  string ("updater not present; not deployed downstream by design (safe to ignore there)") rather
+  than an `IS_SOURCE_REPO` branch, because a second emission would breach the ADR-006 ratchet.
+- **B4 MEDIUM — workflow comment self-contradiction.** It claimed to guard the #173 failure mode
+  and then, ten lines later, admitted it cannot. **Fixed**: the comment now states the real scope
+  (checks invoked through `run_python_check` *without* a native presence guard), cites #334 as the
+  case it genuinely would have caught, and names the blind spot explicitly.
+- **B5 LOW — duplicate assertion deleted.** `test -f …/check_audit_chain.py` duplicated
+  `tests/ci/fixtures/deploy_manifest_golden.txt`, which already pins the complete deployed file
+  list under a 38-test suite and is strictly stronger. Removed per DELETE-bias; the guarantee is
+  unchanged and better enforced.
+- **B6 MEDIUM — the stated ceiling was present-day, not future.** `validate_downstream_capabilities.py`
+  and `generate_safety_nucleus.py` are whitelisted **and** natively presence-guarded, so deleting
+  them yields no bare string, counter 0, and an unqualified pass. The comment now says so.
+- **B9 LOW — zero test coverage.** `tests/ci/test_validator_absent_tool_signal.py` added (5 tests):
+  both deploy whitelist sites must agree (AC-S5 encoded as a test); a source-only *claim* must name
+  a tool `deploy.sh` genuinely withholds (the inverse of the CI grep — that catches a missing
+  reason, this catches a lying one); the reason string must be identical across validators; the
+  counter must be initialised, incremented **and read** in both; and `tool not present` must have
+  exactly one emission site in each validator (ratchet safety + counter-bypass prevention in one
+  assertion). Red-first proven: injecting a false source-only claim into `deploy.sh` turns
+  `test_source_only_claims_are_true` red; restoring turns it green.
+
+### D-7: the chain flip's lack of a clean remediation is the property, not a bug
+
+- **Decision**: keep `check_audit_chain.py` deployed at FAIL severity. Do not soften it.
+- **Reason**: the tenth man proved an adopter with a pre-existing broken chain has no path back to
+  green — running `append_chain_entry.py migrate` trades the chain FAIL for an append-only-witness
+  FAIL, because migrating rewrites already-committed lines and the witness requires the committed
+  baseline to be a line-prefix of the working copy. That is not a defect introduced here: a
+  tamper-evident log you can silently repair is not tamper-evident. The honest response is to say
+  so, not to weaken the check.
+- **Alternatives**: wire it WARN downstream (rejected — it would restore the exact "advertised but
+  not enforced" shape this repo keeps deleting); do not deploy (rejected — leaves ADR-003's
+  downstream promise false, which is where this work started).
+- **Impact**: the release banner must state the flip **and** that `migrate` does not clear it.
+  R2's original framing assumed an actionable path existed; it does not, and that correction is
+  the durable half of this finding.
+
+### B8 — claim correction, carried into ship prose
+
+The summary-line fix covers a **narrow sub-case**. Measured on a fresh deploy after the fix:
+`pass=85 warn=2 fail=0 skip=7`, top line **unqualified**, while 7 checks SKIPped and an 18-check
+work-log family did not run. "Checks that never ran were reported as a pass" therefore remains
+true in general; what changed is that an *unexplained absent tool* now qualifies it. Ship prose
+must not claim more than that.

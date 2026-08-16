@@ -209,32 +209,43 @@ jobs:
           bash "$GITHUB_WORKSPACE/.agentcortex/bin/deploy.sh" .
 
       - name: Validate downstream project
+        # shell + pipefail are load-bearing, not style: GitHub runs `run:` blocks as
+        # `bash -e {0}` with NO pipefail, so `cmd | tee` reports tee's status and a
+        # FAILING downstream validator would land a green job. This step is the only
+        # place CI asserts the deployed validator's exit code.
+        shell: bash
         run: |
+          set -o pipefail
           cd /tmp/test-project
           bash .agentcortex/bin/validate.sh | tee /tmp/downstream-validate.txt
 
       - name: Downstream signal honesty
+        shell: bash
         run: |
-          # A tool that deploy.sh deliberately does not ship names its own reason at the
-          # call site (run_python_check_source_only / -AbsentReason). A bare "tool not
-          # present" therefore means an ACCIDENTAL omission from the runtime-tools
-          # whitelist -- the failure mode that shipped ADR-003's chain checker as
-          # write-only downstream for its entire life (backlog #173).
-          if grep -q -- 'tool not present' /tmp/downstream-validate.txt; then
+          # A tool deploy.sh deliberately does not ship names its own reason at the call
+          # site (run_python_check_source_only / -AbsentReason), so a bare "tool not
+          # present" means an ACCIDENTAL omission from the runtime-tools whitelist. That
+          # has happened before: #334 shipped check_ssot_caps.py missing and the deployed
+          # validator printed exactly this string.
+          #
+          # SCOPE, stated precisely because an earlier draft of this comment overclaimed:
+          # this catches only checks invoked through run_python_check WITHOUT a native
+          # presence guard. It could NOT have caught backlog #173 -- the audit-chain check
+          # sits behind [[ -f INDEX.jsonl ]], and a fresh target ships no archive, so it
+          # never runs and never prints. The same blind spot covers every whitelisted tool
+          # whose call site is natively guarded (today: validate_downstream_capabilities.py,
+          # generate_safety_nucleus.py). Delete one of those and this job stays green.
+          # That gap is present-day, not hypothetical. Closing it needs an expected-tool
+          # list, deliberately rejected (Work Log D-1); the deployed FILE SET is instead
+          # pinned by tests/ci/fixtures/deploy_manifest_golden.txt, which is a strictly
+          # stronger check for absence-from-deploy and already covers check_audit_chain.py.
+          if grep -qE '^\[SKIP\] .* -- tool not present$' /tmp/downstream-validate.txt; then
             echo "::error::Deployed validator reports an unexplained absent tool:"
-            grep -- 'tool not present' /tmp/downstream-validate.txt
+            grep -E '^\[SKIP\] .* -- tool not present$' /tmp/downstream-validate.txt
             echo "Add it to the runtime_tools whitelist in deploy.sh (BOTH sites), or"
             echo "state the reason at the call site if it is deliberately source-only."
             exit 1
           fi
-          # The grep above cannot see check_audit_chain: its check is guarded by
-          # [[ -f INDEX.jsonl ]] and a fresh deploy ships no archive, so it never runs
-          # and never prints. One named assertion for one named ADR-003 guarantee.
-          # KNOWN CEILING: a future tool that is both absent AND presence-guarded is
-          # still invisible here; closing that needs an expected-tool list, deliberately
-          # rejected (see Work Log D-1/D-6 for this change).
-          test -f /tmp/test-project/.agentcortex/tools/check_audit_chain.py \
-            || { echo "::error::ADR-003 chain checker missing from the deployed tree"; exit 1; }
 
   docs-pins:
     # Docs-only PRs classify heavy=false and skip the pytest jobs — but the
