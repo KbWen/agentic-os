@@ -1936,7 +1936,7 @@ PYEOF
   if [[ "$evidence_placeholder_only" -gt 0 ]]; then
     record_result FAIL "feature/arch-change/quick-win shipped work logs with bootstrap-placeholder ## Evidence (NO EVIDENCE = NO SHIP per AGENTS.md §Delivery Gates): ${evidence_placeholder_only}"
   elif [[ "$worklog_count" -gt 0 ]]; then
-    record_result PASS "shipped feature/arch-change work logs have non-placeholder Evidence sections"
+    record_result PASS "shipped feature/arch-change/quick-win work logs have non-placeholder Evidence sections"
   fi
   if [[ "$review_pass_with_unproven" -gt 0 ]]; then
     record_result WARN "work logs with review PASS receipt but unresolved UNPROVEN rows (receipt should be NOT READY per review.md §Burden of Proof): ${review_pass_with_unproven}"
@@ -2557,11 +2557,15 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     fi
 
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
-    # Row set is `| Pending` only — matching the three sibling checks above and
-    # validate.ps1's single $pendingRows. The old `\|In Progress` alternative was both a
-    # twin divergence and unanchored: with no leading pipe-space it matched the words
-    # anywhere in a row, including a Notes cell (#174).
-    distinct_labels=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
+    # ACTIVE rows = Pending OR In Progress, both fully anchored between column pipes.
+    # The backlog's own header defines active work as Pending / In Progress, and an
+    # In-Progress row's labels are part of the active vocabulary this check exists to
+    # watch, so the row set stays wide. What was actually broken (#174) is that the old
+    # `| Pending\|In Progress` gave the second alternative NO leading pipe-space, so it
+    # matched those words anywhere in a row — a Notes cell counted as a match. The
+    # anchored form fixes that without narrowing coverage, and validate.ps1 uses the
+    # same row set for this one check (its $pendingRows stays Pending-only for L-1/L-3).
+    distinct_labels=$(grep -E '\| (Pending|In Progress) \|' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
     distinct_labels=${distinct_labels:-0}
     if [[ "$distinct_labels" -gt 15 ]]; then
       record_result WARN "backlog label vocabulary: ${distinct_labels} distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"
@@ -2826,13 +2830,20 @@ if [[ "$spec_missing_frontmatter" -gt 0 ]]; then
   record_result WARN "docs/specs/ files missing YAML frontmatter or status field: ${spec_missing_frontmatter} (engineering_guardrails.md §4.2 requires status: draft|frozen|shipped|cancelled)"
 elif [[ "$spec_bad_status" -gt 0 ]]; then
   record_result WARN "docs/specs/ files with unrecognized status value: ${spec_bad_status} (valid: draft, frozen, shipped, cancelled, living)"
-else
-  # Emit PASS only when GOVERNED specs were actually checked. This reuses the scanning
-  # loop's own counter instead of re-globbing: the old bare glob counted `.gitkeep.md`
-  # and `_*` meta files, so a fresh downstream whose docs/specs/ holds only placeholders
-  # got a PASS asserting valid frontmatter over ZERO governed specs (#174). validate.ps1
+elif [[ "$spec_file_count" -gt 0 ]]; then
+  # PASS only when GOVERNED specs were actually checked. This reuses the scanning loop's
+  # own counter instead of re-globbing: the old bare glob counted `.gitkeep.md` and `_*`
+  # meta files, so a fresh downstream whose docs/specs/ holds only placeholders got a
+  # PASS asserting valid frontmatter over ZERO governed specs (#174). validate.ps1
   # already counted inside its filtered loop, so this also closes the twin divergence.
-  [[ "$spec_file_count" -gt 0 ]] && record_result PASS "all docs/specs/ files have valid status frontmatter"
+  record_result PASS "all docs/specs/ files have valid status frontmatter"
+else
+  # And SKIP, not silence, when there are none. Dropping the vacuous PASS without saying
+  # anything would trade one defect for the other: ratchet justification #7 (backlog
+  # #149) records that a check emitting NOTHING while the summary still prints "integrity
+  # check passed" IS the defect. An adopter who has run /spec-intake but written no spec
+  # yet should see that this check found nothing to check, not nothing at all.
+  record_result SKIP "docs/specs/ status frontmatter -- no governed specs present (meta/_* and .gitkeep.md excluded)"
 fi
 
 # ACX phase shim skill-existence check: for each .claude/agents/acx-*.md,
