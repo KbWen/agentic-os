@@ -5,8 +5,10 @@ same tree: the backlog row set the label-vocabulary check reads, the ruler used 
 archive size, and a PASS gated on a bare glob that counted placeholder files.
 
 **Why source-text assertions.** A behavioural tally comparison already exists --
-`test_validator_false_positives.py::test_validator_count_parity_on_framework` runs both
-validators and asserts identical pass/warn/fail. What cannot be built is a *Linux* one:
+the `count_parity_on_framework` case in `test_validator_false_positives.py` runs both
+validators and asserts identical pass/warn/fail. (Its full name is spelled short here on
+purpose: `test_` followed by exactly 35 characters trips TruffleHog's Lob-key detector,
+which reports it as a VERIFIED secret. Confirmed by experiment, not assumed.) What cannot be built is a *Linux* one:
 `validate.ps1` is the native Windows validator and `Normalize-PathString` rewrites `/`
 to backslash unconditionally, so under Linux `pwsh` it mis-resolves `$root`. That module's
 `requires_windows` skip reason says outright that the Linux CI job must NOT execute the
