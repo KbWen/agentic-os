@@ -373,3 +373,30 @@ The summary-line fix covers a **narrow sub-case**. Measured on a fresh deploy af
 work-log family did not run. "Checks that never ran were reported as a pass" therefore remains
 true in general; what changed is that an *unexplained absent tool* now qualifies it. Ship prose
 must not claim more than that.
+
+---
+
+## Review round 2 — PASS, with two items routed to ship
+
+A third fresh reviewer (no prior context, diff + standards only) verified each claimed fix from
+round 1 and, more usefully, **mutation-tested the tests added to close round 1**. It found the
+new guard was single-platform: pointing `validate.ps1`'s `-AbsentReason` at a tool `deploy.sh`
+does ship passed all five tests, because the reason-string count stayed equal, the counter was
+still wired, and the CI grep runs only on ubuntu. A Windows adopter would have read "safe to
+ignore downstream" over a genuinely broken install. Closed in `be013a9` with
+`test_source_only_claims_are_true_in_powershell` (both call-site spellings, red-first proven on
+each) plus a non-vacuity assertion on the bash test so an unparsed call site fails loudly rather
+than being skipped. Two comment corrections landed with it: the natively-guarded blind spot
+covers **three** whitelisted tools (`run_governance_eval.py` was missing from the list), and
+`shell: bash` already implies `-eo pipefail`, so the explicit `set -o pipefail` is belt-and-braces
+rather than the fix itself — the comment had claimed otherwise.
+
+**Routed to `/ship`, both the same truth class this branch removes:**
+- `docs/specs/decision-capture-hardening.md:213` carries a live `[CONSTRAINT] Every validator-wired
+  tool ships in deploy.sh runtime_tools`, which the source-only exception now contradicts. It is a
+  `status: shipped` spec, so per §4.2 it is historical reference and must NOT be edited as current
+  design — the correct fix is an **append to the L2 domain log**, at ship.
+- Backlog **#173**'s body still states `check_audit_chain.py` "is not in deploy.sh's whitelist and
+  never has been", still counts it among 7 absent tools, and still prescribes the allowlist D-1
+  rejects. Bootstrap flipped only the status column; the body needs the factual correction.
+
