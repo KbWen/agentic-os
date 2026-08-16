@@ -153,11 +153,19 @@ function Invoke-PythonCheck {
         [Parameter(Mandatory = $true)][string]$Label,
         [Parameter(Mandatory = $true)][string]$MissingPythonLevel,
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [string[]]$Arguments = @()
+        [string[]]$Arguments = @(),
+        # Names a DELIBERATE absence (a tool deploy.sh does not ship). The reason travels
+        # with the call site rather than a separate registry, and "unexpected" stays defined
+        # as an absence with NO stated reason -- see the summary line at the end of this file.
+        [string]$AbsentReason = ''
     )
 
     if (-not (Test-Path -Path $ScriptPath -PathType Leaf)) {
-        Add-Result -Level 'SKIP' -Message "$Label -- tool not present"
+        if ([string]::IsNullOrEmpty($AbsentReason)) {
+            $script:ToolAbsentUnexpected++
+            $AbsentReason = 'tool not present'
+        }
+        Add-Result -Level 'SKIP' -Message "$Label -- $AbsentReason"
         return
     }
     if (-not $script:PythonCommand) {
@@ -199,6 +207,8 @@ $script:PassCount = 0
 $script:WarnCount = 0
 $script:FailCount = 0
 $script:SkipCount = 0
+# Referenced-but-absent tools with NO stated reason (see Invoke-PythonCheck -AbsentReason).
+$script:ToolAbsentUnexpected = 0
 if ($NoPython) {
     $script:PythonCommand = $null
 } else {
@@ -444,7 +454,7 @@ Invoke-PythonCheck -Label 'lifecycle frontmatter (governance docs)' -MissingPyth
 
 # Skill provenance + compatibility floor (backlog #80/#81) -- mirror of validate.sh.
 # Source-repo only; absent downstream (not in deploy runtime_tools) -> graceful SKIP.
-Invoke-PythonCheck -Label 'skill provenance + compatibility floor' -MissingPythonLevel 'FAIL' -ScriptPath $skillProvenanceCheck -Arguments @('--root', $root)
+Invoke-PythonCheck -Label 'skill provenance + compatibility floor' -MissingPythonLevel 'FAIL' -ScriptPath $skillProvenanceCheck -Arguments @('--root', $root) -AbsentReason 'source-only tool, not deployed by design (safe to ignore downstream)'
 
 # Verify the hash chain on the archive INDEX.jsonl.
 if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
@@ -581,14 +591,19 @@ if (Test-Path -Path $ssotCurrentState -PathType Leaf) {
 # validate.sh block. WARN when any scenario/aggregate GREW beyond slack (advisory,
 # never FAIL); baseline absent -> WARN to seed; shrink is intentionally not flagged.
 # Teeth live in tests/ci/test_lifecycle_baseline_drift.py.
+# Updater-absence is tested FIRST: neither the baseline nor the updater is deployed
+# downstream, so testing baseline-absence first made every adopter hit a permanent WARN
+# telling them to run a tool their tree does not contain -- the honest SKIP below it was
+# unreachable. Order is updater -> baseline -> python; the baseline/python order is
+# deliberately left as-is (changing it is a separate semantic change, not this defect).
 $lifecycleBaseline = Join-Path $root '.agentcortex/metadata/lifecycle-baseline.json'
 $lifecycleUpdater = Join-Path $root '.agentcortex/tools/update_lifecycle_baseline.py'
-if (-not (Test-Path -Path $lifecycleBaseline -PathType Leaf)) {
+if (-not (Test-Path -Path $lifecycleUpdater -PathType Leaf)) {
+    Add-Result -Level 'SKIP' -Message 'token lifecycle drift -- updater not present; not deployed downstream by design (safe to ignore there)'
+} elseif (-not (Test-Path -Path $lifecycleBaseline -PathType Leaf)) {
     Add-Result -Level 'WARN' -Message 'token lifecycle baseline absent (.agentcortex/metadata/lifecycle-baseline.json); seed with update_lifecycle_baseline.py --init'
 } elseif (-not $script:PythonCommand) {
     Add-Result -Level 'SKIP' -Message 'token lifecycle drift -- python unavailable or disabled (--NoPython)'
-} elseif (-not (Test-Path -Path $lifecycleUpdater -PathType Leaf)) {
-    Add-Result -Level 'SKIP' -Message 'token lifecycle drift -- updater not present (update_lifecycle_baseline.py missing)'
 } else {
     $prevEap = $ErrorActionPreference
     $hadNative = Test-Path variable:PSNativeCommandUseErrorActionPreference
@@ -796,7 +811,7 @@ Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPy
 # network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when
 # no active Work Log exists. Backlog #161 (2026-08-08 govern-audit F7): a log
 # citing a nonexistent spec path or PR previously passed both validators untouched.
-Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence, advisory)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root)
+Invoke-PythonCheck -Label 'worklog external references (spec/ADR existence, advisory)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_worklog_references.py') -Arguments @('--root', $root) -AbsentReason 'source-only tool, not deployed by design (safe to ignore downstream)'
 $phaseSkillFiles = @(
     (Join-NormalPath $workflowsDir 'plan.md'),
     (Join-NormalPath $workflowsDir 'implement.md'),
@@ -2797,6 +2812,12 @@ if ($script:FailCount -gt 0) {
 # Labeling only — exit stays 0 (not a new gate).
 if (-not $script:PythonCommand) {
     Write-Output 'Agentic OS integrity check passed (reduced assurance: python-dependent checks skipped)'
+} elseif ($script:ToolAbsentUnexpected -gt 0) {
+    # Same failure class as the work-log family SKIP (backlog #149): checks that never ran
+    # must not be reported as an unqualified pass. Keyed on tool absence, which the
+    # python-only condition above is blind to. A deliberate source-only absence names itself
+    # via -AbsentReason and is excluded, so this never fires on a healthy downstream.
+    Write-Output "Agentic OS integrity check passed (reduced assurance: $($script:ToolAbsentUnexpected) referenced tool(s) absent -- those checks did not run)"
 } else {
     Write-Output 'Agentic OS integrity check passed'
 }

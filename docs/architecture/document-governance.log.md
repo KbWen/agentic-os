@@ -287,3 +287,42 @@ source_sha: (ship commit on chore/ssot-drift-and-residue-cleanup — squash-merg
   immutable. Recoverable only because the move was uncommitted; after a
   commit it would have been a permanent record of the check working exactly
   as intended against the agent that shipped it.
+
+### [document-governance][2026-08-16][fix/validator-downstream-truth-claims]
+source_spec: n/a (hotfix)
+source_sha: 55e3314
+
+- [CONSTRAINT] Amends, not replaces, the `[CONSTRAINT] Every validator-wired
+  tool ships in deploy.sh runtime_tools (both whitelist sites)` entry above.
+  That rule is now false as written: some validator-wired tools are
+  deliberately NOT shipped (`check_skill_provenance.py`,
+  `check_worklog_references.py`), and applying it literally would install two
+  permanent no-ops downstream. The amended rule: a validator-wired tool
+  either ships in BOTH whitelist sites with the manifest golden regenerated
+  in the same change, OR states its reason at the call site
+  (`run_python_check_source_only` / `-AbsentReason`). There is no third
+  option — an absence with no stated reason is what the summary line counts
+  and what CI fails on. `tests/ci/test_validator_absent_tool_signal.py`
+  enforces both halves, including that a source-only *claim* names a tool
+  `deploy.sh` genuinely withholds.
+- [DECISION] `check_audit_chain.py` moved into the whitelist. ADR-003 nowhere
+  scopes the chain to the source repo and `:140` names "fresh downstream" as
+  handled, so leaving it source-only would have narrowed a stated guarantee
+  and required an ADR amendment; deploying required none. Counter-fact worth
+  keeping: downstream tamper-evidence was never zero — `validate.sh:452-495`
+  is a pure-git, no-Python append-only witness. The residual gap the Python
+  checker closes is narrower than first stated: a forged or mis-linked entry
+  appended on the current branch before merge.
+- [TRADEOFF] An adopter with a pre-existing broken chain flips green→red on
+  upgrade, and `append_chain_entry.py migrate` does NOT clear it — migrating
+  rewrites already-committed lines, so the append-only witness fails instead.
+  Both states are red and there is no clean path back. Accepted: a
+  tamper-evident log you can silently repair is not tamper-evident. The
+  release banner must say so rather than imply a remediation exists.
+- [CONSTRAINT] A validator's top-line verdict must fold in *which checks did
+  not run*, not just one cause of not running. The reduced-assurance label
+  was keyed to Python absence alone, so seven absent tools produced an
+  unqualified "integrity check passed". Same shape as #149, second
+  occurrence. Honest scope of the fix: only an absence with **no stated
+  reason** qualifies the line — a fresh deploy still prints unqualified while
+  seven checks SKIP and an 18-check family does not run.
