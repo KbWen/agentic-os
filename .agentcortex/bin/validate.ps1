@@ -2376,7 +2376,7 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
     if ($missingCols.Count -eq 0) {
         Add-Result -Level 'PASS' -Message 'backlog schema: Kind/Labels/Priority columns present'
 
-        $pendingRows = @($backlogLines | Where-Object { $_ -match '\| Pending' })
+        $pendingRows = @($backlogLines | Where-Object { $_ -cmatch '\| Pending' })
         $totalPending = $pendingRows.Count
 
         # L-1: P0 ratio lint — warn if >20% of pending items are P0
@@ -2428,7 +2428,7 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
         # -cmatch, not -match: PowerShell's -match is case-INSENSITIVE by default while
         # grep -E is case-sensitive, which would itself be a twin divergence (a `| pending |`
         # row would enter this set and not sh's). Padding is tolerant on both sides.
-        $activeRows = @($backlogLines | Where-Object { $_ -cmatch '\|\s*(Pending|In Progress)\s*\|' })
+        $activeRows = @($backlogLines | Where-Object { $_ -cmatch '\|[ 	]*(Pending|In Progress)[ 	]*\|' })
         $distinctLabels = @($activeRows | ForEach-Object {
             $cols = $_ -split '\|'
             if ($cols.Count -gt 4) {

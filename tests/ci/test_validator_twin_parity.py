@@ -28,7 +28,10 @@ something this file can reach.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
+
+TAB = chr(9)
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATE_SH = ROOT / ".agentcortex" / "bin" / "validate.sh"
@@ -99,10 +102,10 @@ def test_label_vocabulary_reads_the_same_anchored_active_row_set() -> None:
     part of the vocabulary being watched) and anchors both alternatives.
     """
     sh_assign = _line_starting(_sh(), "distinct_labels=$(grep")
-    assert r"grep -E '\|[[:space:]]*(Pending|In Progress)[[:space:]]*\|'" in sh_assign, (
-        "validate.sh label check must read whole-cell active rows with tolerant padding; "
-        "a rigid single-space anchor selects zero rows on a column-aligned backlog and the "
-        "ladder then emits nothing at all"
+    assert "[ 	]*(Pending|In Progress)[ 	]*" in sh_assign, (
+        "validate.sh label check must match a whole status cell with tolerant padding; a "
+        "rigid single-space anchor keeps only the rows whose status is the widest value on "
+        "a column-aligned backlog, so the count goes silently PARTIAL and still reports PASS"
     )
     assert r"| Pending\|In Progress" not in sh_assign, (
         "the unanchored alternation is back: its second branch has no leading pipe-space, "
@@ -110,9 +113,29 @@ def test_label_vocabulary_reads_the_same_anchored_active_row_set() -> None:
     )
 
     ps_assign = _line_starting(_ps1(), "$activeRows =")
-    assert r"'\|\s*(Pending|In Progress)\s*\|'" in ps_assign, (
+    assert "[ 	]*(Pending|In Progress)[ 	]*" in ps_assign, (
         "validate.ps1 must build the same tolerant whole-cell active row set"
     )
+    # The padding class is a literal space and a literal TAB on both sides, deliberately.
+    # POSIX ERE has no tab escape, so spelling it backslash-t inside grep -E would match a
+    # backslash or the letter t instead; and .NET's shorthand whitespace class also matches
+    # U+0085 / U+00A0 / U+3000, which POSIX [[:space:]] does not under LC_ALL=C -- an
+    # NBSP-padded backlog would then be active for one twin and not the other. Pinned here
+    # because a literal tab is invisible in review and trivially stripped by a formatter.
+    for name, line in (("validate.sh", sh_assign), ("validate.ps1", ps_assign)):
+        pattern = re.search(r"\(Pending\|In Progress\)", line)
+        assert pattern, f"{name}: status alternation not found"
+        # Scope to the selector itself: the sh line's later pipeline legitimately uses
+        # [[:space:]] for trimming, which is unrelated to row selection.
+        selector = line[max(0, pattern.start() - 12):pattern.end() + 12]
+        assert f"[ {TAB}]*" in selector, (
+            f"{name}: the padding class must stay ASCII space+tab -- POSIX and .NET "
+            "whitespace shorthands disagree on Unicode blanks and would reintroduce a "
+            "twin divergence"
+        )
+        assert "[[:space:]]" not in selector and chr(92) + "s" not in selector, (
+            f"{name}: selector uses a Unicode-sensitive whitespace class"
+        )
     assert "-cmatch" in ps_assign, (
         "must be -cmatch: PowerShell's -match is case-insensitive while grep -E is not, "
         "so a `| pending |` row would enter ps1's set and not sh's — a twin divergence "
@@ -143,9 +166,11 @@ def test_label_check_row_set_is_separate_from_the_pending_only_siblings() -> Non
 def test_no_governed_specs_emits_a_skip_on_both_sides() -> None:
     """A tree with no governed specs must SKIP, identically, not fall silent.
 
-    The old PASS was gated on a bare `*.md` glob that counted `.gitkeep.md` and `_`-meta
-    files, so a downstream that had run /spec-intake but written no spec was told its
-    spec frontmatter was valid over zero specs. Simply deleting that PASS would have
+    The old PASS was gated on a bare `*.md` glob that counted the `_`-prefixed meta files
+    the scanning loop had just skipped, so a downstream that had run /spec-intake but
+    written no spec was told its spec frontmatter was valid over zero specs. (Not
+    `.gitkeep.md`: bash `*.md` never matches a dotfile without dotglob. An earlier draft
+    of this note said otherwise and was wrong.) Simply deleting that PASS would have
     traded one defect for the one ratchet justification #7 names (backlog #149): a check
     that emits NOTHING while the summary still prints "integrity check passed".
     """
