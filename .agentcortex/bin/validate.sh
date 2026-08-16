@@ -63,6 +63,11 @@ PASS_COUNT=0
 WARN_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
+# Referenced-but-absent tools with NO stated reason. A deliberate source-only absence names
+# itself via ACX_ABSENT_REASON and does not count; an unnamed one is an accident and
+# qualifies the summary line, which otherwise reports an unconditional pass.
+TOOL_ABSENT_UNEXPECTED=0
+ACX_ABSENT_REASON=""
 
 record_result() {
   local level="$1"
@@ -173,7 +178,10 @@ run_python_check() {
   shift 3
 
   if [[ ! -f "$script" ]]; then
-    record_result SKIP "$label -- tool not present"
+    if [[ -z "${ACX_ABSENT_REASON:-}" ]]; then
+      TOOL_ABSENT_UNEXPECTED=$((TOOL_ABSENT_UNEXPECTED + 1))
+    fi
+    record_result SKIP "$label -- ${ACX_ABSENT_REASON:-tool not present}"
     return 0
   fi
 
@@ -195,6 +203,19 @@ run_python_check() {
     record_result FAIL "$label"
   fi
   print_indented_output "$output"
+}
+
+# Same contract as run_python_check, for a tool deploy.sh deliberately does not ship.
+# The reason travels with the call site -- the only place a reader looks -- instead of a
+# separate registry, and "unexpected" stays defined as an absence with NO stated reason
+# rather than as absence from a list that can go stale. Set-and-clear is structural here
+# so a caller cannot leak the reason onto the next check.
+run_python_check_source_only() {
+  local reason="$1"
+  shift
+  ACX_ABSENT_REASON="$reason"
+  run_python_check "$@"
+  ACX_ABSENT_REASON=""
 }
 
 required_files=(
@@ -387,7 +408,8 @@ run_python_check "lifecycle frontmatter (governance docs)" FAIL "$LIFECYCLE_FRON
 # the tool self-skips downstream when a .agentcortex-manifest is present, and as
 # a CI/source validator it is not in deploy.sh runtime_tools, so it is simply
 # absent downstream -> run_python_check records a graceful SKIP.
-run_python_check "skill provenance + compatibility floor" FAIL "$SKILL_PROVENANCE_CHECK" --root "$ROOT"
+run_python_check_source_only "source-only tool, not deployed by design (safe to ignore downstream)" \
+  "skill provenance + compatibility floor" FAIL "$SKILL_PROVENANCE_CHECK" --root "$ROOT"
 
 # Verify the hash chain on the archive INDEX.jsonl. A broken chain means an
 # entry was retroactively rewritten without going through
@@ -662,7 +684,8 @@ run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentc
 # (docs/reviews/2026-08-08-govern-audit-task-simulation.md F7): a log citing a
 # nonexistent spec path or PR previously passed both validators untouched.
 # No-python -> WARN; tool absent -> SKIP.
-run_python_check "worklog external references (spec/ADR existence, advisory)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
+run_python_check_source_only "source-only tool, not deployed by design (safe to ignore downstream)" \
+  "worklog external references (spec/ADR existence, advisory)" WARN "$ROOT/.agentcortex/tools/check_worklog_references.py" --root "$ROOT"
 
 ACTIVE_CODEX_RULES="$ROOT/codex/rules/default.rules"
 [[ -f "$ACTIVE_CODEX_RULES" ]] || ACTIVE_CODEX_RULES="$CODEX_RULES"
@@ -2874,14 +2897,19 @@ fi
 # --dry-run and WARN when any scenario/aggregate GREW beyond slack (advisory, never
 # FAIL). Baseline absent -> WARN to seed. Shrink is intentionally not flagged
 # (trimming token cost is good). Teeth live in tests/ci/test_lifecycle_baseline_drift.py.
+# Updater-absence is tested FIRST: neither the baseline nor the updater is deployed
+# downstream, so testing baseline-absence first made every adopter hit a permanent WARN
+# telling them to run a tool their tree does not contain -- the honest SKIP below it was
+# unreachable. Order is updater -> baseline -> python; the baseline/python order is
+# deliberately left as-is (changing it is a separate semantic change, not this defect).
 ACX_LIFECYCLE_BASELINE="$ROOT/.agentcortex/metadata/lifecycle-baseline.json"
 ACX_LIFECYCLE_UPDATER="$ROOT/.agentcortex/tools/update_lifecycle_baseline.py"
-if [[ ! -f "$ACX_LIFECYCLE_BASELINE" ]]; then
+if [[ ! -f "$ACX_LIFECYCLE_UPDATER" ]]; then
+  record_result SKIP "token lifecycle drift -- updater not deployed by design (source-repo advisory; safe to ignore downstream)" || true
+elif [[ ! -f "$ACX_LIFECYCLE_BASELINE" ]]; then
   record_result WARN "token lifecycle baseline absent (.agentcortex/metadata/lifecycle-baseline.json); seed with update_lifecycle_baseline.py --init" || true
 elif [[ -z "${PYTHON_BIN:-}" ]]; then
   record_result SKIP "token lifecycle drift -- python unavailable or disabled (--no-python)" || true
-elif [[ ! -f "$ACX_LIFECYCLE_UPDATER" ]]; then
-  record_result SKIP "token lifecycle drift -- updater not present (update_lifecycle_baseline.py missing)" || true
 else
   _acx_drift_out="$("$PYTHON_BIN" "$ACX_LIFECYCLE_UPDATER" --root "$ROOT" --dry-run 2>&1)" && _acx_drift_status=0 || _acx_drift_status=$?
   if [[ "$_acx_drift_status" -eq 0 ]]; then
@@ -2961,6 +2989,12 @@ fi
 # claim an unqualified pass. Labeling only — exit stays 0 (not a new gate).
 if [[ -z "${PYTHON_BIN:-}" ]]; then
   echo "Agentic OS integrity check passed (reduced assurance: python-dependent checks skipped)"
+elif [[ "$TOOL_ABSENT_UNEXPECTED" -gt 0 ]]; then
+  # Same failure class as the work-log family SKIP (backlog #149): checks that never ran
+  # must not be reported as an unqualified pass. Keyed on tool absence, which the
+  # python-only condition above is blind to. A deliberate source-only absence names itself
+  # via ACX_ABSENT_REASON and is excluded, so this never fires on a healthy downstream.
+  echo "Agentic OS integrity check passed (reduced assurance: ${TOOL_ABSENT_UNEXPECTED} referenced tool(s) absent -- those checks did not run)"
 else
   echo "Agentic OS integrity check passed"
 fi
