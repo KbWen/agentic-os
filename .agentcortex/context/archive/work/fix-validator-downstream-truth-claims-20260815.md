@@ -15,7 +15,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
 
 ## Decisions (full text)
 
-### D-1: Reject #173's `SOURCE_ONLY_TOOLS` allowlist; keep only its regression detection
+### D-1: Reject #173's `SOURCE_ONLY_TOOLS` allowlist; keep only its regression detection  → consolidated: L2 document-governance
 
 - **Decision**: Do NOT build the `SOURCE_ONLY_TOOLS` allowlist artifact that backlog #173
   prescribes. Instead assert, inside the CI `deploy-smoke-test` job that already deploys to a fresh
@@ -35,7 +35,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
 - **Impact**: #173's row must be updated at ship to record that its prescribed fix was replaced,
   with this reasoning, so a future reader does not re-propose the allowlist.
 
-### D-2: Deploy `check_audit_chain.py` rather than narrow ADR-003
+### D-2: Deploy `check_audit_chain.py` rather than narrow ADR-003  → consolidated: L2 document-governance
 
 - **Decision**: add the checker to the deploy whitelist.
 - **Reason**: dependency-clean (stdlib + `append_chain_entry`, already deployed). ADR-003 nowhere
@@ -50,7 +50,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
   ADR-003 amendment.
 - **Impact**: R2 (green→red on upgrade for an adopter with a genuinely broken chain).
 
-### D-3: Fix the lifecycle WARN by branch reorder, not by deleting the block or deploying the baseline
+### D-3: Fix the lifecycle WARN by branch reorder, not by deleting the block or deploying the baseline  → local
 
 - **Decision**: reorder the ladder so updater-absence is tested before baseline-absence, in both
   validators.
@@ -66,7 +66,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
   upstream where its teeth live (`tests/ci/test_lifecycle_baseline_drift.py`).
 - **Impact**: all four emissions are preserved, so the ratchet is unaffected.
 
-### D-4: The highest-value fix was not in the adopter's report
+### D-4: The highest-value fix was not in the adopter's report  → consolidated: L2 document-governance
 
 - **Decision**: treat the summary-line assurance label as the primary fix of this unit.
 - **Reason**: `validate.sh:2962-2966` keys the reduced-assurance label **only** on `PYTHON_BIN`, so
@@ -78,7 +78,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
   (backlog #149) and is cheaper than anything the report asked for.
 - **Impact**: changes the top-line string adopters see on partial installs.
 
-### D-5: Carry the "why absent" at the call site, not in a registry
+### D-5: Carry the "why absent" at the call site, not in a registry  → consolidated: L2 document-governance
 
 - **Decision**: `run_python_check` / `Invoke-PythonCheck` gain an optional absent-reason. Bash: a
   `run_python_check_source_only "<reason>" …` wrapper that sets and clears `ACX_ABSENT_REASON`
@@ -102,7 +102,7 @@ narrative moved out of it. Classification `hotfix`; base `f5a161c`; implement co
 - **Impact**: `run_python_check`'s existing 3-positional contract is untouched; only the 2
   source-only call sites change form. Zero line-leading `record_result` added → ratchet neutral.
 
-### D-6: Accept and state the regression guard's coverage ceiling
+### D-6: Accept and state the regression guard's coverage ceiling  → local
 
 - **Decision**: the CI guard is two assertions inside the **existing** `deploy-smoke-test` step —
   the deployed validator's output contains no bare `tool not present`, and the deployed tools
@@ -350,7 +350,7 @@ re-verified by the primary against the code before being acted on (`[audit-verif
   assertion). Red-first proven: injecting a false source-only claim into `deploy.sh` turns
   `test_source_only_claims_are_true` red; restoring turns it green.
 
-### D-7: the chain flip's lack of a clean remediation is the property, not a bug
+### D-7: the chain flip's lack of a clean remediation is the property, not a bug  → consolidated: L2 document-governance
 
 - **Decision**: keep `check_audit_chain.py` deployed at FAIL severity. Do not soften it.
 - **Reason**: the tenth man proved an adopter with a pre-existing broken chain has no path back to
