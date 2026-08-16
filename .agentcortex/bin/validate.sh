@@ -1230,7 +1230,13 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   # ingestion-time hazard. WARN-only; opt-out via ARCHIVE_SIZE_WARN_KB=0.
   ARCHIVE_DIR="$ROOT/.agentcortex/context/archive"
   if [[ -d "$ARCHIVE_DIR" ]] && [[ "$ARCHIVE_SIZE_WARN_KB" -gt 0 ]]; then
-    archive_kb="$(du -sk "$ARCHIVE_DIR" 2>/dev/null | awk '{print $1}')" || true
+    # Logical bytes, not disk-allocated. `du -sk` counts allocated blocks, so it read
+    # ~27% high here (2274KB vs 1786KB over 179 files) and disagreed with validate.ps1,
+    # which sums file lengths (#174). Logical size is also the right measure: this
+    # threshold is a proxy for ingestion cost, and block rounding is not even stable
+    # across filesystems for identical content. `du --apparent-size` is GNU-only and
+    # would break macOS/BSD adopters, so sum via ls (portable, one exec for the batch).
+    archive_kb="$(find "$ARCHIVE_DIR" -type f -exec ls -ln {} + 2>/dev/null | awk '{s+=$5} END {print int(s/1024)}')" || true
     if [[ -n "$archive_kb" ]] && [[ "$archive_kb" -gt "$ARCHIVE_SIZE_WARN_KB" ]]; then
       record_result WARN "archive size ${archive_kb}KB exceeds threshold ${ARCHIVE_SIZE_WARN_KB}KB; consider /retro-driven cold-tier rotation"
     else
@@ -2551,7 +2557,11 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     fi
 
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
-    distinct_labels=$(grep '| Pending\|In Progress' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
+    # Row set is `| Pending` only — matching the three sibling checks above and
+    # validate.ps1's single $pendingRows. The old `\|In Progress` alternative was both a
+    # twin divergence and unanchored: with no leading pipe-space it matched the words
+    # anywhere in a row, including a Notes cell (#174).
+    distinct_labels=$(grep '| Pending' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
     distinct_labels=${distinct_labels:-0}
     if [[ "$distinct_labels" -gt 15 ]]; then
       record_result WARN "backlog label vocabulary: ${distinct_labels} distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"
@@ -2781,6 +2791,7 @@ fi
 VALID_SPEC_STATUSES="draft|frozen|shipped|cancelled|living"
 spec_bad_status=0
 spec_missing_frontmatter=0
+spec_file_count=0
 if [[ -d "$ROOT/docs/specs" ]]; then
   shopt -s nullglob
   for spec in "$ROOT/docs/specs"/*.md; do
@@ -2792,6 +2803,9 @@ if [[ -d "$ROOT/docs/specs" ]]; then
     # and are exempt from the spec-status enum, matching the `_*` skip convention
     # already used for the Spec Index completeness check above (#170).
     [[ "$(basename "$spec")" == _* ]] && continue
+    # Counted here, past both skips: this is the set of GOVERNED specs, and it is what
+    # gates the PASS below (validate.ps1 increments at the same point).
+    spec_file_count=$((spec_file_count + 1))
     # Check YAML frontmatter presence (first line must be ---)
     first_line="$(head -n1 "$spec" 2>/dev/null | tr -d '\r')"
     if [[ "$first_line" != "---" ]]; then
@@ -2813,9 +2827,11 @@ if [[ "$spec_missing_frontmatter" -gt 0 ]]; then
 elif [[ "$spec_bad_status" -gt 0 ]]; then
   record_result WARN "docs/specs/ files with unrecognized status value: ${spec_bad_status} (valid: draft, frozen, shipped, cancelled, living)"
 else
-  # Only emit PASS when specs directory has files to check
-  spec_file_count=0
-  for f in "$ROOT/docs/specs"/*.md; do [[ -f "$f" ]] && spec_file_count=$((spec_file_count + 1)); done
+  # Emit PASS only when GOVERNED specs were actually checked. This reuses the scanning
+  # loop's own counter instead of re-globbing: the old bare glob counted `.gitkeep.md`
+  # and `_*` meta files, so a fresh downstream whose docs/specs/ holds only placeholders
+  # got a PASS asserting valid frontmatter over ZERO governed specs (#174). validate.ps1
+  # already counted inside its filtered loop, so this also closes the twin divergence.
   [[ "$spec_file_count" -gt 0 ]] && record_result PASS "all docs/specs/ files have valid status frontmatter"
 fi
 

@@ -93,6 +93,41 @@ jobs:
           chmod +x .agentcortex/bin/validate.sh
           .agentcortex/bin/validate.sh
 
+      - name: Validator twin parity (backlog #174)
+        # Deliberately in THIS job. validate.ps1 otherwise runs only in "Framework
+        # Validation (Windows)", which is not a required status check -- so today the
+        # PowerShell validator is gated by nothing, and a parity assertion placed in a
+        # Windows-only job would be equally unable to block a merge. A guard that cannot
+        # block is the shape this repo deletes, so the placement IS the check.
+        #
+        # Both runs use `|| true` on purpose: the step above already asserts validate.sh's
+        # exit code, and this step needs BOTH validators to finish so their tallies can be
+        # compared even when one fails. An absent or non-functional pwsh surfaces as a
+        # missing Summary line and fails loudly below rather than passing silently.
+        shell: bash
+        run: |
+          set -o pipefail
+          bash .agentcortex/bin/validate.sh > /tmp/v-sh.txt 2>&1 || true
+          pwsh -NoProfile -File .agentcortex/bin/validate.ps1 > /tmp/v-ps1.txt 2>&1 || true
+          sh_sum="$(grep -m1 '^Summary:' /tmp/v-sh.txt || true)"
+          ps_sum="$(grep -m1 '^Summary:' /tmp/v-ps1.txt || true)"
+          echo "validate.sh  -> ${sh_sum:-<no Summary line>}"
+          echo "validate.ps1 -> ${ps_sum:-<no Summary line>}"
+          if [ -z "$sh_sum" ] || [ -z "$ps_sum" ]; then
+            echo "::error::A validator produced no Summary line - it did not run to completion."
+            echo "--- last 20 lines of validate.ps1 output ---"
+            tail -20 /tmp/v-ps1.txt || true
+            exit 1
+          fi
+          if [ "$sh_sum" != "$ps_sum" ]; then
+            echo "::error::validate.sh and validate.ps1 disagree on the same tree."
+            echo "Diff the two result-line sets to find the divergent check - per the"
+            echo "[paired-check-parity] lesson, a count delta is never a known quirk."
+            diff <(grep -E '^\[(PASS|WARN|FAIL|SKIP)\]' /tmp/v-sh.txt | sort) \
+                 <(grep -E '^\[(PASS|WARN|FAIL|SKIP)\]' /tmp/v-ps1.txt | sort) || true
+            exit 1
+          fi
+
   validate-python39:
     name: Framework Validation (Python 3.9)
     runs-on: ubuntu-latest
