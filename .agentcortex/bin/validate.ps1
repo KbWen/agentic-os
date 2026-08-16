@@ -2425,7 +2425,10 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
         # which the backlog header defines as Pending / In Progress. Deliberately a
         # separate row set from $pendingRows — L-1/L-3/L-3b are Pending-only on both
         # sides and must stay that way.
-        $activeRows = @($backlogLines | Where-Object { $_ -match '\| (Pending|In Progress) \|' })
+        # -cmatch, not -match: PowerShell's -match is case-INSENSITIVE by default while
+        # grep -E is case-sensitive, which would itself be a twin divergence (a `| pending |`
+        # row would enter this set and not sh's). Padding is tolerant on both sides.
+        $activeRows = @($backlogLines | Where-Object { $_ -cmatch '\|\s*(Pending|In Progress)\s*\|' })
         $distinctLabels = @($activeRows | ForEach-Object {
             $cols = $_ -split '\|'
             if ($cols.Count -gt 4) {

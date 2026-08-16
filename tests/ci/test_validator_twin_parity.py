@@ -4,18 +4,26 @@ Three places where `validate.sh` and `validate.ps1` reported different things ab
 same tree: the backlog row set the label-vocabulary check reads, the ruler used for
 archive size, and a PASS gated on a bare glob that counted placeholder files.
 
-**Why these are source-text assertions and not a behavioural comparison.** The obvious
-guard -- run both validators in CI and diff their tallies -- cannot be built here.
-`validate.ps1` is the native Windows validator: `Normalize-PathString` rewrites `/` to
-backslash unconditionally, so under Linux `pwsh` it mis-resolves `$root`. This repo
-already knows that and tests around it (`test_validator_false_positives.py`
-`requires_windows`, whose skip reason says the Linux CI job must NOT execute the native
-PS validator), and that same reason names structural tests as the cross-platform
-regression guard. So these follow the established `test_*_parity` style in that module.
+**Why source-text assertions.** A behavioural tally comparison already exists --
+`test_validator_false_positives.py::test_validator_count_parity_on_framework` runs both
+validators and asserts identical pass/warn/fail. What cannot be built is a *Linux* one:
+`validate.ps1` is the native Windows validator and `Normalize-PathString` rewrites `/`
+to backslash unconditionally, so under Linux `pwsh` it mis-resolves `$root`. That module's
+`requires_windows` skip reason says outright that the Linux CI job must NOT execute the
+native PS validator, and names structural tests as the cross-platform guard -- which is
+the style these follow.
 
-**Honest ceiling**: `CI Structural Tests` is not a branch-protection-required context,
-so these fail visibly on a PR but do not block a merge. Making them blocking is a repo
-settings change, not something this file can do.
+**What is still missing, recorded rather than glossed.** The existing behavioural test
+runs against the framework repo, so it could not have caught defect (c): the vacuous PASS
+only appears on a tree whose `docs/specs/` holds meta files and no governed spec. Backlog
+#174's prescribed "dominating substitute" was tally parity **on a fixture tree**, and that
+is not built here -- these guards pin the shape of today's fix, not tomorrow's divergence.
+The fixture-tree variant stays open on the row.
+
+**Honest ceiling**: `CI Structural Tests`, `Pytest (Windows)` and `Framework Validation
+(Windows)` are all non-required contexts, so no parity guard -- these or the behavioural
+one -- can block a merge today. Making one blocking is a branch-protection setting, not
+something this file can reach.
 """
 
 from __future__ import annotations
@@ -91,8 +99,10 @@ def test_label_vocabulary_reads_the_same_anchored_active_row_set() -> None:
     part of the vocabulary being watched) and anchors both alternatives.
     """
     sh_assign = _line_starting(_sh(), "distinct_labels=$(grep")
-    assert r"grep -E '\| (Pending|In Progress) \|'" in sh_assign, (
-        "validate.sh label check must read anchored active rows"
+    assert r"grep -E '\|[[:space:]]*(Pending|In Progress)[[:space:]]*\|'" in sh_assign, (
+        "validate.sh label check must read whole-cell active rows with tolerant padding; "
+        "a rigid single-space anchor selects zero rows on a column-aligned backlog and the "
+        "ladder then emits nothing at all"
     )
     assert r"| Pending\|In Progress" not in sh_assign, (
         "the unanchored alternation is back: its second branch has no leading pipe-space, "
@@ -100,8 +110,13 @@ def test_label_vocabulary_reads_the_same_anchored_active_row_set() -> None:
     )
 
     ps_assign = _line_starting(_ps1(), "$activeRows =")
-    assert r"'\| (Pending|In Progress) \|'" in ps_assign, (
-        "validate.ps1 must build the same anchored active row set for the label check"
+    assert r"'\|\s*(Pending|In Progress)\s*\|'" in ps_assign, (
+        "validate.ps1 must build the same tolerant whole-cell active row set"
+    )
+    assert "-cmatch" in ps_assign, (
+        "must be -cmatch: PowerShell's -match is case-insensitive while grep -E is not, "
+        "so a `| pending |` row would enter ps1's set and not sh's — a twin divergence "
+        "introduced by the change that closes twin divergences"
     )
 
 

@@ -2557,7 +2557,12 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     fi
 
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
-    # ACTIVE rows = Pending OR In Progress, both fully anchored between column pipes.
+    # ACTIVE rows = Pending OR In Progress, anchored as a whole cell between column
+    # pipes with TOLERANT padding — `[[:space:]]*`, matching the sibling status-enum
+    # check below rather than demanding exactly one space. A rigid ` X ` anchor selects
+    # zero rows on a column-aligned backlog (what most markdown formatters emit), and
+    # this ladder then emits nothing at all: the same "check ran and said nothing"
+    # defect the governed-spec SKIP above exists to prevent.
     # The backlog's own header defines active work as Pending / In Progress, and an
     # In-Progress row's labels are part of the active vocabulary this check exists to
     # watch, so the row set stays wide. What was actually broken (#174) is that the old
@@ -2565,7 +2570,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     # matched those words anywhere in a row — a Notes cell counted as a match. The
     # anchored form fixes that without narrowing coverage, and validate.ps1 uses the
     # same row set for this one check (its $pendingRows stays Pending-only for L-1/L-3).
-    distinct_labels=$(grep -E '\| (Pending|In Progress) \|' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
+    distinct_labels=$(grep -E '\|[[:space:]]*(Pending|In Progress)[[:space:]]*\|' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
     distinct_labels=${distinct_labels:-0}
     if [[ "$distinct_labels" -gt 15 ]]; then
       record_result WARN "backlog label vocabulary: ${distinct_labels} distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"
@@ -2843,6 +2848,9 @@ else
   # #149) records that a check emitting NOTHING while the summary still prints "integrity
   # check passed" IS the defect. An adopter who has run /spec-intake but written no spec
   # yet should see that this check found nothing to check, not nothing at all.
+  # Precision on the original bug, since an earlier note here overstated it: bash `*.md`
+  # never matches a dotfile without `dotglob`, so the old re-glob could NOT have counted
+  # `.gitkeep.md`. The `_*` meta files alone were the whole defect.
   record_result SKIP "docs/specs/ status frontmatter -- no governed specs present (meta/_* and .gitkeep.md excluded)"
 fi
 
