@@ -1231,8 +1231,8 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   ARCHIVE_DIR="$ROOT/.agentcortex/context/archive"
   if [[ -d "$ARCHIVE_DIR" ]] && [[ "$ARCHIVE_SIZE_WARN_KB" -gt 0 ]]; then
     # Logical bytes, not disk-allocated. `du -sk` counts allocated blocks, so it read
-    # ~27% high here (2274KB vs 1786KB over 179 files) and disagreed with validate.ps1,
-    # which sums file lengths (#174). Logical size is also the right measure: this
+    # ~27% high (measured 2026-08-16: 2326KB vs 1835KB over 181 files) and disagreed with
+    # validate.ps1, which sums file lengths (#174). Logical size is the right measure:
     # threshold is a proxy for ingestion cost, and block rounding is not even stable
     # across filesystems for identical content. `du --apparent-size` is GNU-only and
     # would break macOS/BSD adopters, so sum via ls (portable, one exec for the batch).
@@ -2558,8 +2558,10 @@ if [[ -f "$BACKLOG_FILE" ]]; then
 
     # L-2: label vocabulary drift — warn if distinct label count exceeds max_distinct_labels (default 15)
     # ACTIVE rows = Pending OR In Progress, anchored as a whole cell between column
-    # pipes with TOLERANT padding — `[[:space:]]*`, matching the sibling status-enum
-    # check below rather than demanding exactly one space. A rigid ` X ` anchor selects
+    # pipes with TOLERANT padding — a literal space and a literal TAB — rather than
+    # demanding exactly one space. (Deliberately NOT `[[:space:]]`: POSIX and .NET
+    # whitespace shorthands disagree on Unicode blanks, so the twins would diverge on
+    # an NBSP-padded backlog. tests/ci/test_validator_twin_parity.py pins this.) A rigid ` X ` anchor selects
     # rows whose padding is wider than one space — on a column-aligned backlog it keeps
     # only the rows whose status happens to be the widest value, so the count is
     # silently PARTIAL and still reported as a PASS. (An earlier note here said it
@@ -2571,7 +2573,7 @@ if [[ -f "$BACKLOG_FILE" ]]; then
     # matched those words anywhere in a row — a Notes cell counted as a match. The
     # anchored form fixes that without narrowing coverage, and validate.ps1 uses the
     # same row set for this one check (its $pendingRows stays Pending-only for L-1/L-3).
-    distinct_labels=$(grep -E '\|[ 	]*(Pending|In Progress)[ 	]*\|' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]')
+    distinct_labels=$(grep -E '\|[ 	]*(Pending|In Progress)[ 	]*\|' "$BACKLOG_FILE" 2>/dev/null | awk -F'|' '{print $5}' | tr ',' '\n' | sed 's/[[:space:]]//g' | grep -v '^—$' | grep -v '^$' | sort -u | wc -l | tr -d '[:space:]' || true)
     distinct_labels=${distinct_labels:-0}
     if [[ "$distinct_labels" -gt 15 ]]; then
       record_result WARN "backlog label vocabulary: ${distinct_labels} distinct labels (>15) — possible drift across sessions; review and consolidate via /spec-intake"

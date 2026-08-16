@@ -143,6 +143,32 @@ def test_label_vocabulary_reads_the_same_anchored_active_row_set() -> None:
     )
 
 
+def test_label_check_survives_a_backlog_with_no_active_rows() -> None:
+    """The label selector must not abort the whole validator when it matches nothing.
+
+    `validate.sh` runs under `set -euo pipefail`, and this assignment's pipeline ends in
+    filters (`grep -v`) that legitimately empty out. On a backlog whose rows are all
+    Shipped -- an adopter who has just closed their last item -- the pipeline returns 1,
+    the assignment fails, and errexit kills the run: no label line, no `Summary:`, every
+    later check silently never executed, exit 1 with nothing explaining why.
+
+    Measured pre-existing: the same abort reproduces on the base commit's unanchored
+    pattern, so this is a latent bug rather than one the anchoring introduced -- but the
+    anchoring touches this exact line, and `validate.ps1` does NOT abort in the same
+    state (an empty `$activeRows` just yields 0), so leaving it would be a twin
+    divergence in exit code, which is the worst kind.
+
+    Its four siblings in the same block are already protected -- `total_pending` and
+    `p0_pending` by `|| echo 0`, `kind_variety` and `kind_assigned` by count gates that
+    only run when rows exist. This one runs unconditionally.
+    """
+    line = _line_starting(_sh(), "distinct_labels=$(grep")
+    assert "|| true" in line or "|| echo 0" in line, (
+        "the label-selector assignment is unguarded: under set -euo pipefail a backlog "
+        "with no active rows aborts the entire validator mid-run"
+    )
+
+
 def test_label_check_row_set_is_separate_from_the_pending_only_siblings() -> None:
     """Widening the label check must NOT widen L-1/L-3/L-3b.
 
