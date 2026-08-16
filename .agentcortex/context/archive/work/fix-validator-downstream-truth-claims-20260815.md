@@ -400,3 +400,27 @@ rather than the fix itself — the comment had claimed otherwise.
   never has been", still counts it among 7 absent tools, and still prescribes the allowlist D-1
   rejects. Bootstrap flipped only the status column; the body needs the factual correction.
 
+
+---
+
+## Test phase — full results and adversarial cases
+
+`pytest tests/ci/ tests/guard/ .agentcortex/tests/` (no `-m` filter; R4) → **890 passed,
+1 skipped, 0 failed** in 40m50s, exit 0. Baseline at `f5a161c` was 884+1; the delta is the 6
+tests added here. The skip is `test_deploy_tiering.py:474`, an environment-conditional
+bare-bash hazard test unrelated to this change.
+
+**Lite adversarial (hotfix tier), on a real deploy — 2 cases:**
+- **A1 — does the disclosed blind spot behave exactly as disclosed, or worse?** Deleting a
+  whitelisted tool whose call site guards on the tool's own presence
+  (`generate_safety_nucleus.py`) prints `[SKIP] safety nucleus freshness -- generator not
+  deployed (safe to ignore)` and an **unqualified pass**: a reassuring string over a genuinely
+  broken install. Real, and now stated in the workflow rather than implied.
+  **This case also corrected my own comment for the third time** — `run_governance_eval.py`,
+  which I had listed alongside it, is gated by an outer capability file that is not deployed, so
+  downstream the block never runs and its absence is genuinely irrelevant. The comment now
+  describes the *shape* instead of enumerating members, because I got the membership wrong twice.
+- **A2 — does the counter report the right number, or merely non-zero?** Removing two unguarded
+  whitelisted tools → `passed (reduced assurance: **2** referenced tool(s) absent -- those checks
+  did not run)`, `skip=9`. Correct count, not a boolean dressed as one.
+

@@ -235,13 +235,19 @@ jobs:
           # this catches only checks invoked through run_python_check WITHOUT a native
           # presence guard. It could NOT have caught backlog #173 -- the audit-chain check
           # sits behind [[ -f INDEX.jsonl ]], and a fresh target ships no archive, so it
-          # never runs and never prints. The same blind spot covers every whitelisted tool
-          # whose call site is natively guarded -- today three: validate_downstream_capabilities.py,
-          # generate_safety_nucleus.py, run_governance_eval.py. Delete any and this job stays green.
-          # That gap is present-day, not hypothetical. Closing it needs an expected-tool
-          # list, deliberately rejected (Work Log D-1); the deployed FILE SET is instead
-          # pinned by tests/ci/fixtures/deploy_manifest_golden.txt, which is a strictly
-          # stronger check for absence-from-deploy and already covers check_audit_chain.py.
+          # never runs and never prints. The same blind spot covers any whitelisted tool
+          # whose call site guards on the TOOL'S OWN presence and emits its own reassuring
+          # SKIP -- deleting it leaves this job green with an unqualified pass. Verified
+          # today on a real deploy with generate_safety_nucleus.py: removing it prints
+          # "generator not deployed (safe to ignore)" over a genuinely broken install.
+          # (A call site guarded on a capability FILE that is not deployed -- the eval
+          # runner, the capabilities validator -- is a different and harmless case: the
+          # block never executes downstream, so the tool's absence changes nothing.)
+          # The shape, not a list: an enumeration here rots, and two earlier drafts of
+          # this comment got the membership wrong. Closing the gap properly needs an
+          # expected-tool list, deliberately rejected (Work Log D-1); the deployed FILE
+          # SET is instead pinned by tests/ci/fixtures/deploy_manifest_golden.txt, a
+          # strictly stronger check for absence-from-deploy.
           if grep -qE '^\[SKIP\] .* -- tool not present$' /tmp/downstream-validate.txt; then
             echo "::error::Deployed validator reports an unexplained absent tool:"
             grep -E '^\[SKIP\] .* -- tool not present$' /tmp/downstream-validate.txt
