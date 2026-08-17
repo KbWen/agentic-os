@@ -1166,7 +1166,11 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         # explicit array materialization so empty archives report 0 KB cleanly.
         $archiveFiles = @(Get-ChildItem -Path $archiveDir -Recurse -File -ErrorAction SilentlyContinue)
         if ($archiveFiles.Count -gt 0) {
-            $archiveKb = [int](($archiveFiles | Measure-Object -Property Length -Sum).Sum / 1024)
+            # Floor, not [int]. awk's int() in validate.sh truncates while [int] rounds —
+            # and rounds half-to-even at that — so the twins reported different KB for the
+            # same bytes and could straddle the threshold in a ~0.5KB band (#174). Both
+            # sides now floor, which makes the figures identical rather than merely close.
+            $archiveKb = [int][math]::Floor((($archiveFiles | Measure-Object -Property Length -Sum).Sum / 1024))
         }
         else {
             $archiveKb = 0
@@ -2372,7 +2376,7 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
     if ($missingCols.Count -eq 0) {
         Add-Result -Level 'PASS' -Message 'backlog schema: Kind/Labels/Priority columns present'
 
-        $pendingRows = @($backlogLines | Where-Object { $_ -match '\| Pending' })
+        $pendingRows = @($backlogLines | Where-Object { $_ -cmatch '\| Pending' })
         $totalPending = $pendingRows.Count
 
         # L-1: P0 ratio lint — warn if >20% of pending items are P0
@@ -2417,7 +2421,15 @@ if (Test-Path -Path $backlogFile -PathType Leaf) {
         }
 
         # L-2: label vocabulary drift — warn if distinct label count exceeds 15
-        $distinctLabels = @($pendingRows | ForEach-Object {
+        # Parity with validate.sh (#174): the label-vocabulary check watches ACTIVE work,
+        # which the backlog header defines as Pending / In Progress. Deliberately a
+        # separate row set from $pendingRows — L-1/L-3/L-3b are Pending-only on both
+        # sides and must stay that way.
+        # -cmatch, not -match: PowerShell's -match is case-INSENSITIVE by default while
+        # grep -E is case-sensitive, which would itself be a twin divergence (a `| pending |`
+        # row would enter this set and not sh's). Padding is tolerant on both sides.
+        $activeRows = @($backlogLines | Where-Object { $_ -cmatch '\|[ 	]*(Pending|In Progress)[ 	]*\|' })
+        $distinctLabels = @($activeRows | ForEach-Object {
             $cols = $_ -split '\|'
             if ($cols.Count -gt 4) {
                 $cols[4] -split ',' | ForEach-Object { $_.Trim() }
@@ -2666,6 +2678,11 @@ if ($specMissingFrontmatter -gt 0) {
     Add-Result -Level 'WARN' -Message "docs/specs/ files with unrecognized status value: $specBadStatus (valid: draft, frozen, shipped, cancelled, living)"
 } elseif ($specFileCount -gt 0) {
     Add-Result -Level 'PASS' -Message 'all docs/specs/ files have valid status frontmatter'
+} else {
+    # SKIP, not silence, when there are no governed specs (#174 / parity with validate.sh).
+    # Ratchet justification #7 (backlog #149) records that a check emitting NOTHING while
+    # the summary still prints "integrity check passed" IS the defect.
+    Add-Result -Level 'SKIP' -Message 'docs/specs/ status frontmatter -- no governed specs present (meta/_* and .gitkeep.md excluded)'
 }
 
 # ACX phase shim skill-existence check (parity with validate.sh)
