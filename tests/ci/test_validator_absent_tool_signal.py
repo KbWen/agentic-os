@@ -40,7 +40,7 @@ def _read(p: Path) -> str:
 def _deployed_tool_names() -> set[str]:
     """Every basename deploy.sh ships from .agentcortex/tools/, from BOTH whitelist sites.
 
-    AC-S5 of the frozen downstream-adaptability-optimization spec requires a tool to appear
+    AC-S5 of the shipped downstream-adaptability-optimization spec requires a tool to appear
     in both the dry-run string and the real array; reading both here means a one-spot edit
     cannot make this test pass by accident.
     """

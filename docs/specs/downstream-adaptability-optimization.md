@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 title: Downstream Adaptability Optimization
 source: internal
 classification: architecture-change
