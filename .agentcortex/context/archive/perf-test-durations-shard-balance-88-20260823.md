@@ -182,7 +182,7 @@ Scaled by the 1.94× box↔runner factor the prediction was ≈ **10.1 min**.
 | worst | **21m57s** | — | **13m7s** |
 | worst share of total | 74% | 34% | **45%** (ideal 33.3%) |
 
-Real improvement **1.67×**, not the predicted 2.2×. The §Known Risk caveat — durations generated on a workstation, not `windows-latest` — is **confirmed by measurement**: the runner weights many-small-tests relatively higher, so the 640-test shard became the slowest rather than the fastest. Follow-up recorded on backlog #88: regenerate durations on the runner (`workflow_dispatch` + `--store-durations` + artifact) to approach the 9.6-min ideal. Owner accepted the 1.67× now and deferred the optimisation.
+Real improvement **1.67× (first run)** and **1.93× (post-rebase re-run: 6m56s / 6m43s / 11m24s)** — quoted as a **range**, because two runs of the same tree differed by ~13% and picking the better number would be a claim the data does not support. Either way the predicted 2.2× was not reached. The §Known Risk caveat — durations generated on a workstation, not `windows-latest` — is **confirmed by measurement**: the runner weights many-small-tests relatively higher, so the 640-test shard became the slowest rather than the fastest. Follow-up recorded on backlog #88: regenerate durations on the runner (`workflow_dispatch` + `--store-durations` + artifact) to approach the 9.6-min ideal. Owner accepted the 1.67× now and deferred the optimisation.
 
 `least_duration` measured at 19.1/19.1/19.1 — better, rejected for cross-group reordering risk.
 
