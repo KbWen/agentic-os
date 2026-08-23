@@ -226,6 +226,24 @@ original classification in `## Drift Log`, since the receipt grammar is pipe-fie
 
 ---
 
+## 15. A red secret scan is often an ordinary identifier, and a rename will not clear it
+
+TruffleHog's Lob detector matches a word boundary, `live` or `test`, an underscore, then
+**exactly 35** characters from `[a-zA-Z0-9_]` — underscores count, so a plain snake_case
+name of the right length satisfies it. Its verifier then returns **verified**, which is why
+`--only-verified` never bounded this class. It has cost two sessions: PR #402 (the test
+enforcing the secret-scanner pin was blocked by the secret scanner) and PR #419 (a committed
+pytest durations file of 897 node ids).
+
+`--exclude-detectors=lob` is now set in `security.yml`, so new cases should not appear. Two
+facts still matter if you meet one on an older branch:
+
+- The action walks **each commit's diff across the range**, not the net endpoint diff. A
+  follow-up rename does not clear the finding, and neither does add-then-remove. Only
+  removing the introducing commit from the range does — in practice, squash.
+- Commit **messages** are in scope too. Describing the incident can re-instantiate the
+  pattern in the very commit that documents it; write the shape in prose, never an instance.
+
 ## Adding to this file
 
 An entry earns its place when it cost a real session and is specific to this repo. If the

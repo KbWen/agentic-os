@@ -198,6 +198,41 @@ class TestTruffleHogJob(unittest.TestCase):
         self.assertIn("--only-verified", extra_args,
                       "TruffleHog must use --only-verified in extra_args")
 
+    def test_detector_exclusions_stay_scoped_to_lob(self):
+        """#171: the ONLY detector this repo may drop is Lob, and dropping it must
+        not become a habit.
+
+        The narrowing exists because Lob's key pattern matches ordinary snake_case
+        identifiers and its verifier returns verified, so `--only-verified` does not
+        bound it (PR #402, PR #419). Every other detector is load-bearing. Without
+        this test, a future "just exclude one more" edit is invisible in review.
+        """
+        th_steps = [
+            s for s in (self.job.get("steps") or [])
+            if "trufflehog" in str(s.get("uses", "")).lower()
+        ]
+        self.assertTrue(th_steps, "No TruffleHog action step found")
+        extra_args = (th_steps[0].get("with") or {}).get("extra_args", "")
+
+        excluded = []
+        for token in extra_args.split():
+            if token.startswith("--exclude-detectors="):
+                excluded.extend(
+                    d.strip().lower()
+                    for d in token.split("=", 1)[1].split(",")
+                    if d.strip()
+                )
+        self.assertLessEqual(
+            set(excluded), {"lob"},
+            f"Only the Lob detector may be excluded (backlog #171); found {excluded}. "
+            "Excluding another detector needs its own decision and its own row.",
+        )
+        # And the exclusion must not have been used to drop --only-verified.
+        self.assertIn(
+            "--only-verified", extra_args,
+            "--only-verified must remain even with a detector exclusion in place",
+        )
+
     def test_ac3_checkout_full_depth(self):
         # NOTE (#166): this asserts full history is FETCHED, which the wrapper
         # needs so `--since-commit <base>` can resolve. It does NOT assert that
