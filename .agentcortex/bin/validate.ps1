@@ -6,6 +6,14 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# (#175) Non-UTF8 Windows consoles (e.g. cp950/Big5) render this file's `§` and `—`
+# as mojibake. [Console]::OutputEncoding is PROCESS-GLOBAL and this script runs in the
+# caller's live session, so it is saved here and restored in the matching `finally` at
+# the end of the file -- never set-and-leave, which would mutate console state after exit.
+$acxPreviousOutputEncoding = [Console]::OutputEncoding
+try {
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+
 function Normalize-PathString {
     param([Parameter(Mandatory = $true)][string]$Path)
     # Strip Windows long-path prefix (\\?\) before any further normalization.
@@ -2837,4 +2845,11 @@ if (-not $script:PythonCommand) {
     Write-Output "Agentic OS integrity check passed (reduced assurance: $($script:ToolAbsentUnexpected) referenced tool(s) absent -- those checks did not run)"
 } else {
     Write-Output 'Agentic OS integrity check passed'
+}
+
+}
+finally {
+    # (#175) Hand the caller's console state back exactly as found. Runs on the `exit 1`
+    # path above as well -- PowerShell executes `finally` on exit and preserves the code.
+    [Console]::OutputEncoding = $acxPreviousOutputEncoding
 }
