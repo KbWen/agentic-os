@@ -115,7 +115,17 @@ jobs:
         with:
           image: ghcr.io/trufflesecurity/trufflehog@sha256
           version: "aa821cf4ace8861c7d096d83818cdf7bb9719028a52d37a52eaad44086a52577"
-          extra_args: --only-verified
+          # --exclude-detectors=lob (backlog #171): the Lob detector matches a word
+          # boundary, `live` or `test`, an underscore, then EXACTLY 35 characters from
+          # [a-zA-Z0-9_] -- underscores included -- so an ordinary snake_case identifier
+          # satisfies it, and its verifier returns VERIFIED. `--only-verified` therefore
+          # does NOT bound this class: demonstrated on PR #402 (the test enforcing the
+          # scanner pin was blocked by the scanner) and again on PR #419, where a
+          # committed pytest durations file of 897 node ids failed the job outright.
+          # Scope of the narrowing: ONE detector, for a service this repo has no
+          # integration with. Every other detector still runs, and the `credential-scan`
+          # job below plus the pre-commit credential floor remain as separate layers.
+          extra_args: --only-verified --exclude-detectors=lob
 
   credential-scan:
     name: Credential Pattern Scan (PR diff)
