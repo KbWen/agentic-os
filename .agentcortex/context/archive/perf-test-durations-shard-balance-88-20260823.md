@@ -170,7 +170,19 @@ none
 | 3 | 4m14s | 18.2 min (640 tests) |
 | worst shard as % of total work | **74%** | **34%** (ideal 33.3%) |
 
-Scaled by the 1.94× box↔runner factor: worst shard ≈ **10.1 min**, from 21m57s.
+Scaled by the 1.94× box↔runner factor the prediction was ≈ **10.1 min**.
+
+### MEASURED on PR #419 — the prediction was optimistic
+
+| shard | before (#417) | predicted | **actual (#419)** |
+|---|---|---|---|
+| 1 | 21m57s | 19.6 min | **7m18s** |
+| 2 | 3m19s | 19.5 min | **8m28s** |
+| 3 | 4m14s | 18.2 min | **13m7s** |
+| worst | **21m57s** | — | **13m7s** |
+| worst share of total | 74% | 34% | **45%** (ideal 33.3%) |
+
+Real improvement **1.67×**, not the predicted 2.2×. The §Known Risk caveat — durations generated on a workstation, not `windows-latest` — is **confirmed by measurement**: the runner weights many-small-tests relatively higher, so the 640-test shard became the slowest rather than the fastest. Follow-up recorded on backlog #88: regenerate durations on the runner (`workflow_dispatch` + `--store-durations` + artifact) to approach the 9.6-min ideal. Owner accepted the 1.67× now and deferred the optimisation.
 
 `least_duration` measured at 19.1/19.1/19.1 — better, rejected for cross-group reordering risk.
 
