@@ -329,7 +329,14 @@ jobs:
 
       # Windows previously ran only validate.ps1 — cross-platform pytest
       # regressions (CRLF, path separators, cp1252) went uncaught. (#163)
-      # --splits/--group: even count-split with no committed .test_durations file.
+      # --splits/--group: balanced by the committed .test_durations (#88). Without it
+      # pytest-split falls back to an even COUNT split, which clustered every
+      # subprocess-shelling deploy test onto one shard — measured on PR #417 as
+      # 21m57s / 3m19s / 4m14s. Unknown test ids (added since the file was generated)
+      # degrade to count-splitting, so drift is graceful, not breaking. Regenerate with:
+      #   pytest tests/ci/ tests/guard/ .agentcortex/tests/ -q --store-durations
+      # on Windows — the file's value is the RELATIVE weights, and the dominant cost
+      # (subprocess spawn) is platform-shaped.
       - name: Run test suite on Windows (shard ${{ matrix.group }}/3)
         run: python -m pytest tests/ci/ tests/guard/ .agentcortex/tests/ --splits 3 --group ${{ matrix.group }} -q
 
