@@ -9,23 +9,47 @@ This guide allows users or assigned AI agents to verify if **Agentic OS** succes
 
 ## 🧪 Test 1: Invisible Assistant Check (.gitignore Automation)
 
-**Goal**: Ensure that AI system files (`.agent/`, `.agentcortex/context/`, etc.) do not pollute your Git repository.
+**Goal**: Ensure your **session-local runtime state** stays out of Git while the **persistent governance record** stays in it. Both halves matter: the first keeps per-session noise out of your history, the second is what lets your team review the AI's decisions in a diff.
 
 **Execution Steps**:
 
-1. Open your terminal.
-2. Run the following commands (this automatically creates a test folder and deploys):
+1. Open your terminal at the root of any tree that has Agentic OS deployed — the framework repo itself, or your own project.
+2. Run the following (creates a throwaway project beside it and deploys into that):
 
    ```bash
-   mkdir -p test-ai-brain && cd test-ai-brain
+   ACX_HOME="$(pwd)"
+   mkdir -p ../acx-audit-test && cd ../acx-audit-test
    git init
-   bash ../installers/deploy_brain.sh ./ --force
-   git status
+   bash "$ACX_HOME/.agentcortex/bin/deploy.sh" .
+   git status --short
    ```
 
+   Use the canonical `deploy.sh`, not `installers/deploy_brain.sh`. In an already-installed project the wrapper takes its update path: it fetches from the remote, writes an `.agentcortex-src/` cache into the project you are standing in, and then audits *that* version rather than the one you have. `deploy.sh` needs no network and deploys the copy already on disk.
+
 3. **Expected Results**:
-   - `git status` **does not** show `.agent/`, `.agents/`, `.antigravity/`, or `.agentcortex/context/`.
-   - Check `cat .gitignore`; you will see the `# Agentic OS Template - Downstream Ignore Defaults` block has been automatically added to the bottom.
+   - `cat .gitignore` now ends with an automatically added `# Agentic OS Template - Downstream Ignore Defaults` block.
+   - The framework files themselves **do** appear in `git status`. `.agent/`, `.agents/`, `.antigravity/`, `AGENTS.md`, and `.agentcortex/context/current_state.md` are meant to be committed — governance you cannot review in a diff is not governance.
+   - What the block hides is session-local state. Check that mechanically rather than by eye:
+
+     ```bash
+     for p in \
+       .agentcortex/context/work/my-task.md \
+       .agentcortex/context/work/my-task.lock.json \
+       .agentcortex/context/private/x.md \
+       .agent/private/x.md \
+       .agentcortex-src/x \
+       anything.acx-incoming \
+       .claude/settings.local.json
+     do
+       git check-ignore -q "$p" && echo "ignored (correct): $p" || echo "NOT ignored (bug): $p"
+     done
+     ```
+
+     All seven lines must read `ignored (correct)`.
+4. Clean up. Delete by absolute path so a failed `cd` cannot point the removal somewhere else:
+   `TESTDIR="$(pwd)" && cd .. && rm -rf "$TESTDIR"`
+
+> **The standing guarantee is a check, not this page.** `validate.sh` / `validate.ps1` use `git check-ignore` to assert that the persistent artifacts (`current_state.md`, `context/archive/`, `specs/`, `adr/`) are *not* ignored, and fail with `.gitignore blocks persistent SSoT artifacts` naming the offending `<ignore source>:<line>` -- which may be `.gitignore`, `.git/info/exclude`, or a global excludes file. Run the validator for the guarantee; this page is the guided walk-through. An earlier revision of this test asserted the opposite of what the ignore block actually does, and nothing caught it — because no mechanism was bound to the claim.
 
 ---
 

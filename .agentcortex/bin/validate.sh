@@ -2326,28 +2326,94 @@ PYEOF
   fi
 fi
 
-GITIGNORE="$ROOT/.gitignore"
-if [[ -f "$GITIGNORE" ]]; then
-  gitignore_errors=0
-  for must_track in \
-    '.agentcortex/context/current_state.md' \
-    '.agentcortex/context/archive/' \
-    '.agentcortex/specs/' \
-    '.agentcortex/adr/' \
-    'docs/specs/' \
-    'docs/adr/'; do
-    if grep -x -F -q -- "$must_track" "$GITIGNORE"; then
-      printf '  .gitignore must NOT ignore persistent SSoT artifact: %s\n' "$must_track"
+# Persistent SSoT artifacts must stay visible to git. Ask git, not `.gitignore`:
+# a pattern like `docs/specs/*.md` or `.agentcortex/context/archive/*.md` ignores the
+# contents without ever naming the directory, so matching directory lines literally
+# reported a false PASS while the governance record silently stopped being committed
+# (reported by a downstream fork whose archive ignore had exactly that shape).
+#
+# Three flags carry the correctness here, each verified against real git behaviour:
+#   -q          the VERDICT. `-v` exits 0 whenever a pattern MATCHED, including a
+#               negation -- on `docs/adr/*` + `!docs/adr/*.md` (an ordinary idiom)
+#               `-v` exits 0 while `-q` exits 1, and git tracks the file fine. Reading
+#               `-v`'s status as "ignored" fails an adopter whose tree is correct and
+#               names the PROTECTIVE `!` line as the one to remove.
+#   --no-index  without it check-ignore skips TRACKED files, so the one real path here
+#               (`current_state.md`) is inert in every healthy deploy -- a .gitignore
+#               naming it outright would report clean.
+#   -v          message only, run once on the failing path to name source:line.
+#
+# The probes are REPRESENTATIVE, not exhaustive: they are synthetic filenames shaped
+# like each directory's real contents, so a pattern that matches real files but not the
+# probe (`archive/*-worklog.md`) still slips through, and a negation aimed at a narrower
+# name than the probe (`!docs/adr/ADR-2*.md`) can flag a tree that is fine. This catches
+# the whole-directory and whole-extension shapes, which is the class that bit downstream.
+#
+# Deliberately NOT gated on `.gitignore` existing: `.git/info/exclude` and a global
+# core.excludesFile hide files just as effectively, and the branch this replaced
+# claimed "no persistent SSoT artifacts are ignored" without checking anything.
+gitignore_probes=(
+  '.agentcortex/context/current_state.md'
+  '.agentcortex/context/archive/acx-ignore-probe-20260101.md'
+  '.agentcortex/specs/acx-ignore-probe.md'
+  '.agentcortex/adr/ADR-000-acx-ignore-probe.md'
+  'docs/specs/acx-ignore-probe.md'
+  'docs/adr/ADR-000-acx-ignore-probe.md'
+)
+gitignore_errors=0
+gitignore_unknown=0
+gitignore_report=()
+for probe in "${gitignore_probes[@]}"; do
+  set +e
+  git -C "$ROOT" check-ignore -q --no-index -- "$probe" 2>/dev/null
+  probe_status=$?
+  set -e
+  case "$probe_status" in
+    0)
       gitignore_errors=$((gitignore_errors + 1))
-    fi
-  done
-  if [[ "$gitignore_errors" -gt 0 ]]; then
-    record_result FAIL ".gitignore blocks persistent SSoT artifacts"
+      set +e
+      probe_source="$(git -C "$ROOT" check-ignore -v --no-index -- "$probe" 2>/dev/null)"
+      set -e
+      gitignore_report+=("  ${probe_source:-$probe}")
+      ;;
+    1) ;;
+    *) gitignore_unknown=$((gitignore_unknown + 1)) ;;
+  esac
+done
+# Re-label only, never re-decide. When EVERY probe is ignored and this tree sits
+# inside a larger repository, the cause is that outer repo hiding the whole
+# directory, and per-probe blame would name its `vendor/`-style rule as "the pattern
+# to remove" -- advice that breaks something load-bearing. This runs after the loop
+# and only when errors>0, so it can never turn a PASS into a FAIL.
+#
+# Deliberately NOT `check-ignore -- .`: a blank CRLF line in .gitignore is the
+# pattern "\r", which git strips to the empty string, and the empty pattern matches
+# the pathspec `.`. Every Git-for-Windows clone (core.autocrlf=true) would then be
+# reported as ignored-by-an-outer-repo on a perfectly healthy tree. Measured, not
+# theorised: `printf '\r\n' > .gitignore` makes that probe exit 0.
+gitignore_outer_prefix=""
+if [[ "$gitignore_errors" -eq "${#gitignore_probes[@]}" ]]; then
+  set +e
+  gitignore_outer_prefix="$(git -C "$ROOT" rev-parse --show-prefix 2>/dev/null)"
+  set -e
+fi
+if [[ "$gitignore_errors" -gt 0 ]]; then
+  printf '%s
+' "${gitignore_report[@]}"
+  if [[ -n "$gitignore_outer_prefix" ]]; then
+    gitignore_fail_message="persistent SSoT artifacts are untracked: every probe is ignored and this project sits at '${gitignore_outer_prefix}' inside a larger repository, so an outer rule (source:line above) is hiding the whole directory and no governance record here can be committed. Fix by running \`git init\` in this directory, or by un-ignoring this path in the outer repository -- do NOT delete that rule blindly, it is probably load-bearing there"
   else
-    record_result PASS ".gitignore preserves persistent SSoT artifacts"
+    gitignore_tail=""
+    if [[ "$gitignore_unknown" -gt 0 ]]; then
+      gitignore_tail="; ${gitignore_unknown} further probe(s) could not be resolved"
+    fi
+    gitignore_fail_message=".gitignore blocks persistent SSoT artifacts (${gitignore_errors}/${#gitignore_probes[@]} probes ignored; the ignore source:line shown above is the pattern to remove${gitignore_tail})"
   fi
+  record_result FAIL "$gitignore_fail_message"
+elif [[ "$gitignore_unknown" -gt 0 ]]; then
+  record_result SKIP "persistent SSoT artifacts vs .gitignore -- git check-ignore could not resolve ${gitignore_unknown}/${#gitignore_probes[@]} probes here (not a git work tree, or git unavailable); the check did NOT run"
 else
-  record_result PASS ".gitignore absent -- no persistent SSoT artifacts are ignored"
+  record_result PASS ".gitignore preserves persistent SSoT artifacts"
 fi
 
 # SSoT completeness checks — verify current_state.md indexes match disk reality
