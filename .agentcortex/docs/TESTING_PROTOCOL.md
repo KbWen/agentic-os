@@ -1,4 +1,4 @@
-# Testing Protocol v1.8.23
+# Testing Protocol v1.8.24
 
 > **This document guides the AI Agent to produce high-quality, trustworthy, and defensive test code.**
 
