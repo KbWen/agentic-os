@@ -9,23 +9,47 @@
 
 ## 🧪 測試 1：隱形助手檢查 (.gitignore 自動化)
 
-**目標**：確保 AI 的系統檔案（`.agent/`, `.agentcortex/context/` 等）不會污染您的 Git 倉庫。
+**目標**：確保【屬於單次對話的執行時狀態】不進版控，而【需要長期保存的治理紀錄】確實進版控。兩半都重要：前者避免每次 session 的雜訊污染 git 歷史，後者才能讓你的團隊在 diff 裡審閱 AI 做過的決定。
 
 **執行步驟**：
 
-1. 開啟您的終端機。
-2. 執行以下指令（這會自動建立一個測試資料夾並部署）：
+1. 在任何已部署 Agentic OS 的樹的根目錄開啟終端機 —— 框架 repo 本身，或你自己的專案都可以。
+2. 執行以下指令（會在它旁邊建一個丟棄式專案並部署進去）：
 
    ```bash
-   mkdir -p test-ai-brain && cd test-ai-brain
+   ACX_HOME="$(pwd)"
+   mkdir -p ../acx-audit-test && cd ../acx-audit-test
    git init
-   bash ../installers/deploy_brain.sh ./ --force
-   git status
+   bash "$ACX_HOME/.agentcortex/bin/deploy.sh" .
+   git status --short
    ```
 
+   請用正規的 `deploy.sh`，**不要**用 `installers/deploy_brain.sh`。在已安裝的專案裡，那支 wrapper 會走更新路徑：從遠端抓取、在你當下所在的專案裡寫一個 `.agentcortex-src/` 快取，然後稽核的是**那個**版本而不是你手上這個。`deploy.sh` 不需要網路，部署的就是磁碟上這份。
+
 3. **預期結果**：
-   - 您的 `git status` 裡面**不會**出現 `.agent/`、`.agents/`、`.antigravity/` 或是 `.agentcortex/context/`。
-   - 檢查 `cat .gitignore`，您會看到文件最下方已經自動加上了 `# Agentic OS Template - Downstream Ignore Defaults` 區塊。
+   - `cat .gitignore` 最下方會多出一塊自動加入的 `# Agentic OS Template - Downstream Ignore Defaults`。
+   - 框架檔案本身**會**出現在 `git status` 裡。`.agent/`、`.agents/`、`.antigravity/`、`AGENTS.md` 與 `.agentcortex/context/current_state.md` 本來就該進版控 —— 無法在 diff 裡被審閱的治理，不算治理。
+   - 這塊 ignore 真正藏起來的是 session 層的執行時狀態。請用機械方式驗證，不要用肉眼看：
+
+     ```bash
+     for p in \
+       .agentcortex/context/work/my-task.md \
+       .agentcortex/context/work/my-task.lock.json \
+       .agentcortex/context/private/x.md \
+       .agent/private/x.md \
+       .agentcortex-src/x \
+       anything.acx-incoming \
+       .claude/settings.local.json
+     do
+       git check-ignore -q "$p" && echo "ignored (correct): $p" || echo "NOT ignored (bug): $p"
+     done
+     ```
+
+     七行都必須是 `ignored (correct)`。
+4. 清理。用絕對路徑刪除，避免 `cd` 失敗時把刪除指到別的地方：
+   `TESTDIR="$(pwd)" && cd .. && rm -rf "$TESTDIR"`
+
+> **真正的保證是那個檢查，不是這頁文件。** `validate.sh` / `validate.ps1` 會用 `git check-ignore` 斷言長期保存的檔案（`current_state.md`、`context/archive/`、`specs/`、`adr/`）**沒有**被忽略，若被忽略則以 `.gitignore blocks persistent SSoT artifacts` 失敗並指名肇事的 `<ignore 來源>:<行號>`（可能是 `.gitignore`、`.git/info/exclude`，或 global excludes 檔）。要保證就跑 validator；這頁只是導覽。舊版本的測試 1 斷言的恰好是 ignore 區塊的反面，而沒有任何東西發現 —— 因為沒有機制綁住那個宣稱。
 
 ---
 

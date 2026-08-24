@@ -2193,32 +2193,72 @@ print(count)
     }
 }
 
-$gitignore = Join-NormalPath $root '.gitignore'
-if (Test-Path -Path $gitignore -PathType Leaf) {
-    $gitignoreContent = Get-Content -Path $gitignore
-    $gitignoreErrors = 0
-    foreach ($mustTrack in @(
-        '.agentcortex/context/current_state.md',
-        '.agentcortex/context/archive/',
-        '.agentcortex/specs/',
-        '.agentcortex/adr/',
-        'docs/specs/',
-        'docs/adr/'
-    )) {
-        if ($gitignoreContent -contains $mustTrack) {
-            Write-Output "  .gitignore must NOT ignore persistent SSoT artifact: $mustTrack"
-            $gitignoreErrors++
-        }
+# Persistent SSoT artifacts must stay visible to git -- see the matching block in
+# validate.sh for the full rationale. The three flags carry the correctness: `-q` for
+# the verdict (`-v` exits 0 on a NEGATION match too, which means NOT ignored),
+# `--no-index` so tracked files are not skipped, `-v` for the message only.
+# The probes are representative, not exhaustive.
+# PS7 can promote a native non-zero exit to a terminating error when a caller profile
+# sets this; pin it so an ordinary "not ignored" (exit 1) cannot land in the catch and
+# turn a real verdict into SKIP. Assigning it on Windows PowerShell 5.1 is inert.
+$PSNativeCommandUseErrorActionPreference = $false
+$gitignoreProbes = @(
+    '.agentcortex/context/current_state.md',
+    '.agentcortex/context/archive/acx-ignore-probe-20260101.md',
+    '.agentcortex/specs/acx-ignore-probe.md',
+    '.agentcortex/adr/ADR-000-acx-ignore-probe.md',
+    'docs/specs/acx-ignore-probe.md',
+    'docs/adr/ADR-000-acx-ignore-probe.md'
+)
+$gitignoreErrors = 0
+$gitignoreUnknown = 0
+$gitignoreReport = @()
+foreach ($probe in $gitignoreProbes) {
+    $probeStatus = 2
+    try {
+        & git -C $root check-ignore -q --no-index -- $probe 2>$null
+        $probeStatus = $LASTEXITCODE
     }
-    if ($gitignoreErrors -gt 0) {
-        Add-Result -Level 'FAIL' -Message '.gitignore blocks persistent SSoT artifacts'
+    catch {
+        $probeStatus = 2
     }
-    else {
-        Add-Result -Level 'PASS' -Message '.gitignore preserves persistent SSoT artifacts'
+    if ($probeStatus -eq 0) {
+        $gitignoreErrors++
+        $probeSource = $null
+        try { $probeSource = & git -C $root check-ignore -v --no-index -- $probe 2>$null } catch { $probeSource = $null }
+        if ($probeSource) { $gitignoreReport += "  $probeSource" } else { $gitignoreReport += "  $probe" }
+    }
+    elseif ($probeStatus -ne 1) {
+        $gitignoreUnknown++
     }
 }
+# Re-label only, never re-decide -- see the matching block in validate.sh, including
+# why this is not `check-ignore -- .` (a blank CRLF line is the pattern "\r", which
+# git strips to empty, and the empty pattern matches `.`; every core.autocrlf clone
+# would be misreported).
+$gitignoreOuterPrefix = ''
+if ($gitignoreErrors -eq $gitignoreProbes.Count) {
+    try { $gitignoreOuterPrefix = (& git -C $root rev-parse --show-prefix 2>$null) -join '' } catch { $gitignoreOuterPrefix = '' }
+}
+if ($gitignoreErrors -gt 0) {
+    foreach ($reportLine in $gitignoreReport) { Write-Output $reportLine }
+    if ($gitignoreOuterPrefix) {
+        $gitignoreFailMessage = "persistent SSoT artifacts are untracked: every probe is ignored and this project sits at '$gitignoreOuterPrefix' inside a larger repository, so an outer rule (source:line above) is hiding the whole directory and no governance record here can be committed. Fix by running ``git init`` in this directory, or by un-ignoring this path in the outer repository -- do NOT delete that rule blindly, it is probably load-bearing there"
+    }
+    else {
+        $gitignoreTail = ''
+        if ($gitignoreUnknown -gt 0) {
+            $gitignoreTail = "; $gitignoreUnknown further probe(s) could not be resolved"
+        }
+        $gitignoreFailMessage = ".gitignore blocks persistent SSoT artifacts ($gitignoreErrors/$($gitignoreProbes.Count) probes ignored; the ignore source:line shown above is the pattern to remove$gitignoreTail)"
+    }
+    Add-Result -Level 'FAIL' -Message $gitignoreFailMessage
+}
+elseif ($gitignoreUnknown -gt 0) {
+    Add-Result -Level 'SKIP' -Message "persistent SSoT artifacts vs .gitignore -- git check-ignore could not resolve $gitignoreUnknown/$($gitignoreProbes.Count) probes here (not a git work tree, or git unavailable); the check did NOT run"
+}
 else {
-    Add-Result -Level 'PASS' -Message '.gitignore absent -- no persistent SSoT artifacts are ignored'
+    Add-Result -Level 'PASS' -Message '.gitignore preserves persistent SSoT artifacts'
 }
 
 # SSoT completeness checks — verify current_state.md indexes match disk reality

@@ -86,3 +86,82 @@ source_sha: (ship commit on chore/local-state-contract — squash-merged via PR)
   persistent bot checkouts, fresh clones never had the file) and recorded
   rather than assumed away. **Reopen trigger**: a contributor reports lost
   local permissions.
+
+---
+
+### [governance][2026-08-24][fix/ignore-assertion-binding]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-ignore-assertion-binding-20260824.md`)
+source_sha: 14ac9d9
+
+- [DECISION] A guard that asserts something about **git's behaviour** must ask git, not
+  pattern-match the file git reads. The `.gitignore preserves persistent SSoT artifacts`
+  check compared whole `.gitignore` lines against a list of directory paths; a downstream
+  fork's `.agentcortex/context/archive/*.md` hides the archived Work Logs without ever
+  spelling that directory, so the guard reported PASS while the governance record stopped
+  being committed. Reproduced here before fixing: one appended line left `fail=0` while
+  `git check-ignore` confirmed the logs were hidden. The same shape had independently
+  grown in two forks of the same ancestor, which is what makes it a class and not a slip.
+- [DECISION] Probe a representative **file inside** each protected directory, never the
+  directory itself — `docs/specs/*.md` ignores the contents without matching the directory,
+  so a directory probe reproduces the original blindness. Probing inside subsumes both.
+- [CONSTRAINT] `git check-ignore -v` exits 0 whenever a pattern **matched**, including a
+  negation. On the ordinary `docs/adr/*` + `!docs/adr/*.md` idiom, `-v` exits 0 while `-q`
+  exits 1 and git tracks the file. Taking the verdict from `-v` fails a correct adopter and
+  names their protective `!` line as the pattern to remove — a diagnostic whose advice
+  breaks something that was working. Verdict from `-q`; `-v` for the message only.
+- [CONSTRAINT] `check-ignore` skips **tracked** paths unless `--no-index`, so the one real
+  path in any such probe list is inert in a healthy tree. Omitting the flag shipped a
+  detection *narrowing* inside a change whose stated purpose was broadening.
+- [DECISION] Three verdicts, not two, and FAIL outranks SKIP. A guard that could not run
+  must say so rather than report assurance — the discipline PR #412 established for absent
+  tools, applied here to an absent git or a non-work-tree. And when some probes are ignored
+  while others are unresolvable, the FAIL wins and names the unresolved count in its tail;
+  letting SKIP win would let one unreadable probe swallow a real data-loss finding.
+- [DECISION] A page that documents a mechanism should point at the check, not carry a second
+  copy of its claim. Test 1 drifted because its assertion lived only in prose with nothing
+  binding it; the rewrite states the standing guarantee is the validator's and reduces the
+  page to a guided walk-through, and a test now executes the page's own assertion list
+  against a real deployed ignore block. The durable form: **doc claims about mechanism
+  behaviour either name the mechanism or get executed — prose alone is a second source of truth.**
+- [DECISION] Diagnose "this whole tree is ignored by an outer repository" as its own
+  cause with its own remedy — but **re-label, never re-decide**. Deployed under a
+  `vendor/`-style ignore every probe resolves ignored, and per-probe blame points at the
+  outer repo's directory rule. Run the probe loop first and only relabel when **all**
+  probes came back ignored **and** `git rev-parse --show-prefix` is non-empty; that
+  ordering cannot turn a PASS into a FAIL, and it reuses the same emission site so the
+  ADR-006 native ratchet does not move.
+- [CONSTRAINT] Do **not** use `git check-ignore -- .` as that discriminator. A blank CRLF
+  line in `.gitignore` is not blank to git: it is the pattern `
+`, which git strips to
+  the empty string, and the empty pattern matches the pathspec `.`. So the probe returns
+  "ignored" on every healthy `core.autocrlf=true` checkout — the Git-for-Windows default.
+  Shipped in the first version of this branch and caught only because an independent
+  reviewer ran the validators against **this** repository, whose own `.gitignore` is CRLF.
+  Minimal repro: `printf '
+' > .gitignore; git check-ignore -q --no-index -- .` exits 0.
+  The general lesson is sharper than the flag: **a fresh-deploy fixture is not a checkout.**
+  Fourteen scenarios all deployed clean LF trees and none of them could see this.
+- [CONSTRAINT] ADR-006's native escape hatch applies here and was invoked without spending
+  ratchet headroom: the guard must stay native because it is a FAIL-tier data-loss check
+  and `run_python_check` degrades to a graceful SKIP on no-Python downstreams — unprotecting
+  exactly the adopters it exists for — and the wrappers map exit!=0 to FAIL and cannot
+  express the did-not-run SKIP. Net emission change was zero because the same unit deleted
+  a branch that asserted a PASS without checking anything.
+- [DECISION] No claim-decay mechanism (ADR-011 domain). The downstream report proposed
+  `<!-- claim: verified-at <sha> -->` markers for quantified claims. Rejected on two
+  grounds: the instance found here was mis-attributed — the SSoT's dated `### Ship-*`
+  headings already anchor those measurements as history, not standing claims — and a
+  "remember to tag" convention with no verifier is precisely the ritual-without-
+  discriminating-power defect the same report diagnoses. **Reopen trigger**: a second
+  quantified claim found false inside a *living* (non-dated) governance surface.
+- [CONSTRAINT] A doc that ships downstream must be written for the downstream reader.
+  `audit-guardrails.md` Test 1 was rewritten around `installers/deploy_brain.sh` and "the
+  source repo root"; measured from an installed project, that wrapper clones from the
+  remote, writes an `.agentcortex-src/` cache into the reader's own tree, and audits the
+  fetched version rather than theirs. The canonical `.agentcortex/bin/deploy.sh` exists in
+  both positions, needs no network, and audits the copy on disk.
+- [TRADEOFF] A self-review by the author is structurally weaker than an independent one,
+  and this unit measured the gap rather than asserting it: a tenth-man pass over my own
+  diff returned PASS and found the defect that was *visible in the diff*; a delegated
+  adversarial pass then found one CRITICAL and two MAJOR that required knowing
+  `git check-ignore`'s exit semantics. Every finding was re-derived before being acted on.
