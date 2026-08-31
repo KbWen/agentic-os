@@ -111,7 +111,7 @@ jobs:
       # valid image reference and `docker run` fails — loudly, not silently.
       # sha256:aa821cf4… is the manifest digest published for release v3.96.0.
       - name: Scan for secrets
-        uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11  # v3.96.0
+        uses: trufflesecurity/trufflehog@20652fbbdefffcdaa493a5bf57ab2ac6b1db715b  # v3.97.1
         with:
           image: ghcr.io/trufflesecurity/trufflehog@sha256
           version: "aa821cf4ace8861c7d096d83818cdf7bb9719028a52d37a52eaad44086a52577"
