@@ -1,0 +1,355 @@
+# Skill trigger-accuracy eval cases.
+#
+# Spec: docs/specs/skill-trigger-accuracy-eval.md  (backlog #165, issue #398)
+# Runner: .agentcortex/tools/run_skill_eval.py
+#
+# WHAT THIS MEASURES: whether registry `detect_by.intent_patterns` data
+# discriminates — i.e. does a natural phrasing reach the intended skill, and
+# does a near-miss correctly fail to. Scored by importing the SHIPPED resolver
+# (`trigger_runtime_core.skill_is_candidate`), never a matcher of its own.
+#
+# WHAT IT DOES NOT MEASURE: whether an agent routes correctly. That is a
+# different surface and stays in #254. Do not rename this "effectiveness".
+#
+# Cases assert DESIRED routing. A case blocked on a live defect carries
+# `known_gap`; those are printed on every run and their count is ratcheted,
+# never silently passed. See spec §D-2.
+#
+# This file is data-only. It is loaded by no runtime workflow, and it does not
+# ship downstream (same as governance.yaml — the runner ships, the data does not).
+
+version: 1
+description: Trigger-accuracy cases for the 14 kind:skill entries in trigger-registry.yaml.
+
+# Ratchet: may decrease, never increase. See spec §D-2.
+known_gap_baseline: 13
+
+cases:
+  # ---------------------------------------------------------------------
+  # Positives — one per skill. Natural phrasing, not the trigger phrase alone.
+  # ---------------------------------------------------------------------
+  - id: tdd-pos
+    skill_id: test-driven-development
+    prompt: "let's do test first for the billing module"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: sysdebug-pos
+    skill_id: systematic-debugging
+    prompt: "help me debug this crash on startup"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: redteam-pos
+    skill_id: red-team-adversarial
+    prompt: "run a red team pass over this endpoint"
+    classification: feature
+    phase: review
+    expect_activation: true
+
+  - id: apidesign-pos
+    skill_id: api-design
+    prompt: "what endpoint conventions should this follow"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: dbdesign-pos
+    skill_id: database-design
+    prompt: "I need help with schema design for orders"
+    classification: feature
+    phase: plan
+    expect_activation: true
+
+  - id: frontend-pos
+    skill_id: frontend-patterns
+    prompt: "what component patterns fit this screen"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: authsec-pos
+    skill_id: auth-security
+    prompt: "can you do a security review of this module"
+    classification: feature
+    phase: review
+    expect_activation: true
+
+  - id: doclookup-pos
+    skill_id: doc-lookup
+    prompt: "check docs for the correct pytest flag"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: dispatch-pos
+    skill_id: dispatching-parallel-agents
+    prompt: "can we dispatch subtasks for these modules"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: subagent-pos
+    skill_id: subagent-driven-development
+    prompt: "use a subagent for the migration work"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: worktree-pos
+    skill_id: using-git-worktrees
+    prompt: "set up a git worktree for this branch"
+    classification: feature
+    phase: implement
+    expect_activation: true
+
+  - id: karpathy-pos
+    skill_id: karpathy-principles
+    prompt: "apply karpathy principles to this design"
+    classification: feature
+    phase: plan
+    expect_activation: true
+
+  - id: prodready-pos
+    skill_id: production-readiness
+    prompt: "do a production readiness pass before ship"
+    classification: feature
+    phase: review
+    expect_activation: true
+
+  # The 14th skill. `intent_patterns` is empty BY DESIGN — activation is
+  # phase_scope-driven and verified: `resolve_runtime_contract.py
+  # --classification feature --phase ship --platform claude` returns it with no
+  # prompt at all. It is reachable through free text only by naming the skill,
+  # because `values_match` prepends `entry["id"]`. Recorded rather than forced:
+  # a "near-miss paraphrase" is undefined for a skill with no phrases, so this
+  # entry takes the AC-2 exclusion path and carries no negative.
+  - id: verifybeforedone-pos-by-name
+    skill_id: verification-before-completion
+    prompt: "run the verification before completion checks"
+    classification: feature
+    phase: ship
+    expect_activation: true
+    note: >-
+      Reachable by name only; intent-first discovery does not apply here.
+      Excluded from the near-miss requirement per AC-2.
+
+  # ---------------------------------------------------------------------
+  # Near-miss negatives — semantically adjacent, lexically disjoint from every
+  # pattern AND from the skill id. Word-level paraphrase does NOT work: any
+  # phrase carrying a pattern token matches (DEFECT-2), so these are built to
+  # share meaning without sharing vocabulary.
+  # ---------------------------------------------------------------------
+  - id: tdd-neg
+    skill_id: test-driven-development
+    prompt: "add a unit test after the refactor lands"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: sysdebug-neg
+    skill_id: systematic-debugging
+    prompt: "the build is broken and I have no idea why"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: redteam-neg
+    skill_id: red-team-adversarial
+    prompt: "please be critical when you look at this"
+    classification: feature
+    phase: review
+    expect_activation: false
+
+  - id: apidesign-neg
+    skill_id: api-design
+    prompt: "the handler returns the wrong status code"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: dbdesign-neg
+    skill_id: database-design
+    prompt: "the query is slow on the orders table"
+    classification: feature
+    phase: plan
+    expect_activation: false
+
+  - id: frontend-neg
+    skill_id: frontend-patterns
+    prompt: "the button renders in the wrong place"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: authsec-neg
+    skill_id: auth-security
+    prompt: "the login form loses focus on submit"
+    classification: feature
+    phase: review
+    expect_activation: false
+
+  - id: doclookup-neg
+    skill_id: doc-lookup
+    prompt: "I cannot remember what this parameter does"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: dispatch-neg
+    skill_id: dispatching-parallel-agents
+    prompt: "these three jobs can run at the same time"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: subagent-neg
+    skill_id: subagent-driven-development
+    prompt: "delegate this piece to another worker"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: worktree-neg
+    skill_id: using-git-worktrees
+    prompt: "keep these two branches from colliding"
+    classification: feature
+    phase: implement
+    expect_activation: false
+
+  - id: karpathy-neg
+    skill_id: karpathy-principles
+    prompt: "keep the code as simple as you can"
+    classification: feature
+    phase: plan
+    expect_activation: false
+
+  - id: prodready-neg
+    skill_id: production-readiness
+    prompt: "will this survive real traffic"
+    classification: feature
+    phase: review
+    expect_activation: false
+
+  # ---------------------------------------------------------------------
+  # DEFECT-1 — CJK patterns are inert inside a natural zh-TW sentence.
+  #
+  # `normalize_text` splits on whitespace only, and Traditional Chinese has no
+  # whitespace word boundaries, so a whole clause collapses to ONE token and a
+  # CJK pattern is never a subset of it. Measured 2026-09-01: 21 of 21 CJK
+  # patterns in the registry are inert this way — every one of them.
+  #
+  # These cases assert the DESIRED routing (activation) and are expected to fail
+  # today. They are the reason the ratchet exists: `AGENTS.md §Chat Language
+  # Policy` supports zh-TW input, and `skill-ecosystem.md` commits to intent-first
+  # discovery "not by memorizing skill names" — yet a zh-TW user must type the
+  # trigger phrase in isolation for it to work, which is exactly memorizing it.
+  #
+  # Fix belongs to its own unit (it moves skill loading for every user). Related
+  # but distinct: backlog #150, the plural/singular inflection gap.
+  # ---------------------------------------------------------------------
+  - id: tdd-pos-zhtw
+    skill_id: test-driven-development
+    prompt: "這次想先寫測試再實作"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: sysdebug-pos-zhtw
+    skill_id: systematic-debugging
+    prompt: "這個功能除錯很難"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: redteam-pos-zhtw
+    skill_id: red-team-adversarial
+    prompt: "幫這個端點做紅隊測試"
+    classification: feature
+    phase: review
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: apidesign-pos-zhtw
+    skill_id: api-design
+    prompt: "這個功能的API設計要怎麼做"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: dbdesign-pos-zhtw
+    skill_id: database-design
+    prompt: "訂單的資料庫設計請幫我看看"
+    classification: feature
+    phase: plan
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: frontend-pos-zhtw
+    skill_id: frontend-patterns
+    prompt: "這頁的前端模式該怎麼選"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: authsec-pos-zhtw
+    skill_id: auth-security
+    prompt: "幫我做安全檢查"
+    classification: feature
+    phase: review
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: doclookup-pos-zhtw
+    skill_id: doc-lookup
+    prompt: "先查官方文檔再決定"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: dispatch-pos-zhtw
+    skill_id: dispatching-parallel-agents
+    prompt: "這幾個模組可以平行開發"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: subagent-pos-zhtw
+    skill_id: subagent-driven-development
+    prompt: "把遷移工作分派agent處理"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: worktree-pos-zhtw
+    skill_id: using-git-worktrees
+    prompt: "這個分支用worktree隔離開"
+    classification: feature
+    phase: implement
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: karpathy-pos-zhtw
+    skill_id: karpathy-principles
+    prompt: "這份設計請套用簡潔原則"
+    classification: feature
+    phase: plan
+    expect_activation: true
+    known_gap: DEFECT-1
+
+  - id: prodready-pos-zhtw
+    skill_id: production-readiness
+    prompt: "上線前做觀測性檢查"
+    classification: feature
+    phase: review
+    expect_activation: true
+    known_gap: DEFECT-1

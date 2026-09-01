@@ -98,6 +98,7 @@ core .agentcortex/tools/lint_governed_writes.py
 core .agentcortex/tools/lint_spec_drift.py
 core .agentcortex/tools/recover_worklog_lock.py
 core .agentcortex/tools/run_governance_eval.py
+core .agentcortex/tools/run_skill_eval.py
 core .agentcortex/tools/scan_credentials.py
 core .agentcortex/tools/sync_skills.sh
 core .agentcortex/tools/text_integrity_baseline.txt
