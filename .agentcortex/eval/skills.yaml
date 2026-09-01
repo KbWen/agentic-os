@@ -1,0 +1,447 @@
+# Skill trigger-accuracy eval cases.
+#
+# Spec: docs/specs/skill-trigger-accuracy-eval.md  (backlog #165, issue #398)
+# Runner: .agentcortex/tools/run_skill_eval.py
+#
+# WHAT THIS MEASURES: whether registry `detect_by.intent_patterns` data
+# discriminates LEXICALLY — does a phrasing reach the intended skill's patterns.
+# Scored by importing the SHIPPED resolver (`trigger_runtime_core.skill_is_candidate`),
+# never a matcher of its own.
+#
+# `expect_pattern_match` is a lexical claim, NOT an activation claim. A skill can
+# load without any pattern matching (`load_policy: phase-entry`, or a firing
+# `phase_condition`); a case whose negative sits in such a context must say so with
+# `activates_anyway: true`, and the runner hard-fails an undeclared one. That is
+# how a suite ends up asserting "the near-miss was correctly rejected" about a
+# skill that loaded anyway — it happened here and review caught it.
+#
+# WHAT IT DOES NOT MEASURE: whether an agent routes correctly. That is a
+# different surface and stays in #254. Do not rename this "effectiveness".
+#
+# Cases assert DESIRED routing. A case blocked on a live defect carries
+# `known_gap`; those are printed on every run and their count is ratcheted,
+# never silently passed. See spec §D-2.
+#
+# This file is data-only, loaded by no runtime workflow. Neither it NOR the runner
+# ships downstream: `run_skill_eval.py` imports `trigger_runtime_core.py`, which is
+# itself deliberately source-only along with the rest of the resolver toolchain, so
+# a shipped runner could not start. Spec §D-5.
+
+version: 1
+description: Trigger-accuracy cases for the 14 kind:skill entries in trigger-registry.yaml.
+
+# Ratchet: may decrease, never increase. See spec §D-2.
+known_gap_baseline: 19
+
+# Of those gaps, how many the user actually feels: the skill does NOT load by some
+# other path. A gap that is not user-visible is still a data defect, but it does
+# not cost the user the skill. Both counts are ratcheted.
+user_visible_gap_baseline: 16
+
+cases:
+  # ---------------------------------------------------------------------
+  # Positives — one per skill. Natural sentences that DO carry the trigger phrase
+  # verbatim, because that is what `values_match`'s token-subset test requires:
+  # strip the phrase and all 14 stop matching. So these prove "say the words and
+  # it works" — NOT intent-first discovery. The DEFECT-3 block below is where the
+  # actual commitment ("users should not have to memorise skill names") is measured.
+  # ---------------------------------------------------------------------
+  - id: tdd-pos
+    skill_id: test-driven-development
+    prompt: "let's do test first for the billing module"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: sysdebug-pos
+    skill_id: systematic-debugging
+    prompt: "help me debug this crash on startup"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: redteam-pos
+    skill_id: red-team-adversarial
+    prompt: "run a red team pass over this endpoint"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+
+  - id: apidesign-pos
+    skill_id: api-design
+    prompt: "what endpoint conventions should this follow"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: dbdesign-pos
+    skill_id: database-design
+    prompt: "I need help with schema design for orders"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+
+  - id: frontend-pos
+    skill_id: frontend-patterns
+    prompt: "what component patterns fit this screen"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: authsec-pos
+    skill_id: auth-security
+    prompt: "can you do a security review of this module"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+
+  - id: doclookup-pos
+    skill_id: doc-lookup
+    prompt: "check docs for the correct pytest flag"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: dispatch-pos
+    skill_id: dispatching-parallel-agents
+    prompt: "can we dispatch subtasks for these modules"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: subagent-pos
+    skill_id: subagent-driven-development
+    prompt: "use a subagent for the migration work"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: worktree-pos
+    skill_id: using-git-worktrees
+    prompt: "set up a git worktree for this branch"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+
+  - id: karpathy-pos
+    skill_id: karpathy-principles
+    prompt: "apply the coding discipline here"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+
+  - id: prodready-pos
+    skill_id: production-readiness
+    prompt: "check observability before we go live"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+
+  # The 14th skill. `intent_patterns` is empty BY DESIGN — activation is
+  # phase_scope-driven and verified: `resolve_runtime_contract.py
+  # --classification feature --phase ship --platform claude` returns it with no
+  # prompt at all. It is reachable through free text only by naming the skill,
+  # because `values_match` prepends `entry["id"]`. Recorded rather than forced:
+  # a "near-miss paraphrase" is undefined for a skill with no phrases, so this
+  # entry takes the AC-2 exclusion path and carries no negative.
+  - id: verifybeforedone-pos-by-name
+    skill_id: verification-before-completion
+    prompt: "run the verification before completion checks"
+    classification: feature
+    phase: ship
+    expect_pattern_match: true
+    note: >-
+      Reachable by name only; intent-first discovery does not apply here.
+      Excluded from the near-miss requirement per AC-2.
+
+  # ---------------------------------------------------------------------
+  # Near-miss negatives — semantically adjacent, lexically disjoint from every
+  # pattern AND from the skill id. They assert LEXICAL non-match only. Several are
+  # phrasings a human plausibly WOULD want routed to that skill; that is a finding
+  # about the registry, not a success, and it is what DEFECT-3 below records.
+  # Word-level paraphrase cannot be used here: any phrase carrying a pattern token
+  # matches, so these share meaning without sharing vocabulary.
+  # ---------------------------------------------------------------------
+  - id: tdd-neg
+    skill_id: test-driven-development
+    prompt: "add a unit test after the refactor lands"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: sysdebug-neg
+    skill_id: systematic-debugging
+    prompt: "the build is broken and I have no idea why"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: redteam-neg
+    skill_id: red-team-adversarial
+    prompt: "please be critical when you look at this"
+    classification: feature
+    phase: review
+    expect_pattern_match: false
+    activates_anyway: true
+
+  - id: apidesign-neg
+    skill_id: api-design
+    prompt: "the handler returns the wrong status code"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: dbdesign-neg
+    skill_id: database-design
+    prompt: "the query is slow on the orders table"
+    classification: feature
+    phase: plan
+    expect_pattern_match: false
+
+  - id: frontend-neg
+    skill_id: frontend-patterns
+    prompt: "the button renders in the wrong place"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: authsec-neg
+    skill_id: auth-security
+    prompt: "the login form loses focus on submit"
+    classification: feature
+    phase: review
+    expect_pattern_match: false
+
+  - id: doclookup-neg
+    skill_id: doc-lookup
+    prompt: "I cannot remember what this parameter does"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: dispatch-neg
+    skill_id: dispatching-parallel-agents
+    prompt: "these three jobs can run at the same time"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: subagent-neg
+    skill_id: subagent-driven-development
+    prompt: "delegate this piece to another worker"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: worktree-neg
+    skill_id: using-git-worktrees
+    prompt: "keep these two branches from colliding"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+
+  - id: karpathy-neg
+    skill_id: karpathy-principles
+    prompt: "keep the code as simple as you can"
+    classification: feature
+    phase: plan
+    expect_pattern_match: false
+    activates_anyway: true
+
+  - id: prodready-neg
+    skill_id: production-readiness
+    prompt: "will this survive real traffic"
+    classification: feature
+    phase: review
+    expect_pattern_match: false
+    activates_anyway: true
+
+  # ---------------------------------------------------------------------
+  # DEFECT-1 — CJK patterns are inert inside a natural zh-TW sentence.
+  #
+  # `normalize_text` splits on whitespace only, and Traditional Chinese has no
+  # whitespace word boundaries, so a whole clause collapses to ONE token and a
+  # CJK pattern is never a subset of it.
+  #
+  # Measured 2026-09-01, and the CONSTRUCTION is part of the claim: with each
+  # pattern embedded in a zh-TW clause that adds no spaces around it (sentence
+  # start, middle, or end), 21 of 21 are inert. Space-delimit the whole pattern
+  # and 21 of 21 match. So the number is a property of the SENTENCE, not of the
+  # registry: a pattern matches only when every one of its tokens is
+  # whitespace-bounded, which zh-TW writing does not do. Three reviewers reached
+  # 21/21, 14/21 and 1/7 from three different corpora -- quote the mechanism,
+  # never a bare count.
+  #
+  # These cases assert the DESIRED routing (activation) and are expected to fail
+  # today. They are the reason the ratchet exists: `AGENTS.md §Chat Language
+  # Policy` supports zh-TW input, and `skill-ecosystem.md` commits to intent-first
+  # discovery "not by memorizing skill names" — yet a zh-TW user must type the
+  # trigger phrase in isolation for it to work, which is exactly memorizing it.
+  #
+  # Fix belongs to its own unit (it moves skill loading for every user). Related
+  # but distinct: backlog #150, the plural/singular inflection gap.
+  # ---------------------------------------------------------------------
+  - id: tdd-pos-zhtw
+    skill_id: test-driven-development
+    prompt: "這次想先寫測試再實作"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: sysdebug-pos-zhtw
+    skill_id: systematic-debugging
+    prompt: "這個功能除錯很難"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: redteam-pos-zhtw
+    skill_id: red-team-adversarial
+    prompt: "幫這個端點做紅隊測試"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: apidesign-pos-zhtw
+    skill_id: api-design
+    prompt: "這個功能的API設計要怎麼做"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: dbdesign-pos-zhtw
+    skill_id: database-design
+    prompt: "訂單的資料庫設計請幫我看看"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: frontend-pos-zhtw
+    skill_id: frontend-patterns
+    prompt: "這頁的前端模式該怎麼選"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: authsec-pos-zhtw
+    skill_id: auth-security
+    prompt: "幫我做安全檢查"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: doclookup-pos-zhtw
+    skill_id: doc-lookup
+    prompt: "先查官方文檔再決定"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: dispatch-pos-zhtw
+    skill_id: dispatching-parallel-agents
+    prompt: "這幾個模組可以平行開發"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: subagent-pos-zhtw
+    skill_id: subagent-driven-development
+    prompt: "把遷移工作分派agent處理"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: worktree-pos-zhtw
+    skill_id: using-git-worktrees
+    prompt: "這個分支用worktree隔離開"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: karpathy-pos-zhtw
+    skill_id: karpathy-principles
+    prompt: "這份設計請套用簡潔原則"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  - id: prodready-pos-zhtw
+    skill_id: production-readiness
+    prompt: "上線前做觀測性檢查"
+    classification: feature
+    phase: review
+    expect_pattern_match: true
+    known_gap: DEFECT-1
+
+  # ---------------------------------------------------------------------
+  # DEFECT-2 — single-token patterns over-trigger. `debug` is a subset of any
+  # sentence containing that token, so an unrelated use of the word pulls the
+  # skill in. Sited at a phase where the skill does NOT load by another path, so
+  # the spurious load is the user's actual outcome.
+  # ---------------------------------------------------------------------
+  - id: sysdebug-overtrigger
+    skill_id: systematic-debugging
+    prompt: "I need to debug my understanding of the spec"
+    classification: feature
+    phase: plan
+    expect_pattern_match: false
+    known_gap: DEFECT-2
+
+  - id: doclookup-overtrigger
+    skill_id: doc-lookup
+    prompt: "check docs into the repo before you push"
+    classification: feature
+    phase: implement
+    expect_pattern_match: false
+    known_gap: DEFECT-2
+
+  # ---------------------------------------------------------------------
+  # DEFECT-3 — intent without vocabulary does not route. Each prompt states the
+  # need plainly and carries no pattern token and no part of the skill id. These
+  # are the cases that actually test `skill-ecosystem.md` §Strategic Principles:
+  # "users should discover skills by task intent … not by memorizing skill names."
+  # All fail today. That is the measurement, not a defect in the cases.
+  # ---------------------------------------------------------------------
+  - id: sysdebug-intent-first
+    skill_id: systematic-debugging
+    prompt: "I keep guessing at what is wrong and need to be methodical"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+    known_gap: DEFECT-3
+
+  - id: authsec-intent-first
+    skill_id: auth-security
+    prompt: "make sure nobody can read another person's records"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+    known_gap: DEFECT-3
+
+  - id: dbdesign-intent-first
+    skill_id: database-design
+    prompt: "orders and customers need to relate without duplicating rows"
+    classification: feature
+    phase: plan
+    expect_pattern_match: true
+    known_gap: DEFECT-3
+
+  - id: tdd-intent-first
+    skill_id: test-driven-development
+    prompt: "I want the spec to drive the code, not the other way round"
+    classification: feature
+    phase: implement
+    expect_pattern_match: true
+    known_gap: DEFECT-3

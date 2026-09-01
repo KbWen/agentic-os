@@ -244,6 +244,27 @@ facts still matter if you meet one on an older branch:
 - Commit **messages** are in scope too. Describing the incident can re-instantiate the
   pattern in the very commit that documents it; write the shape in prose, never an instance.
 
+## 16. There are three skill-trigger surfaces, and the registry one has no runtime consumer
+
+Skill activation is decided by the AI reading **`routing.md §3`** (the phrase table) and the
+table embedded in **`bootstrap.md §3.6`** (semantic conditions, no phrases). The third surface,
+`trigger-registry.yaml` `detect_by.intent_patterns`, is read by **nothing at runtime**:
+`bootstrap.md:363` states outright that bootstrap does not depend on the registry;
+`resolve_runtime_contract.py` — the only CLI reaching `values_match` with a caller-supplied
+list — has zero callers in `.agent/`, `.github/` or `validate.sh`; and
+`validate_trigger_metadata.py`'s parity check passes `manual_skills: []`.
+
+Cost: a whole `feature` unit (issue #398) was built to measure free-text→`intent_patterns`
+accuracy before anyone asked who consumes it. A mid-flight roundtable raised exactly this
+objection and it was refuted on the strength of a **code comment**
+(`trigger_runtime_core.py:713`, "Intent Router reads full registry") — a statement of intent,
+not a consumer.
+
+Before building anything that measures or guards a data surface here, run the path from user
+input to that surface and name the caller. The two phrase surfaces have also already drifted:
+4 phrases live in `routing.md §3` and not the registry (backlog #187). See also gotcha #9 for
+registry↔compact-index staleness.
+
 ## Adding to this file
 
 An entry earns its place when it cost a real session and is specific to this repo. If the
