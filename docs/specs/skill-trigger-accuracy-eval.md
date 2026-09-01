@@ -1,15 +1,27 @@
 ---
-status: frozen
+status: draft
 title: Skill Trigger-Accuracy Eval Suite
 source: github-issue-398
 primary_domain: skill-ecosystem
 created: 2026-09-01
-last_updated: 2026-09-01
+last_updated: 2026-09-01  # amended after the second review round
 ---
 
 # Skill Trigger-Accuracy Eval Suite
 
 Backlog #165 · GitHub issue #398 · split from #254 (backlog #79).
+
+## Scope limitation, established after this spec was first frozen
+
+**Nothing at runtime consumes `detect_by.intent_patterns`.** Verified three independent ways:
+
+- `.agent/workflows/bootstrap.md:363` — *"**No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml`."* The workflow that activates skills says outright that it does not read the registry.
+- `resolve_runtime_contract.py`, the only CLI that reaches `values_match` with a caller-supplied list, is invoked by **zero** workflows, validators, or CI jobs.
+- `validate_trigger_metadata.py`'s resolver-parity check exercises the resolver through `scope_signals`, passing `manual_skills: []`.
+
+Skill activation is the AI reading `routing.md §3` and the table embedded in `bootstrap.md §3.6` — semantically, not by token matching. **This suite therefore measures a data contract, not a live user path.** It is worth guarding because `trigger-registry.yaml` ships core-tier and would otherwise rot unchecked; it is NOT evidence about what a user experiences.
+
+The §Roundtable table below records this objection as REFUTED. **That refutation was wrong.** It rested on a code comment (`trigger_runtime_core.py:713-714`, *"Intent Router reads full registry"*) — a statement of intent, not a consumer. The correct answer was available in `bootstrap.md` the whole time. Left in place rather than deleted, because the mistake is the more useful record.
 
 ## Problem
 
@@ -43,7 +55,7 @@ Zero-coverage rules: 28
 | `這個功能除錯很難` | **no** | **DEFECT-1** |
 | `I need to debug my understanding of the spec` | **MATCH** | **DEFECT-2** |
 
-- **DEFECT-1 — CJK patterns are inert inside a sentence.** `normalize_text` splits on whitespace only, so `這個功能除錯很難` normalizes to the single token `['這個功能除錯很難']` and the pattern `除錯` is not a subset of it. CJK has no whitespace word boundaries, so a zh-TW pattern only ever matches when the user happens to surround it with spaces. `AGENTS.md §Chat Language Policy` explicitly supports zh-TW input.
+- **DEFECT-1 — CJK patterns are inert inside a sentence, and the count is a property of the sentence.** With each pattern embedded in a zh-TW clause that adds no spaces around it, 21 of 21 are inert; space-delimit the whole pattern and 21 of 21 match. Three reviewers reached 21/21, 14/21 and 1/7 from three different corpora. Quote the mechanism — a pattern matches only when every one of its tokens is whitespace-bounded — never a bare count. `normalize_text` splits on whitespace only, so `這個功能除錯很難` normalizes to the single token `['這個功能除錯很難']` and the pattern `除錯` is not a subset of it. CJK has no whitespace word boundaries, so a zh-TW pattern only ever matches when the user happens to surround it with spaces. `AGENTS.md §Chat Language Policy` explicitly supports zh-TW input.
 - **DEFECT-2 — single-token English patterns over-trigger.** `debug` is a subset of any sentence containing that token.
 
 **Already owned elsewhere, deliberately not re-filed:** the plural/singular inflection gap is backlog **#150** (Pending, P2) — "53 inflections across 12 of 14 Skills stop matching". Cases in this suite must not re-file it; where a case would trip it, cite #150.
@@ -85,7 +97,13 @@ No drift. Recorded because the same omission would silently weaken any case file
 
 **Rejected — live-agent scoring**: stochastic, needs a transcript-level definition of "activated" that `_score_case` has no concept of, and cannot carry a hard exit without the repeated-run aggregation explicitly reserved to #254.
 
-### Decision D-4 — ship the runner, keep the data source-only
+### Decision D-5 — the runner is SOURCE-ONLY  *(supersedes D-4)*
+
+D-4 was wrong and its own justification was false twice over. `trigger_runtime_core.py`, the runner's only import, ships **0** times — as does the entire resolver toolchain (`resolve_runtime_contract`, `query_trigger_metadata`, `resolve_skill_lockfile`). A shipped runner hands adopters an unhandled `FileNotFoundError`. And the ADR-007 gain D-4 claimed does not exist in code: `trigger_runtime_core.py` contains `custom-`, `downstream-capabilities` and `context/private` zero times each, so an adopter could not have evaluated their declared custom skills even with the runner in hand.
+
+The de-facto rule this repo actually follows is *a tool ships iff a deployed surface invokes it*. Nothing deployed invokes this one. AC-6 therefore takes its **second** branch: an explicit written source-only decision. Precedent: `check_skill_provenance.py`, `check_worklog_references.py`.
+
+### Decision D-4 — ship the runner  *(SUPERSEDED by D-5)*
 
 Evidence, not analogy: `trigger-registry.yaml` is core tier in `tests/ci/fixtures/deploy_manifest_golden.txt:80`, while `.agentcortex/eval/governance.yaml` appears **0** times in that golden. `run_governance_eval.py` therefore already ships as a runner with no bundled data, and this unit copies that shape exactly rather than inventing one. Downstream value is real: the registry ships, so an adopter can evaluate their own trigger phrases — including `custom-*` skills declared through ADR-007's capability seam.
 
@@ -105,14 +123,15 @@ Consequently this unit **does not** clear `AGENTS.md §Skill Activation Triggers
 
 ## Acceptance Criteria
 
-- **AC-1** `.agentcortex/eval/skills.yaml` exists, data-only, covering all **14** `kind: skill` entries with ≥1 positive case each. Case shape: `{id, skill_id, prompt, classification, phase, platform, expect_activation, known_gap?}`.
-- **AC-2** ≥1 near-miss negative for every skill with non-empty `intent_patterns`. **Re-derived: that is 13 of 14, not 11.** The issue's AC-2 says three entries carry `intent_patterns: []`, but two of those three (`:17`, `:43`) are `kind: workflow` and `kind: policy`, which its own Scope section excludes. Within scope only **`verification-before-completion`** (`:110`) is empty; it takes the exclusion path with a recorded rationale (activation is `phase_scope`-driven — verified by executing the resolver, see above), not a forced paraphrase.
-- **AC-3** The scoring-mechanism decision is written down before the runner is built, with its determinism and exit-code consequences stated. → **D-1 above.**
-- **AC-4** `run_skill_eval.py` scores cases; `--format json` emits a run-identity header (commit SHA, `resolve_skill_lockfile.py` snapshot digest, caller-supplied model/harness string) with explicit `unknown` where genuinely unavailable. Hard non-zero exit permitted because D-1 is deterministic.
-- **AC-5** Any extracted shared-scoring refactor leaves `run_governance_eval.py` behaviour unchanged — proven by running the governance eval before and after.
-- **AC-6** Deploy wiring: if the runner ships downstream, both `deploy.sh` whitelist spots (`:739` string, `:947` array member) **and** `tests/ci/fixtures/deploy_manifest_golden.txt`. Otherwise an explicit written source-only decision. Note `governance.yaml` (the data file) ships in neither, so the data-file precedent is source-only already.
-- **AC-7** The known-gap baseline is committed and asserted non-increasing (D-2), and every known-gap entry names a backlog row or a defect ID.
-- **AC-8** No second matcher. `run_skill_eval.py` must import `trigger_runtime_core`; a grep for a locally-defined match function in the runner is part of review.
+- **AC-1** `.agentcortex/eval/skills.yaml` exists, data-only, covering all **14** `kind: skill` entries with ≥1 **positive** case each (the positive requirement is asserted separately — coverage alone would pass on negatives only). Case shape: `{id, skill_id, prompt, classification, phase, expect_pattern_match}` plus optional `{platform, activates_anyway, known_gap, note}`. Unknown keys are rejected fail-closed.
+- **AC-2** ≥1 near-miss negative for every skill with non-empty `intent_patterns`. **Re-derived: 13 of 14, not 11** — the issue's AC-2 counted a `kind: workflow` and a `kind: policy` entry its own Scope excludes. `verification-before-completion` is the single exclusion; its `intent_patterns` is empty by design and activation is `phase_scope`-driven (verified by executing the resolver).
+- **AC-3** The scoring-mechanism decision is written before the runner. → **D-1**.
+- **AC-4** `run_skill_eval.py` scores cases; `--format json` emits a run-identity header with explicit `unknown` where unavailable. Hard non-zero exit permitted because D-1 is deterministic.
+- **AC-5** `run_governance_eval.py` behaviour unchanged — proven by `git diff` returning zero lines for it plus a before/after `--coverage` run.
+- **AC-6** → **D-5**: source-only, second branch. `run_skill_eval.py` appears 0 times in `deploy.sh` and in the golden manifest.
+- **AC-7** *(partially met — stated honestly rather than rewritten to match the code)*. The spec asked for a baseline "asserted **non-increasing**". What shipped is **exact equality** against an anchor duplicated in the guard test, so moving it requires editing two files. That is stronger against the one-file attack the review demonstrated and **weaker** than non-increasing: two consistent edits still move it, and the ratchet cannot distinguish "the matcher was fixed" from "the case was deleted". Recorded as a known ceiling, not claimed as satisfied.
+- **AC-8** No second matcher. `run_skill_eval.py` delegates to `trigger_runtime_core`, proved at **runtime** by an in-process spy — a source grep was shown to pass a hand-rolled-matcher mutant that produced a byte-identical green board.
+- **AC-9** *(added after review)* No case prompt may match a skill other than its own. This is the only guard that sees pattern **widening**; the case file is otherwise a diagonal, and an over-broad pattern added to skill B is invisible to a suite that only ever scores prompts against skill A.
 
 ## Non-goals
 

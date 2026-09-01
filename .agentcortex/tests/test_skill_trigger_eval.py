@@ -123,6 +123,45 @@ def test_every_skill_with_patterns_has_a_near_miss_negative() -> None:
     assert with_patterns <= negatives, "missing a near-miss negative: %s" % sorted(with_patterns - negatives)
 
 
+def test_no_case_prompt_collides_with_another_skill() -> None:
+    """Pattern widening is the one regression class the case file alone cannot see.
+
+    Every case scores one prompt against one skill -- a diagonal, not a matrix. So
+    adding an over-broad pattern to skill B (`code`, `test`, `endpoint`) is invisible
+    even when the suite's OWN prompts start matching it. This walks the off-diagonal.
+
+    Baseline is clean at 0 collisions. Headroom is thin by construction: the corpus
+    reserves its vocabulary, and every non-CJK pattern sits 1-2 token-drops from a
+    collision. That is the point -- a single-token pattern is what over-triggers, and
+    the registry already carries two (`debug`, `subagent`). If a legitimate addition
+    fires this, record it as a declared exception here; do NOT reword the prompt to
+    hide it, because the prompt and the assertion live in the same file.
+    """
+    with REGISTRY.open(encoding="utf-8") as handle:
+        registry = yaml.safe_load(handle)
+    entries = {e["id"]: e for e in registry["entries"] if e.get("kind") == "skill"}
+
+    spec = importlib.util.spec_from_file_location("_acx_core_xskill", ROOT / ".agentcortex" / "tools" / "trigger_runtime_core.py")
+    core = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(core)
+
+    collisions = []
+    for case in _load_cases()["cases"]:
+        # Negatives count too: their vocabulary widens the off-diagonal we can see,
+        # and the baseline is clean with them included (measured, both ways).
+        if case.get("known_gap"):
+            continue
+        for other_id, other in entries.items():
+            if other_id == case["skill_id"]:
+                continue
+            refs = [other["id"], *((other.get("detect_by") or {}).get("intent_patterns") or [])]
+            if core.values_match(refs, [case["prompt"]]):
+                collisions.append("%s (%s) also matches %s" % (case["id"], case["skill_id"], other_id))
+    assert not collisions, (
+        "a prompt written for one skill now matches another -- a pattern was widened too far: %s" % "; ".join(collisions)
+    )
+
+
 def test_runner_actually_calls_the_shipped_resolver() -> None:
     """AC-8 as a RUNTIME proof.
 

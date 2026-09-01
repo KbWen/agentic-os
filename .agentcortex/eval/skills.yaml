@@ -125,14 +125,14 @@ cases:
 
   - id: karpathy-pos
     skill_id: karpathy-principles
-    prompt: "apply karpathy principles to this design"
+    prompt: "apply the coding discipline here"
     classification: feature
     phase: plan
     expect_pattern_match: true
 
   - id: prodready-pos
     skill_id: production-readiness
-    prompt: "do a production readiness pass before ship"
+    prompt: "check observability before we go live"
     classification: feature
     phase: review
     expect_pattern_match: true
@@ -261,8 +261,16 @@ cases:
   #
   # `normalize_text` splits on whitespace only, and Traditional Chinese has no
   # whitespace word boundaries, so a whole clause collapses to ONE token and a
-  # CJK pattern is never a subset of it. Measured 2026-09-01: 21 of 21 CJK
-  # patterns in the registry are inert this way — every one of them.
+  # CJK pattern is never a subset of it.
+  #
+  # Measured 2026-09-01, and the CONSTRUCTION is part of the claim: with each
+  # pattern embedded in a zh-TW clause that adds no spaces around it (sentence
+  # start, middle, or end), 21 of 21 are inert. Space-delimit the whole pattern
+  # and 21 of 21 match. So the number is a property of the SENTENCE, not of the
+  # registry: a pattern matches only when every one of its tokens is
+  # whitespace-bounded, which zh-TW writing does not do. Three reviewers reached
+  # 21/21, 14/21 and 1/7 from three different corpora -- quote the mechanism,
+  # never a bare count.
   #
   # These cases assert the DESIRED routing (activation) and are expected to fail
   # today. They are the reason the ratchet exists: `AGENTS.md §Chat Language
