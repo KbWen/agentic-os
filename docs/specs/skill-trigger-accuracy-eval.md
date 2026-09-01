@@ -133,6 +133,18 @@ Consequently this unit **does not** clear `AGENTS.md §Skill Activation Triggers
 - **AC-8** No second matcher. `run_skill_eval.py` delegates to `trigger_runtime_core`, proved at **runtime** by an in-process spy — a source grep was shown to pass a hand-rolled-matcher mutant that produced a byte-identical green board.
 - **AC-9** *(added after review)* No case prompt may match a skill other than its own. This is the only guard that sees pattern **widening**; the case file is otherwise a diagonal, and an over-broad pattern added to skill B is invisible to a suite that only ever scores prompts against skill A.
 
+## Domain Decisions
+
+[DECISION] `trigger-registry.yaml` `detect_by.intent_patterns` is a **data contract, not a user path**. Nothing at runtime feeds it free text — `bootstrap.md:363` states outright that bootstrap does not depend on the registry, `resolve_runtime_contract.py` has zero callers, and the resolver-parity validator passes `manual_skills: []`. Skill activation is the AI reading `routing.md §3` and the table embedded in `bootstrap.md §3.6`. Anything measuring this field guards the file from rotting; it is never evidence about what a user experiences, and must say so where a reader cannot miss it.
+
+[DECISION] An eval runner whose imports are source-only stays source-only. `run_skill_eval.py` was wired into `deploy.sh` on the `run_governance_eval.py` precedent, but that precedent does not transfer: the governance runner has no unshipped dependency and this one does. The framework's de-facto rule is *a tool ships iff a deployed surface invokes it*.
+
+[CONSTRAINT] A "no second matcher" rule needs a **runtime** proof, not a source grep. Identifying strings live in docstrings, so a grep-based guard passes a mutant that deletes the delegation, hand-rolls the matcher, and produces a byte-identical green board. Assert the call actually happens — an in-process spy over the real module.
+
+[CONSTRAINT] Claims about whitespace-tokenized matching must quote the **mechanism, not a count**. A CJK pattern matches only when every one of its tokens is whitespace-bounded; the resulting figure is a property of the example sentence, and three reviewers reached 21/21, 14/21 and 1/7 from three different corpora. A bare count in an artifact will be wrong for someone else's sentence.
+
+[TRADEOFF] The known-gap ratchet is **exact equality against an anchor in a second file**, not the "non-increasing" the spec asked for. Exactness closes the one-file attack (edit the baseline, go green) at the cost of firing on a legitimate fix until the anchor is lowered in the same change. Two consistent edits still move it — recorded as a ceiling, not claimed as satisfied.
+
 ## Non-goals
 
 - A/B baseline pairing, repeated-run aggregation, isolation mode, measured token/time/tool metrics, human-feedback channel — all stay in #254.

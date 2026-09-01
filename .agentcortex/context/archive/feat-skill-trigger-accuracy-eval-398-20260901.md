@@ -106,18 +106,23 @@ Seven phases, all receipts in `## Gate Evidence`. Moved verbatim to `archive/wor
 
 ### D-1 — scoring is STATIC, importing the shipped resolver
 Not a tautology; deterministic, so a hard exit is permitted.
+→ local
 
 ### D-2 — known-gap ratchet, not a green board and not a permanent red
 Gaps printed every run; count anchored in the guard test, exact equality.
+→ consolidated: L2 skill-ecosystem
 
 ### D-3 — the coverage claim is stated, never banked
 Coverage-invisible by construction; #143 keeps that metric.
+→ local
 
 ### D-4 — ship the runner  *(SUPERSEDED by D-5)*
 Reasoned from the `run_governance_eval.py` precedent; wrong — that runner has no unshipped dependency.
+→ local
 
 ### D-5 — the runner is SOURCE-ONLY  *(supersedes D-4)*
 Its only import ships 0x, as does the whole resolver toolchain. AC-6 second branch.
+→ consolidated: L2 skill-ecosystem
 
 ---
 
