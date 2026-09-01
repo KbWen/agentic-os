@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.25] - 2026-08-27
+
+This release closes the release-to-downstream consistency gap found by an adversarial premortem and removes a local test-discovery trap.
+
+- **Release metadata is now machine-checked instead of hand-reconciled.** A focused pytest guard derives the canonical version from `deploy.sh` and requires the citation metadata, both testing-protocol titles, the Antigravity runtime guide, both model-guide titles, and the newest CHANGELOG heading to agree. It also rejects a `CITATION.cff` release date older than the newest CHANGELOG release. The guard was proved red against the live v1.8.24 drift before the guide was repaired.
+- **The stale downstream runtime guide is repaired.** The v1.8.24 package shipped `antigravity-v5-runtime.md` with a v1.8.23 framework banner. The premortem reproduced that mismatch in a clean deployment; v1.8.25 aligns the guide and keeps it covered by the new guard.
+- **Bare local pytest no longer double-collects Claude worktrees.** `.claude` joins the existing `norecursedirs` exclusions, preventing leftover `.claude/worktrees/<id>/` trees from producing import-file-mismatch collection errors. CI's explicit-path invocation is unchanged.
+
+**Downstream delta.** The corrected runtime-guide banner ships downstream; the new release guard and pytest discovery fix are upstream test/developer safeguards. No runtime engine, gate order, deployed file set, or user configuration changes.
+
+**What this release does not do.** Workflow job-graph integrity (#183), macOS CI coverage (#181), and Windows PowerShell 5.1 coverage (#184) remain separate backlog items. Tag publication and GitHub Release creation remain explicit post-commit release steps and are verified during this cut.
+
 ## [1.8.24] - 2026-08-24
 
 A sibling fork of the same ancestor reported six governance findings. One was worth fixing here, and the interesting part is that the fix broke three times on the way — each break the same shape as the original defect, and each caught by something other than the person who wrote it.
