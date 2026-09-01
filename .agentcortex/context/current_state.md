@@ -13,7 +13,7 @@
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
 - **Last Updated**: 2026-08-26T16:30:25Z
-- **Last Verified**: 2026-08-23
+- **Last Verified**: 2026-09-01
 - **Update Sequence**: 164
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)

@@ -11,11 +11,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 PYTEST_INI = ROOT / "pytest.ini"
 REQS = ROOT / ".github" / "requirements-ci.txt"
-WORKFLOW = ROOT / ".github" / "workflows" / "validate.yml"
-SECURITY_WORKFLOW = ROOT / ".github" / "workflows" / "security.yml"
+WORKFLOWS_DIR = ROOT / ".github" / "workflows"
+WORKFLOW = WORKFLOWS_DIR / "validate.yml"
+SECURITY_WORKFLOW = WORKFLOWS_DIR / "security.yml"
 
 
 def test_requirements_file_pins_test_deps() -> None:
@@ -177,3 +180,49 @@ def test_docs_pin_marker_registered_and_selects_tests() -> None:
         f"-m docs_pin must select >=4 content-pin tests (got {count}) — a lost tag silently "
         f"re-opens the docs-only gate hole (#112). {proc.stdout[-400:]}"
     )
+
+
+def _needs_targets(needs: object) -> list[str]:
+    """Normalize a job's `needs:` value. GitHub accepts a scalar or a sequence."""
+    if isinstance(needs, str):
+        return [needs]
+    if isinstance(needs, list):
+        return [n for n in needs if isinstance(n, str)]
+    return []
+
+
+def test_needs_targets_handles_both_yaml_forms() -> None:
+    # Every live `needs:` in this repo is the scalar form, so the sequence branch
+    # has no natural coverage — pin it directly or a half-blind guard reads green.
+    assert _needs_targets("changes") == ["changes"]
+    assert _needs_targets(["changes", "validate"]) == ["changes", "validate"]
+    assert _needs_targets(None) == []
+    assert _needs_targets(42) == []
+
+
+def test_workflow_needs_targets_all_resolve() -> None:
+    """A dangling `needs:` is valid YAML, so nothing else here catches it (#183).
+
+    GitHub rejects the WHOLE workflow at parse time on an unresolvable `needs:` —
+    it does not skip the one job — so every push-triggered check stops running
+    while the local tree stays green. Reported by a downstream fork, 2026-08-24.
+    """
+    yaml = pytest.importorskip("yaml", reason="pyyaml not installed — pip install pyyaml")
+
+    files = sorted(WORKFLOWS_DIR.glob("*.yml")) + sorted(WORKFLOWS_DIR.glob("*.yaml"))
+    assert files, f"no workflow files under {WORKFLOWS_DIR} — an empty glob must not pass vacuously"
+
+    for path in files:
+        workflow = yaml.safe_load(path.read_text(encoding="utf-8"))
+        jobs = (workflow or {}).get("jobs") or {}
+        assert jobs, f"{path.name} declares no jobs — a parse yielding nothing must not pass vacuously"
+
+        names = set(jobs)
+        for job_name, body in jobs.items():
+            for target in _needs_targets((body or {}).get("needs")):
+                assert target in names, (
+                    f"{path.name}: job {job_name!r} needs {target!r}, which is not a job in "
+                    f"this workflow. Known jobs: {sorted(names)}. GitHub rejects the entire "
+                    f"workflow at parse time on a dangling needs: — every push-triggered "
+                    f"check silently stops running (#183)."
+                )
