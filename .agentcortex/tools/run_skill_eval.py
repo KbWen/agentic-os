@@ -2,7 +2,7 @@
 """Skill trigger-accuracy eval runner.
 
 Measures whether registry `detect_by.intent_patterns` DATA discriminates: does a
-natural phrasing reach the intended skill, and does a near-miss correctly fail to?
+natural phrasing lexically reach the intended skill, and does a near-miss not?
 
 Scoring is static and delegates to the SHIPPED resolver
 (`trigger_runtime_core.skill_is_candidate`). It MUST NOT carry a matcher of its
@@ -10,8 +10,22 @@ own — backlog #150 records what that costs: the old `resolve_runtime_contract.
 had its own bidirectional-substring matcher which "masked the gap, so the
 simulation CLI reported activations the runtime never performed".
 
+TWO DIFFERENT QUESTIONS, BOTH REPORTED:
+  * `expect_pattern_match` -- did the phrase reach the skill's patterns? This is
+    what the suite asserts. It is a LEXICAL claim, not an activation claim.
+  * activation -- does the skill actually load? A skill with `load_policy:
+    phase-entry`, or one whose `phase_conditions` fire, loads regardless of the
+    prompt. A lexical negative for such a skill is true but says nothing about
+    what the user gets, so the case MUST declare `activates_anyway: true`.
+    An undeclared mismatch is a hard failure: it is how a suite ends up
+    asserting "the near-miss was correctly rejected" about a skill that loaded.
+
 This does NOT measure whether an agent routes correctly. That is a different
 surface and stays in issue #254. Do not rename this "effectiveness".
+
+SOURCE-ONLY (spec §D-5). This tool is deliberately NOT deployed: its only import,
+`trigger_runtime_core.py`, is itself source-only, as is the whole resolver
+toolchain. Shipping the runner alone hands adopters a tool that cannot start.
 
 Spec: docs/specs/skill-trigger-accuracy-eval.md (backlog #165, issue #398)
 Run:  python .agentcortex/tools/run_skill_eval.py [--format json]
@@ -22,6 +36,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -37,15 +52,42 @@ FAIL = "fail"
 KNOWN_GAP = "known_gap"
 INERT = "inert"
 
+# Fail-closed: a typo'd key must be an error, never a silently ignored field.
+ALLOWED_KEYS = frozenset(
+    {
+        "id",
+        "skill_id",
+        "prompt",
+        "classification",
+        "phase",
+        "platform",
+        "expect_pattern_match",
+        "activates_anyway",
+        "known_gap",
+        "note",
+    }
+)
+
+# A known gap must name a defect or a backlog row, never free text (AC-7).
+KNOWN_GAP_RE = re.compile(r"^(DEFECT-\d+|#\d+)$")
+
 
 def _load_core(root: Path) -> Any:
     """Load the canonical resolver. Never reimplement its matching here."""
     module_path = root / ".agentcortex" / "tools" / "trigger_runtime_core.py"
+    if not module_path.is_file():
+        raise RuntimeError(
+            "canonical resolver not found: %s -- this tool is source-only and cannot "
+            "run against a deployed tree (spec D-5)" % module_path
+        )
     spec = importlib.util.spec_from_file_location("_acx_trigger_runtime_core", module_path)
     if spec is None or spec.loader is None:
         raise RuntimeError("cannot load canonical resolver: %s" % module_path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    except OSError as exc:
+        raise RuntimeError("cannot load canonical resolver: %s (%s)" % (module_path, exc))
     return module
 
 
@@ -58,57 +100,41 @@ def _load_yaml(path: Path) -> Any:
         return yaml.safe_load(handle)
 
 
-def _git_sha(root: Path) -> str:
-    """Best-effort commit SHA. Returns the literal 'unknown' when unavailable."""
+def _probe(argv: list, timeout: int) -> str:
+    """Run a best-effort identity probe. Returns stdout, or '' on any failure."""
     try:
         proc = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=10,
+            argv, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout
         )
     except (OSError, subprocess.SubprocessError):
-        return "unknown"
-    if proc.returncode != 0:
-        return "unknown"
-    return proc.stdout.strip() or "unknown"
+        return ""
+    return proc.stdout if proc.returncode == 0 else ""
+
+
+def _git_sha(root: Path) -> str:
+    return _probe(["git", "-C", str(root), "rev-parse", "HEAD"], 10).strip() or "unknown"
 
 
 def _snapshot_digest(root: Path) -> str:
-    """Skill-package snapshot digest, or the literal 'unknown'."""
     tool = root / ".agentcortex" / "tools" / "resolve_skill_lockfile.py"
     if not tool.is_file():
         return "unknown"
+    out = _probe([sys.executable, str(tool), "--root", str(root), "--snapshot-only"], 60)
     try:
-        proc = subprocess.run(
-            [sys.executable, str(tool), "--root", str(root), "--snapshot-only"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=60,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return "unknown"
-    if proc.returncode != 0:
-        return "unknown"
-    try:
-        return json.loads(proc.stdout).get("snapshot_digest") or "unknown"
+        return json.loads(out).get("snapshot_digest") or "unknown"
     except (ValueError, AttributeError):
         return "unknown"
 
 
-def score_case(core: Any, entry: dict, case: dict, platform: str) -> tuple:
-    """Score one case. Returns (status, detail).
+def score_case(core: Any, entry: dict, case: dict, default_platform: str) -> dict:
+    """Score one case against the shipped resolver.
 
-    The measured signal is `matches["manual"]` — the flag that reflects
-    free-text-to-pattern resolution. It is NOT `is_candidate`: that is
-    `manual or phase_ready`, so it is true for any case whose phase sits in the
-    skill's phase_scope, which would make every positive trivially pass and
-    every negative impossible.
+    The lexical signal is `matches["manual"]`. It is NOT `is_candidate`, which is
+    `manual or phase_ready` and would make every positive trivially pass and every
+    negative impossible. Activation is read separately from `skill_is_activated`,
+    the real runtime decision, and cross-checked against the case's own claim.
     """
+    platform = case.get("platform") or default_platform
     _is_candidate, matches = core.skill_is_candidate(
         entry,
         classification=case["classification"],
@@ -120,35 +146,102 @@ def score_case(core: Any, entry: dict, case: dict, platform: str) -> tuple:
     )
     if not matches:
         # skill_is_candidate returns (False, {}) when classification or platform
-        # gates the entry out. The case then measures nothing at all, which must
-        # be an error rather than a silent negative.
-        return INERT, (
-            "classification %r / platform %r is gated out by the registry entry -- "
-            "this case measures nothing" % (case["classification"], platform)
-        )
+        # gates the entry out. The case then measures nothing, which must be an
+        # error rather than a silent negative.
+        return {
+            "status": INERT,
+            "detail": "classification %r / platform %r is gated out by the registry entry -- "
+            "this case measures nothing" % (case["classification"], platform),
+            "activated": None,
+            "user_visible_gap": False,
+        }
 
     actual = bool(matches.get("manual"))
-    expected = bool(case["expect_activation"])
+    expected = bool(case["expect_pattern_match"])
+    activated = bool(
+        core.skill_is_activated(
+            entry, classification=case["classification"], phase=case["phase"], matches=matches
+        )
+    )
+    # The question that matters is not "does it activate" but "would it activate
+    # even if this phrase had not matched". Otherwise a spurious load caused by an
+    # over-triggering pattern reads as "it loads anyway", hiding the very harm.
+    without_match = bool(
+        core.skill_is_activated(
+            entry,
+            classification=case["classification"],
+            phase=case["phase"],
+            matches=dict(matches, manual=False),
+        )
+    )
+    declared = bool(case.get("activates_anyway"))
+
+    # A lexical negative for a skill that loads anyway says nothing about what the
+    # user gets. Force the case to say so out loud, and reject a stale annotation.
+    if not expected and without_match and not declared:
+        return {
+            "status": FAIL,
+            "detail": "expects no pattern match, but the skill loads in this phase even without "
+            "one (load_policy=%r) -- declare activates_anyway: true or re-site the case"
+            % entry.get("load_policy"),
+            "activated": activated,
+            "user_visible_gap": False,
+        }
+    if declared and not without_match:
+        return {
+            "status": FAIL,
+            "detail": "declares activates_anyway but the skill does not load here without a match -- stale annotation",
+            "activated": activated,
+            "user_visible_gap": False,
+        }
+
     if actual == expected:
-        return PASS, ""
-    detail = "expected activation=%s, got %s" % (expected, actual)
+        return {"status": PASS, "detail": "", "activated": activated, "user_visible_gap": False}
+
+    detail = "expected pattern_match=%s, got %s" % (expected, actual)
     if case.get("known_gap"):
-        return KNOWN_GAP, detail
-    return FAIL, detail
+        # A gap the user never feels (the skill loads by another path) is real but
+        # not user-visible. Both counts are reported; both are ratcheted.
+        return {
+            "status": KNOWN_GAP,
+            "detail": detail,
+            "activated": activated,
+            "user_visible_gap": not without_match,
+        }
+    return {"status": FAIL, "detail": detail, "activated": activated, "user_visible_gap": False}
 
 
-def _validate_case(case: Any, index: int, skill_ids: set) -> None:
+def _validate_case(case: Any, index: int, skill_ids: set, valid_phases: set) -> None:
     if not isinstance(case, dict):
         raise ValueError("case %d is not a mapping" % index)
+    unknown = sorted(set(case) - ALLOWED_KEYS)
+    if unknown:
+        raise ValueError(
+            "case %r: unknown key(s) %s -- a typo must be an error, not a silently "
+            "ignored field" % (case.get("id", index), ", ".join(repr(k) for k in unknown))
+        )
     for field in ("id", "skill_id", "prompt", "classification", "phase"):
         if not isinstance(case.get(field), str) or not case[field].strip():
             raise ValueError("case %d: %r must be a non-empty string" % (index, field))
-    if not isinstance(case.get("expect_activation"), bool):
-        raise ValueError("case %r: expect_activation must be a boolean" % case.get("id"))
+    if not isinstance(case.get("expect_pattern_match"), bool):
+        raise ValueError("case %r: expect_pattern_match must be a boolean" % case["id"])
+    if "activates_anyway" in case and not isinstance(case["activates_anyway"], bool):
+        raise ValueError("case %r: activates_anyway must be a boolean" % case["id"])
+    if case["phase"] not in valid_phases:
+        raise ValueError(
+            "case %r: phase %r is not one of %s"
+            % (case["id"], case["phase"], ", ".join(sorted(valid_phases)))
+        )
     if case["skill_id"] not in skill_ids:
         raise ValueError(
             "case %r: skill_id %r is not a kind:skill entry in the registry"
             % (case["id"], case["skill_id"])
+        )
+    gap = case.get("known_gap")
+    if gap is not None and not (isinstance(gap, str) and KNOWN_GAP_RE.match(gap)):
+        raise ValueError(
+            "case %r: known_gap %r must name a defect or backlog row (DEFECT-<n> or #<n>) -- "
+            "free text would let any failure be excused" % (case["id"], gap)
         )
 
 
@@ -171,67 +264,78 @@ def run(root: Path, cases_path: Path, registry_path: Path, platform: str, harnes
     seen = set()
     results = []
     for index, case in enumerate(cases):
-        _validate_case(case, index, set(entries))
+        _validate_case(case, index, set(entries), set(core.VALID_PHASES))
         if case["id"] in seen:
             raise ValueError("duplicate case id: %r" % case["id"])
         seen.add(case["id"])
-        status, detail = score_case(core, entries[case["skill_id"]], case, platform)
+        scored = score_case(core, entries[case["skill_id"]], case, platform)
         results.append(
             {
                 "id": case["id"],
                 "skill_id": case["skill_id"],
                 "prompt": case["prompt"],
-                "expect_activation": bool(case["expect_activation"]),
-                "status": status,
-                "detail": detail,
+                "expect_pattern_match": bool(case["expect_pattern_match"]),
                 "known_gap": case.get("known_gap") or None,
+                **scored,
             }
         )
 
     covered = {case["skill_id"] for case in cases}
-    baseline = document.get("known_gap_baseline")
+    positives = {c["skill_id"] for c in cases if c["expect_pattern_match"]}
+    gaps = [r for r in results if r["status"] == KNOWN_GAP]
     return {
         "run_identity": {
             "commit_sha": _git_sha(root),
             "skill_snapshot_digest": _snapshot_digest(root),
             "harness": harness or "unknown",
-            "cases_file": str(cases_path.as_posix()),
-            "registry": str(registry_path.as_posix()),
+            "cases_file": cases_path.as_posix(),
+            "registry": registry_path.as_posix(),
             "platform": platform,
         },
         "totals": {
             "cases": len(results),
             "passed": sum(1 for r in results if r["status"] == PASS),
             "failed": sum(1 for r in results if r["status"] == FAIL),
-            "known_gaps": sum(1 for r in results if r["status"] == KNOWN_GAP),
+            "known_gaps": len(gaps),
+            "user_visible_gaps": sum(1 for r in gaps if r["user_visible_gap"]),
             "inert": sum(1 for r in results if r["status"] == INERT),
             "skills_covered": len(covered),
+            "skills_with_positive": len(positives),
             "skills_in_registry": len(entries),
-            "known_gap_baseline": baseline if isinstance(baseline, int) else None,
+            "known_gap_baseline": document.get("known_gap_baseline"),
+            "user_visible_gap_baseline": document.get("user_visible_gap_baseline"),
         },
         "uncovered_skills": sorted(set(entries) - covered),
+        "skills_without_positive": sorted(set(entries) - positives),
         "results": results,
     }
 
 
 def _verdict(report: dict) -> tuple:
-    """Return (exit_code, reasons). Deterministic scoring permits a hard exit."""
+    """Return (exit_code, reasons). Deterministic scoring permits a hard exit.
+
+    Coverage completeness is deliberately NOT here. It is an invariant of THIS
+    repo's case file, asserted by the guard test -- putting it in the runner made
+    the tool reject any other case file, which is the opposite of reusable.
+    """
     totals = report["totals"]
     reasons = []
     if totals["failed"]:
         reasons.append("%d case(s) failed" % totals["failed"])
     if totals["inert"]:
         reasons.append("%d case(s) measured nothing (classification/platform gated)" % totals["inert"])
-    if report["uncovered_skills"]:
-        reasons.append("skills with no case: %s" % ", ".join(report["uncovered_skills"]))
-    baseline = totals["known_gap_baseline"]
-    if baseline is None:
-        reasons.append("known_gap_baseline missing from the cases file")
-    elif totals["known_gaps"] > baseline:
-        reasons.append(
-            "known gaps rose to %d against a baseline of %d -- the ratchet only goes down"
-            % (totals["known_gaps"], baseline)
-        )
+    for key, label in (
+        ("known_gap_baseline", "known_gaps"),
+        ("user_visible_gap_baseline", "user_visible_gaps"),
+    ):
+        baseline = totals[key]
+        if not isinstance(baseline, int):
+            reasons.append("%s missing from the cases file" % key)
+        elif totals[label] != baseline:
+            reasons.append(
+                "%s is %d against a declared baseline of %d -- cap at today: fix the gap and "
+                "lower the baseline in the same change" % (label, totals[label], baseline)
+            )
     return (1 if reasons else 0), reasons
 
 
@@ -242,18 +346,32 @@ def _print_text(report: dict, reasons: list) -> None:
         % (totals["cases"], totals["passed"], totals["failed"], totals["known_gaps"], totals["inert"])
     )
     print(
-        "coverage: %d/%d kind:skill entries"
-        % (totals["skills_covered"], totals["skills_in_registry"])
+        "coverage: %d/%d kind:skill entries (%d with a positive case)"
+        % (totals["skills_covered"], totals["skills_in_registry"], totals["skills_with_positive"])
     )
-    # Known gaps are printed on EVERY run, never silently skipped (spec §D-2).
     gaps = [r for r in report["results"] if r["status"] == KNOWN_GAP]
     if gaps:
+        # Known gaps are printed on EVERY run, never silently skipped (spec D-2).
         print(
-            "known gaps (%d, baseline %s) -- asserted, not excused:"
-            % (len(gaps), totals["known_gap_baseline"])
+            "known gaps: %d (baseline %s), of which %d are user-visible (baseline %s):"
+            % (
+                totals["known_gaps"],
+                totals["known_gap_baseline"],
+                totals["user_visible_gaps"],
+                totals["user_visible_gap_baseline"],
+            )
         )
         for result in gaps:
-            print("  - %s [%s] %s: %s" % (result["id"], result["known_gap"], result["skill_id"], result["detail"]))
+            print(
+                "  - %s [%s] %s%s: %s"
+                % (
+                    result["id"],
+                    result["known_gap"],
+                    result["skill_id"],
+                    "" if result["user_visible_gap"] else " (skill loads anyway -- not user-visible)",
+                    result["detail"],
+                )
+            )
     for result in report["results"]:
         if result["status"] in (FAIL, INERT):
             print("  [%s] %s (%s): %s" % (result["status"].upper(), result["id"], result["skill_id"], result["detail"]))
@@ -262,10 +380,10 @@ def _print_text(report: dict, reasons: list) -> None:
 
 
 def main() -> int:
-    # Force UTF-8 stdout so the zh-TW case prompts survive a cp950 Windows
-    # console (child processes default to the console codepage). Without this,
-    # `--format json` emits cp950 bytes that no JSON parser can read -- measured,
-    # not assumed. Same guard as check_ssot_caps.py / check_routing_actions.py.
+    # Force UTF-8 stdout so the zh-TW case prompts survive a cp950 Windows console
+    # (child processes default to the console codepage). Without this, --format json
+    # emits cp950 bytes that no JSON parser can read -- measured, not assumed. Same
+    # guard as check_ssot_caps.py / check_routing_actions.py.
     try:
         sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:
@@ -275,7 +393,7 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root")
     parser.add_argument("--cases", default=None, help="Path to the eval cases YAML")
     parser.add_argument("--registry", default=None, help="Path to trigger-registry.yaml")
-    parser.add_argument("--platform", default=DEFAULT_PLATFORM, help="Platform to score against")
+    parser.add_argument("--platform", default=DEFAULT_PLATFORM, help="Default platform when a case omits one")
     parser.add_argument(
         "--harness",
         default="",
