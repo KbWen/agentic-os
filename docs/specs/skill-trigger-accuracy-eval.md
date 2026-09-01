@@ -1,5 +1,5 @@
 ---
-status: draft
+status: shipped
 title: Skill Trigger-Accuracy Eval Suite
 source: github-issue-398
 primary_domain: skill-ecosystem
