@@ -38,6 +38,6 @@ foreach ($f in $files) {
     }
 }
 if ($hit -ne 0) {
-    [Console]::Error.WriteLine('ACX credential floor: high-confidence secret shape in staged content (redacted above). Rotate/remove it, then re-commit. (no-python floor; CI TruffleHog is the backstop)')
+    [Console]::Error.WriteLine('ACX credential floor: high-confidence secret shape in staged content (redacted above). Rotate/remove it, then re-commit. (narrow no-python floor; a full scan needs the python scanner or CI secret scanning)')
 }
 exit $hit

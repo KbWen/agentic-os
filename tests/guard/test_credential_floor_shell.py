@@ -7,6 +7,8 @@ The floor is pure bash + grep — it never invokes Python (the no-python guarant
 """
 from __future__ import annotations
 
+import importlib.util
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -111,3 +113,70 @@ def test_floor_git_failure_exits_3(tmp_path):
     """Not a git repo → fail-CLOSED exit 3 (never 0 'clean')."""
     r = subprocess.run([BASH, str(FLOOR)], cwd=str(tmp_path), capture_output=True, encoding="utf-8", errors="replace")
     assert r.returncode == 3
+
+def _floor_patterns():
+    """The floor's OWN patterns, parsed from its source.
+
+    Never re-declare them here: a second matcher is the defect backlog #165 forbids
+    and #150 records the cost of."""
+    src = FLOOR.read_text(encoding="utf-8")
+    block = re.search(r"PATTERNS='(.*?)'", src, re.S)
+    assert block, "could not read PATTERNS out of credential_floor.sh"
+    out = []
+    for line in block.group(1).splitlines():
+        if "|" in line:
+            name, ere = line.split("|", 1)
+            out.append((name.strip(), ere.strip()))
+    return out
+
+
+def test_repo_ships_no_shape_its_own_floor_would_block():
+    """This module's docstring promises no full literal sits in the repo. Enforce it.
+
+    That promise had no verifier, and it had already broken: `scan_credentials.py`
+    carried AWS's canonical example key in the docstring that documents the allowlist
+    escape hatch. Because the floor reads each WHOLE staged blob and has no
+    self-exclusion, a no-Python adopter following the deploy banner's own
+    `git add .agentcortex/ ...` had their FIRST framework commit blocked and was told
+    to rotate a secret out of a core-tier file the framework had just force-written.
+    The scanner passed the same staged set -- only the floor saw it."""
+    patterns = _floor_patterns()
+    assert patterns, "the floor declares no patterns -- parse failed"
+    hits = []
+    for name, ere in patterns:
+        r = subprocess.run(
+            ["git", "grep", "-nE", "-e", ere],
+            cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="replace",
+        )
+        for line in r.stdout.splitlines():
+            if "pragma: allowlist secret" in line.lower():
+                continue
+            hits.append(name + " -> " + line[:160])
+    assert not hits, (
+        "tracked files carry a shape the floor blocks on; build it by concatenation "
+        "or abbreviate the prose:" + chr(10) + chr(10).join(hits)
+    )
+
+def test_reduced_assurance_message_matches_the_real_pattern_counts():
+    """The hook's REDUCED ASSURANCE line quotes two counts. Pin them to their sources.
+
+    A quantified claim shipped in a file with no verifier decays silently -- the same
+    advertised-but-unenforced defect this change was written to fix, so it applies to
+    the fix too. Counts are read from the two tools; never re-declared here.
+    """
+    hook = (ROOT / ".githooks" / "pre-commit.guard-ssot.sample").read_text(encoding="utf-8")
+    m = re.search(
+        r"the floor screens (\d+) credential shapes, "
+        r"the python scanner screens (\d+)", hook)
+    assert m, "the REDUCED ASSURANCE line is gone or reworded -- update this pin"
+    scanner = ROOT / ".agentcortex" / "tools" / "scan_credentials.py"
+    spec = importlib.util.spec_from_file_location("scan_credentials_for_count", scanner)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(mod)
+    assert (int(m.group(1)), int(m.group(2))) == (
+        len(_floor_patterns()), len(mod._PATTERNS)), (
+        "the hook tells the developer how much assurance the fallback gives up; "
+        "that number is now wrong"
+    )
