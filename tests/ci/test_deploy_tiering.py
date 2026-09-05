@@ -418,6 +418,18 @@ def test_deploy_gitignores_acx_local_sidecar() -> None:
     assert "*.acx-local" in s, "deploy.sh must add *.acx-local to the managed .gitignore block"
 
 
+def test_deploy_gitignores_python_bytecode() -> None:
+    """#430: Agentic OS Python tools can create bytecode in downstream trees.
+
+    The source repository ignores these files; the managed downstream
+    .gitignore block must do the same so running validate does not dirty an
+    adopter's first framework commit with interpreter-specific artifacts.
+    """
+    s = DEPLOY_SH.read_text(encoding="utf-8")
+    assert "__pycache__/" in s, "deploy.sh must add __pycache__/ to the managed .gitignore block"
+    assert "*.pyc" in s, "deploy.sh must add *.pyc to the managed .gitignore block"
+
+
 @requires_powershell
 def test_deploy_ps1_entrypoint_resolves_real_bash() -> None:
     with tempfile.TemporaryDirectory() as td:
