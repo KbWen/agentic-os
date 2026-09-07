@@ -109,12 +109,18 @@ jobs:
       #
       # If upstream ever changes that join, the composed string stops being a
       # valid image reference and `docker run` fails — loudly, not silently.
-      # sha256:aa821cf4… is the manifest digest published for release v3.96.0.
+      # sha256:deb2af10… is the manifest digest published for release v3.97.1.
+      # This digest and the `uses:` SHA above MUST be bumped together: dependabot
+      # rewrites the action SHA but never touches a `with:` input, so a bump left
+      # alone here upgrades the wrapper while the OLD scanner keeps running
+      # (observed on PR #425). test_ac5_trufflehog_wrapper_and_digest_agree_on_release
+      # turns that drift red. Resolve a new digest with:
+      #   docker buildx imagetools inspect ghcr.io/trufflesecurity/trufflehog:<version>
       - name: Scan for secrets
         uses: trufflesecurity/trufflehog@20652fbbdefffcdaa493a5bf57ab2ac6b1db715b  # v3.97.1
         with:
           image: ghcr.io/trufflesecurity/trufflehog@sha256
-          version: "aa821cf4ace8861c7d096d83818cdf7bb9719028a52d37a52eaad44086a52577"
+          version: "deb2af10659a488a14d262a323addcde099d99827a1cf1dc4e93c17915c39f08"
           # --exclude-detectors=lob (backlog #171): the Lob detector matches a word
           # boundary, `live` or `test`, an underscore, then EXACTLY 35 characters from
           # [a-zA-Z0-9_] -- underscores included -- so an ordinary snake_case identifier

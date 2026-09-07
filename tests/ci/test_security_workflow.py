@@ -304,6 +304,51 @@ class TestTruffleHogJob(unittest.TestCase):
             "so a reader can map the opaque digest back to a version",
         )
 
+    def test_ac5_trufflehog_wrapper_and_digest_agree_on_release(self):
+        """Drift instrument for the automated bump path — not a provenance claim.
+
+        Dependabot rewrites the `uses:` SHA and its `# vX.Y.Z` comment, but the
+        scanner digest lives in a `with: version:` input that no bump ever
+        touches. Backlog #166 predicted that trap when the digest pin was
+        chosen; PR #425 walked into it — the wrapper moved to v3.97.1 while the
+        digest stayed on v3.96.0's, and every existing test stayed green, so the
+        upgrade would have landed wrapper-only with the old scanner still
+        executing.
+
+        Comparing the two release comments turns that specific drift red. It is
+        deliberately NOT offered as provenance, for the reason
+        test_ac5_trufflehog_release_comment_present already records: a comment
+        is display metadata. Two edits still slip past it — a hand-edited `uses:`
+        SHA whose comment was left alone, and a provenance comment advanced to a
+        release whose digest was not actually substituted. Neither is the
+        automated path, and only the digest assertion above binds what executes.
+        This test's job is narrower and worth having anyway: make the *bump*
+        path fail loudly instead of half-upgrading.
+        """
+        raw = SECURITY_YML.read_text(encoding="utf-8")
+        wrapper = re.search(
+            r"uses:\s*trufflesecurity/trufflehog@[0-9a-f]{40}\s*#\s*v(\d+\.\d+\.\d+)",
+            raw,
+        )
+        digest = re.search(r"#\s*sha256:[0-9a-f]{6,}.*release v(\d+\.\d+\.\d+)", raw)
+        self.assertIsNotNone(
+            wrapper, "TruffleHog `uses:` line must carry a `# vX.Y.Z` release comment"
+        )
+        self.assertIsNotNone(
+            digest, "a comment must state which release the pinned digest belongs to"
+        )
+        self.assertEqual(
+            wrapper.group(1),
+            digest.group(1),
+            "TruffleHog wrapper and scanner digest name different releases "
+            f"(wrapper v{wrapper.group(1)}, digest v{digest.group(1)}). An action-SHA "
+            "bump moved the wrapper without the `with: version:` digest, so the "
+            "scanner that actually runs is still the older release. Resolve the new "
+            "digest with `docker buildx imagetools inspect "
+            "ghcr.io/trufflesecurity/trufflehog:<version>` and update both the "
+            "`version:` input and its provenance comment.",
+        )
+
 
 class TestDependencyAuditJob(unittest.TestCase):
     """AC-4 & AC-5: pip-audit conditional on requirements files, -r flags, pinned version."""
