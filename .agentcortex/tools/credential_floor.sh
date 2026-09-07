@@ -46,6 +46,6 @@ $files
 FILE_EOF
 
 if [ "$hit" -ne 0 ]; then
-  printf 'ACX credential floor: high-confidence secret shape in staged content (redacted above). Rotate/remove it, then re-commit. (no-python floor; CI TruffleHog is the backstop)\n' >&2
+  printf 'ACX credential floor: high-confidence secret shape in staged content (redacted above). Rotate/remove it, then re-commit. (narrow no-python floor; a full scan needs the python scanner or CI secret scanning)\n' >&2
 fi
 exit "$hit"

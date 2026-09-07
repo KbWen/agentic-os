@@ -76,7 +76,7 @@ def scan_text(text: str, label: str) -> list[tuple[str, int, str]]:
 
     A line containing ``pragma: allowlist secret`` (the detect-secrets convention) is
     skipped — an escape hatch for documented EXAMPLE tokens that share a real
-    credential's shape (e.g. AWS's own ``AKIAIOSFODNN7EXAMPLE`` in setup docs), so a
+    credential's shape (e.g. AWS's own ``AKIA...EXAMPLE`` in setup docs), so a
     blocking PR gate does not reject legitimate documentation / fixture changes.
     """
     findings: list[tuple[str, int, str]] = []

@@ -203,7 +203,7 @@ However you adopt Agentic OS — **fork** the repo, or **clone + `deploy_brain.s
 | You want to… | Put it here | Why it survives upgrades |
 |---|---|---|
 | Add project governance (narrow/disable a directive) | `AGENTS.override.md` (project root) or `~/.agentcortex/AGENTS.override.md` (personal) | Loaded present-only at session start; framework never ships these files. MAY narrow/disable directives but **cannot** relax delivery gates. |
-| Add your own skills | `.agents/skills/custom-<name>/SKILL.md` (+ `.agent/skills/custom-<name>` metadata) | `custom-*` is a reserved namespace the framework never ships → zero collision, never overwritten. |
+| Add your own skills | `.agents/skills/custom-<name>/SKILL.md` (+ `.agent/skills/custom-<name>` metadata) | `custom-*` is a reserved namespace the framework never ships → zero collision, never overwritten. **Survival is not activation:** an undeclared `custom-*` skill stays inert — it is never auto-recommended and cannot be pinned. To make it activatable, declare its id under `skills:` in `.agentcortex/context/private/downstream-capabilities.yaml` (opt-in, capped at `load_policy: on-match`; see [ADR-007](adr/ADR-007-downstream-capability-declaration-seam.md)). |
 | Adjust skill activation (pin/exclude) | `.agentcortex/context/private/user-preferences.yaml` | Gitignored, personal, loaded by bootstrap. |
 | Connect an external knowledge base (read-only) | `knowledge_sources:` in `.agentcortex/context/private/downstream-capabilities.yaml` — see [Connecting a knowledge base](../.agentcortex/docs/guides/connecting-a-knowledge-base.md) | Present-only opt-in; **absent = zero cost**. Lives in the never-shipped private dir; consumed as DATA to enrich `/plan` + `/review`. |
 

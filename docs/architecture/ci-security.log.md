@@ -5,6 +5,12 @@ domain: ci-security
 
 # CI Security — Decision Log (L2)
 
+### [ci-security][2026-09-05][fix/precommit-credential-failopen]
+source_spec: docs/specs/dev-flow-hardening.md
+source_pr: https://github.com/KbWen/agentic-os/pull/433
+
+- [CONSTRAINT] **The two credential pre-screens do not share a detection surface, so routing between them is never a drop-in.** `scan_credentials.py` reads only newly-ADDED diff lines, self-excludes `("scan_credentials.py", "test_scan_credentials.py")`, matches a case-INsensitive allowlist pragma, and screens **7** shapes. `credential_floor.sh` reads each WHOLE staged blob, excludes nothing, matches the pragma case-SENsitively, and screens **3**. Measured both directions on one staged set: the floor blocks files the scanner passes (whole-blob + no self-exclusion), and the scanner blocks shapes the floor cannot see (4 of 7). Consequences that cost this unit two review rounds: making the floor canonical-and-always-run would block every commit touching the credential controls on a working-python host; and falling back to the floor **silently** on a scanner error is *quieter* than saying the scanner did not run, because a clean narrow screen reads as a clean scan. Any future change that swaps, reorders, or merges these two must state which direction of the asymmetry it is accepting. Filed as backlog #195; the hook's header comment now names the trade in both directions.
+
 ### [ci-security][2026-08-12][fix/166-trufflehog-scanner-pin]
 source_spec: docs/specs/ci-security-scanning.md
 source_sha: 982ce7b

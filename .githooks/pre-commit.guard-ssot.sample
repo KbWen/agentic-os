@@ -22,29 +22,59 @@ fi
 cd "$ROOT" || exit 1
 
 # Credential pre-screen (issue #225): block secrets BEFORE they enter object history
-# — CI TruffleHog only fires post-commit, by which point rotation (not deletion) is the
+# — CI secret scanning only fires post-commit, by which point rotation (not deletion) is the
 # remedy. Python path = scan_credentials.py (full detection); NO-PYTHON path =
-# credential_floor.sh (narrow FP-free AKIA/PEM/ghp_ subset; no silent skip). Opt-in hook;
-# --no-verify-bypassable; TruffleHog is the CI backstop either way.
+# credential_floor.sh (narrow FP-free AKIA/PEM/ghp_ subset; no silent skip). A scanner
+# that CANNOT RUN falls through to the floor instead of passing the commit unscanned
+# (dev-flow-hardening AC-8: the credential floor cannot fail open silently). The floor
+# trades in BOTH directions and is not a drop-in: it reads each whole staged blob where
+# the scanner reads only ADDED lines, but screens 3 credential shapes where the scanner
+# screens 7. Opt-in hook; --no-verify-bypassable. A deployed tree ships
+# no .github/workflows, so an adopter may have no CI backstop at all.
 CREDENTIAL_SCANNER=".agentcortex/tools/scan_credentials.py"
 CREDENTIAL_FLOOR=".agentcortex/tools/credential_floor.sh"
+# Existence is not startability: on stock Windows the WindowsApps App-Execution-Alias
+# `python`/`python3` EXIST on PATH with no Python installed and exit 9009. Probe each
+# candidate the way validate.sh does (same python3 -> python order) so a stub can never
+# win the selection and shadow the floor below. Ref: backlog #144, which fixed this in
+# both validator twins but not here.
 CRED_PY=""
-command -v python >/dev/null 2>&1 && CRED_PY=python
-[[ -z "$CRED_PY" ]] && command -v python3 >/dev/null 2>&1 && CRED_PY=python3
+for _cred_py in python3 python; do
+  if command -v "$_cred_py" >/dev/null 2>&1 && "$_cred_py" -c "import sys" >/dev/null 2>&1; then
+    CRED_PY="$_cred_py"; break
+  fi
+done
+unset _cred_py
 cred_rc=0
+floor_ran=0
 if [[ -n "$CRED_PY" && -f "$CREDENTIAL_SCANNER" ]]; then
   "$CRED_PY" "$CREDENTIAL_SCANNER" --staged; cred_rc=$?
+  # An execution error is NOT a clean scan -- the same policy security.yml's
+  # credential-scan job already applies. The regex floor is the canonical
+  # no-python control (ADR-008 / AC-S4), so consult it before giving up rather
+  # than letting a scanner failure pass the commit through unscanned.
+  if [[ "$cred_rc" -ne 0 && "$cred_rc" -ne 1 && -f "$CREDENTIAL_FLOOR" ]]; then
+    echo "ACX pre-commit: python scanner could not run (exit $cred_rc); falling back to the no-python floor."
+    bash "$CREDENTIAL_FLOOR" --staged; cred_rc=$?; floor_ran=1
+    if [[ "$cred_rc" -eq 0 ]]; then
+      echo "ACX pre-commit: REDUCED ASSURANCE -- the floor screens 3 credential shapes, the python scanner screens 7. A clean floor result is NOT a clean full scan; fix the scanner."
+    fi
+  fi
 elif [[ -f "$CREDENTIAL_FLOOR" ]]; then
-  bash "$CREDENTIAL_FLOOR" --staged; cred_rc=$?            # no-python narrow floor
+  bash "$CREDENTIAL_FLOOR" --staged; cred_rc=$?; floor_ran=1   # no-python narrow floor
 else
-  echo "ACX pre-commit: no credential pre-screen available on this host; CI TruffleHog backstops."
+  echo "ACX pre-commit: no credential pre-screen available on this host; only CI secret scanning can backstop this, if your CI runs one."
 fi
 if [[ "$cred_rc" -eq 1 ]]; then
   echo "ACX pre-commit: credential pattern detected in staged changes; commit blocked."
   echo "   Rotate the exposed secret, remove it from the change, then re-commit."
   exit 1
 elif [[ "$cred_rc" -ne 0 ]]; then
-  echo "ACX pre-commit: credential pre-screen could not run (exit $cred_rc); continuing (CI TruffleHog backstops)."
+  if [[ "$floor_ran" -eq 1 ]]; then
+    echo "ACX pre-commit: credential pre-screen could not run (floor exit $cred_rc); continuing UNSCANNED. Only CI secret scanning can backstop this, if your CI runs one."
+  else
+    echo "ACX pre-commit: credential pre-screen could not run (exit $cred_rc) and the no-python floor was not available; continuing UNSCANNED. Only CI secret scanning can backstop this, if your CI runs one."
+  fi
 fi
 
 GUARD_RECEIPT=".agentcortex/context/.guard_receipts"

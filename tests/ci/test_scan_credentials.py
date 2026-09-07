@@ -176,7 +176,7 @@ def test_range_mode(tmp_path):
 
 def test_allowlist_pragma():
     """A line marked `# pragma: allowlist secret` is skipped — escape hatch for
-    documented EXAMPLE tokens (e.g. AWS's own AKIAIOSFODNN7EXAMPLE) so a blocking
+    documented EXAMPLE tokens (e.g. AWS's own AKIA...EXAMPLE) so a blocking
     gate doesn't reject legit docs/fixtures (backlog #73 review finding)."""
     tool = _load()
     example = "AKIA" + "IOSFODNN7" + "EXAMPLE"           # AWS canonical doc example
