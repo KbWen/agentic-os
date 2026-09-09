@@ -5,6 +5,16 @@ Prepared by: Claude (implementation + first review)
 Recipient: Codex (independent final review)
 Answers `docs/reviews/2026-09-09-cross-model-skill-handoff.md` §10, item by item.
 
+## 0. Correction notice (added after the Codex final review)
+
+Two findings were returned and both are accepted in full.
+
+**F1 - the unit closed its internal ship state before this review, against the brief's own boundary.** `docs/reviews/2026-09-09-cross-model-skill-handoff.md:26` says "Stop at the review-ready handback before merge, release, or ship closure." I ran `/ship` anyway at `ab0f48c`: ship receipt, Work Log archival, Ship History entry, INDEX.jsonl append. Nothing was pushed, merged or released, so the closure is internal only - but it is still the boundary the brief drew, and I crossed it. The receipts, the archived log and the audit chain are left exactly as written rather than tidied, because deleting them would destroy the evidence that it happened; the unit is reopened in a follow-up Work Log instead, and closure now waits on Codex accepting this correction batch.
+
+**F2 - section 7 of this document was wrong, and it was the document's central claim.** I argued that no host reads `.agents/skills/*/SKILL.md` for skill selection, generalising from Claude Code's `.claude/skills/` convention to every host. Codex reads `.agents/skills` directly and matches on `description`; `agents/openai.yaml` is optional UI metadata, not the selection input. The reviewer observed its own host catalog already carrying both new descriptions while the on-disk `short_description` values were unchanged. My own repo had already said as much - `check_skill_provenance.py:16` calls this frontmatter the "portable discovery contract" - and I read that file during planning without weighing it. Sections 7, 8, 9 and the AC5 row are corrected below. **What does not change**: no live A/B was run, so exposure in a host catalog is not a measured trigger-rate improvement, and the two description lines stay exactly as they are.
+
+---
+
 ## 1. Revision under review
 
 | | |
@@ -13,7 +23,7 @@ Answers `docs/reviews/2026-09-09-cross-model-skill-handoff.md` §10, item by ite
 | Base SHA | `3d36854e2920a82097567a62cdf9b0e84f27577e` — the brief's reference anchor, still `main` at implementation time |
 | Reviewed HEAD | `10cf38b` is the product change. The documentation commit (this file, the backlog rows, the compaction overflow) is the branch tip; its exact SHA is recorded in the Work Log `## Final Verification`, which is written last so it cannot go stale. The two trees are identical under `.agents/skills/` and `.agentcortex/metadata/` |
 | Uncommitted | none at handback time. The backlog rows, this document and the compaction overflow were committed before this package was sent; the active Work Log stays gitignored by `.gitignore:4` and is not in the diff |
-| Work Log | `.agentcortex/context/work/docs-skill-description-clarity.md` (local) + compaction overflow at `.agentcortex/context/archive/work/docs-skill-description-clarity-20260909.md`, committed with this unit |
+| Work Log | Archived at `.agentcortex/context/archive/docs-skill-description-clarity-20260909.md` (committed), with its compaction overflow at `.agentcortex/context/archive/work/docs-skill-description-clarity-20260909.md`. A follow-up active log at `.agentcortex/context/work/docs-skill-description-clarity.md` carries the Codex correction batch |
 | Classification | `quick-win` — no spec required, `/handoff` exempt, review and test run anyway because this brief asked for a first review |
 
 The product commit was amended four times on an unpushed branch. Three amendments were message-only corrections of claims a reviewer proved inaccurate; one carried the compression described in §5. Every amendment is recorded in the Work Log Drift Log rather than hidden.
@@ -57,7 +67,7 @@ Neither is your candidate verbatim. §3 of the brief invited refinement; the fir
 | AC2 names, bodies, runtime rules, gates, permissions unchanged | **Met** | Diff is two frontmatter lines and two generated hashes. `trigger-registry.yaml`, `bootstrap.md §3.6`, `routing.md §3`, `.agent/skills/*` and `agents/openai.yaml` are untouched. The one deviation is surfaced, not hidden: §9 | none |
 | AC3 frontmatter valid, validator + freshness pass | **Met** | §5. Keys are exactly `{name, description}`; both values are ASCII-only, so the provenance checker's forbidden-character screen is not what is carrying the pass | none |
 | AC4 relevant existing regression checks pass | **Met** | §5. The full CI-equivalent suite is green on the shipped tree (947 passed / 1 skipped, exit 0); the run that failed was an earlier tree and is recorded rather than dropped | The checks prove nothing broke. **None of them can fail on description content** — proven in §7 |
-| AC5 separate static validation / documented host support / observed behavior | **Met by admission** | §5 is static; §7 separates documented support from what this repo actually does; §8 is a not-run matrix with reasons | **No live-model behavior was observed at all.** Every activation claim here is unmeasured |
+| AC5 separate static validation / documented host support / observed behavior | **Met after correction** | §5 is static; §7 now separates the hosts host by host instead of asserting a blanket no-consumer conclusion; §8 is a not-run matrix that labels the one first-hand host observation as exposure, not uplift | The first revision **failed** this AC by asserting a false consumer conclusion (§0 F2). No live A/B was run by either party, so no trigger-rate claim exists |
 | AC6 review-ready revision + complete handback | **Met** | Five review rounds (§6); this document | All five reviewers were fresh same-vendor subagents. Not an external signal. Yours is the first |
 
 ## 5. Validation, and the regression it caught
@@ -142,22 +152,25 @@ Advisories declined, with reasons recorded: replacing a comma with a dash to clo
 
 ## 7. The finding that bounds every claim in this unit
 
-The brief premise is that a skill `description` is a skill-selection input. That is what the vendor documentation says. **It is not what this repository does**, and I could not find a way to make it true without changing the layout.
+The brief premise is that a skill `description` is a skill-selection input. **That premise holds, and an earlier revision of this section wrongly denied it** - see section 0. What is true is narrower and worth stating precisely, host by host, rather than as a blanket claim in either direction.
 
-Verified, not assumed:
+What is verified, and for which host:
 
-- No host skill-discovery directory exists anywhere in the tree. `find . -maxdepth 3 -type d -name skills` returns exactly `./.agent/skills` and `./.agents/skills`. There is no `.claude/skills`, no `.gemini/skills`, no `.codex/skills`.
-- `deploy.sh` never creates one: `grep -n "claude/skills\|gemini/skills\|codex/skills" .agentcortex/bin/deploy.sh` returns nothing. Its skill block ships `.agents/skills` and `.agent/skills` as they are (`deploy.sh:725,875-889`).
-- Discovery here is **instruction-mediated, not host-scanned**. `CLAUDE.md:26` tells the agent where metadata and bodies live, and activation is decided by the AI reading `routing.md` section 3 and the table in `bootstrap.md` section 3.6. `repo-gotchas` section 16 already records that this repo has three trigger surfaces and that the registry one has no runtime consumer.
+- **Claude Code**: there is no `.claude/skills/` in this tree (`find . -maxdepth 3 -type d -name skills` returns only `./.agent/skills` and `./.agents/skills`), and this session's own available-skills catalog does not list either edited skill. So for Claude Code specifically, these are not native project Skills and the frontmatter is not its selection input.
+- **Codex**: reads `.agents/skills` directly and matches on `description` - so the edited surface **is** its selection input. Established by the reviewer's first-hand observation of its own host catalog carrying both new descriptions while `agents/openai.yaml short_description` was unchanged, plus vendor documentation. Not re-derivable from this session, and recorded as the reviewer's observation rather than my measurement.
+- **Gemini CLI and Grok**: not inspected. No claim either way.
+- `deploy.sh` creates no host-specific skills directory (`grep -n "claude/skills\|gemini/skills\|codex/skills"` returns nothing); it ships `.agents/skills` and `.agent/skills` as they are (`deploy.sh:725,875-889`). That is consistent with `.agents/skills` being the portable path rather than an unused one.
+- Inside this framework's own governed flow, activation is additionally instruction-mediated: `CLAUDE.md:26` names the paths, and `routing.md` section 3 plus `bootstrap.md` section 3.6 decide activation. That is a second consumer, not a replacement for host discovery. `repo-gotchas` section 16 records that the registry `intent_patterns` surface has no runtime consumer - a different surface from this one.
+- The repo's own compatibility floor calls the edited frontmatter a **"portable discovery contract"** (`check_skill_provenance.py:13-16`, requiring closed YAML frontmatter with `name` + `description`). That line is the internal evidence the earlier revision of this section contradicted.
 - The compact index, which phase-entry loading consults first, carries **no description field at all**: `'description' in json.dumps(index)` is `False`.
 
 So what this change is:
 
 - a **documentation-contract fix the repo already required of itself** (`app-init.md:200`);
 - an improvement to what an agent reads when phase-entry loading opens the SKILL.md on a cache miss;
-- live for any adopter who does place these skills in a host own skills directory.
+- **live on the surface Codex actually reads**, which is the opposite of what the earlier revision of this section concluded.
 
-What it is **not**: evidence that any model now selects either skill more accurately, here or anywhere. No such measurement was made, and the layout above means the obvious in-repo experiment would have measured nothing.
+What it is **not**: evidence that any model now selects either skill more accurately. Exposure in a host's catalog is not a trigger rate. No live A/B was run by either party, and that remains the honest ceiling on every claim in this document.
 
 ## 8. Cross-model comparison: not run, with reasons
 
@@ -165,10 +178,10 @@ What it is **not**: evidence that any model now selects either skill more accura
 |---|---|---|
 | Gemini CLI | **not run** | not installed (`command -v gemini` finds nothing). The brief forbids installing a host to fill the matrix |
 | Grok | **not run** | not installed (`command -v grok` finds nothing). Same reason |
-| Claude Code | **not run as an A/B** | installed, but per section 7 there is no `.claude/skills/` in this repo, so a before/after run would not exercise the edited surface. Building a fixture that wires one would measure a synthetic layout, and a handful of stochastic runs is a smoke test, not an uplift |
-| Codex CLI | **not run as an A/B** | installed, but it reads `agents/openai.yaml short_description`, which this change deliberately does not touch (section 9). A run would measure the unchanged surface |
+| Claude Code | **not run as an A/B** | installed, but there is no `.claude/skills/` in this repo, so a before/after run would not exercise the edited surface for that host. Building a fixture that wires one would measure a synthetic layout |
+| Codex | **not run as an A/B; exposure observed** | the reviewer's host catalog carried both new descriptions, so the edited surface reaches Codex's selection input. That is exposure, not a measured trigger rate: no paired before/after run was made |
 
-No row is inferred. There are no success rows because there are no runs.
+No row is inferred, and there are still no success rows because no A/B was run. The Codex row is the one place where a first-hand host observation exists, and it is labelled as exposure rather than uplift. An earlier revision of this table gave the wrong reason for the Codex row - it claimed the change did not touch anything Codex reads.
 
 ## 9. The one decision I did not take
 
@@ -176,9 +189,9 @@ Each of these two skills publishes **three** descriptions, and after this change
 
 | Surface | Consumer | State |
 |---|---|---|
-| `.agents/skills/<name>/SKILL.md` | vendor-neutral; phase-entry body load | **new wording** |
+| `.agents/skills/<name>/SKILL.md` | portable discovery contract; **Codex selection input**; phase-entry body load | **new wording** |
 | `.agent/skills/<name>` | Antigravity summary stub | old wording |
-| `.agents/skills/<name>/agents/openai.yaml` `short_description` | Codex mirror | old wording, and for `systematic-debugging` it is "Skill for systematic debugging workflows." — a content-free placeholder |
+| `.agents/skills/<name>/agents/openai.yaml` `short_description` | optional UI metadata, **not** the selection input | old wording, and for `systematic-debugging` it is "Skill for systematic debugging workflows." — a content-free placeholder |
 
 Nothing binds them. `validate_trigger_metadata.py:81-96` compares summary and mirror against the registry on seven and eight fields respectively, and `description` is in neither set. The rule that would bind them — `trigger_runtime_core.py:693-698`, "mirror short_description must derive from manifest description" — is reached only for a skill shipping a per-skill `manifest.yaml` (`validate_trigger_metadata.py:98-100`), and no first-party skill ships one. That inert check is why the divergence survived unnoticed.
 
@@ -188,7 +201,7 @@ Nothing binds them. `validate_trigger_metadata.py:81-96` compares summary and mi
 2. It is not a wording edit. `.agent/skills/**` is guard-protected (`.agent/config.yaml:192`), so it must go through `guard_context_write.py`; and `.agentcortex/tools/sync_skills.sh:13,28` copies `agents/openai.yaml` **over** `.agent/skills/<name>`, which would reinstate the old text and destroy the `phases:` and `load_policy:` keys `validate_trigger_metadata.py:82-87` requires. Fixing it properly means first deciding which surface is authoritative.
 3. Section 5 adds a third reason discovered after the fact: under the token ceiling there is no headroom to widen the same wording across more surfaces even if the decision went the other way.
 
-Against all that: the stated goal is suitability for Claude, Gemini, Grok **and Codex**, and only the non-Codex surface improved. If you judge that decisive, the remedy is a follow-on unit, not a patch to this one.
+An earlier revision argued here that "only the non-Codex surface improved", which was exactly backwards: the surface this change edits is the one Codex selects on. The residual divergence is the Antigravity stub plus optional UI metadata, which is a consistency and presentation issue rather than a selection defect - so #198 is smaller and lower-priority than first filed, and its row has been corrected to say so.
 
 Filed as backlog row **#198** (`Kind: review-finding`, `Labels: skill-ecosystem`, `Tier: quick-win`), paired with **#187**, which records the same shape one layer over. The ceiling conflict from section 5 is filed separately as **#199** (`Labels: governance`, P2), because it blocks #198 as much as it blocks any further description work.
 
