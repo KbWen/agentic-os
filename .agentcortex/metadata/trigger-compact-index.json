@@ -214,7 +214,7 @@
         ]
       },
       "load_policy": "on-failure",
-      "content_hash": "62c16046"
+      "content_hash": "9bee4d30"
     },
     {
       "id": "red-team-adversarial",
@@ -469,7 +469,7 @@
         ]
       },
       "load_policy": "phase-entry",
-      "content_hash": "dd1f151b"
+      "content_hash": "18e63ee1"
     }
   ]
 }
