@@ -6,7 +6,25 @@ Diff base: `3d36854e2920a82097567a62cdf9b0e84f27577e`
 Reviewer: Codex, independent of Claude's implementing/reviewing sessions
 Date: 2026-09-09
 
-## Decision
+## Final acceptance and transfer to Claude — 2026-09-10
+
+**Verdict: PASS for the bounded first-wave change and the F1/F2 correction batch.** Reviewed correction: `df53e48`, plus Codex's uncommitted records-only correction to the handback's risk item 4. The product remains identical to the previously accepted `10cf38b`: two description lines and two generated hashes. F1 is resolved by a forward correction and reopened follow-up log with the original archive/chain preserved; F2 is resolved by host-specific consumer claims. No new product defect or blocking finding remains. Historical NOT READY statements below describe the previous revision and are superseded by this acceptance.
+
+Independent acceptance evidence: both `validate.sh` and `validate.ps1` returned **exit 0, pass=117 warn=4 fail=0 skip=2** after the record corrections; the four warnings match the pre-existing set. Audit-chain integrity, trigger metadata validation and diff whitespace checks also passed. The unchanged product retains the independent **173 passed, 1 skipped** result recorded below. This is not a live cross-model accuracy measurement. Final record-write verification is recorded in the reviewer Work Log's `Acceptance Verification` section.
+
+The user's final instruction on 2026-09-10 delegates all remaining work to Claude and explicitly removes the expectation of another return to this Codex conversation. **Claude owns the remaining closure; no additional Codex review or routine user confirmation is requested.** This supersedes earlier handoff/handback wording requiring another correction package or Codex round after this acceptance.
+
+### Remaining closure checklist for Claude
+
+1. Read this acceptance and establish the current working-tree baseline. Preserve the accepted product and Codex's uncommitted report/risk-sentence edits; do not discard them as unrelated changes.
+2. In the active correction Work Log, reference this independent acceptance of `df53e48` plus the records delta. Complete the applicable review/ship records honestly; retain the premature historical ship event and its forward correction. Do not invent missing past receipts or backdate this acceptance.
+3. Record the compact final acceptance in the handback/current lifecycle record using the existing guarded write rules. Close out the reviewer-owned follow-up log through the normal archival mechanism when finalizing the unit, preserving its evidence. The user has delegated this remaining records closure to Claude; do not leave an abandoned review log or held lock behind.
+4. Commit the remaining records and complete the project's normal authorized closure. Check record integrity and relevant validators after the final lifecycle writes, then record their actual results. No full product-suite rerun is needed solely for records changes; rerun affected checks if the product changes.
+5. Report completion to the user once, concisely. Resolve routine in-scope issues independently. Do not expand into backlog #198/#199, rewrite other skills/workflows, add host installations, or start model A/B infrastructure as part of closure. Merge/release actions remain governed by the existing user authorization and repository workflow; this acceptance itself performs neither.
+
+Known limitation to carry forward: Codex catalog exposure was observed; no paired Claude/Gemini/Grok/Codex trigger-rate experiment was performed. Do not advertise measured cross-model effectiveness.
+
+## Initial decision at 0fd1d17 — superseded by final acceptance above
 
 The two skill edits and generated index are acceptable for the agreed bounded first wave. No actionable defect was found in their wording, unchanged skill bodies, or activation metadata. The complete handback is **NOT READY for closure** because the records contain an incorrect Codex-consumer conclusion and premature ship state. Resolve the two findings below together; no additional skill rewrite or model-specific adapter work is requested.
 

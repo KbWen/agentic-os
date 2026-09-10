@@ -13,6 +13,8 @@ Two findings were returned and both are accepted in full.
 
 **F2 - section 7 of this document was wrong, and it was the document's central claim.** I argued that no host reads `.agents/skills/*/SKILL.md` for skill selection, generalising from Claude Code's `.claude/skills/` convention to every host. Codex reads `.agents/skills` directly and matches on `description`; `agents/openai.yaml` is optional UI metadata, not the selection input. The reviewer observed its own host catalog already carrying both new descriptions while the on-disk `short_description` values were unchanged. My own repo had already said as much - `check_skill_provenance.py:16` calls this frontmatter the "portable discovery contract" - and I read that file during planning without weighing it. Sections 7, 8, 9 and the AC5 row are corrected below. **What does not change**: no live A/B was run, so exposure in a host catalog is not a measured trigger-rate improvement, and the two description lines stay exactly as they are.
 
+**Outcome.** Codex re-reviewed the correction batch (`df53e48`) and returned **PASS** for both the bounded change and the corrections, recorded in `docs/reviews/2026-09-09-cross-model-skill-final-review.md`. It also corrected one sentence this batch had missed - risk item 4 in section 10 still leaned on the refuted "vacuous experiment" premise - and that edit is kept as Codex wrote it. The user then delegated the remaining records closure to Claude. Closure verification is appended at the end of this document, after the final writes.
+
 ---
 
 ## 1. Revision under review
@@ -210,7 +212,7 @@ Filed as backlog row **#198** (`Kind: review-finding`, `Labels: skill-ecosystem`
 1. **Over-triggering.** `systematic-debugging` now names five conditions where it named none, and `unexpected behavior` is broad on a skill the registry marks `cost_type: execution`, `cost_risk: high`. Mitigated only by `load_policy: on-failure` and the phase gate, neither of which this change touched.
 2. **Missed activation.** `production-readiness` names four scope signals; the registry lists seven (`new API endpoint`, `new service class`, `new background job` are absent). That gap predates this change and matches the body own When-to-Use list, so the description is faithful to the body — the body is the narrower document.
 3. **Compression cost.** `production-readiness` lost the "not just debug consoles" contrast, which is what distinguishes a production sink from any log call. R3 judged it summary-grade because the body loads at those phases anyway. It is the first thing to restore if headroom ever appears.
-4. **Neither risk 1 nor 2 is measured**, and section 7 explains why the in-repo experiment would have been vacuous rather than merely skipped.
+4. **Neither risk 1 nor 2 is measured**: no paired before/after run was performed. Section 7 distinguishes observed Codex catalog exposure from unmeasured activation behavior.
 5. **Cross-surface divergence** (section 9), left open by decision.
 6. **No guard.** Nothing can detect a future regression of this wording. A test was refused rather than added, on the brief own AC4 wording plus `repo-gotchas` section 16; the reasoning is in the Work Log.
 
