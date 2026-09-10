@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Use 4-phase root cause analysis (Observe, Hypothesize, Verify, Fix); avoid unverified patches.
+description: Use when investigating a bug, test failure, flaky test, unexpected behavior, or a hotfix, or an unexplained or failed fix; find the root cause first.
 ---
 
 # Systematic Debugging

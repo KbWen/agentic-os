@@ -1,6 +1,6 @@
 ---
 name: production-readiness
-description: Pre-ship observability readiness checklist — ensures errors reach production monitoring, not just debug consoles.
+description: Use at review and ship, automatically for feature or architecture changes and on request for error handling, logging, crash reporting, or observability; verify errors reach production monitoring.
 ---
 
 # Production Readiness
