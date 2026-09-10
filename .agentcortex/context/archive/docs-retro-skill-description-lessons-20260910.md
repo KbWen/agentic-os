@@ -130,3 +130,17 @@ none
 - `pytest test_repo_gotchas_discoverability.py test_lifecycle_token_consumption.py test_lesson_chain_archival.py` -> 55 passed, exit 0 (read via PIPESTATUS, not through the pipe).
 - `repo-gotchas.md` directive-keyword scan -> 0 hits.
 - bootstrap: branch from `main` at `7c13f5d` (post-#437 merge); working tree clean before the branch.
+
+---
+
+## Final Verification
+
+> Sole location of this unit's closing figures, written after every other write and committed.
+
+- Captured `2026-09-10T07:53:06Z` against `69278b6` (working tree clean)
+- `validate.sh` -> exit 0 - `pass=99 warn=4 fail=0 skip=3`
+- `validate.ps1` -> exit 0 - `pass=99 warn=4 fail=0 skip=3` - twin parity exact, WARN set identical
+- `check_lesson_chain.py` -> intact (20 lessons); `check_audit_chain.py` -> intact
+- All 4 WARNs pre-existing. pass=99 because `work/` is empty after archival (18 active-log checks -> 1 SKIP).
+
+⚡ ACX
