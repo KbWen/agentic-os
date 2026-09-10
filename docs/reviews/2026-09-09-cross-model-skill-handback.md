@@ -223,3 +223,19 @@ Filed as backlog row **#198** (`Kind: review-finding`, `Labels: skill-ecosystem`
 3. **Section 5, the ceiling tension.** A governance contract requires prose that a governance ratchet cannot afford. That is a design conflict this unit surfaced and did not fix.
 4. **The two sentences against the bodies and the registry.** R1 found a phase-binding regression I did not, and R3 found evidence claims I had not earned. Assume there is a third.
 5. **Verification provenance.** Section 5 lists exit codes for runs I performed. Re-run anything you would otherwise be taking on trust — including the token figures, which are reproducible with `analyze_token_lifecycle.py --root . --format json`.
+
+## 12. Closure verification
+
+Written after the final lifecycle writes (both Work Logs archived, audit chain extended, SSoT updated) and committed as `5391ca2`. This section is the only place the closing figures appear.
+
+| Check | Exit | Result |
+|---|---|---|
+| `validate.sh` | 0 | `pass=99 warn=4 fail=0 skip=3` |
+| `validate.ps1` | 0 | `pass=99 warn=4 fail=0 skip=3` - twin parity exact, WARN set identical |
+| `check_audit_chain.py` | 0 | audit chain intact after two new entries |
+| `git diff 10cf38b..HEAD -- .agents/skills .agentcortex/metadata` | 0 | empty - product unchanged since the reviewed revision |
+
+Why pass dropped from 117 to 99: with both Work Logs archived, `work/` is empty, so 18 active-log checks collapse into one SKIP (skip 2 to 3). That delta was traced check by check earlier in this unit, not assumed. The 4 WARNs are the same pre-existing set, and the archived-log gate-gap count stayed at 3, so neither newly archived log added to it.
+
+Captured `2026-09-10T06:39:04Z`. Not re-run: the full 947-test suite, because nothing since `10cf38b` touches a code path it exercises - which Codex also stated.
+
