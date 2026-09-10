@@ -116,6 +116,7 @@ none
 ## Drift Log
 
 - Skip Attempt: NO
+- **Post-verification defect, found by me after the first closing record and fixed**: the new `repo-gotchas §16` paragraph cited `check_skill_provenance.py` by bare filename. `repo-gotchas.md` ships force-update core tier and that tool is not in the deploy set (0 entries in `deploy_manifest_golden.txt`), so every adopter would read a reference to a file they do not have - another instance of backlog #192's class. `test_deployed_governance_referenced_tools_are_deployed` stayed green because it matches only the full `.agentcortex/tools/<name>.py` path; a bare basename evades it, which #192 already records (bare basenames excluded, #185 false-positive class). Reworded to state the fact without citing the file. The first Final Verification (against `69278b6`) is superseded by the one below.
 - **Ship History rotation, owed by the previous unit**: `check_ssot_caps.py` reported 12 entries against a cap of 10. The PR #437 ship had already taken it to 11 without rotating - a miss in that unit, not this one. Rotated the oldest 2 (`Ship-chore-release-v1.8.23-2026-08-24`, `Ship-perf-test-durations-shard-balance-88-2026-08-23`) verbatim into `archive/ship-history-2026.md`, newest-archived first; SSoT side through `guard_context_write.py`. Verified byte-identical in the archive; caps now 10/10.
 - Gate Fail Reason: N/A
 - Token Leak: NO
@@ -130,17 +131,3 @@ none
 - `pytest test_repo_gotchas_discoverability.py test_lifecycle_token_consumption.py test_lesson_chain_archival.py` -> 55 passed, exit 0 (read via PIPESTATUS, not through the pipe).
 - `repo-gotchas.md` directive-keyword scan -> 0 hits.
 - bootstrap: branch from `main` at `7c13f5d` (post-#437 merge); working tree clean before the branch.
-
----
-
-## Final Verification
-
-> Sole location of this unit's closing figures, written after every other write and committed.
-
-- Captured `2026-09-10T07:53:06Z` against `69278b6` (working tree clean)
-- `validate.sh` -> exit 0 - `pass=99 warn=4 fail=0 skip=3`
-- `validate.ps1` -> exit 0 - `pass=99 warn=4 fail=0 skip=3` - twin parity exact, WARN set identical
-- `check_lesson_chain.py` -> intact (20 lessons); `check_audit_chain.py` -> intact
-- All 4 WARNs pre-existing. pass=99 because `work/` is empty after archival (18 active-log checks -> 1 SKIP).
-
-⚡ ACX

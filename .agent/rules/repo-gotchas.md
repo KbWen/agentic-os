@@ -270,8 +270,7 @@ registry↔compact-index staleness.
 Codex scans `.agents/skills` and selects skills by matching on it, while `agents/openai.yaml`
 `short_description` is optional UI metadata, not the selection input. Claude Code reads
 `.claude/skills/`, which this framework neither ships nor creates, so it does not discover these
-skills natively. That is why `check_skill_provenance.py` calls the frontmatter the "portable
-discovery contract".
+skills natively. That frontmatter is the framework's portable discovery contract for skills.
 
 Cost: PR #437's handback generalised from Claude Code to every host, concluded that nothing
 consumes this surface, and was refuted by a Codex reviewer reading its own skill catalog. The
