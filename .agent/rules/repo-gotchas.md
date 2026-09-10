@@ -265,6 +265,18 @@ input to that surface and name the caller. The two phrase surfaces have also alr
 4 phrases live in `routing.md §3` and not the registry (backlog #187). See also gotcha #9 for
 registry↔compact-index staleness.
 
+**A host-side surface sits outside those three, and it is consumed.** The `description` in each
+`.agents/skills/<name>/SKILL.md` frontmatter is read by hosts rather than by the governed flow:
+Codex scans `.agents/skills` and selects skills by matching on it, while `agents/openai.yaml`
+`short_description` is optional UI metadata, not the selection input. Claude Code reads
+`.claude/skills/`, which this framework neither ships nor creates, so it does not discover these
+skills natively. That frontmatter is the framework's portable discovery contract for skills.
+
+Cost: PR #437's handback generalised from Claude Code to every host, concluded that nothing
+consumes this surface, and was refuted by a Codex reviewer reading its own skill catalog. The
+rule above cuts both ways - name the host, and the evidence for that host, before claiming a
+surface is or is not consumed.
+
 ## Adding to this file
 
 An entry earns its place when it cost a real session and is specific to this repo. If the
