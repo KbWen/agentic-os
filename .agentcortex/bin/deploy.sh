@@ -1093,6 +1093,10 @@ write_downstream_ignore_block() {
 *.acx-incoming
 *.acx-local
 
+# Python bytecode produced by Agentic OS validation/tools
+__pycache__/
+*.pyc
+
 # Per-Operator Tool State (this project's .claude/settings.json declares
 # settings.local.json user-local; keep git agreeing with that declaration)
 .claude/settings.local.json
