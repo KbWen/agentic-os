@@ -14,3 +14,7 @@
 ## Archived 2026-09-10 (prev: GENESIS, body-sha: 7d331603)
 
 - [Category: classification-flow][Severity: MEDIUM][Trigger: polish-pass-or-audit-batch][prev: GENESIS] When the task is a batch of audit-driven polish edits that touch governance files (AGENTS.md, .agent/rules/*), the governance-file exclusion pushes it to `quick-win` minimum — not automatically `feature`. Classify by the flow you actually intend to run (quick-win skips spec + handoff legitimately); do not silently adopt `feature` label while running the quick-win flow. Self-check at bootstrap: "Am I going to write a spec? Will I run /handoff? If no to both, classification is quick-win."
+
+## Archived 2026-09-20 (prev: GENESIS, body-sha: 4faa557a)
+
+- [Category: windows-install][Severity: MEDIUM][Trigger: windows-cmd-lightweight-install][prev: GENESIS] On Windows, installer wrappers should prefer PowerShell or a real Git Bash path over PATH `bash.exe`; the WindowsApps `bash.exe` can be a WSL placeholder and break lightweight downstream installs when no distro is configured.
