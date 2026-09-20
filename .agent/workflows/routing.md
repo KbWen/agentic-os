@@ -183,10 +183,10 @@ All commands are dispatched per `AGENTS.md §Agentic OS Runtime v1` and execute 
 | Command | Workflow File | Classification Scope |
 |---|---|---|
 | `/bootstrap` | `.agent/workflows/bootstrap.md` | all non-tiny-fix |
-| `/plan` | `.agent/workflows/plan.md` | feature, architecture-change, quick-win |
+| `/plan` | `.agent/workflows/plan.md` | all non-tiny-fix |
 | `/implement` | `.agent/workflows/implement.md` | all non-tiny-fix |
-| `/review` | `.agent/workflows/review.md` | all non-tiny-fix |
-| `/test` | `.agent/workflows/test.md` | all non-tiny-fix |
+| `/review` | `.agent/workflows/review.md` | feature, architecture-change, hotfix (optional for quick-win) |
+| `/test` | `.agent/workflows/test.md` | feature, architecture-change, hotfix (optional for quick-win) |
 | `/ship` | `.agent/workflows/ship.md` | all non-tiny-fix |
 | `/spec-intake` | `.agent/workflows/spec-intake.md` | multi-feature spec input |
 | `/spec` | `.agent/workflows/spec.md` | spec writing |

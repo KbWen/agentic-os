@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Final delivery and archival. Requires TESTED state and handoff gate.
+description: Final delivery and archival. Entry gates vary by classification.
 tasks:
   - ship
 ---
