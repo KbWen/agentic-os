@@ -1,7 +1,7 @@
 {
-  "expected_sha": "9d669f62a69bcff0e85371d082da012e5aaf94a286544f81af73d9f561a0636f",
+  "expected_sha": "330a00c5e31b224aa321b28f60f84f4b4aea1c98d46fa33947c7a5215568bdd8",
   "mode": "replace",
-  "new_sha": "4e3f7b2298918fca62a2da62becd11ff8a3b0d2733e444f7017e469e17386133",
-  "target": ".agent/workflows/ship.md",
-  "timestamp": 1789885504
+  "new_sha": "c0264595744b23611c39a0e2676a13d69f655fd0a2e7944054bfeea836cfda54",
+  "target": ".agentcortex/context/current_state.md",
+  "timestamp": 1789890847
 }
