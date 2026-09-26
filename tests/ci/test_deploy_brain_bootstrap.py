@@ -233,13 +233,16 @@ def test_partial_checkout_cache_is_recloned_not_deployed(tmp_path: Path) -> None
     project = _make_project(tmp_path / "proj", right)
     cache = project / ".agentcortex-src"
     _git("clone", right, str(cache), cwd=tmp_path)
+    # Hermetic: a developer's global pull.rebase=true aborts the pull on the staged
+    # deletions and reaches the re-clone by another path.
+    _git("config", "pull.rebase", "false", cwd=cache)
     _git("rm", "-r", "-q", "--cached", ".", cwd=cache)  # the failed-checkout shape
 
     result = _run_deploy_brain(project)
 
     combined = result.stdout + result.stderr
     assert result.returncode == 0, combined
-    assert "incomplete" in combined, "the partial cache must be detected"
+    assert "failed its integrity check" in combined, "the partial cache must be detected"
     assert STUB_MARKER in combined, "must deploy from a fresh, complete clone"
     listed = subprocess.run(
         ["git", "-C", str(cache), "ls-files"], capture_output=True, text=True, check=True,
@@ -265,9 +268,54 @@ def test_crlf_manifest_source_repo_is_not_a_mismatch(tmp_path: Path) -> None:
     assert "Updating cached Agentic OS source" in combined
 
 
+@requires_bash
+@requires_git
+def test_cache_whose_status_fails_is_not_read_as_clean(tmp_path: Path) -> None:
+    """#206 review F1: a `git status` that errors prints nothing, and the first version
+    of the gate read that empty output as a clean cache and deployed a modified one."""
+    right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
+    project = _make_project(tmp_path / "proj", right)
+    cache = project / ".agentcortex-src"
+    _git("clone", right, str(cache), cwd=tmp_path)
+    _git("config", "pull.rebase", "false", cwd=cache)
+    (cache / ".agentcortex" / "bin" / "deploy.sh").write_bytes(
+        b'#!/usr/bin/env bash\necho "MODIFIED CACHE DEPLOYED"\n'
+    )
+    _git("config", "status.showUntrackedFiles", "bogus", cwd=cache)  # status exits 128
+
+    result = _run_deploy_brain(project)
+
+    combined = result.stdout + result.stderr
+    assert "MODIFIED CACHE DEPLOYED" not in combined, combined
+    assert result.returncode == 0, combined
+    assert STUB_MARKER in combined, "must deploy from a fresh clone"
+
+
+@requires_bash
+@requires_git
+def test_source_without_deploy_sh_points_at_source_repo(tmp_path: Path) -> None:
+    """#206 review F2: when a fresh clone still fails the gate, the cause is the source
+    (or a cache git refuses), not the path length -- a failed checkout stops at the clone."""
+    wrong = tmp_path / "not-agentic-os"
+    wrong.mkdir()
+    (wrong / "README.md").write_bytes(b"not the framework\n")
+    _git("init", "-b", "main", cwd=wrong)
+    _git("add", "-A", cwd=wrong)
+    _git("commit", "-m", "unrelated", cwd=wrong)
+    project = _make_project(tmp_path / "proj", wrong.as_posix())
+
+    result = _run_deploy_brain(project)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "check source_repo in .agentcortex-manifest" in result.stderr
+    assert "shorter path" not in result.stderr
+    assert "did not match any file" in result.stderr, "git's own diagnostic must be shown"
+
+
 def test_every_clone_and_pull_enables_long_paths() -> None:
-    """#206: static check. The functional failure needs a Windows path beyond MAX_PATH,
-    which CI cannot build; every clone/pull must go through acx_git (core.longpaths)."""
+    """#206: static check. The functional failure needs a path beyond MAX_PATH on a
+    Windows runner with no system-wide core.longpaths; Linux runners cannot show it.
+    Every clone/pull must go through acx_git (core.longpaths)."""
     text = DEPLOY_BRAIN_SH.read_text(encoding="utf-8")
     assert 'git -c core.longpaths=true "$@"' in text
     calls = [

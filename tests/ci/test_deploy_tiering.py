@@ -58,8 +58,8 @@ def _set_manifest_hash(manifest: Path, rel: str, digest: str) -> None:
             break
     else:
         raise AssertionError(f"manifest row not found: {rel}")
-    # Keep the manifest LF-only. Bash's batch reader treats a trailing CR as
-    # part of the hash token, which would turn this fixture into a false local edit.
+    # Keep the manifest LF-only: this helper rewrites one row, and a CRLF manifest has
+    # its own test (test_crlf_manifest_from_a_windows_checkout_updates_cleanly).
     manifest.write_bytes(("\n".join(lines) + "\n").encode("utf-8"))
 
 # Every test here shells out to real deploy.sh/validate.sh (fidelity by design).
@@ -1301,8 +1301,8 @@ def test_deploy_stdout_renders_enforcement_block() -> None:
     [
         None,
         # The per-file path (macOS bash 3.2) parses the manifest with awk. MSYS awk drops
-        # CR in text mode, so on Windows this case cannot fail and costs ~20 minutes of
-        # per-file spawns; GNU/BSD awk keep the CR, so it runs (and discriminates) elsewhere.
+        # CR in text mode, so on Windows this case cannot fail (and costs a few minutes of
+        # per-file spawns); GNU/BSD awk keep the CR, so it runs (and discriminates) elsewhere.
         pytest.param(
             {"ACX_FORCE_PERFILE": "1"},
             marks=pytest.mark.skipif(os.name == "nt", reason="MSYS awk strips CR; slow and non-discriminating on Windows"),

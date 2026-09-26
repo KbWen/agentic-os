@@ -121,15 +121,23 @@ fi
 # exit 0. Deploy only from a cache whose index is populated and clean.
 cache_is_intact() {
     # acx_git here too: without core.longpaths a long path reads as "modified".
-    acx_git -C "$ACX_CACHE" ls-files --error-unmatch .agentcortex/bin/deploy.sh >/dev/null 2>&1         && [[ -z "$(acx_git -C "$ACX_CACHE" status --porcelain --untracked-files=no 2>/dev/null)" ]]
+    acx_git -C "$ACX_CACHE" ls-files --error-unmatch .agentcortex/bin/deploy.sh >/dev/null 2>&1 || return 1
+    local _st
+    # A failing `git status` prints nothing; that must not read as "clean".
+    _st="$(acx_git -C "$ACX_CACHE" status --porcelain --untracked-files=no 2>/dev/null)" || return 1
+    [[ -z "$_st" ]]
 }
 if ! cache_is_intact; then
-    echo "Cached Agentic OS source is incomplete (an earlier checkout failed). Re-cloning..." >&2
+    echo "Cached Agentic OS source failed its integrity check (partial checkout, modified files, or unreadable). Re-cloning..." >&2
     remove_cache_or_die
     acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
     if ! cache_is_intact; then
-        echo "Cached source is still incomplete after a fresh clone - aborting." >&2
-        echo "On Windows this usually means the project path is too long; move the project to a shorter path." >&2
+        # A checkout that fails (e.g. Filename too long) already stopped at the clone
+        # above; what reaches here is a source without deploy.sh or a cache git refuses.
+        echo "Cached source still fails its integrity check after a fresh clone - aborting. git says:" >&2
+        acx_git -C "$ACX_CACHE" ls-files --error-unmatch .agentcortex/bin/deploy.sh >/dev/null || true
+        acx_git -C "$ACX_CACHE" status --porcelain --untracked-files=no >&2 || true
+        echo "If .agentcortex/bin/deploy.sh is not known to git, check source_repo in .agentcortex-manifest." >&2
         exit 1
     fi
 fi
