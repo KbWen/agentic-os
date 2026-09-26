@@ -43,6 +43,8 @@ fi
 COUNT_UPDATED=0
 COUNT_SKIPPED=0
 COUNT_NEW=0
+COUNT_UNCHANGED=0
+COUNT_KEPT=0
 COUNT_REMOVED=0
 COUNT_CORE_OVERWRITTEN=0
 
@@ -258,8 +260,10 @@ _deploy_file_now() {
             if [ "$src_hash" != "$dst_hash" ]; then
                 cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
                 [ -n "$do_chmod" ] && chmod +x "$dst"
+                COUNT_UPDATED=$((COUNT_UPDATED + 1))
+            else
+                COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
             fi
-            COUNT_UPDATED=$((COUNT_UPDATED + 1))
         else
             # Scaffold/wrapper: check if user modified
             if [ -z "$old_manifest_hash" ]; then
@@ -279,7 +283,7 @@ _deploy_file_now() {
                     return 0
                 fi
                 # Same content — no-op; record the matching hash for future runs.
-                COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
             else
                 if [ "$dst_hash" = "$old_manifest_hash" ]; then
                     # User didn't modify — safe to update.
@@ -287,10 +291,19 @@ _deploy_file_now() {
                     if [ "$src_hash" != "$dst_hash" ]; then
                         cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
                         [ -n "$do_chmod" ] && chmod +x "$dst"
+                        COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                    else
+                        COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
                     fi
-                    COUNT_UPDATED=$((COUNT_UPDATED + 1))
                 else
-                    # User modified — skip and write sidecar
+                    # User modified. ADR-005 amendment (2026-09-26, #201): a sidecar carries
+                    # news, so write one only when the framework changed this file since the
+                    # recorded baseline. Otherwise keep the user's copy and say nothing per file.
+                    if [ "$src_hash" = "$old_manifest_hash" ] && [ "$src_hash" != "$dst_hash" ]; then
+                        COUNT_KEPT=$((COUNT_KEPT + 1))
+                        record_deployed "$tier" "$rel" "$old_manifest_hash"
+                        return 0
+                    fi
                     if [ "$src_hash" != "$dst_hash" ]; then
                         cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst.acx-incoming"
                         echo "  [SKIP] $rel (locally modified; new version at $rel.acx-incoming)"
@@ -300,7 +313,7 @@ _deploy_file_now() {
                         return 0
                     else
                         # User modified but result is same as new version — no action needed
-                        COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                        COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
                     fi
                 fi
             fi
@@ -1452,7 +1465,14 @@ fi
     echo "---"
     sort -k2 "$DEPLOYED_FILES_TMP"
 } > "$MANIFEST_FILE.tmp"
-mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+# Same content apart from deployed_at (CR-insensitive, #202): keep the tracked file, so a
+# no-op update does not show up in `git status` (#201).
+if [ -f "$MANIFEST_FILE" ] \
+   && [ "$(grep -v '^deployed_at:' "$MANIFEST_FILE.tmp" | tr -d '\r')" = "$(grep -v '^deployed_at:' "$MANIFEST_FILE" | tr -d '\r')" ]; then
+    rm -f "$MANIFEST_FILE.tmp"
+else
+    mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+fi
 
 # ============================================================
 # Summary
@@ -1464,9 +1484,12 @@ echo "Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
 echo ""
 if $IS_UPDATE; then
     if [ "$COUNT_CORE_OVERWRITTEN" -gt 0 ]; then
-        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed / ${COUNT_UNCHANGED} unchanged / ${COUNT_KEPT} kept"
     else
-        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed / ${COUNT_UNCHANGED} unchanged / ${COUNT_KEPT} kept"
+    fi
+    if [ "$COUNT_KEPT" -gt 0 ]; then
+        echo "  kept = your local edits to files the framework did not change in this version (no sidecar needed)."
     fi
 else
     echo "Installed ${TOTAL_DEPLOYED} files."
