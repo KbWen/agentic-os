@@ -168,7 +168,7 @@ Output findings using the Red Team Report format defined in the skill file.
 
 ## Burden of Proof Protocol (ALL non-tiny-fix classifications)
 
-> **Core principle**: Every claim of correctness starts as **UNPROVEN**. The reviewer must cite concrete evidence to flip it to PASS. This inverts the default from "find problems to fail" to "find evidence to pass", eliminating confirmation bias.
+> **Core principle**: Every claim of correctness starts as **UNPROVEN**. The reviewer must cite concrete evidence to flip it to PASS.
 
 ### For feature / architecture-change (Spec-Based)
 
@@ -195,6 +195,8 @@ These classifications have no formal spec, but the burden of proof still applies
    - Root cause addressed (for hotfix): cite the specific fix location
 3. No evidence → `✗ UNPROVEN` → cannot proceed.
 
+**Invariants** (`never`, `always`, `unique`, `not reused`): code evidence alone leaves the row `✗ UNPROVEN` — only a test or run that hits the boundary (empty, last/largest, repeat) proves one.
+
 ### Evidence Output Format
 
 ```
@@ -219,7 +221,7 @@ AI MUST verify its own review before outputting:
 
 1. **Scope check**: List every file changed. Any file NOT in the original plan? Flag it.
 2. **Regression check**: For each changed function/export, state: "Callers: [list]. Breaking change: yes/no."
-3. **Proof check**: no untagged `✗ UNPROVEN` row remains, and each `✅ PROVEN` row's evidence exercises the input likeliest to break it — for an invariant, its boundary (empty, last/largest, repeat). A Red Team or Security observation contradicting a PROVEN row reverts it to `✗ UNPROVEN`.
+3. **Proof check**: a Red Team or Security observation of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`; any untagged `✗ UNPROVEN` row makes the receipt `NOT READY` — re-issue one already written.
 
 ## Output Format
 

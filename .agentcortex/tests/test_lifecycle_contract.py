@@ -66,6 +66,15 @@ class LifecycleContractTests(unittest.TestCase):
         self.assertIn("Output Compression Rule", test_text)
         self.assertIn("Do not reprint the full test skeleton", test_text)
 
+    def test_review_invariant_proof_requires_boundary_evidence(self) -> None:
+        """#203: a code citation must not prove an invariant, and a contradicting
+        Red Team/Security observation must reopen a PROVEN row (downstream sim 2026-09-26)."""
+        review_text = (ROOT / ".agent" / "workflows" / "review.md").read_text(encoding="utf-8")
+        self.assertIn("code evidence alone leaves the row `✗ UNPROVEN`", review_text)
+        self.assertIn("hits the boundary", review_text)
+        self.assertIn("of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`", review_text)
+        self.assertIn("makes the receipt `NOT READY`", review_text)
+
     def test_quick_win_phases_exclude_review_and_test(self) -> None:
         """Quick-win required phases MUST NOT include review/test per hard rules."""
         for scenario in self.scenarios:
