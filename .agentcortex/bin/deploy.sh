@@ -1519,6 +1519,12 @@ echo "         Copy-Item .githooks/pre-commit.guard-ssot.sample .githooks/pre-co
 echo "         git config core.hooksPath .githooks"
 echo "      NOTE: core.hooksPath replaces any existing hooks (husky/lefthook/"
 echo "      .git/hooks). Already use one? Integrate - don't overwrite."
+_acx_repo_prefix="$(git -C "$TARGET" rev-parse --show-prefix 2>/dev/null || true)"
+if [ -n "$_acx_repo_prefix" ]; then
+    echo "      This project is the sub-directory ${_acx_repo_prefix%/} of its git repository;"
+    echo "      git resolves core.hooksPath from the repository root, so use instead:"
+    echo "         git config core.hooksPath ${_acx_repo_prefix}.githooks"
+fi
 echo ""
 echo "   3. CI floor - make the checks block every PR, not just local commits:"
 echo "         Add a CI job that runs:  .agentcortex/bin/validate.sh"

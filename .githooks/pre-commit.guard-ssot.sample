@@ -3,6 +3,8 @@
 # Opt-in Agentic OS validation hook.
 # INSTALL: cp .githooks/pre-commit.guard-ssot.sample .githooks/pre-commit && chmod +x .githooks/pre-commit
 #          git config core.hooksPath .githooks
+#          Framework in a sub-directory of the repository (monorepo)? core.hooksPath is
+#          resolved from the repository root: git config core.hooksPath <sub-dir>/.githooks
 # UPDATING: the installed pre-commit is a COPY (not auto-updated). After a framework
 #          update, re-run the INSTALL copy to pick up hook improvements (e.g. the
 #          no-python credential floor). The floor/scanner scripts themselves force-update.
@@ -13,7 +15,13 @@
 
 set -u
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# The framework root is the directory holding this hook's .githooks/, which is the
+# repository root only for a top-level install; in a monorepo it is the package.
+_acx_hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)"
+ROOT="${_acx_hook_dir%/.githooks}"
+if [[ -z "$_acx_hook_dir" || "$ROOT" == "$_acx_hook_dir" || ! -d "$ROOT/.agentcortex" ]]; then
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+fi
 if [[ -z "$ROOT" ]]; then
   echo "ACX pre-commit: unable to locate the Git repository root."
   exit 1
@@ -62,6 +70,9 @@ if [[ -n "$CRED_PY" && -f "$CREDENTIAL_SCANNER" ]]; then
   fi
 elif [[ -f "$CREDENTIAL_FLOOR" ]]; then
   bash "$CREDENTIAL_FLOOR" --staged; cred_rc=$?; floor_ran=1   # no-python narrow floor
+  if [[ "$cred_rc" -eq 0 ]]; then
+    echo "ACX pre-commit: no Python -- the credential floor screened 3 credential shapes; the Python scanner screens 7. Install Python 3.9+ for the full scan."
+  fi
 else
   echo "ACX pre-commit: no credential pre-screen available on this host; only CI secret scanning can backstop this, if your CI runs one."
 fi
@@ -118,8 +129,12 @@ if ! run_validator; then
 fi
 echo "ACX pre-commit: validator passed."
 
+# --relative: paths under the framework root, relative to it (a monorepo package
+# matches too). --diff-filter=M: an added file is the install, not an SSoT edit
+# that bypassed the guard.
+staged_modified="$(git diff --cached --name-only --relative --diff-filter=M)"
 for path in "${GUARDED_PATHS[@]}"; do
-  if git diff --cached --name-only | grep -qxF "$path"; then
+  if grep -qxF "$path" <<< "$staged_modified"; then
     # Check for a recent receipt (written in last 60 minutes)
     if [[ ! -d "$GUARD_RECEIPT" ]] || ! find "$GUARD_RECEIPT" -name "*.json" -newer "$path" -mmin -60 | grep -q .; then
       echo "GUARD WARN: $path staged without a recent guard receipt."

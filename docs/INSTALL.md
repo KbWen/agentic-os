@@ -60,6 +60,8 @@ git config core.hooksPath .githooks
 
 > **Note:** `git config core.hooksPath .githooks` makes Git use **only** `.githooks/`. If you already use husky, lefthook, or a `.git/hooks/` setup, this replaces it — integrate the ACX check into your existing hook instead of overwriting.
 
+> **Framework in a sub-directory (monorepo)?** Git resolves `core.hooksPath` from the repository root, so a bare `.githooks` points at a directory that does not exist there and the hook silently never runs. Use the path from the root instead: `git config core.hooksPath <sub-dir>/.githooks`. The hook finds the framework next to its own `.githooks/` directory.
+
 The hook runs `validate.ps1` from Git Bash on Windows when PowerShell is available, otherwise it runs `validate.sh`. Validator failures block the commit; guarded SSoT receipt warnings remain advisory.
 
 <details>

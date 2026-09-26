@@ -131,6 +131,18 @@ def test_hook_blocks_without_python_via_floor(tmp_path):
     assert FAKE not in (r.stdout + r.stderr), "value leaked into hook output"
 
 
+def test_hook_names_the_narrower_screen_without_python(tmp_path):
+    """#211(a): without a startable python the floor passes a clean commit; say that it
+    screened 3 credential shapes, not the scanner's 7, instead of passing silently."""
+    repo = _install(tmp_path)
+    (repo / "ok.txt").write_text("just some normal text without secrets\n", encoding="utf-8")
+    _git(repo, "add", "ok.txt", check=True)
+    shim = _shim(tmp_path.parent / "shim_nopy", "#!/bin/sh\nexit 9\n")
+    r = _git(repo, "commit", "-m", "ok", env={**os.environ, "PATH": _path_with(shim)})
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "no Python -- the credential floor screened 3 credential shapes" in r.stdout + r.stderr
+
+
 def test_hook_passes_benign(tmp_path):
     repo = _install(tmp_path)
     (repo / "ok.txt").write_text("just some normal text without secrets\n", encoding="utf-8")
