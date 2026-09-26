@@ -168,7 +168,9 @@ Output findings using the Red Team Report format defined in the skill file.
 
 ## Burden of Proof Protocol (ALL non-tiny-fix classifications)
 
-> **Core principle**: Every claim of correctness starts as **UNPROVEN**. The reviewer must cite concrete evidence to flip it to PASS. This inverts the default from "find problems to fail" to "find evidence to pass", eliminating confirmation bias.
+> **Core principle**: Every claim of correctness starts as **UNPROVEN**. The reviewer must cite concrete evidence to flip it to PASS.
+
+**Invariants** (`never`, `always`, `unique`, `not reused`): code evidence alone leaves the row `✗ UNPROVEN` — only a test or run that hits the boundary (empty, last/largest, repeat) proves one.
 
 ### For feature / architecture-change (Spec-Based)
 
@@ -183,7 +185,7 @@ Cross-reference implementation against EVERY AC in the referenced `docs/specs/<f
 4. Evidence insufficient or missing → remains `✗ UNPROVEN`.
 5. Partial evidence → `⚠️ PARTIAL (evidence: <citation>, gap: <what's missing>)`.
 
-**Gate rule**: Any AC remaining `✗ UNPROVEN` → STOP. Cannot proceed to `/test` until resolved or explicitly deferred via `[NEEDS_HUMAN]` with user acknowledgment.
+**Gate rule**: Any AC remaining `✗ UNPROVEN` or untagged `⚠️ PARTIAL` → STOP. Cannot proceed to `/test` until resolved or explicitly deferred via `[NEEDS_HUMAN]` with user acknowledgment.
 
 ### For quick-win / hotfix (Behavioral)
 
@@ -206,14 +208,12 @@ These classifications have no formal spec, but the burden of proof still applies
 | AC-3 | [description] | ⚠️ PARTIAL | `src/bar.dart:10` implements, but no test — [NEEDS_HUMAN] |
 ```
 
-After completing the table, emit the Gate Receipt for Work Log `## Gate Evidence`. The verdict is **conditional** — PASS only when all AC rows are either `✅ PROVEN` or explicitly tagged `[NEEDS_HUMAN]`:
-- **If zero `✗ UNPROVEN` rows remain** (or all UNPROVEN are `[NEEDS_HUMAN]`):
+After completing the table and the Self-Check Protocol below, emit the Gate Receipt for Work Log `## Gate Evidence`. The verdict is **conditional** — PASS only when all AC rows are either `✅ PROVEN` or explicitly tagged `[NEEDS_HUMAN]`:
+- **If every row is `✅ PROVEN` or tagged `[NEEDS_HUMAN]`**:
   ```
   - Gate: review | Verdict: PASS | Classification: <classification> | Timestamp: <ISO>
   ```
-- **If any `✗ UNPROVEN` row exists without `[NEEDS_HUMAN]` tag**: the review is incomplete. The receipt MUST be `NOT READY`, not `PASS`. Proceed through the `## Reverse Transition` block below instead of writing a PASS receipt.
-
-The Burden of Proof table stays in the review output for human readability; the receipt goes to Gate Evidence for CI validation.
+- **Otherwise**: the review is incomplete. The receipt MUST be `NOT READY`, not `PASS`. Proceed through the `## Reverse Transition` block below instead of writing a PASS receipt.
 
 ## Self-Check Protocol (Auto — Before Presenting Results)
 
@@ -221,7 +221,7 @@ AI MUST verify its own review before outputting:
 
 1. **Scope check**: List every file changed. Any file NOT in the original plan? Flag it.
 2. **Regression check**: For each changed function/export, state: "Callers: [list]. Breaking change: yes/no."
-3. **Proof completeness check**: Verify the Burden of Proof table has zero `✗ UNPROVEN` rows (or all UNPROVEN rows are explicitly tagged `[NEEDS_HUMAN]`). If any UNPROVEN row lacks a tag, the review is incomplete — do NOT present as ready.
+3. **Proof check**: a Red Team or Security observation of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`; any untagged `✗ UNPROVEN` or `⚠️ PARTIAL` row makes the receipt `NOT READY`.
 
 ## Output Format
 
@@ -276,7 +276,7 @@ If verdict = **Not Ready**, the agent MUST execute the reverse transition before
 
 1. Update Work Log `Current Phase: implement` (do NOT leave it as `review`).
 2. Append to `## Phase Summary`: `- review: Not Ready — [blocking issues list] — routed back to implement`.
-3. Record the reverse edge in `## Gate Evidence`: `- Gate: review | Verdict: NOT READY | Transition: REVIEWED→IMPLEMENTING | Timestamp: <ISO>`.
+3. Record the reverse edge in `## Gate Evidence`: `- Gate: review | Verdict: NOT READY | Classification: <classification> | Transition: REVIEWED→IMPLEMENTING | Timestamp: <ISO>`.
 4. State clearly to the user: "Route back to `/implement` to address: [list of blocking issues by severity]."
 
 This ensures the state machine correctly records the remediation loop. Leaving `Current Phase: review` on a Not Ready verdict creates a phantom REVIEWED state that blocks future phase-progression validation.

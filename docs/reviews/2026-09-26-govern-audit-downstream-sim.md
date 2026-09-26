@@ -322,8 +322,8 @@ routing_actions:
     owner: "unassigned"
   - finding: "Review PROVEN rows accept non-discriminating proofs; a red-team counterexample does not reopen them (backlog #203)"
     target_doc: "docs/architecture/governance.log.md"
-    status: pending
-    owner: "unassigned"
+    status: merged
+    owner: "fix/agent-guidance-levers-204-203"
   - finding: "Gate-receipt Timestamp is rarely a clock reading in practice (25 of 29 synthetic or pre-written) — keep, auto-stamp, or delete from the contract (backlog #205)"
     target_doc: "docs/architecture/governance.log.md"
     status: pending
@@ -333,3 +333,11 @@ routing_actions:
 Probe hygiene: all deployments, agent sessions and reproductions ran in a
 scratch directory outside the repository; nothing from them was committed.
 Evidence (logs, transcripts, work logs, scripts) is kept there for the session.
+
+## Addendum — post-remediation measurement (same day)
+
+The two product-outcome levers were implemented on `fix/agent-guidance-levers-204-203` and re-measured with the same harness before shipping.
+
+- **F4 / #204 — refuted as a lever.** Adding the Work-Log step to `CLAUDE.md` changed nothing: zero-hint Claude opened a Work Log in 0/3 runs before and 0/3 after (one run classified quick-win and went straight to code without reading the SSoT). The change was reverted. The pre-mortem's hypothesis that one clause could close the gap does not hold; what does work is starting the task with `/bootstrap <task>` (6/6 engaged). Decision moved to #213.
+- **F3 / #203 — shipped, effect not demonstrated.** v1 (Self-Check only) lost to the existing rule that accepts `file:line` evidence: the re-run review certified "deleted IDs are not recycled" by citing the very `max(id)` line that recycles them. v2 moved the rule into the evidence definition. In two v2 chains the rule never fired, because neither review listed the invariant as a criterion. Governed chains caught the defect 0/4 — one run before the change, three after — against 2/2 no-framework controls. The shipped wording, after two further review rounds (rule placed above both evidence lists, untagged PARTIAL forces NOT READY, receipt written after the Self-Check), was not re-measured. The upstream gap is filed as #212.
+- **Unchanged conclusion:** the verdict above stands, and it is now sharper — wording in the phase files is not where the product-quality lever sits for these models.

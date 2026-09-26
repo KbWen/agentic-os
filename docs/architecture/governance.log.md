@@ -165,3 +165,29 @@ source_sha: 14ac9d9
   diff returned PASS and found the defect that was *visible in the diff*; a delegated
   adversarial pass then found one CRITICAL and two MAJOR that required knowing
   `git check-ignore`'s exit semantics. Every finding was re-derived before being acted on.
+
+---
+
+### [governance][2026-09-26][fix/agent-guidance-levers-204-203]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-agent-guidance-levers-204-203-20260926.md`)
+source_sha: 551af72
+
+- [DECISION] A burden-of-proof row that claims an invariant (`never`, `always`, `unique`,
+  `not reused`) is proven only by a test or run that hits the boundary (empty, last/largest,
+  repeat); a `file:line` citation leaves it `✗ UNPROVEN`. Observed: a governed `/review`
+  certified "deleted IDs are never reused" by citing the `max(id)+1` line that reuses the
+  highest id. The rule sits in the evidence definition, above both evidence lists, because
+  the first draft put it in the Self-Check, where it lost to the explicit rule that accepts
+  `file:line` evidence.
+- [DECISION] A Red Team or Security observation of any severity that contradicts a
+  `✅ PROVEN` row reverts it, and the review receipt is written after the Self-Check rather
+  than re-issued: a NOT READY appended after a PASS was invisible to the gate-progression
+  check at the time.
+- [CONSTRAINT] Wording in a phase file is not where the product-quality lever sits for
+  these models. Governed chains caught the seeded defect 0/4 (one run before the change,
+  three after) against 2/2 no-framework controls; in the last two, no criterion named the
+  invariant, so the rule had nothing to fire on. Any further lever (#212) is measured with
+  the same hidden-test harness before an effect is claimed.
+- [TRADEOFF] #204's `CLAUDE.md` clause was reverted rather than kept as harmless: it
+  measured 0/3 -> 0/3, and an inert governance line signals coverage that does not exist.
+  Starting with `/bootstrap <task>` engaged 6/6; the entry-path decision is #213.
