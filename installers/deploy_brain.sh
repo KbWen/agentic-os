@@ -33,7 +33,8 @@ fi
 
 # Try to read source_repo from manifest
 if [[ -z "$ACX_SOURCE" && -f "$MANIFEST" ]]; then
-    ACX_SOURCE="$(sed -n 's/^source_repo:[[:space:]]*//p' "$MANIFEST" | head -n 1)" || true
+    # tr -d: a manifest checked out CRLF (Windows autocrlf) must not leave a CR in the URL.
+    ACX_SOURCE="$(sed -n 's/^source_repo:[[:space:]]*//p' "$MANIFEST" | head -n 1 | tr -d '\r')" || true
 fi
 
 # NVM-style dispatch:
@@ -61,6 +62,12 @@ if ! command -v git >/dev/null 2>&1; then
     echo "git is required for bootstrap fetch. Install Git from https://git-scm.com/downloads" >&2
     exit 1
 fi
+
+# core.longpaths: upstream paths reach ~100 chars, so a clone under a deep Windows
+# project root exceeds MAX_PATH without it. Git ignores the setting elsewhere.
+acx_git() {
+    git -c core.longpaths=true "$@"
+}
 
 # Trailing slash / .git suffix differences are not real mismatches.
 normalize_git_url() {
@@ -92,21 +99,39 @@ if [[ -d "$ACX_CACHE/.git" ]]; then
         echo "  configured:   $ACX_SOURCE" >&2
         echo "Re-cloning from the configured source..." >&2
         remove_cache_or_die
-        git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+        acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
     else
         echo "Updating cached Agentic OS source..."
-        if ! git -C "$ACX_CACHE" pull 2>&1; then
+        if ! acx_git -C "$ACX_CACHE" pull 2>&1; then
             echo "" >&2
             echo "Failed to update cached source. Removing stale cache and re-cloning..." >&2
             remove_cache_or_die
-            git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+            acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
         fi
     fi
 else
     echo "Cloning Agentic OS from $ACX_SOURCE..."
     # Clean up any partial clone left by a prior interrupted attempt
     [[ -d "$ACX_CACHE" ]] && remove_cache_or_die
-    git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+    acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+fi
+
+# A failed checkout (e.g. a path over MAX_PATH) leaves an empty index; `git pull`
+# then reports "Already up to date" and the partial tree would be deployed with
+# exit 0. Deploy only from a cache whose index is populated and clean.
+cache_is_intact() {
+    # acx_git here too: without core.longpaths a long path reads as "modified".
+    acx_git -C "$ACX_CACHE" ls-files --error-unmatch .agentcortex/bin/deploy.sh >/dev/null 2>&1         && [[ -z "$(acx_git -C "$ACX_CACHE" status --porcelain --untracked-files=no 2>/dev/null)" ]]
+}
+if ! cache_is_intact; then
+    echo "Cached Agentic OS source is incomplete (an earlier checkout failed). Re-cloning..." >&2
+    remove_cache_or_die
+    acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+    if ! cache_is_intact; then
+        echo "Cached source is still incomplete after a fresh clone - aborting." >&2
+        echo "On Windows this usually means the project path is too long; move the project to a shorter path." >&2
+        exit 1
+    fi
 fi
 
 CACHED_CANONICAL="$ACX_CACHE/.agentcortex/bin/deploy.sh"

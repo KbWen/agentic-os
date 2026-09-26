@@ -15,6 +15,7 @@ design, matching test_deploy_tiering.py) against tiny local git repos:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -220,3 +221,65 @@ def test_origin_url_normalization_is_not_a_mismatch(tmp_path: Path) -> None:
     assert result.returncode == 0, combined
     assert "does not match" not in combined
     assert STUB_MARKER in combined
+
+
+@requires_bash
+@requires_git
+def test_partial_checkout_cache_is_recloned_not_deployed(tmp_path: Path) -> None:
+    """#206 (downstream sim 2026-09-26): a checkout that failed (e.g. MAX_PATH) leaves
+    an empty index; `git pull` then reports "Already up to date" and the old installer
+    deployed from the partial tree with exit 0. It must re-clone instead."""
+    right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
+    project = _make_project(tmp_path / "proj", right)
+    cache = project / ".agentcortex-src"
+    _git("clone", right, str(cache), cwd=tmp_path)
+    _git("rm", "-r", "-q", "--cached", ".", cwd=cache)  # the failed-checkout shape
+
+    result = _run_deploy_brain(project)
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "incomplete" in combined, "the partial cache must be detected"
+    assert STUB_MARKER in combined, "must deploy from a fresh, complete clone"
+    listed = subprocess.run(
+        ["git", "-C", str(cache), "ls-files"], capture_output=True, text=True, check=True,
+    ).stdout
+    assert ".agentcortex/bin/deploy.sh" in listed, "the re-cloned cache must have a populated index"
+
+
+@requires_bash
+@requires_git
+def test_crlf_manifest_source_repo_is_not_a_mismatch(tmp_path: Path) -> None:
+    """#202 companion: a manifest checked out CRLF must not leave a CR in source_repo,
+    or every update would look like an origin mismatch (and a non-MSYS sed keeps it)."""
+    right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
+    project = _make_project(tmp_path / "proj", right)
+    (project / ".agentcortex-manifest").write_bytes(f"source_repo: {right}\r\n".encode("utf-8"))
+    _git("clone", right, str(project / ".agentcortex-src"), cwd=tmp_path)
+
+    result = _run_deploy_brain(project)
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "does not match" not in combined
+    assert "Updating cached Agentic OS source" in combined
+
+
+def test_every_clone_and_pull_enables_long_paths() -> None:
+    """#206: static check. The functional failure needs a Windows path beyond MAX_PATH,
+    which CI cannot build; every clone/pull must go through acx_git (core.longpaths)."""
+    text = DEPLOY_BRAIN_SH.read_text(encoding="utf-8")
+    assert 'git -c core.longpaths=true "$@"' in text
+    calls = [
+        line for line in text.splitlines()
+        if re.search(r"\b(clone|pull)\b", line)
+        and "git" in line
+        and not line.lstrip().startswith(("#", "echo"))
+    ]
+    assert calls, "expected clone/pull call sites"
+    for line in calls:
+        assert "acx_git" in line, f"clone/pull without core.longpaths: {line.strip()}"
+    # The integrity check reads the cache too; without core.longpaths a checked-out
+    # long path reads as "modified" and a healthy cache is rejected (found by re-sim).
+    assert 'acx_git -C "$ACX_CACHE" ls-files' in text
+    assert 'acx_git -C "$ACX_CACHE" status' in text
