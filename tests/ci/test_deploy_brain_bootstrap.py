@@ -247,6 +247,7 @@ def test_partial_checkout_cache_is_recloned_not_deployed(tmp_path: Path) -> None
     assert STUB_MARKER in combined, "must deploy from a fresh, complete clone"
     listed = subprocess.run(
         ["git", "-C", str(cache), "ls-files"], capture_output=True, text=True, check=True,
+        encoding="utf-8", errors="replace",
     ).stdout
     assert ".agentcortex/bin/deploy.sh" in listed, "the re-cloned cache must have a populated index"
 
