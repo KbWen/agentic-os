@@ -80,6 +80,11 @@ class LifecycleContractTests(unittest.TestCase):
         # The receipt is written after the Self-Check, so a reverted row never needs a re-issued receipt
         # (validate.sh ignores a NOT READY that follows a review PASS).
         self.assertIn("After completing the table and the Self-Check Protocol below, emit the Gate Receipt", review_text)
+        self.assertNotIn("re-issue", review_text)
+        self.assertLess(review_text.index("## Burden of Proof Protocol"), review_text.index("code evidence alone"))
+        # An untagged PARTIAL row must not satisfy the PASS bullet.
+        self.assertIn("**If every row is `✅ PROVEN` or tagged `[NEEDS_HUMAN]`**", review_text)
+        self.assertIn("Verdict: NOT READY | Classification: <classification> | Transition: REVIEWED", review_text)
 
     def test_quick_win_phases_exclude_review_and_test(self) -> None:
         """Quick-win required phases MUST NOT include review/test per hard rules."""
