@@ -118,5 +118,24 @@ def test_local_edit_with_a_framework_change_still_gets_a_sidecar(installed: Path
     assert _sidecars(installed) == [SSOT + ".acx-incoming"]
     assert f"[SKIP] {SSOT}" in out and MERGE_BLOCK in out
     assert counts["skipped"] == 1 and counts["kept"] == 0
-    assert f"scaffold {SSOT} sha256:{old_baseline}" in (installed / ".agentcortex-manifest").read_text(
-        encoding="utf-8"), "the baseline stays recorded, so the local edit is still detected next time"
+    offered = hashlib.sha256((ROOT / ".agentcortex" / "templates" / "current_state.md").read_bytes()
+                             .replace(b"\r\n", b"\n")).hexdigest()
+    assert f"scaffold {SSOT} sha256:{offered}" in (installed / ".agentcortex-manifest").read_text(
+        encoding="utf-8"), "the offered version becomes the baseline (review F3)"
+
+
+def test_an_unmerged_offer_repeats_and_a_deleted_one_does_not(installed: Path) -> None:
+    """AC-2a (review F2/F3): the offered version becomes the baseline; the sidecar is
+    written again while it still exists, and not after the adopter deletes it."""
+    _set_baseline(installed, SSOT, hashlib.sha256(b"an older template").hexdigest())
+    first = _deploy(installed)
+    assert _sidecars(installed) == [SSOT + ".acx-incoming"], first[-800:]
+
+    again = _deploy(installed)  # the adopter has not dealt with it yet
+    assert _sidecars(installed) == [SSOT + ".acx-incoming"], "an unmerged offer must stay"
+    assert _summary(again)["skipped"] == 1
+
+    (installed / (SSOT + ".acx-incoming")).unlink()  # merged, then deleted
+    after = _deploy(installed)
+    assert _sidecars(installed) == [], "a merged-and-deleted offer must not come back"
+    assert _summary(after)["kept"] == 1 and MERGE_BLOCK not in after

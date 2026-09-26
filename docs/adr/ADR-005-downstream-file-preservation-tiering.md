@@ -92,18 +92,21 @@ template was byte-identical upstream: the sidecar condition was only "the adopte
 differs from the recorded baseline". Agents asked to follow the block found nothing to merge.
 Spec: `docs/specs/scaffold-sidecar-on-upstream-change.md`.
 
-- **Sidecar condition (amended).** A locally modified sidecar-class file gets `.acx-incoming`
-  only when the framework's current version differs from the adopter's recorded baseline
-  (the framework changed it) and from the adopter's copy. When the framework version equals
-  the baseline, the adopter's copy is kept, no sidecar is written, and the deploy summary
-  counts it as kept. The baseline hash stays recorded either way, so a later framework
-  change to that file still produces the sidecar.
+- **Sidecar condition (amended).** The manifest baseline of a sidecar-class file is the
+  framework version last offered to the adopter. A locally modified file gets
+  `.acx-incoming` when the framework changed it since that offer, or when the previous offer
+  is still unmerged (its sidecar existed when the run started); the offered version then
+  becomes the baseline. Otherwise the adopter's copy is kept, no sidecar is written, and the
+  deploy summary counts it as kept. Deleting a sidecar ends that offer until the framework
+  changes the file again.
 - **Compliance check (amended).** After a local edit to a framework-shipped skill, a
   re-deploy of the same framework version keeps the edit and writes no `.acx-incoming`; a
-  deploy of a version that changed that skill writes one and leaves the original untouched.
+  deploy of a version that changed that skill writes one and leaves the original untouched;
+  the next deploy writes it again while it is still there, and not after it is deleted.
 - **Consequence (amended).** Part of the "sidecar merge paralysis" risk above came from
   this ADR itself: a sidecar on every update teaches adopters to ignore the one that
   matters. The merge block now prints only when the run wrote a sidecar.
 - **Unchanged.** Which files are sidecar-class and which force-update; the core branch;
   and the branches with no recorded baseline (a fresh install into existing files, a
-  pre-manifest migration), which still write a sidecar on any difference.
+  pre-manifest migration), which still write a sidecar on any difference, now kept on offer
+  until the adopter deletes it.
