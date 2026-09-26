@@ -133,7 +133,8 @@ if ! cache_is_intact; then
     acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
     if ! cache_is_intact; then
         # A checkout that fails (e.g. Filename too long) already stopped at the clone
-        # above; what reaches here is a source without deploy.sh or a cache git refuses.
+        # above; what reaches here is a source without deploy.sh, a cache git refuses to
+        # read, or a fresh clone git already reports as modified (e.g. a case collision).
         echo "Cached source still fails its integrity check after a fresh clone - aborting. git says:" >&2
         acx_git -C "$ACX_CACHE" ls-files --error-unmatch .agentcortex/bin/deploy.sh >/dev/null || true
         acx_git -C "$ACX_CACHE" status --porcelain --untracked-files=no >&2 || true

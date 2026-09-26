@@ -1301,8 +1301,8 @@ def test_deploy_stdout_renders_enforcement_block() -> None:
     [
         None,
         # The per-file path (macOS bash 3.2) parses the manifest with awk. MSYS awk drops
-        # CR in text mode, so on Windows this case cannot fail (and costs a few minutes of
-        # per-file spawns); GNU/BSD awk keep the CR, so it runs (and discriminates) elsewhere.
+        # CR in text mode, so on Windows this case cannot fail (and costs over ten minutes
+        # of per-file spawns); GNU/BSD awk keep the CR, so it runs (and discriminates) elsewhere.
         pytest.param(
             {"ACX_FORCE_PERFILE": "1"},
             marks=pytest.mark.skipif(os.name == "nt", reason="MSYS awk strips CR; slow and non-discriminating on Windows"),

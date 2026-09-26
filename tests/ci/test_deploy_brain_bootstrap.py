@@ -313,6 +313,24 @@ def test_source_without_deploy_sh_points_at_source_repo(tmp_path: Path) -> None:
     assert "did not match any file" in result.stderr, "git's own diagnostic must be shown"
 
 
+@requires_bash
+@requires_git
+def test_abort_path_still_explains_when_git_refuses_the_cache(tmp_path: Path) -> None:
+    """#206 review round 2: the abort diagnostics must not themselves abort. A `git status`
+    that fails there would end the run under `set -e` with git's code and no hint."""
+    right = _make_source_repo(tmp_path / "right-repo", STUB_MARKER)
+    project = _make_project(tmp_path / "proj", right)
+    bad_config = tmp_path / "global.gitconfig"
+    bad_config.write_bytes(b"[status]\n\tshowUntrackedFiles = bogus\n")  # status exits 128
+
+    result = _run_deploy_brain(project, GIT_CONFIG_GLOBAL=str(bad_config), LC_ALL="C", LANGUAGE="C")
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "bad config" in result.stderr, "git's own diagnostic must be shown"
+    assert "check source_repo in .agentcortex-manifest" in result.stderr
+    assert STUB_MARKER not in result.stdout
+
+
 def test_every_clone_and_pull_enables_long_paths() -> None:
     """#206: static check. The functional failure needs a path beyond MAX_PATH on a
     Windows runner with no system-wide core.longpaths; Linux runners cannot show it.
@@ -330,5 +348,11 @@ def test_every_clone_and_pull_enables_long_paths() -> None:
         assert "acx_git" in line, f"clone/pull without core.longpaths: {line.strip()}"
     # The integrity check reads the cache too; without core.longpaths a checked-out
     # long path reads as "modified" and a healthy cache is rejected (found by re-sim).
-    assert 'acx_git -C "$ACX_CACHE" ls-files' in text
-    assert 'acx_git -C "$ACX_CACHE" status' in text
+    # Check the gate's own body: the abort path repeats both calls for diagnostics, so a
+    # whole-file substring would still pass with a plain `git` inside the gate.
+    gate = re.search(r"^cache_is_intact\(\) \{\n(.*?)^\}", text, re.S | re.M)
+    assert gate, "cache_is_intact() not found"
+    assert 'acx_git -C "$ACX_CACHE" ls-files' in gate.group(1)
+    assert 'acx_git -C "$ACX_CACHE" status' in gate.group(1)
+    plain = re.findall(r'(?<![\w-])git -C "\$ACX_CACHE" (?:ls-files|status)', text)
+    assert not plain, f"cache reads without core.longpaths: {plain}"
