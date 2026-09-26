@@ -11,8 +11,12 @@ $ErrorActionPreference = 'Stop'
 # caller's live session, so it is saved here and restored in the matching `finally` at
 # the end of the file -- never set-and-leave, which would mutate console state after exit.
 $acxPreviousOutputEncoding = [Console]::OutputEncoding
+# (#211) Python tools would print in the console code page, which the UTF-8 decoding set
+# below turns into mojibake; make them print UTF-8. Restored in the same `finally`.
+$acxPreviousPythonIoEncoding = $env:PYTHONIOENCODING
 try {
     [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+    $env:PYTHONIOENCODING = 'utf-8'
 
 function Normalize-PathString {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -215,7 +219,8 @@ function Invoke-PythonCheck {
 # error under $ErrorActionPreference = 'Stop' (pwsh 7 does not), so a git probe that
 # is expected to fail -- not a repo, no origin remote, an unresolvable SHA, a detached
 # HEAD -- aborted the whole run with no Summary. Probe through this instead: stderr is
-# dropped; stdout and $LASTEXITCODE come back as usual.
+# dropped; stdout and $LASTEXITCODE come back as usual. Quote a `--` argument ('--'): a
+# bare -- is consumed by PowerShell's parameter binder and never reaches $args.
 function Invoke-GitQuiet {
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
@@ -559,7 +564,7 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     if (-not $gitPresent -or -not $isRepo) {
         Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- git unavailable or not a git repo'
     } else {
-        git -C $root rev-parse --verify -q origin/main *> $null
+        Invoke-GitQuiet -C $root rev-parse --verify -q origin/main | Out-Null
         if ($LASTEXITCODE -ne 0) { Invoke-GitQuiet -C $root fetch -q --depth=1 origin main | Out-Null }
         $witnessBase = (Invoke-GitQuiet -C $root merge-base origin/main HEAD | Select-Object -First 1)
         if (-not $witnessBase) {
@@ -655,7 +660,7 @@ if ($gitPresentMarkers) { Invoke-GitQuiet -C $root rev-parse --git-dir | Out-Nul
 if (-not $gitPresentMarkers -or -not $isRepoMarkers) {
     Add-Result -Level 'WARN' -Message 'merge-conflict marker scan -- git unavailable or not a git repo'
 } else {
-    $conflictMarkerHits = git -C $root grep -I -n -E '^(<<<<<<< |>>>>>>> )' -- . ':(exclude).agentcortex/bin/validate.sh' ':(exclude).agentcortex/bin/validate.ps1' ':(exclude)tests/guard/test_conflict_markers.py' 2>$null
+    $conflictMarkerHits = Invoke-GitQuiet -C $root grep -I -n -E '^(<<<<<<< |>>>>>>> )' '--' . ':(exclude).agentcortex/bin/validate.sh' ':(exclude).agentcortex/bin/validate.ps1' ':(exclude)tests/guard/test_conflict_markers.py' 
     if ($conflictMarkerHits) {
         Add-Result -Level 'FAIL' -Message 'unresolved merge-conflict markers in tracked files'
         Show-IndentedOutput -Text ($conflictMarkerHits | Out-String)
@@ -1524,6 +1529,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
             $hasShipReceipt = $false  # H3: track ANY ship receipt regardless of verdict
             $reviewNotReady = $false  # track pending re-review after NOT READY reverse edge
             $hadNotReady = $false  # sticky: a review NOT READY reverse edge occurred (for remediation hint)
+            $nrIndex = 0  # gates recorded after the latest review NOT READY start here
             foreach ($line in $gateLines) {
                 $gm = [regex]::Match($line, '(?i)^(?:`?- )?gate:\s*(\w+)\s*\|')
                 if ($gm.Success) {
@@ -1538,21 +1544,22 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                         # H4: Reclassification reset — one reset per structured drift record
                         if ($gPhase -eq 'bootstrap' -and $gateList.Count -gt 0 -and $reclassifyCount -gt $resetsUsed) {
                             $gateList.Clear()
+                            $nrIndex = 0
                             $resetsUsed++
                         }
                         $gateList.Add($gPhase)
                     } else {
-                        # The latest review verdict wins: a NOT READY after a review PASS voids that
-                        # PASS and every gate recorded after it, then reopens implement below.
-                        $lastReview = $gateList.LastIndexOf('review')
-                        if ($gPhase -eq 'review' -and $lastReview -ge 0) {
-                            $gateList.RemoveRange($lastReview, $gateList.Count - $lastReview)
-                        }
                         # NOT READY / FAIL review: discard preceding implement (reverse-edge pop)
-                        if ($gPhase -eq 'review' -and $gateList.Count -gt 0 -and $gateList[$gateList.Count - 1] -eq 'implement') {
-                            $gateList.RemoveAt($gateList.Count - 1)
+                        if ($gPhase -eq 'review') {
+                            if ($gateList.Count -gt 0 -and $gateList[$gateList.Count - 1] -eq 'implement') {
+                                $gateList.RemoveAt($gateList.Count - 1)
+                            }
+                            # The latest review verdict wins, also after a review PASS. Recorded gates
+                            # are never deleted (that would hide an illegal edge logged before this
+                            # point); the re-review requirement covers the gates recorded after it.
                             $reviewNotReady = $true
                             $hadNotReady = $true  # remember for the re-review remediation hint below
+                            $nrIndex = $gateList.Count
                         }
                     }
                 }
@@ -1584,8 +1591,10 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 }
             }
             # NOT READY reverse-edge check: re-review was skipped after NOT READY
-            if ($reviewNotReady -and ($gates | Where-Object { $_ -in @('test','handoff','ship') })) {
-                $badNext = ($gates | Where-Object { $_ -in @('test','handoff','ship') } | Select-Object -First 1)
+            # An empty slice needs the guard: $a[4..3] is a DESCENDING range in PowerShell.
+            $afterNotReady = if ($nrIndex -lt $gates.Count) { @($gates[$nrIndex..($gates.Count - 1)]) } else { @() }
+            if ($reviewNotReady -and ($afterNotReady | Where-Object { $_ -in @('test','handoff','ship') })) {
+                $badNext = ($afterNotReady | Where-Object { $_ -in @('test','handoff','ship') } | Select-Object -First 1)
                 Write-Output "  illegal gate progression in $($wl.Name): NOT_READY-review->$badNext (re-review skipped after NOT READY)"
                 $gateProgressionIllegal++
             }
@@ -2916,4 +2925,5 @@ finally {
     # (#175) Hand the caller's console state back exactly as found. Runs on the `exit 1`
     # path above as well -- PowerShell executes `finally` on exit and preserves the code.
     [Console]::OutputEncoding = $acxPreviousOutputEncoding
+    $env:PYTHONIOENCODING = $acxPreviousPythonIoEncoding
 }

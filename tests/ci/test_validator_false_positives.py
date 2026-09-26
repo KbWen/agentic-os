@@ -1275,6 +1275,12 @@ def test_not_ready_re_review_hint_source_parity() -> None:
 
 SUPERSEDED_LOG = "feature-review-pass-then-not-ready.md"
 SUPERSEDED_FIXED_LOG = "feature-review-pass-then-not-ready-fixed.md"
+# Review F1 of the first version: voiding every gate after the voided PASS also erased an
+# illegal ship recorded there, so a later NOT READY + redo loop laundered it.
+LAUNDERED_LOG = "feature-premature-ship-then-not-ready.md"
+# In progress, last receipt a NOT READY: nothing follows it yet. In validate.ps1 an
+# unguarded $gates[$nrIndex..($gates.Count - 1)] is a descending range here and throws.
+IN_PROGRESS_LOG = "feature-in-progress-not-ready-after-test.md"
 RECEIPTLESS_LOG = "feature-no-receipt-line.md"
 RECEIPT_LINE_HINT = (
     "expected receipt line: - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>"
@@ -1340,6 +1346,13 @@ def receipt_fixture_target(tmp_path_factory: pytest.TempPathFactory) -> Path:
     _write_receipt_worklog(target, SUPERSEDED_LOG, head + [("test", "PASS")])
     _write_receipt_worklog(target, SUPERSEDED_FIXED_LOG,
                            head + [("implement", "PASS"), ("review", "PASS"), ("test", "PASS")])
+    _write_receipt_worklog(target, LAUNDERED_LOG, [
+        ("bootstrap", "PASS"), ("plan", "PASS"), ("implement", "PASS"), ("review", "PASS"),
+        ("ship", "PASS"),  # premature: no test, no handoff
+        ("review", "NOT READY"), ("implement", "PASS"), ("review", "PASS"),
+        ("test", "PASS"), ("handoff", "PASS"), ("ship", "PASS"),
+    ])
+    _write_receipt_worklog(target, IN_PROGRESS_LOG, head[:4] + [("test", "PASS"), ("review", "NOT READY")])
     _write_receipt_worklog(target, RECEIPTLESS_LOG, [])
     return target
 
@@ -1351,6 +1364,12 @@ def _assert_latest_review_verdict_wins(out: str, label: str) -> None:
     )
     assert not any(SUPERSEDED_FIXED_LOG in line for line in illegal), (
         f"[{label}] implement + re-review PASS after the NOT READY must stay legal:\n{out[-1200:]}"
+    )
+    assert any(LAUNDERED_LOG in line and "review->ship" in line for line in illegal), (
+        f"[{label}] a NOT READY must not erase an illegal edge recorded before it:\n{out[-1200:]}"
+    )
+    assert "Summary:" in out and not any(IN_PROGRESS_LOG in line for line in illegal), (
+        f"[{label}] a log that ends on a NOT READY is in progress, not illegal:\n{out[-1200:]}"
     )
 
 
@@ -1386,6 +1405,8 @@ def test_gate_receipt_diagnostics_source_parity() -> None:
     ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8")
     for src, label in ((sh, "validate.sh"), (ps1, "validate.ps1")):
         assert "The latest review verdict wins" in src, label
+        assert "Recorded gates" in src and "are never deleted" in src, label
+        assert "PYTHONIOENCODING" in src, f"{label}: Python tools must print UTF-8 (#211)"
         assert RECEIPT_LINE_HINT in src, label
         assert "## Gate Evidence has no receipt line" in src, label
         assert "no ## Gate Evidence section" in src, label
@@ -1419,7 +1440,8 @@ def _run_validate_windows_powershell(cwd: Path) -> str:
 
 
 def _git(target: Path, *args: str) -> None:
-    subprocess.run(["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", *args],
+    subprocess.run(["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t",
+                    "-c", "commit.gpgsign=false", *args],
                    cwd=str(target), check=True, capture_output=True)
 
 
@@ -1459,6 +1481,15 @@ def test_validate_ps1_survives_failing_git_probes_on_windows_powershell(tmp_path
     assert "unresolvable Checkpoint SHA ('1234567') in main.md" in out, out[-1200:]
 
 
+def test_validate_ps1_restores_the_python_encoding_it_sets() -> None:
+    """#211(f): validate.ps1 runs in the caller's session, so like the console encoding
+    (#175) the PYTHONIOENCODING it sets must be handed back in the same finally."""
+    ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8-sig")
+    assert "$acxPreviousPythonIoEncoding = $env:PYTHONIOENCODING" in ps1
+    tail = ps1[ps1.rindex("finally {"):]
+    assert "$env:PYTHONIOENCODING = $acxPreviousPythonIoEncoding" in tail
+
+
 def test_validate_ps1_git_probes_go_through_quiet_helper() -> None:
     """Fast guard: the failing-by-design git probes use Invoke-GitQuiet, not a raw redirect."""
     ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8")
@@ -1469,7 +1500,9 @@ def test_validate_ps1_git_probes_go_through_quiet_helper() -> None:
                 "git -C $root symbolic-ref --short HEAD 2>$null",
                 "git -C $root rev-parse --abbrev-ref HEAD 2>$null",
                 'git -C $root rev-parse --verify "$cpVerify^{commit}" 2>$null',
-                'git -C $root rev-parse --verify "$dbVerify^{commit}" 2>$null'):
+                'git -C $root rev-parse --verify "$dbVerify^{commit}" 2>$null',
+                "git -C $root rev-parse --verify -q origin/main *> $null",
+                "$conflictMarkerHits = git -C $root grep"):
         assert raw not in ps1, raw
 
 

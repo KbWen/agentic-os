@@ -178,7 +178,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 
 1. **Ship Guard (§11.1)**: Before writing, check if `current_state.md` has been modified since this task started. If modified by another session, warn user and request confirmation before merging. Use **additive merge**, never full overwrite.
 2. **SSoT Update & Ship History**:
-- Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot). With Python, every SSoT write here goes through the guard, never a direct Edit — edit a copy, then:
+- Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot). With Python, every SSoT write here goes through the guard, never a direct Edit — edit a copy outside the repo, then:
 
   ```bash
   python .agentcortex/tools/guard_context_write.py snapshot --path .agentcortex/context/current_state.md  # prints sha256
