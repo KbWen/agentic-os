@@ -170,6 +170,8 @@ Output findings using the Red Team Report format defined in the skill file.
 
 > **Core principle**: Every claim of correctness starts as **UNPROVEN**. The reviewer must cite concrete evidence to flip it to PASS.
 
+**Invariants** (`never`, `always`, `unique`, `not reused`): code evidence alone leaves the row `✗ UNPROVEN` — only a test or run that hits the boundary (empty, last/largest, repeat) proves one.
+
 ### For feature / architecture-change (Spec-Based)
 
 Cross-reference implementation against EVERY AC in the referenced `docs/specs/<feature>.md`:
@@ -195,8 +197,6 @@ These classifications have no formal spec, but the burden of proof still applies
    - Root cause addressed (for hotfix): cite the specific fix location
 3. No evidence → `✗ UNPROVEN` → cannot proceed.
 
-**Invariants** (`never`, `always`, `unique`, `not reused`): code evidence alone leaves the row `✗ UNPROVEN` — only a test or run that hits the boundary (empty, last/largest, repeat) proves one.
-
 ### Evidence Output Format
 
 ```
@@ -208,7 +208,7 @@ These classifications have no formal spec, but the burden of proof still applies
 | AC-3 | [description] | ⚠️ PARTIAL | `src/bar.dart:10` implements, but no test — [NEEDS_HUMAN] |
 ```
 
-After completing the table, emit the Gate Receipt for Work Log `## Gate Evidence`. The verdict is **conditional** — PASS only when all AC rows are either `✅ PROVEN` or explicitly tagged `[NEEDS_HUMAN]`:
+After completing the table and the Self-Check Protocol below, emit the Gate Receipt for Work Log `## Gate Evidence`. The verdict is **conditional** — PASS only when all AC rows are either `✅ PROVEN` or explicitly tagged `[NEEDS_HUMAN]`:
 - **If zero `✗ UNPROVEN` rows remain** (or all UNPROVEN are `[NEEDS_HUMAN]`):
   ```
   - Gate: review | Verdict: PASS | Classification: <classification> | Timestamp: <ISO>
@@ -221,7 +221,7 @@ AI MUST verify its own review before outputting:
 
 1. **Scope check**: List every file changed. Any file NOT in the original plan? Flag it.
 2. **Regression check**: For each changed function/export, state: "Callers: [list]. Breaking change: yes/no."
-3. **Proof check**: a Red Team or Security observation of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`; any untagged `✗ UNPROVEN` row makes the receipt `NOT READY` — re-issue one already written.
+3. **Proof check**: a Red Team or Security observation of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`; any untagged `✗ UNPROVEN` or `⚠️ PARTIAL` row makes the receipt `NOT READY`.
 
 ## Output Format
 

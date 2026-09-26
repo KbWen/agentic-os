@@ -73,7 +73,13 @@ class LifecycleContractTests(unittest.TestCase):
         self.assertIn("code evidence alone leaves the row `✗ UNPROVEN`", review_text)
         self.assertIn("hits the boundary", review_text)
         self.assertIn("of any severity that contradicts a `✅ PROVEN` row reverts it to `✗ UNPROVEN`", review_text)
-        self.assertIn("makes the receipt `NOT READY`", review_text)
+        self.assertIn("`✗ UNPROVEN` or `⚠️ PARTIAL` row makes the receipt `NOT READY`", review_text)
+        # The invariant rule must govern BOTH evidence lists, so it sits above the first one.
+        self.assertLess(review_text.index("code evidence alone"),
+                        review_text.index("### For feature / architecture-change (Spec-Based)"))
+        # The receipt is written after the Self-Check, so a reverted row never needs a re-issued receipt
+        # (validate.sh ignores a NOT READY that follows a review PASS).
+        self.assertIn("After completing the table and the Self-Check Protocol below, emit the Gate Receipt", review_text)
 
     def test_quick_win_phases_exclude_review_and_test(self) -> None:
         """Quick-win required phases MUST NOT include review/test per hard rules."""
