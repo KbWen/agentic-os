@@ -169,7 +169,8 @@ _get_tier_inline() {
 manifest_lookup_hash() {
     local rel_path="$1"
     if [ -f "$MANIFEST_FILE" ]; then
-        awk -v path="$rel_path" '$2 == path { sub(/^sha256:/, "", $3); print $3; exit }' "$MANIFEST_FILE"
+        # sub(/\r$/): a manifest checked out CRLF must not leak a CR into the hash (#202).
+        awk -v path="$rel_path" '{ sub(/\r$/, "") } $2 == path { sub(/^sha256:/, "", $3); print $3; exit }' "$MANIFEST_FILE"
     fi
 }
 
@@ -399,6 +400,9 @@ process_queue() {
     declare -A _mfst_hash=()
     if [ -f "$MANIFEST_FILE" ]; then
         while IFS= read -r _mline; do
+            # read -r keeps a trailing CR from a CRLF checkout (Windows autocrlf); strip it
+            # or every stored hash mismatches and unedited files look locally modified (#202).
+            _mline="${_mline%$'\r'}"
             case "$_mline" in
                 core\ *|scaffold\ *|wrapper\ *)
                     _mrel="${_mline#* }"; _mrel="${_mrel%% *}"
@@ -1508,7 +1512,7 @@ echo "         (secret scanning stays in the hook above; per-PR gate/"
 echo "         work-log discipline stays local - work logs are gitignored)."
 echo ""
 echo "Finish setup:"
-echo "   - git add .agentcortex-manifest AGENTS.md CLAUDE.md GEMINI.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/ installers/"
+echo "   - git add .agentcortex-manifest .gitignore .gitattributes .githooks/ AGENTS.md CLAUDE.md GEMINI.md .agent/ .agents/ .agentcortex/ .antigravity/ .codex/ codex/ docs/ installers/"
 echo "     # Also add if present: .claude/ .github/"
 echo "   - Tell AI: 'Please run /bootstrap' to start"
 echo "   - Reference docs live under .agentcortex/docs/"

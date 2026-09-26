@@ -58,8 +58,8 @@ def _set_manifest_hash(manifest: Path, rel: str, digest: str) -> None:
             break
     else:
         raise AssertionError(f"manifest row not found: {rel}")
-    # Keep the manifest LF-only. Bash's batch reader treats a trailing CR as
-    # part of the hash token, which would turn this fixture into a false local edit.
+    # Keep the manifest LF-only: this helper rewrites one row, and a CRLF manifest has
+    # its own test (test_crlf_manifest_from_a_windows_checkout_updates_cleanly).
     manifest.write_bytes(("\n".join(lines) + "\n").encode("utf-8"))
 
 # Every test here shells out to real deploy.sh/validate.sh (fidelity by design).
@@ -1289,4 +1289,54 @@ def test_deploy_stdout_renders_enforcement_block() -> None:
         assert "TURN ON ENFORCEMENT" in result.stdout
         assert "Copy-Item .githooks/pre-commit.guard-ssot.sample" in result.stdout
         assert "work logs are gitignored" in result.stdout
+        # #202: the literal "Finish setup" line must stage the EOL rules and the ignore block,
+        # or teammates check the manifest out CRLF and lose the managed ignores.
+        assert "git add .agentcortex-manifest .gitignore .gitattributes .githooks/" in result.stdout
         assert "Validate the installation (optional" not in result.stdout
+
+
+@requires_bash
+@pytest.mark.parametrize(
+    "env",
+    [
+        None,
+        # The per-file path (macOS bash 3.2) parses the manifest with awk. MSYS awk drops
+        # CR in text mode, so on Windows this case cannot fail (and costs over ten minutes
+        # of per-file spawns); GNU/BSD awk keep the CR, so it runs (and discriminates) elsewhere.
+        pytest.param(
+            {"ACX_FORCE_PERFILE": "1"},
+            marks=pytest.mark.skipif(os.name == "nt", reason="MSYS awk strips CR; slow and non-discriminating on Windows"),
+        ),
+    ],
+    ids=["batch", "per-file"],
+)
+def test_crlf_manifest_from_a_windows_checkout_updates_cleanly(env: dict | None) -> None:
+    """#202 (downstream sim 2026-09-26): a teammate whose git checked the manifest out
+    with CRLF (autocrlf=true, no committed .gitattributes) must get the same clean
+    update as the committer: no false "[OVERWRITE] ... your local edits backed up",
+    no scaffold sidecar for files never touched, and no CR re-recorded."""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        target.mkdir()
+        first = _deploy(target, env)
+        assert first.returncode == 0, f"first deploy failed:\n{first.stderr}"
+        manifest = target / ".agentcortex-manifest"
+        core = target / ".agent" / "rules" / "engineering_guardrails.md"
+        scaffold = target / "CLAUDE.md"
+        # An older framework install the adopter never edited: the file holds the
+        # previous upstream bytes AND the manifest records exactly those bytes.
+        for path, rel in ((core, ".agent/rules/engineering_guardrails.md"), (scaffold, "CLAUDE.md")):
+            path.write_bytes(path.read_bytes() + b"\n<!-- previous upstream version -->\n")
+            _set_manifest_hash(manifest, rel, _lf_sha256(path))
+        # The teammate's checkout of the same commit: CRLF line endings.
+        manifest.write_bytes(manifest.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+
+        second = _deploy(target, env)
+        assert second.returncode == 0, f"update deploy failed:\n{second.stderr}"
+        output = second.stdout + second.stderr
+        assert "[OVERWRITE]" not in output, output
+        assert not core.with_name(core.name + ".acx-local").exists(), "no backup for an unedited file"
+        assert not scaffold.with_name(scaffold.name + ".acx-incoming").exists(), "no sidecar for an unedited file"
+        assert b"previous upstream version" not in core.read_bytes(), "core file must be updated"
+        assert b"previous upstream version" not in scaffold.read_bytes(), "scaffold file must be updated"
+        assert b"\r" not in manifest.read_bytes(), "the rewritten manifest must not carry CRs forward"

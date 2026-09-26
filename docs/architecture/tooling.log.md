@@ -36,3 +36,27 @@ source_sha: 2bc0c7eb30fe3ede9d342537831b2c8bfa8b0496 (PR #405)
   fallback, reachable only when `deploy_brain.ps1` is absent from the
   installers directory — which no real install or deploy produces. Recorded
   as a known third path, deliberately not widened into the hotfix.
+
+---
+
+### [tooling][2026-09-26][fix/install-path-batch]
+source_spec: — (hotfix; Work Log `.agentcortex/context/archive/fix-install-path-batch-20260926.md`)
+source_sha: 6678949
+
+- [CONSTRAINT] Anything `deploy.sh` reads back from a tracked text file must strip a
+  trailing CR before comparing: a Windows clone checks tracked files out CRLF until
+  `.gitattributes` pins them, and bash `read -r` keeps the CR while the content
+  hashes it is compared with are CR-normalized. MSYS `awk`/`sed` drop the CR in text
+  mode, so this class is invisible to Windows-only testing of those paths.
+- [DECISION] The installer's cache gate checks what a deploy needs — `deploy.sh`
+  in the index and a clean `git status` — and treats a git error as unclean. A
+  failed checkout never reaches it (the clone exits under `set -e`); what does is a
+  wrong source, a cache git refuses to read, or a fresh clone git reports modified.
+  The abort shows git's own diagnostic instead of guessing a cause.
+- [CONSTRAINT] Every git call that reads a checked-out cache needs
+  `core.longpaths` too, not only clone/pull: without it `git status` reports long
+  paths as modified and a healthy cache is rejected. The static test binds this to
+  the gate's own body, because the diagnostics repeat the same calls.
+- [TRADEOFF] The gate is a correctness check, not a tamper control: untracked files
+  pass `--untracked-files=no`. The cache was already fully trusted (its `deploy.sh`
+  is executed), so a stronger check would claim protection it cannot give.
