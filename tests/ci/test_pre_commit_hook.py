@@ -130,7 +130,8 @@ def test_ac2_hook_prefers_powershell_validator_on_windows() -> None:
 
 
 def _commit_all(repo: Path) -> None:
-    subprocess.run([git, "-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qm", "x"],
+    subprocess.run([git, "-c", "user.email=t@example.invalid", "-c", "user.name=t",
+                    "-c", "commit.gpgsign=false", "commit", "-qm", "x"],
                    cwd=repo, check=True, capture_output=True)
 
 
@@ -153,6 +154,13 @@ def test_ac3_guard_receipt_warning_is_advisory_only(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "GUARD WARN: AGENTS.md" in result.stdout
+
+    _commit_all(repo)
+    subprocess.run([git, "rm", "-q", "AGENTS.md"], cwd=repo, check=True)
+    (repo / ".agentcortex" / "context" / ".guard_receipts").mkdir(parents=True)  # reach the receipt lookup
+    deleted = _run_hook(repo)
+    assert "GUARD WARN: AGENTS.md" in deleted.stdout, "a deletion is an SSoT edit too"
+    assert "No such file" not in deleted.stdout + deleted.stderr
 
 
 @requires_git_bash

@@ -130,13 +130,14 @@ fi
 echo "ACX pre-commit: validator passed."
 
 # --relative: paths under the framework root, relative to it (a monorepo package
-# matches too). --diff-filter=M: an added file is the install, not an SSoT edit
-# that bypassed the guard.
-staged_modified="$(git diff --cached --name-only --relative --diff-filter=M)"
+# matches too). --diff-filter=a (lowercase = exclude): every change except an
+# addition, since adding the file is the install, not an SSoT edit that bypassed
+# the guard. A deletion still warns.
+staged_edits="$(git diff --cached --name-only --relative --diff-filter=a)"
 for path in "${GUARDED_PATHS[@]}"; do
-  if grep -qxF "$path" <<< "$staged_modified"; then
+  if grep -qxF "$path" <<< "$staged_edits"; then
     # Check for a recent receipt (written in last 60 minutes)
-    if [[ ! -d "$GUARD_RECEIPT" ]] || ! find "$GUARD_RECEIPT" -name "*.json" -newer "$path" -mmin -60 | grep -q .; then
+    if [[ ! -e "$path" || ! -d "$GUARD_RECEIPT" ]] || ! find "$GUARD_RECEIPT" -name "*.json" -newer "$path" -mmin -60 | grep -q .; then
       echo "GUARD WARN: $path staged without a recent guard receipt."
       echo "   Run guard_context_write.py or use the /ship workflow to update SSoT."
       echo "   (Advisory only - commit not blocked)"
