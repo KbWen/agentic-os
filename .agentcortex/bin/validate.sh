@@ -1269,6 +1269,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   checkpoint_missing=0
   checkpoint_violation_list=""
   gate_evidence_missing=0
+  gate_evidence_missing_list=""
   legacy_gate_evidence_missing=0
   gate_progression_illegal=0
   gate_progression_skipped=0
@@ -1385,6 +1386,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         # pre-Runtime-v4 log — you are actively shipping on this branch now.
         # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
+        gate_evidence_missing_list="${gate_evidence_missing_list}  $(basename "$wl"): no ## Gate Evidence section\n"
       fi
     elif ! <<< "$wl_content" grep -qiE '^(`?- )?gate:.*verdict:'; then
       if [[ "$legacy_gate_evidence" -eq 1 ]] && [[ "$is_current_branch" -eq 0 ]]; then
@@ -1395,6 +1397,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         # pre-Runtime-v4 log — you are actively shipping on this branch now.
         # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
+        gate_evidence_missing_list="${gate_evidence_missing_list}  $(basename "$wl"): ## Gate Evidence has no receipt line\n"
       fi
     else
       # Parse gate receipts and verify phase progression. Use PYTHON_BIN
@@ -1555,6 +1558,10 @@ for l in gate_lines:
         # Only count PASS verdicts; NOT READY / FAIL are reverse edges, not forward progress
         v = re.search(r'\|[^|]*verdict:\s*([A-Za-z _]+?)(\s*\||$)', l, re.IGNORECASE)
         if v and v.group(1).strip().upper() != 'PASS':
+            # The latest review verdict wins: a NOT READY after a review PASS voids that
+            # PASS and every gate recorded after it, then reopens implement below.
+            if phase == 'review' and 'review' in gates:
+                del gates[len(gates) - 1 - gates[::-1].index('review'):]
             # NOT READY / FAIL review is a reverse edge — discard the preceding
             # implement to avoid a false-positive implement→implement pair after
             # re-implementation (test.md §Step 5 reverse-edge; review.md §NOT READY)
@@ -1879,6 +1886,9 @@ PYEOF
   fi
   if [[ "$gate_evidence_missing" -gt 0 ]]; then
     record_result FAIL "work logs missing gate evidence receipts: ${gate_evidence_missing}"
+    # #210: name the log and the expected line, not just a count.
+    printf '%b' "$gate_evidence_missing_list"
+    printf '  expected receipt line: - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>\n'
   elif [[ "$worklog_count" -gt 0 ]] && [[ "$legacy_gate_evidence_missing" -eq 0 ]]; then
     record_result PASS "all active work logs have gate evidence receipts"
   fi

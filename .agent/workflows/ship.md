@@ -178,11 +178,16 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
 
 1. **Ship Guard (§11.1)**: Before writing, check if `current_state.md` has been modified since this task started. If modified by another session, warn user and request confirmation before merging. Use **additive merge**, never full overwrite.
 2. **SSoT Update & Ship History**:
-- Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot) via `.agentcortex/tools/guard_context_write.py`.
-- Use the helper as documented in `.agentcortex/docs/guides/guarded-context-writes.md`. In Stage 1, missing guard receipts are a validation warning, not a hard runtime block.
+- Update `.agentcortex/context/current_state.md` Spec Index statuses (mutable snapshot). With Python, every SSoT write here goes through the guard, never a direct Edit — edit a copy, then:
+
+  ```bash
+  python .agentcortex/tools/guard_context_write.py snapshot --path .agentcortex/context/current_state.md  # prints sha256
+  python .agentcortex/tools/guard_context_write.py write --path .agentcortex/context/current_state.md --lock-key ship-ssot --input <edited-copy> --expected-sha <sha256>
+  ```
+
 - **No-Python fallback** (all SSoT writes here incl. §8 heartbeat): direct write + Drift Log entry (AGENTS.md §Write Isolation).
 - **Spec Index Cap**: on the `check_ssot_caps.py` over-cap WARN, move the oldest `shipped` **index lines** into the single `## Spec Index Archive` section at the bottom of `current_state.md`, keeping cap-many inline (over-folding re-WARNs). Spec bodies stay in `docs/specs/` — moving one makes the entry a phantom and FAILs.
-- MUST add the completion record at the **top** of the `## Ship History` section — immediately after the `## Ship History` header, newest-first, matching the established convention (the most recent ship is the first entry; older entries follow below). Use `.agentcortex/tools/guard_context_write.py --mode replace` (snapshot → insert the entry right after the header → write with `--expected-sha`), or a surgical anchored Edit. **Do NOT use `--mode append`**: it is `O_APPEND` (writes at file-end), which drops the entry at the *bottom* — the oldest position — silently breaking newest-first ordering. See `.agentcortex/docs/guides/guarded-context-writes.md`. **Note**: The Work Log `SSoT Sequence` header field is a bootstrap-time snapshot and is NOT incremented at ship — do not attempt to update it.
+- MUST add the completion record at the **top** of the `## Ship History` section — immediately after the `## Ship History` header, newest-first (the most recent ship is the first entry; older entries follow below): insert it right after the header in the copy and write it with the template above. **Do NOT use `--mode append`**: it is `O_APPEND` (writes at file-end), which drops the entry at the *bottom* — the oldest position — silently breaking newest-first ordering. **Note**: The Work Log `SSoT Sequence` header field is a bootstrap-time snapshot and is NOT incremented at ship — do not attempt to update it.
 - Use the format:
 
   ```markdown

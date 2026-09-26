@@ -211,6 +211,18 @@ function Invoke-PythonCheck {
     Show-IndentedOutput -Text $output
 }
 
+# Windows PowerShell 5.1 turns a redirected native stderr line into a terminating
+# error under $ErrorActionPreference = 'Stop' (pwsh 7 does not), so a git probe that
+# is expected to fail -- not a repo, no origin remote, an unresolvable SHA, a detached
+# HEAD -- aborted the whole run with no Summary. Probe through this instead: stderr is
+# dropped; stdout and $LASTEXITCODE come back as usual.
+function Invoke-GitQuiet {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & git @args 2>$null }
+    finally { $ErrorActionPreference = $previousErrorActionPreference }
+}
+
 $script:PassCount = 0
 $script:WarnCount = 0
 $script:FailCount = 0
@@ -543,17 +555,17 @@ $indexRel = '.agentcortex/context/archive/INDEX.jsonl'
 if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
     $gitPresent = [bool](Get-Command git -ErrorAction SilentlyContinue)
     $isRepo = $false
-    if ($gitPresent) { git -C $root rev-parse --git-dir *> $null; $isRepo = ($LASTEXITCODE -eq 0) }
+    if ($gitPresent) { Invoke-GitQuiet -C $root rev-parse --git-dir | Out-Null; $isRepo = ($LASTEXITCODE -eq 0) }
     if (-not $gitPresent -or -not $isRepo) {
         Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- git unavailable or not a git repo'
     } else {
         git -C $root rev-parse --verify -q origin/main *> $null
-        if ($LASTEXITCODE -ne 0) { git -C $root fetch -q --depth=1 origin main *> $null }
-        $witnessBase = (git -C $root merge-base origin/main HEAD 2>$null | Select-Object -First 1)
+        if ($LASTEXITCODE -ne 0) { Invoke-GitQuiet -C $root fetch -q --depth=1 origin main | Out-Null }
+        $witnessBase = (Invoke-GitQuiet -C $root merge-base origin/main HEAD | Select-Object -First 1)
         if (-not $witnessBase) {
             Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- no merge-base with origin/main (offline, no remote, or unrelated history)'
         } else {
-            git -C $root cat-file -e "${witnessBase}:$indexRel" 2>$null
+            Invoke-GitQuiet -C $root cat-file -e "${witnessBase}:$indexRel" | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 Add-Result -Level 'WARN' -Message 'INDEX.jsonl append-only witness -- not present at merge-base (new log surface)'
             } else {
@@ -639,7 +651,7 @@ if (-not (Test-Path -Path $lifecycleUpdater -PathType Leaf)) {
 # bash check. The validator pair self-excludes.
 $gitPresentMarkers = [bool](Get-Command git -ErrorAction SilentlyContinue)
 $isRepoMarkers = $false
-if ($gitPresentMarkers) { git -C $root rev-parse --git-dir *> $null; $isRepoMarkers = ($LASTEXITCODE -eq 0) }
+if ($gitPresentMarkers) { Invoke-GitQuiet -C $root rev-parse --git-dir | Out-Null; $isRepoMarkers = ($LASTEXITCODE -eq 0) }
 if (-not $gitPresentMarkers -or -not $isRepoMarkers) {
     Add-Result -Level 'WARN' -Message 'merge-conflict marker scan -- git unavailable or not a git repo'
 } else {
@@ -1216,6 +1228,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     $checkpointMissing = 0
     $checkpointViolationList = New-Object System.Collections.Generic.List[string]
     $gateEvidenceMissing = 0
+    $gateEvidenceMissingList = New-Object System.Collections.Generic.List[string]
     $legacyGateEvidenceMissing = 0
     $gateProgressionIllegal = 0
     $phaseSummaryMissing = 0
@@ -1274,9 +1287,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         if ($gitAvailable) {
             # Use symbolic-ref --short first: works on empty repos (no commits yet).
             # Fall back to rev-parse --abbrev-ref for detached-HEAD scenarios.
-            $curBranch = & git -C $root symbolic-ref --short HEAD 2>$null
+            $curBranch = Invoke-GitQuiet -C $root symbolic-ref --short HEAD
             if ($LASTEXITCODE -ne 0 -or -not $curBranch) {
-                $curBranch = & git -C $root rev-parse --abbrev-ref HEAD 2>$null
+                $curBranch = Invoke-GitQuiet -C $root rev-parse --abbrev-ref HEAD
             }
             if ($LASTEXITCODE -eq 0 -and $curBranch -and $curBranch -ne 'HEAD') {
                 # F10 (2026-07-11 receipt-integrity audit): apply the canonical
@@ -1375,7 +1388,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                         $checkpointMissing++
                         $checkpointViolationList.Add("  invalid Checkpoint SHA value ('$cpVal') in $($wl.Name)")
                     } elseif ($isCurrentBranch) {
-                        & git -C $root rev-parse --verify "$cpVerify^{commit}" 2>$null | Out-Null
+                        Invoke-GitQuiet -C $root rev-parse --verify "$cpVerify^{commit}" | Out-Null
                         if ($LASTEXITCODE -ne 0) {
                             $checkpointMissing++
                             $checkpointViolationList.Add("  unresolvable Checkpoint SHA ('$cpVerify') in $($wl.Name) (git rev-parse --verify failed)")
@@ -1414,7 +1427,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                     $checkpointMissing++
                     $checkpointViolationList.Add("  invalid Diff Base SHA value ('$dbVal') in $($wl.Name)")
                 } elseif ($isCurrentBranch) {
-                    & git -C $root rev-parse --verify "$dbVerify^{commit}" 2>$null | Out-Null
+                    Invoke-GitQuiet -C $root rev-parse --verify "$dbVerify^{commit}" | Out-Null
                     if ($LASTEXITCODE -ne 0) {
                         $checkpointMissing++
                         $checkpointViolationList.Add("  unresolvable Diff Base SHA ('$dbVerify') in $($wl.Name) (git rev-parse --verify failed)")
@@ -1430,6 +1443,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 # missing gate evidence cannot legitimately be pre-Runtime-v4 —
                 # deny the legacy WARN downgrade and treat as a FAIL-tier miss.
                 $gateEvidenceMissing++
+                $gateEvidenceMissingList.Add("  $($wl.Name): no ## Gate Evidence section")
             }
         } elseif ($content -notmatch '(?mi)^(`?- )?gate:.*verdict:') {
             if ($isLegacyGateEvidenceLog -and -not $isCurrentBranch) {
@@ -1439,6 +1453,7 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                 # missing gate evidence cannot legitimately be pre-Runtime-v4 —
                 # deny the legacy WARN downgrade and treat as a FAIL-tier miss.
                 $gateEvidenceMissing++
+                $gateEvidenceMissingList.Add("  $($wl.Name): ## Gate Evidence has no receipt line")
             }
         } else {
             # Parse gate receipts: only PASS verdicts are forward transitions;
@@ -1527,6 +1542,12 @@ if (Test-Path -Path $worklogDir -PathType Container) {
                         }
                         $gateList.Add($gPhase)
                     } else {
+                        # The latest review verdict wins: a NOT READY after a review PASS voids that
+                        # PASS and every gate recorded after it, then reopens implement below.
+                        $lastReview = $gateList.LastIndexOf('review')
+                        if ($gPhase -eq 'review' -and $lastReview -ge 0) {
+                            $gateList.RemoveRange($lastReview, $gateList.Count - $lastReview)
+                        }
                         # NOT READY / FAIL review: discard preceding implement (reverse-edge pop)
                         if ($gPhase -eq 'review' -and $gateList.Count -gt 0 -and $gateList[$gateList.Count - 1] -eq 'implement') {
                             $gateList.RemoveAt($gateList.Count - 1)
@@ -1772,6 +1793,9 @@ if (Test-Path -Path $worklogDir -PathType Container) {
     }
     if ($gateEvidenceMissing -gt 0) {
         Add-Result -Level 'FAIL' -Message "work logs missing gate evidence receipts: $gateEvidenceMissing"
+        # #210: name the log and the expected line, not just a count.
+        foreach ($line in $gateEvidenceMissingList) { Write-Output $line }
+        Write-Output '  expected receipt line: - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>'
     } elseif ($worklogs.Count -gt 0 -and $legacyGateEvidenceMissing -eq 0) {
         Add-Result -Level 'PASS' -Message 'all active work logs have gate evidence receipts'
     }
