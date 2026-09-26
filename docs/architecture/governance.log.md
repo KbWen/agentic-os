@@ -191,3 +191,27 @@ source_sha: 551af72
 - [TRADEOFF] #204's `CLAUDE.md` clause was reverted rather than kept as harmless: it
   measured 0/3 -> 0/3, and an inert governance line signals coverage that does not exist.
   Starting with `/bootstrap <task>` engaged 6/6; the entry-path decision is #213.
+
+---
+
+### [governance][2026-09-26][fix/gate-evidence-tooling]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-gate-evidence-tooling-20260926.md`)
+source_sha: 68b67b8
+
+- [DECISION] The latest review verdict governs the review gate: a NOT READY recorded after
+  a review PASS reopens the loop. Recorded gates are never deleted, though — the re-review
+  requirement covers only the gates recorded after the NOT READY. The first version deleted
+  everything after the voided PASS, which let "NOT READY + redo" launder an illegal edge
+  logged earlier (a ship with no test or handoff); an independent review caught it.
+- [DECISION] #205: the receipt `Timestamp` stays in the contract and the template now says
+  what it is — written by the agent that writes the receipt, unverified, read from the
+  clock when the phase ends — and that a receipt records a phase that ran. Dropping the
+  field would change every workflow's receipt template for a value no tool reads; an
+  auto-stamp helper would be machinery no gate can enforce. Reopen trigger: a consumer that
+  needs trustworthy phase times.
+- [CONSTRAINT] Windows PowerShell 5.1 turns a redirected native stderr line into a
+  terminating error under `$ErrorActionPreference = 'Stop'`; pwsh 7 does not, and every
+  ps1 test and CI job prefers pwsh. A git probe that can fail by design goes through
+  `Invoke-GitQuiet`; the 5.1 regression test calls `powershell.exe` itself.
+- [CONSTRAINT] In PowerShell, `$a[$n..($a.Count - 1)]` with `$n -eq $a.Count` is a
+  descending range and throws under StrictMode; guard empty slices explicitly.
