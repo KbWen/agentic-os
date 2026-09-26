@@ -207,13 +207,15 @@ However you adopt Agentic OS — **fork** the repo, or **clone + `deploy_brain.s
 | Adjust skill activation (pin/exclude) | `.agentcortex/context/private/user-preferences.yaml` | Gitignored, personal, loaded by bootstrap. |
 | Connect an external knowledge base (read-only) | `knowledge_sources:` in `.agentcortex/context/private/downstream-capabilities.yaml` — see [Connecting a knowledge base](../.agentcortex/docs/guides/connecting-a-knowledge-base.md) | Present-only opt-in; **absent = zero cost**. Lives in the never-shipped private dir; consumed as DATA to enrich `/plan` + `/review`. |
 
-**What NOT to do:** editing a framework file in place (`AGENTS.md`, `.agent/rules/*`, `.agent/workflows/*`, a shipped skill body) causes merge conflicts on `git pull upstream` (fork) and is force-updated on the next `deploy` (clone). Framework **skills** are the one tolerant exception — if you edit one, `deploy` preserves your copy as a visible `<file>.acx-incoming` sidecar rather than silently overwriting it — but the cleaner pattern is always to copy it to a `custom-<name>` skill and edit that.
+**What NOT to do:** editing a framework file in place causes merge conflicts on `git pull upstream` (fork). On the next `deploy` (clone) what happens depends on the file: rules, workflows and tools (`.agent/rules/*`, `.agent/workflows/*`) are force-updated, and your edit survives only as a `<file>.acx-local` backup; `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` and shipped skill bodies keep your copy and put the framework's new version beside it as a `<file>.acx-incoming` sidecar that you must merge by hand. Either way the cleaner pattern is `AGENTS.override.md` for governance and a `custom-<name>` skill for skills.
 
 ## Start working — pick your entry point
 
 Always preface your first message with:
 
 > "Read `AGENTS.md` and follow it. Do not claim completion until /review and /test pass."
+
+> **Claude Code:** start the task with the slash command itself (`/bootstrap <task>`, `/spec-intake`, `/audit`), not with prose alone. In the 2026-09-26 downstream simulation, Claude Code sessions that began with `/bootstrap` opened a Work Log and followed the phases 6/6; sessions given only the preface above did so 1/2, and sessions with no hint 0/3. Codex reads `AGENTS.md` natively and engaged in 6/6 without a slash command.
 
 Then add **one** of the following based on your situation:
 
