@@ -213,15 +213,13 @@ After completing the table, emit the Gate Receipt for Work Log `## Gate Evidence
   ```
 - **If any `✗ UNPROVEN` row exists without `[NEEDS_HUMAN]` tag**: the review is incomplete. The receipt MUST be `NOT READY`, not `PASS`. Proceed through the `## Reverse Transition` block below instead of writing a PASS receipt.
 
-The Burden of Proof table stays in the review output for human readability; the receipt goes to Gate Evidence for CI validation.
-
 ## Self-Check Protocol (Auto — Before Presenting Results)
 
 AI MUST verify its own review before outputting:
 
 1. **Scope check**: List every file changed. Any file NOT in the original plan? Flag it.
 2. **Regression check**: For each changed function/export, state: "Callers: [list]. Breaking change: yes/no."
-3. **Proof completeness check**: Verify the Burden of Proof table has zero `✗ UNPROVEN` rows (or all UNPROVEN rows are explicitly tagged `[NEEDS_HUMAN]`). If any UNPROVEN row lacks a tag, the review is incomplete — do NOT present as ready.
+3. **Proof check**: no untagged `✗ UNPROVEN` row remains, and each `✅ PROVEN` row's evidence exercises the input likeliest to break it — for an invariant, its boundary (empty, last/largest, repeat). A Red Team or Security observation contradicting a PROVEN row reverts it to `✗ UNPROVEN`.
 
 ## Output Format
 
