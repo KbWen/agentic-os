@@ -80,8 +80,9 @@ def _make_project(path: Path, source_url: str) -> Path:
     return path
 
 
-def _run_deploy_brain(project: Path) -> subprocess.CompletedProcess:
+def _run_deploy_brain(project: Path, **extra_env: str) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if k != "ACX_SOURCE"}
+    env.update(extra_env)
     return subprocess.run(
         [bash, str(project / "installers" / "deploy_brain.sh"), "."],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -304,7 +305,7 @@ def test_source_without_deploy_sh_points_at_source_repo(tmp_path: Path) -> None:
     _git("commit", "-m", "unrelated", cwd=wrong)
     project = _make_project(tmp_path / "proj", wrong.as_posix())
 
-    result = _run_deploy_brain(project)
+    result = _run_deploy_brain(project, LC_ALL="C", LANGUAGE="C")  # git's messages in English
 
     assert result.returncode == 1, result.stdout + result.stderr
     assert "check source_repo in .agentcortex-manifest" in result.stderr
