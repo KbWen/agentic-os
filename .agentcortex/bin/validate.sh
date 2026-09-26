@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# (#211) The Python tools this script runs would print in the console code page (cp950
+# renders an em dash as A1 58) while this script prints UTF-8; keep one encoding.
+export PYTHONIOENCODING=utf-8
 
 # --- CLI flags ---
 ACX_NO_PYTHON=0
@@ -1269,6 +1272,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
   checkpoint_missing=0
   checkpoint_violation_list=""
   gate_evidence_missing=0
+  gate_evidence_missing_list=""
   legacy_gate_evidence_missing=0
   gate_progression_illegal=0
   gate_progression_skipped=0
@@ -1385,6 +1389,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         # pre-Runtime-v4 log — you are actively shipping on this branch now.
         # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
+        gate_evidence_missing_list="${gate_evidence_missing_list}  $(basename "$wl"): no ## Gate Evidence section\n"
       fi
     elif ! <<< "$wl_content" grep -qiE '^(`?- )?gate:.*verdict:'; then
       if [[ "$legacy_gate_evidence" -eq 1 ]] && [[ "$is_current_branch" -eq 0 ]]; then
@@ -1395,6 +1400,7 @@ if [[ -d "$WORKLOG_DIR" ]]; then
         # pre-Runtime-v4 log — you are actively shipping on this branch now.
         # Deny the legacy WARN downgrade and treat as a FAIL-tier miss.
         gate_evidence_missing=$((gate_evidence_missing + 1))
+        gate_evidence_missing_list="${gate_evidence_missing_list}  $(basename "$wl"): ## Gate Evidence has no receipt line\n"
       fi
     else
       # Parse gate receipts and verify phase progression. Use PYTHON_BIN
@@ -1541,6 +1547,7 @@ gates = []
 has_ship_receipt = False  # H3: track ANY ship receipt regardless of verdict
 review_not_ready = False  # track pending re-review requirement after NOT READY reverse edge
 had_not_ready = False  # sticky: a review NOT READY reverse edge occurred (for remediation hint)
+nr_index = 0  # gates recorded after the latest review NOT READY start here
 resets_used = 0  # H4: track consumed reclassification records
 for l in gate_lines:
     m = re.match(r'^(?:\x60?- )?gate:\s*(\w+)\s*\|', l, re.IGNORECASE)
@@ -1558,10 +1565,15 @@ for l in gate_lines:
             # NOT READY / FAIL review is a reverse edge — discard the preceding
             # implement to avoid a false-positive implement→implement pair after
             # re-implementation (test.md §Step 5 reverse-edge; review.md §NOT READY)
-            if phase == 'review' and gates and gates[-1] == 'implement':
-                gates.pop()
+            if phase == 'review':
+                if gates and gates[-1] == 'implement':
+                    gates.pop()
+                # The latest review verdict wins, also after a review PASS. Recorded gates
+                # are never deleted (that would hide an illegal edge logged before this
+                # point); the re-review requirement covers the gates recorded after it.
                 review_not_ready = True  # flag: re-review required before test/ship
                 had_not_ready = True  # remember for the re-review remediation hint below
+                nr_index = len(gates)
             continue
         # PASS verdict: if review PASS, clear the pending re-review flag
         if phase == 'review':
@@ -1569,6 +1581,7 @@ for l in gate_lines:
         # H4: Reclassification reset — one reset per structured drift record; count-based
         if phase == 'bootstrap' and gates and reclassify_count > resets_used:
             gates = []
+            nr_index = 0
             resets_used += 1
         gates.append(phase)
 # Completeness check first — valid even with 1 gate (avoids early-return bypass)
@@ -1594,8 +1607,8 @@ if has_ship_receipt or 'ship' in gate_set:
         sys.exit(0)
 # NOT READY reverse-edge check: if review_not_ready is still set (no subsequent review
 # PASS cleared it), any test/handoff/ship in gates = re-review was skipped
-if review_not_ready and any(g in ('test','handoff','ship') for g in gates):
-    bad_next = next(g for g in gates if g in ('test','handoff','ship'))
+if review_not_ready and any(g in ('test','handoff','ship') for g in gates[nr_index:]):
+    bad_next = next(g for g in gates[nr_index:] if g in ('test','handoff','ship'))
     print(f'illegal:NOT_READY-review->{bad_next} (re-review skipped after NOT READY — implement→review required per review.md)')
     sys.exit(0)
 # Progression check requires 2+ gates; tiny-fix has no required phase sequence
@@ -1879,6 +1892,9 @@ PYEOF
   fi
   if [[ "$gate_evidence_missing" -gt 0 ]]; then
     record_result FAIL "work logs missing gate evidence receipts: ${gate_evidence_missing}"
+    # #210: name the log and the expected line, not just a count.
+    printf '%b' "$gate_evidence_missing_list"
+    printf '  expected receipt line: - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>\n'
   elif [[ "$worklog_count" -gt 0 ]] && [[ "$legacy_gate_evidence_missing" -eq 0 ]]; then
     record_result PASS "all active work logs have gate evidence receipts"
   fi

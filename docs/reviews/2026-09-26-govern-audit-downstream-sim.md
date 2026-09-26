@@ -326,8 +326,8 @@ routing_actions:
     owner: "fix/agent-guidance-levers-204-203"
   - finding: "Gate-receipt Timestamp is rarely a clock reading in practice (25 of 29 synthetic or pre-written) — keep, auto-stamp, or delete from the contract (backlog #205)"
     target_doc: "docs/architecture/governance.log.md"
-    status: pending
-    owner: "unassigned"
+    status: merged
+    owner: "fix/gate-evidence-tooling"
 ```
 
 Probe hygiene: all deployments, agent sessions and reproductions ran in a

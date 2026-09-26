@@ -9,7 +9,7 @@ description: Workflow for implement
 
 **Phase Verification** (per bootstrap §2b): Read `Current Phase` from Work Log header. Verify transition to `implement` is legal. If illegal, STOP. Otherwise update `Current Phase: implement`.
 
-**Resume-after-review**: If the prior phase was `review` (Work Log gate evidence shows a NOT READY verdict with `Transition: REVIEWED→IMPLEMENTING`), read Work Log `## Review Feedback` before writing any code. The resume scope is ONLY the UNPROVEN/blocking rows from the burden-of-proof table — do NOT re-implement already-passing items.
+**Resume-after-review**: If the prior phase was `review` (Work Log gate evidence shows a NOT READY verdict with `Transition: REVIEWED→IMPLEMENTING`), read Work Log `## Review Feedback` before writing any code. The resume scope is ONLY the UNPROVEN/blocking rows from the burden-of-proof table — do NOT re-implement already-passing items. Then re-run `/review` for a PASS before `/test` or `/ship` — quick-win included.
 
 **Diff Base SHA** (AC-4, set ONCE): on first `/implement` entry (when absent/`none`), record `Diff Base SHA: <git HEAD>` — the immutable pre-implementation HEAD used as the stable review base (`lint_spec_drift.py --base <Diff Base SHA>`). Never update it on resume.
 
@@ -22,12 +22,10 @@ description: Workflow for implement
 
 **Next phase (classification-aware)**:
 - `feature` / `architecture-change`: proceed to `/review`, then `/test`, then `/handoff`, then `/ship`.
-- `quick-win`: MAY proceed directly to `/ship` (review/test optional per `engineering_guardrails.md §10.4`). Record inline evidence and go straight to `/ship`.
+- `quick-win`: MAY go straight to `/ship` with inline evidence (review/test optional per `engineering_guardrails.md §10.4`).
 - `hotfix`: MUST proceed to `/review` then `/test` then `/ship` (handoff exempt).
 
 ## Direct Execution Rule (Turn 1 — feature / architecture-change only)
-
-For `feature` or `architecture-change` classification:
 
 - If the user explicitly requested implementation or gave an unambiguous fix/build request that already implies implementation, proceed directly after phase verification and checkpoint capture.
 - Only ask for an extra confirmation if implementation was inferred rather than explicitly requested, or if a separate high-impact decision appears inside the phase.
@@ -37,7 +35,7 @@ For `feature` or `architecture-change` classification:
 
 ## Work Log Compaction Check
 
-Before implementation, check the active Work Log size. If it exceeds compaction thresholds (see `.agent/config.yaml` §worklog), compact per `/handoff` §6 BEFORE proceeding. This prevents bloated logs from inflating token costs during the implementation phase.
+Before implementation, check the active Work Log size. If it exceeds compaction thresholds (see `.agent/config.yaml` §worklog), compact per `/handoff` §6 BEFORE proceeding.
 
 ## Pre-Execution Check (Mandatory)
 

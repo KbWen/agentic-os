@@ -1265,6 +1265,248 @@ def test_not_ready_re_review_hint_source_parity() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 2026-09-26 downstream simulation (docs/reviews/2026-09-26-govern-audit-
+# downstream-sim.md). (1) The latest review verdict wins: a review NOT READY
+# recorded after a review PASS used to be ignored (the reverse edge only popped
+# a preceding implement), so the stale PASS still satisfied the review gate.
+# (2) #210: the missing-receipts FAIL printed a bare count; it now names each
+# log and the expected receipt line.
+# ---------------------------------------------------------------------------
+
+SUPERSEDED_LOG = "feature-review-pass-then-not-ready.md"
+SUPERSEDED_FIXED_LOG = "feature-review-pass-then-not-ready-fixed.md"
+# Review F1 of the first version: voiding every gate after the voided PASS also erased an
+# illegal ship recorded there, so a later NOT READY + redo loop laundered it.
+LAUNDERED_LOG = "feature-premature-ship-then-not-ready.md"
+# In progress, last receipt a NOT READY: nothing follows it yet. In validate.ps1 an
+# unguarded $gates[$nrIndex..($gates.Count - 1)] is a descending range here and throws.
+IN_PROGRESS_LOG = "feature-in-progress-not-ready-after-test.md"
+RECEIPTLESS_LOG = "feature-no-receipt-line.md"
+RECEIPT_LINE_HINT = (
+    "expected receipt line: - Gate: <phase> | Verdict: PASS | Classification: <tier> | Timestamp: <ISO>"
+)
+
+
+def _write_receipt_worklog(target: Path, name: str, receipts: list[tuple[str, str]]) -> None:
+    work_dir = target / ".agentcortex" / "context" / "work"
+    work_dir.mkdir(parents=True, exist_ok=True)
+    gate_lines = "\n".join(
+        f"- Gate: {phase} | Verdict: {verdict} | Classification: feature | Timestamp: 2026-09-26T{i:02d}:00:00Z"
+        for i, (phase, verdict) in enumerate(receipts)
+    ) or "none"
+    (work_dir / name).write_bytes(
+        f"""# Work Log: {name}
+
+## Header
+
+- Branch: `test/{name}`
+- Classification: `feature`
+- Created Date: `2026-09-26`
+- Current Phase: `test`
+- Checkpoint SHA: `0000000000000000000000000000000000000000`
+
+---
+
+## Phase Summary
+
+Receipt-diagnostics fixture. ACX
+
+---
+
+## Gate Evidence
+
+{gate_lines}
+
+---
+
+## Drift Log
+
+- ADR Coverage Check: test fixture.
+
+---
+
+## Resume
+
+none
+
+---
+
+## Evidence
+
+- Fixture evidence.
+""".encode("utf-8")
+    )
+
+
+@pytest.fixture(scope="module")
+def receipt_fixture_target(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    target = _deploy_for_validator_fixture(tmp_path_factory.mktemp("receipts"))
+    head = [("bootstrap", "PASS"), ("plan", "PASS"), ("implement", "PASS"),
+            ("review", "PASS"), ("review", "NOT READY")]
+    _write_receipt_worklog(target, SUPERSEDED_LOG, head + [("test", "PASS")])
+    _write_receipt_worklog(target, SUPERSEDED_FIXED_LOG,
+                           head + [("implement", "PASS"), ("review", "PASS"), ("test", "PASS")])
+    _write_receipt_worklog(target, LAUNDERED_LOG, [
+        ("bootstrap", "PASS"), ("plan", "PASS"), ("implement", "PASS"), ("review", "PASS"),
+        ("ship", "PASS"),  # premature: no test, no handoff
+        ("review", "NOT READY"), ("implement", "PASS"), ("review", "PASS"),
+        ("test", "PASS"), ("handoff", "PASS"), ("ship", "PASS"),
+    ])
+    _write_receipt_worklog(target, IN_PROGRESS_LOG, head[:4] + [("test", "PASS"), ("review", "NOT READY")])
+    _write_receipt_worklog(target, RECEIPTLESS_LOG, [])
+    return target
+
+
+def _assert_latest_review_verdict_wins(out: str, label: str) -> None:
+    illegal = [line for line in out.splitlines() if ILLEGAL_PROGRESSION_MARK in line]
+    assert any(SUPERSEDED_LOG in line and "NOT_READY-review->test" in line for line in illegal), (
+        f"[{label}] a NOT READY after a review PASS must void that PASS:\n{out[-1200:]}"
+    )
+    assert not any(SUPERSEDED_FIXED_LOG in line for line in illegal), (
+        f"[{label}] implement + re-review PASS after the NOT READY must stay legal:\n{out[-1200:]}"
+    )
+    assert any(LAUNDERED_LOG in line and "review->ship" in line for line in illegal), (
+        f"[{label}] a NOT READY must not erase an illegal edge recorded before it:\n{out[-1200:]}"
+    )
+    assert "Summary:" in out and not any(IN_PROGRESS_LOG in line for line in illegal), (
+        f"[{label}] a log that ends on a NOT READY is in progress, not illegal:\n{out[-1200:]}"
+    )
+
+
+def _assert_missing_receipts_named(out: str, label: str) -> None:
+    assert "work logs missing gate evidence receipts: 1" in out, f"[{label}]\n{out[-1200:]}"
+    assert f"{RECEIPTLESS_LOG}: ## Gate Evidence has no receipt line" in out, (
+        f"[{label}] the FAIL must name the log (#210):\n{out[-1200:]}"
+    )
+    assert RECEIPT_LINE_HINT in out, f"[{label}] the FAIL must print the receipt line (#210):\n{out[-1200:]}"
+
+
+@requires_bash
+@pytest.mark.slow
+def test_gate_receipt_diagnostics_sh(receipt_fixture_target: Path) -> None:
+    out = _run_validate(receipt_fixture_target)
+    _assert_latest_review_verdict_wins(out, "sh")
+    _assert_missing_receipts_named(out, "sh")
+
+
+@requires_bash
+@requires_powershell
+@requires_windows
+@pytest.mark.slow
+def test_gate_receipt_diagnostics_ps1(receipt_fixture_target: Path) -> None:
+    out = _run_validate_ps1(receipt_fixture_target)
+    _assert_latest_review_verdict_wins(out, "ps1")
+    _assert_missing_receipts_named(out, "ps1")
+
+
+def test_gate_receipt_diagnostics_source_parity() -> None:
+    """Fast parity guard (no shell): both twins carry the supersede rule and the #210 hint."""
+    sh = (ROOT / ".agentcortex" / "bin" / "validate.sh").read_text(encoding="utf-8")
+    ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8")
+    for src, label in ((sh, "validate.sh"), (ps1, "validate.ps1")):
+        assert "The latest review verdict wins" in src, label
+        assert "Recorded gates" in src and "are never deleted" in src, label
+        assert "PYTHONIOENCODING" in src, f"{label}: Python tools must print UTF-8 (#211)"
+        assert RECEIPT_LINE_HINT in src, label
+        assert "## Gate Evidence has no receipt line" in src, label
+        assert "no ## Gate Evidence section" in src, label
+
+
+# ---------------------------------------------------------------------------
+# Windows PowerShell 5.1 (the `powershell` that INSTALL.md and the opt-in
+# pre-commit hook invoke) turns a redirected native stderr line into a
+# terminating error under $ErrorActionPreference = 'Stop'. A git probe that is
+# expected to fail aborted validate.ps1 with no Summary: not a git repo, a repo
+# with no origin remote once INDEX.jsonl exists, an unresolvable Checkpoint SHA
+# on the current branch (found 2026-09-26). The other ps1 tests prefer pwsh 7,
+# which does not have this behaviour, so this one calls powershell.exe itself.
+# ---------------------------------------------------------------------------
+
+windows_powershell = shutil.which("powershell")
+requires_windows_powershell = pytest.mark.skipif(
+    sys.platform != "win32" or windows_powershell is None,
+    reason="Windows PowerShell 5.1 (powershell.exe) is Windows-only",
+)
+
+
+def _run_validate_windows_powershell(cwd: Path) -> str:
+    proc = subprocess.run(
+        [windows_powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+         str(cwd / ".agentcortex" / "bin" / "validate.ps1")],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(cwd),
+    )
+    return proc.stdout + proc.stderr
+
+
+def _git(target: Path, *args: str) -> None:
+    subprocess.run(["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t",
+                    "-c", "commit.gpgsign=false", *args],
+                   cwd=str(target), check=True, capture_output=True)
+
+
+@requires_bash
+@requires_windows_powershell
+@pytest.mark.slow
+def test_validate_ps1_survives_failing_git_probes_on_windows_powershell(tmp_path: Path) -> None:
+    index_rel = Path(".agentcortex/context/archive/INDEX.jsonl")
+    # (a) not a git repo, INDEX.jsonl present: both rev-parse --git-dir probes fail.
+    (tmp_path / "plain").mkdir()
+    plain = _deploy_for_validator_fixture(tmp_path / "plain")
+    (plain / index_rel).parent.mkdir(parents=True, exist_ok=True)
+    (plain / index_rel).write_text("", encoding="utf-8")
+    out = _run_validate_windows_powershell(plain)
+    assert "Summary:" in out, f"[not a repo] validate.ps1 aborted:\n{out[-1200:]}"
+    assert "merge-conflict marker scan -- git unavailable or not a git repo" in out, out[-1200:]
+
+    # (b) a local repo with no remote after its first ship, and a current-branch
+    # log whose Checkpoint SHA no longer resolves (e.g. after a squash).
+    (tmp_path / "repo").mkdir()
+    repo = _deploy_for_validator_fixture(tmp_path / "repo")
+    (repo / index_rel).parent.mkdir(parents=True, exist_ok=True)
+    (repo / index_rel).write_text("", encoding="utf-8")
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "init")
+    (repo / ".agentcortex" / "context" / "work" / "main.md").write_bytes(
+        b"# Work Log: main\n\n## Header\n\n- Branch: `main`\n- Classification: `quick-win`\n"
+        b"- Created Date: `2026-09-26`\n- Owner: `t`\n- Current Phase: `implement`\n"
+        b"- Checkpoint SHA: `1234567`\n\n---\n\n## Phase Summary\n\n- fixture ACX\n\n---\n\n"
+        b"## Gate Evidence\n\n- Gate: bootstrap | Verdict: PASS | Classification: quick-win | "
+        b"Timestamp: 2026-09-26T00:00:00Z\n\n---\n\n## Drift Log\n\nnone\n\n---\n\n## Evidence\n\nnone\n"
+    )
+    out = _run_validate_windows_powershell(repo)
+    assert "Summary:" in out, f"[no remote / stale SHA] validate.ps1 aborted:\n{out[-1200:]}"
+    assert "no merge-base with origin/main" in out, out[-1200:]
+    assert "unresolvable Checkpoint SHA ('1234567') in main.md" in out, out[-1200:]
+
+
+def test_validate_ps1_restores_the_python_encoding_it_sets() -> None:
+    """#211(f): validate.ps1 runs in the caller's session, so like the console encoding
+    (#175) the PYTHONIOENCODING it sets must be handed back in the same finally."""
+    ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8-sig")
+    assert "$acxPreviousPythonIoEncoding = $env:PYTHONIOENCODING" in ps1
+    tail = ps1[ps1.rindex("finally {"):]
+    assert "$env:PYTHONIOENCODING = $acxPreviousPythonIoEncoding" in tail
+
+
+def test_validate_ps1_git_probes_go_through_quiet_helper() -> None:
+    """Fast guard: the failing-by-design git probes use Invoke-GitQuiet, not a raw redirect."""
+    ps1 = (ROOT / ".agentcortex" / "bin" / "validate.ps1").read_text(encoding="utf-8")
+    assert "function Invoke-GitQuiet" in ps1
+    for raw in ("git -C $root rev-parse --git-dir *> $null",
+                "git -C $root fetch -q --depth=1 origin main *> $null",
+                "git -C $root merge-base origin/main HEAD 2>$null",
+                "git -C $root symbolic-ref --short HEAD 2>$null",
+                "git -C $root rev-parse --abbrev-ref HEAD 2>$null",
+                'git -C $root rev-parse --verify "$cpVerify^{commit}" 2>$null',
+                'git -C $root rev-parse --verify "$dbVerify^{commit}" 2>$null',
+                "git -C $root rev-parse --verify -q origin/main *> $null",
+                "$conflictMarkerHits = git -C $root grep"):
+        assert raw not in ps1, raw
+
+
+# ---------------------------------------------------------------------------
 # 2026-07-11 receipt-integrity audit (docs/reviews/2026-07-11-govern-audit-
 # receipt-integrity.md): F10 canonical Work Log key normalization, F7 receipt
 # Timestamp requirement, F9 receipt/header Classification agreement, F8

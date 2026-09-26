@@ -3,8 +3,9 @@
 Use `.agentcortex/tools/guard_context_write.py` as the single approved helper when writing SSoT files such as:
 
 - `.agentcortex/context/current_state.md`
-- `.agentcortex/context/archive/INDEX.jsonl` (preferred structured index)
 - `.agentcortex/context/archive/INDEX.md` (legacy compatibility mirror)
+
+`.agentcortex/context/archive/INDEX.jsonl` is hash-chained: append to it only with `append_chain_entry.py` (`ship.md` §3), never with this helper. The runnable snapshot → write template is in `ship.md` §2.
 
 Stage 1 keeps this helper **observable, not hard-blocking**:
 
