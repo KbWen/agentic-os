@@ -1,7 +1,7 @@
 {
-  "expected_sha": "2b2fc6a78e29103aad0aa671f7d6ad9af730e4bad8cb0948db9e7be2cac92539",
+  "expected_sha": "3638bd8790110d8e70192e2fe05c25ec30c77d33cf48b5a6e6aea264a1cb5b52",
   "mode": "replace",
-  "new_sha": "310aeb336d11c616fcf7d3f49c6264c8945a58b1d7f412e99e1b06644bec865d",
-  "target": ".agentcortex/context/current_state.md",
-  "timestamp": 1790416285
+  "new_sha": "d4a33e3f4ac9278845ca6149ccfbd65eff700d6f642dc69acee983d3e8c65f71",
+  "target": ".agentcortex/context/archive/fix-agent-guidance-levers-204-203-20260926.md",
+  "timestamp": 1790432686
 }
