@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.8.29] - 2026-09-27
+
+Right after v1.8.28, the owner asked for a check that installing Agentic OS does not weigh a product down or change how it is developed.
+
+**Weight: no regression.**
+- v1.8.28 installs the same 205 files as v1.8.27, with bytes on disk up 0.6%.
+- The `AGENTS.md` that agents read every turn is unchanged.
+- The token total across the lifecycle scenarios fell from 354,887 to 354,488.
+
+**Behaviour: two defects touched the product itself**, and both are fixed here.
+
+- **The installed `.gitattributes` no longer sets line endings for your own files (#215, PR #452).**
+  - Up to v1.8.28, the installed file was the framework repository's own. Its rules were repo-wide:
+    - `* text=auto`;
+    - `*.md`, `*.py`, `*.json`, `*.sh` and `*.yaml`: `text eol=lf`;
+    - `*.ps1`, `*.cmd` and `*.bat`: `text eol=crlf`.
+  - In a product committed with CRLF, every file an editor or build tool touched became a whole-file line-ending rewrite. On a fixture this hit 7 of 7 files; it now hits 0.
+  - The new file covers only what Agentic OS installs, plus `.githooks/`. Two validator parsers of product docs now accept CRLF.
+  - Four independent review rounds shaped the design. Two alternatives were rejected for affecting product files:
+    - keeping `* text=auto`: under Windows `core.autocrlf=false` it checks out CRLF;
+    - a printed re-checkout script: it deleted skip-worktree files.
+- **`deploy.sh --dry-run` deletes and moves nothing (#216, PR #453).**
+  - On an update, it used to delete every pending `*.acx-incoming` sidecar before the preview.
+  - On a legacy install, it ran the path migration first.
+
+**Upgrading from v1.8.28 or earlier:**
+- An unedited old `.gitattributes` is replaced, and deploy says so once.
+- A clone checked out under the old rules can show files as modified once a tool touches them. This affects Windows with `core.autocrlf=false`, and `*.ps1`, `*.cmd` and `*.bat` files on any platform. Clones with `core.autocrlf=true`, the Git for Windows default, are not affected.
+- To check a file that git shows as modified, run `git diff --ignore-cr-at-eol -- <file>`. If it prints nothing, the file only has the old line endings, and `git checkout -- <file>` restores it.
+- If you edited the old file, delete its repo-wide rules yourself. The new block is in `.agentcortex/templates/downstream.gitattributes`.
+
+**Downstream delta.** Measured with `git diff v1.8.28..HEAD` against the deploy manifest: 4 of the 17 changed files reach an adopter. Force-updated (core): `.agentcortex/bin/deploy.sh`, `validate.sh`. Scaffold: `.gitattributes`, now installed from the new `.agentcortex/templates/downstream.gitattributes` and replaced only if you never edited it. The SSoT template is unchanged.
+
+**Still open:**
+- #201 (PR #451, draft) would write a sidecar only when the framework changed the file. It awaits the owner's approval of its spec and of the ADR-005 amendment.
+- #212 was measured, and neither lever shipped.
+
 ## [1.8.28] - 2026-09-27
 
 This release comes out of a simulation of the whole downstream loop (2026-09-26). The simulation used real deploys, upgrades from four older versions, and headless Claude Code and Codex sessions building a small product against hidden acceptance tests. The release fixes what that simulation found in the install, update and validation paths. It also records what the simulation did not support: the governed sessions did not build better products than the ungoverned controls. **If you installed the pre-commit hook, re-run the INSTALL copy step after updating.** The hook changes below do not reach an installed copy on their own.
