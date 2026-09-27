@@ -780,6 +780,12 @@ if $DRY_RUN; then
     if [ -f "$REPO_ROOT/.agentcortex/AGENTS.safety.md" ]; then
         _dry_print_file "$REPO_ROOT/.agentcortex/AGENTS.safety.md" ".agentcortex/AGENTS.safety.md"
     fi
+    _dry_print_file "$REPO_ROOT/.githooks/pre-commit.guard-ssot.sample" ".githooks/pre-commit.guard-ssot.sample"
+    if [ -f "$TARGET/.gitignore" ]; then
+        echo "  [UPDATE] (block)    .gitignore -- the Agentic OS managed block is added or refreshed"
+    else
+        echo "  [NEW]    (block)    .gitignore -- created with the Agentic OS managed block"
+    fi
     # Skills (summarise counts instead of listing every file)
     _skill_count=0
     for skill_dir in "$REPO_ROOT/.agents/skills"/*/; do
@@ -789,10 +795,19 @@ if $DRY_RUN; then
     done
     for sf in "$REPO_ROOT"/.agent/skills/*; do [ -f "$sf" ] && _skill_count=$((_skill_count + 1)); done
     [ "$_skill_count" -gt 0 ] && echo "  [NEW]    (mixed)    ... $_skill_count skill files under .agent/skills/ and .agents/skills/"
-    # Docs (summarise)
+    # Docs (summarise) -- same globs as "Deploy: reference docs" below; keep them in step.
     _doc_count=0
-    for df in "$REPO_ROOT"/.agentcortex/docs/*.md "$REPO_ROOT"/.agentcortex/docs/guides/*.md \
-              "$REPO_ROOT"/README.md "$REPO_ROOT"/docs/README_zh-TW.md; do
+    for df in "$REPO_ROOT"/README.md "$REPO_ROOT"/docs/README_zh-TW.md \
+              "$REPO_ROOT"/docs/AGENT_MODEL_GUIDE*.md \
+              "$REPO_ROOT"/.agentcortex/docs/AGENT_PHILOSOPHY*.md \
+              "$REPO_ROOT"/.agentcortex/docs/TESTING_PROTOCOL*.md \
+              "$REPO_ROOT"/.agentcortex/docs/CODEX_PLATFORM_GUIDE*.md \
+              "$REPO_ROOT"/.agentcortex/docs/PROJECT_EXAMPLES*.md \
+              "$REPO_ROOT"/.agentcortex/docs/PROJECT_OVERVIEW*.md \
+              "$REPO_ROOT"/.agentcortex/docs/NONLINEAR_SCENARIOS*.md \
+              "$REPO_ROOT"/.agentcortex/docs/CLAUDE_PLATFORM_GUIDE*.md \
+              "$REPO_ROOT"/.agentcortex/docs/guides/*.md \
+              "$REPO_ROOT"/docs/guides/token-optimization-quickstart*.md; do
         [ -f "$df" ] && _doc_count=$((_doc_count + 1))
     done
     [ "$_doc_count" -gt 0 ] && echo "  [NEW]    (mixed)    ... $_doc_count reference docs under .agentcortex/docs/"
@@ -1104,7 +1119,6 @@ write_downstream_ignore_block() {
 # Third-party AI Tool Local State
 .openrouter/
 .claude-chat/
-.cursor/
 .antigravity/scratch/
 
 # Framework Tool Bytecode (framework namespace only; project policy untouched)
@@ -1135,6 +1149,8 @@ strip_managed_ignore_blocks() {
         managed[".claude/settings.local.json"] = 1
         managed[".openrouter/"] = 1
         managed[".claude-chat/"] = 1
+        # Retired from the block (#207: Cursor project rules are meant to be committed);
+        # kept here so blocks written by older versions still strip clean.
         managed[".cursor/"] = 1
         managed[".antigravity/scratch/"] = 1
         # Add new entries here AND last in the block above: an older deploy.sh
@@ -1522,6 +1538,6 @@ echo ""
 # (SSoT optimistic locking) is Python-only; absent Python the AI falls back to
 # direct writes. Single-session safe; multi-session loses lock protection.
 if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
-    echo "Note: Python not on PATH — SSoT multi-session locking disabled (single-session OK). Install Python 3.8+ for full safety."
+    echo "Note: Python not on PATH — SSoT multi-session locking disabled (single-session OK). Install Python 3.9+ for full safety."
     echo ""
 fi

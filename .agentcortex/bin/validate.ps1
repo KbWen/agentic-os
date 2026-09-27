@@ -1077,7 +1077,6 @@ else {
         '*.acx-incoming',
         '.openrouter/',
         '.claude-chat/',
-        '.cursor/',
         '.antigravity/scratch/',
         '# End Agentic OS Template - Downstream Ignore Defaults'
     )) {
