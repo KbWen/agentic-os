@@ -863,6 +863,14 @@ deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
 deploy_file "$REPO_ROOT/GEMINI.md" "GEMINI.md"
 
 # --- Deploy: .gitattributes (scaffold — user may extend) ---
+# v1.8.28 and earlier installed repo-wide rules; a clone checked out under them may need a
+# one-time re-checkout once they are gone (notice after the summary). No pipe: pipefail +
+# grep -q can report a match as a failure; [[:space:]]* absorbs a CRLF checkout's CR.
+_ACX_OLD_GITATTRIBUTES_RE='^\*\.md[[:space:]]+text[[:space:]]+eol=lf[[:space:]]*$'
+_acx_old_gitattributes=false
+if $IS_UPDATE && [ -f "$TARGET/.gitattributes" ] && grep -qE "$_ACX_OLD_GITATTRIBUTES_RE" "$TARGET/.gitattributes"; then
+    _acx_old_gitattributes=true
+fi
 deploy_file "$DOWNSTREAM_GITATTRIBUTES_TEMPLATE" ".gitattributes"
 
 # --- Deploy: wrapper scripts (into installers/ — not root) ---
@@ -1490,6 +1498,21 @@ if [ "$COUNT_SKIPPED" -gt 0 ]; then
     echo ""
     echo "  → Manual merge:  diff each pair, keep your content + adopt framework updates, then re-run deploy."
     echo "  → AI-assisted:   ask your AI agent — \"merge each *.acx-incoming into its target, preserving project-specific content and adopting framework updates, then delete the sidecars\""
+fi
+if $_acx_old_gitattributes; then
+    echo ""
+    echo "⚠ .gitattributes no longer sets line endings for your own files (up to v1.8.28 it"
+    echo "  did, for every file). A clone checked out under the old rules can show files as"
+    echo "  modified with only line-ending changes (Windows with core.autocrlf=false; *.ps1,"
+    echo "  *.cmd and *.bat anywhere). Run this once in each clone; files with real edits are"
+    echo "  left alone:"
+    cat <<'EOT'
+    git ls-files --eol | awk -F'\t' '$1 ~ /^i\/lf +w\/crlf/ {print $2}' | while IFS= read -r f; do if git diff --quiet --ignore-cr-at-eol -- "$f"; then rm -f -- "$f" && git checkout -q -- "$f"; fi; done
+EOT
+    if grep -qE "$_ACX_OLD_GITATTRIBUTES_RE" "$TARGET/.gitattributes"; then
+        echo "  Your .gitattributes still has the old rules: replace them with the block in"
+        echo "  .agentcortex/templates/downstream.gitattributes."
+    fi
 fi
 if [ "$COUNT_CORE_OVERWRITTEN" -gt 0 ]; then
     echo ""
