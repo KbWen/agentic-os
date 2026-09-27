@@ -1,13 +1,15 @@
 # Agentic OS line endings (installed from .agentcortex/templates/downstream.gitattributes).
 #
-# These rules cover only the files Agentic OS installs and the documents its
-# validators read (docs/specs, docs/architecture, docs/adr, docs/reviews).
-# Your product's own files are not covered, so they keep your repository's
-# settings. Add rules for your own files below this block.
-#
-# text=auto leaves binary files, and files already committed with CRLF, alone.
-# eol=lf keeps the covered files LF on Windows checkouts (core.autocrlf=true):
-# the bash validators and hooks read them, and a CR breaks their line matching.
+# Only the first rule reaches your product's own files: `* text=auto`, Git's
+# common default. It never rewrites a file already committed with CRLF, and a
+# working copy with either line ending compares clean.
+# The other rules cover only the files Agentic OS installs and the Markdown its
+# validators read in docs/specs, docs/architecture, docs/adr and docs/reviews.
+# Those must be LF on every checkout: the bash validators match `$`-anchored lines.
+# Earlier versions installed repo-wide rules here (*.md *.py *.json *.sh *.yaml
+# *.yml text eol=lf; *.ps1 *.cmd *.bat text eol=crlf). If your copy still has
+# them, delete them. Add rules for your own files below this block.
+*                            text=auto
 AGENTS.md                    text=auto eol=lf
 CLAUDE.md                    text=auto eol=lf
 GEMINI.md                    text=auto eol=lf
@@ -22,10 +24,10 @@ GEMINI.md                    text=auto eol=lf
 .antigravity/rules.md        text=auto eol=lf
 codex/rules/default.rules    text=auto eol=lf
 installers/deploy_brain.sh   text=auto eol=lf
-docs/specs/**                text=auto eol=lf
-docs/architecture/**         text=auto eol=lf
-docs/adr/**                  text=auto eol=lf
-docs/reviews/**              text=auto eol=lf
+docs/specs/**/*.md           text eol=lf
+docs/architecture/**/*.md    text eol=lf
+docs/adr/**/*.md             text eol=lf
+docs/reviews/**/*.md         text eol=lf
 
 # The Windows scripts Agentic OS installs stay CRLF.
 .agentcortex/**/*.ps1        text eol=crlf

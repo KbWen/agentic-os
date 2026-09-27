@@ -26,9 +26,12 @@
 
 # Deployed manifest and git hooks are parsed line-by-line by deploy.sh /
 # validate.sh — a CRLF rewrite (autocrlf on extensionless files) would make
-# manifest hash fields carry a stray \r. Pin LF in the deployed scaffold.
+# manifest hash fields carry a stray \r. Adopters get these rules from
+# .agentcortex/templates/downstream.gitattributes, not from this file; deploy
+# copies that template byte for byte, so it is pinned LF as well.
 .agentcortex-manifest text eol=lf
 .githooks/** text eol=lf
+.agentcortex/templates/downstream.gitattributes text eol=lf
 
 # Keep binary files as-is
 *.png binary

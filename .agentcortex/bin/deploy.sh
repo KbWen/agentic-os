@@ -720,7 +720,8 @@ fi
 
 # The source repository's own .gitattributes sets repo-wide rules (*.md, *.py, *.json ...).
 # Installed into a product, they rewrite the line endings of the product's own files; the
-# downstream template covers only what Agentic OS installs and the docs its validators read.
+# downstream template sets line endings only for what Agentic OS installs and the docs its
+# validators read.
 DOWNSTREAM_GITATTRIBUTES_TEMPLATE="$REPO_ROOT/.agentcortex/templates/downstream.gitattributes"
 if [ ! -f "$DOWNSTREAM_GITATTRIBUTES_TEMPLATE" ]; then
     echo "" >&2

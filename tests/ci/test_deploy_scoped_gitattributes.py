@@ -4,8 +4,9 @@ deploy.sh used to install the source repository's own .gitattributes, whose rule
 repo-wide (``*.md``/``*.py``/``*.json``/``*.sh`` ``text eol=lf``, ``*.ps1`` ``eol=crlf``).
 In a product that commits CRLF, every product file then showed as a whole-file
 line-ending rewrite as soon as an editor or build tool touched it. deploy.sh now installs
-``.agentcortex/templates/downstream.gitattributes``, which covers only the files
-Agentic OS installs and the docs its validators read.
+``.agentcortex/templates/downstream.gitattributes``: Git's ``* text=auto`` default for
+the product's files (it never rewrites a file committed with CRLF), and line endings only
+for the files Agentic OS installs and the Markdown its validators read.
 """
 
 from __future__ import annotations
@@ -98,9 +99,9 @@ def test_installed_gitattributes_covers_framework_paths_only(tmp_path: Path) -> 
     _git(target, "add", "-A")
     _git(target, *GIT_ID, "commit", "-qm", "install")
 
-    # The product's own files get no line-ending rule from the framework ...
+    # The product's own files get only Git's `text=auto` default, never a line ending ...
     product = list(PRODUCT_FILES)
-    assert set(_attr(target, "text", product).values()) == {"unspecified"}
+    assert set(_attr(target, "text", product).values()) == {"auto"}
     assert set(_attr(target, "eol", product).values()) == {"unspecified"}
     # ... so an editor or build tool touching them changes nothing git reports.
     time.sleep(1.1)
@@ -124,3 +125,83 @@ def test_installed_gitattributes_covers_framework_paths_only(tmp_path: Path) -> 
     assert all(eol[p] == "lf" for p in framework if p.endswith(".sh"))
     windows = [p for p in framework if p.endswith((".ps1", ".cmd"))]
     assert windows and all(eol[p] == "crlf" for p in windows), {p: eol[p] for p in windows}
+
+
+# The rules v1.8.28 and earlier installed (the repository's own file at the time).
+OLD_INSTALLED = """\
+* text=auto
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.py text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+.agentcortex-manifest text eol=lf
+.githooks/** text eol=lf
+"""
+TEMPLATE = ROOT / ".agentcortex" / "templates" / "downstream.gitattributes"
+
+
+def test_template_normalizes_governed_markdown_and_nothing_of_the_product(tmp_path: Path) -> None:
+    """Review of #215: under `text=auto` a governed spec committed with CRLF would stay
+    CRLF forever, and the `$`-anchored validators misread it on an LF checkout. Governed
+    Markdown is always `text`; everything else of the product keeps Git's default."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    (repo / ".gitattributes").write_bytes(TEMPLATE.read_bytes())
+    governed = ["docs/specs/a.md", "docs/specs/sub/b.md", "docs/architecture/api.log.md",
+                "docs/adr/ADR-001-x.md", "docs/reviews/r.md"]
+    product = ["app.py", "src/web.js", "README.md", "docs/guide.md", "docs/specs/diagram.png", "build.cmd"]
+    text = _attr(repo, "text", governed + product)
+    eol = _attr(repo, "eol", governed + product)
+    assert all(text[p] == "set" and eol[p] == "lf" for p in governed), {p: (text[p], eol[p]) for p in governed}
+    assert all(text[p] == "auto" and eol[p] == "unspecified" for p in product), {p: (text[p], eol[p]) for p in product}
+
+
+@pytest.mark.parametrize(
+    "eol, autocrlf",
+    [("lf", "false"), ("crlf", "false"), ("native", "true")],
+    ids=["linux-default", "windows-autocrlf-false", "windows-autocrlf-true"],
+)
+def test_upgrading_from_the_repo_wide_rules_leaves_every_file_clean(
+    tmp_path: Path, eol: str, autocrlf: str
+) -> None:
+    """Review of #215: dropping `* text=auto` left the working copies the old rules had
+    written with CRLF (`*.ps1`/`*.cmd` everywhere, every text file under Windows
+    `core.autocrlf=false`) modified against their LF blobs on an update."""
+    origin = tmp_path / "origin"
+    files = {
+        "build.cmd": b"@echo off\n", "run.bat": b"@echo off\n", "scripts/tool.ps1": b"Write-Host hi\n",
+        "src/web.js": b"x\n", "README.md": b"# P\n", "app.py": b"print(1)\n",
+        "docs/specs/feature.md": b"---\nstatus: draft\n---\n",
+        ".agentcortex/bin/validate.sh": b"echo ok\n", ".agentcortex/bin/validate.ps1": b"Write-Host ok\n",
+        ".agent/skills/stub": b"stub\n",
+    }
+    origin.mkdir()
+    _git(origin, "init", "-q")
+    _git(origin, "config", "core.autocrlf", "false")
+    for rel, data in files.items():
+        (origin / rel).parent.mkdir(parents=True, exist_ok=True)
+        (origin / rel).write_bytes(data)
+    (origin / ".gitattributes").write_text(OLD_INSTALLED, encoding="utf-8", newline="\n")
+    _git(origin, "add", "-A")
+    _git(origin, *GIT_ID, "commit", "-qm", "installed with the old rules")
+
+    clone = tmp_path / "clone"
+    cfg = ["-c", f"core.autocrlf={autocrlf}", "-c", f"core.eol={eol}"]
+    subprocess.run(["git", *cfg, "clone", "-q", *cfg, str(origin), str(clone)], capture_output=True, check=True)
+
+    (origin / ".gitattributes").write_bytes(TEMPLATE.read_bytes())
+    _git(origin, "add", "-A")
+    _git(origin, *GIT_ID, "commit", "-qm", "updated to the scoped rules")
+    _git(clone, "pull", "-q", "--ff-only")
+
+    time.sleep(1.1)
+    for rel in files:
+        os.utime(clone / rel)
+    status = _git(clone, "status", "--porcelain")
+    assert status == "", f"the update left files modified ({eol=}, {autocrlf=}):\n{status}"
