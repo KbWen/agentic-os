@@ -16,6 +16,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 HOOK_SAMPLE = ROOT / ".githooks" / "pre-commit.guard-ssot.sample"
+DEPLOY_SH = ROOT / ".agentcortex" / "bin" / "deploy.sh"
 README = ROOT / "README.md"
 
 git = shutil.which("git")
@@ -128,6 +129,12 @@ def test_ac2_hook_prefers_powershell_validator_on_windows() -> None:
     assert "validate.sh" in text
 
 
+def _commit_all(repo: Path) -> None:
+    subprocess.run([git, "-c", "user.email=t@example.invalid", "-c", "user.name=t",
+                    "-c", "commit.gpgsign=false", "commit", "-qm", "x"],
+                   cwd=repo, check=True, capture_output=True)
+
+
 @requires_git_bash
 def test_ac3_guard_receipt_warning_is_advisory_only(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path, validate_exit=0)
@@ -135,10 +142,69 @@ def test_ac3_guard_receipt_warning_is_advisory_only(tmp_path: Path) -> None:
     guarded_file.write_text("# local governance\n", encoding="utf-8")
     subprocess.run([git, "add", "AGENTS.md"], cwd=repo, check=True)
 
+    # #211(c): adding the file is the install, not an SSoT edit that bypassed the guard.
+    added = _run_hook(repo)
+    assert added.returncode == 0, added.stdout + added.stderr
+    assert "GUARD WARN" not in added.stdout
+
+    _commit_all(repo)
+    guarded_file.write_text("# local governance, edited\n", encoding="utf-8")
+    subprocess.run([git, "add", "AGENTS.md"], cwd=repo, check=True)
     result = _run_hook(repo)
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "GUARD WARN: AGENTS.md" in result.stdout
+
+    _commit_all(repo)
+    subprocess.run([git, "rm", "-q", "AGENTS.md"], cwd=repo, check=True)
+    (repo / ".agentcortex" / "context" / ".guard_receipts").mkdir(parents=True)  # reach the receipt lookup
+    deleted = _run_hook(repo)
+    assert "GUARD WARN: AGENTS.md" in deleted.stdout, "a deletion is an SSoT edit too"
+    assert "No such file" not in deleted.stdout + deleted.stderr
+
+
+@requires_git_bash
+def test_hook_finds_a_framework_installed_in_a_monorepo_package(tmp_path: Path) -> None:
+    """#208: with core.hooksPath pkg/.githooks, git runs the hook from the repository
+    root. The hook used to cd there and block every commit on a missing validator."""
+    outer = tmp_path / "mono"
+    outer.mkdir()
+    subprocess.run([git, "init", "-q"], cwd=outer, check=True)
+    pkg = _make_repo(outer, validate_exit=0)  # creates mono/repo with .githooks + stub
+    shutil.rmtree(pkg / ".git")  # a package directory, not a nested repository
+
+    result = _run_hook(outer, hook_path=f"{pkg.name}/.githooks/pre-commit")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "stub-validator" in result.stdout and "validator passed" in result.stdout
+
+    guarded = pkg / "AGENTS.md"
+    guarded.write_text("# pkg governance\n", encoding="utf-8")
+    subprocess.run([git, "add", "-A"], cwd=outer, check=True)
+    _commit_all(outer)
+    guarded.write_text("# pkg governance, edited\n", encoding="utf-8")
+    subprocess.run([git, "add", "-A"], cwd=outer, check=True)
+    edited = _run_hook(outer, hook_path=f"{pkg.name}/.githooks/pre-commit")
+    assert "GUARD WARN: AGENTS.md" in edited.stdout, edited.stdout
+
+
+@requires_git_bash
+@pytest.mark.slow
+def test_deploy_banner_gives_the_monorepo_hooks_path(tmp_path: Path) -> None:
+    """#208: `git config core.hooksPath .githooks` is resolved from the repository root,
+    so for a package inside a larger repository the banner names the path from there."""
+    outer = tmp_path / "mono"
+    (outer / "pkg").mkdir(parents=True)
+    subprocess.run([git, "init", "-q"], cwd=outer, check=True)
+
+    def deploy(target: Path) -> str:
+        r = subprocess.run([bash, str(DEPLOY_SH), str(target)], capture_output=True,
+                           text=True, encoding="utf-8", errors="replace")
+        assert r.returncode == 0, r.stderr
+        return r.stdout
+
+    assert "git config core.hooksPath pkg/.githooks" in deploy(outer / "pkg")
+    assert "sub-directory" not in deploy(outer), "a top-level install keeps the plain command"
 
 
 @pytest.mark.docs_pin
