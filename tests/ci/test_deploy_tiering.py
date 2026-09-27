@@ -162,6 +162,11 @@ def test_preexisting_sidecar_file_stays_preserved_across_repeated_deploys(
         state_template = source_root / ".agentcortex" / "templates" / "current_state.md"
         state_template.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / ".agentcortex" / "templates" / "current_state.md", state_template)
+        # Same for the downstream .gitattributes template (#215).
+        shutil.copy2(
+            ROOT / ".agentcortex" / "templates" / "downstream.gitattributes",
+            state_template.parent / "downstream.gitattributes",
+        )
 
         source = source_root / rel_path
         source.parent.mkdir(parents=True, exist_ok=True)
@@ -707,6 +712,33 @@ def test_deploy_fails_closed_when_current_state_template_missing() -> None:
         assert result.returncode != 0
         assert "Missing downstream current_state template" in result.stderr
         assert not (target / ".agentcortex" / "context" / "current_state.md").exists()
+
+
+@requires_bash
+def test_deploy_fails_closed_when_gitattributes_template_missing() -> None:
+    """#215: without the downstream template, deploy must refuse rather than install the
+    source repository's own repo-wide .gitattributes."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        deploy_script = source_root / ".agentcortex" / "bin" / "deploy.sh"
+        templates = source_root / ".agentcortex" / "templates"
+        deploy_script.parent.mkdir(parents=True)
+        templates.mkdir(parents=True)
+        shutil.copy2(DEPLOY_SH, deploy_script)
+        shutil.copy2(ROOT / ".agentcortex" / "templates" / "current_state.md", templates / "current_state.md")
+        (source_root / ".gitattributes").write_text("*.md text eol=lf\n", encoding="utf-8")
+
+        target = Path(td) / "proj"
+        target.mkdir()
+        result = subprocess.run(
+            [bash, str(deploy_script), str(target)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            cwd=str(source_root),
+        )
+
+        assert result.returncode != 0
+        assert "Missing downstream .gitattributes template" in result.stderr
+        assert not (target / ".gitattributes").exists()
 
 
 @requires_bash
