@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-09-27T00:41:17Z
+- **Last Updated**: 2026-09-27T01:02:45Z
 - **Last Verified**: 2026-09-26
-- **Update Sequence**: 179
+- **Update Sequence**: 180
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -113,6 +113,31 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.28-2026-09-27
+- Feature shipped: **v1.8.28** packages the nine PRs merged since v1.8.27.
+  - Six of them come from the 2026-09-26 downstream simulation:
+    - the report itself (#444);
+    - #445: `/review` invariant proofs;
+    - #446: CRLF manifests and long-path / partial-cache updates;
+    - #447: validator receipts, the latest review verdict, and the Windows PowerShell 5.1 crash;
+    - #448: install-day copy;
+    - #449: the hook in monorepo packages.
+  - Three came earlier: #441 (governance scope consistency), #442 (external review adjudication) and #443 (retro).
+  - The seven version surfaces plus `CITATION.cff date-released` moved 1.8.27 -> 1.8.28 and 2026-09-14 -> 2026-09-27. Each was bumped by an asserted single-occurrence replace and is pinned by `test_release_version_consistency.py` (2 passed).
+- **The downstream delta was measured, not assumed.**
+  - 12 of the 43 files changed since `v1.8.27` reach an adopter:
+    - core: 4 workflows, `deploy.sh`, both validators, the guard guide;
+    - scaffold: the Work Log template, the hook sample, `CLAUDE.md`;
+    - wrapper: `deploy_brain.sh`.
+  - The SSoT template is unchanged.
+  - The CHANGELOG leads with the one action an adopter must take: re-run the hook's INSTALL copy step.
+- **The release notes keep the unfavourable result.**
+  - No governed arm beat its no-framework control on hidden tests.
+  - The id-reuse defect was caught in 1 of 10 governed chains.
+  - Two #212 levers were measured and not shipped.
+  - #201 is a proposal awaiting the owner's approval, because it amends ADR-005.
+- Tests: release guard 2 passed; docs pins 12 passed. The whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. After merge: lightweight `v1.8.28` tag + `gh release create --latest` (repo-gotchas §12); the release is NOT complete at PR merge. SSoT sequence 179->180; Ship History rotated at cap 10.
+
 ### Ship-fix-hook-monorepo-and-notices-2026-09-27
 - Feature shipped: **the opt-in pre-commit hook works in a monorepo package and says true things (#208, #211 a/c).**
   - #208, the silent case: git resolves `core.hooksPath` from the repository root, so running `git config core.hooksPath .githooks` inside a package pointed at nothing and the hook never ran.
@@ -188,10 +213,4 @@
 - **Downstream scenarios were run, not reasoned about**: upgrade from main with committed bytecode, legacy `AI Brain OS` block, CRLF adopter file, subdirectory install in a monorepo, no-Python, and `deploy.ps1` vs `deploy.sh` byte parity. Matrix in the archived Work Log.
 - **The fresh reviewer (same-vendor subagent) found two defects, and both were reproduced before being fixed.** (1) The new double-deploy test read the developer's global git excludes, so it failed on any machine that ignores `__pycache__/` globally. (2) Mixed framework versions deploying into one repository grew `.gitignore` by 10-13 lines per round, because an older `deploy.sh` stops stripping at the first entry it does not know. Writing the entry last cut that to 3 lines per round. The remainder lives in older-version code and is recorded, not claimed fixed. A marker-bounded strip was rejected because it would delete lines adopters added inside the block.
 - Tests: Pass. The full CI-equivalent suite (`tests/ci/ tests/guard/ .agentcortex/tests/`, 951 collected) ran alone at `6a3de6e`: **949 passed, 1 skipped, 1 failed**. The failure was this unit's own: the new test used `write_text(newline=)`, which is 3.10+, and `test_write_text_newline_ratchet` caught it against the 3.9 floor. None of the targeted or mutation runs had included that ratchet. Fixed in `52ef638`, after which the ratchet plus `test_deploy_tiering.py` came to 43 passed, 1 skipped. This is a whole-suite run followed by a changed-file rerun, not one clean run, and it is recorded as such. Validator figures are in the archived Work Log §Final Verification.
-
-### Ship-docs-retro-skill-description-lessons-2026-09-10
-
-- Feature shipped: `/retro` for PR #437. Its durable learnings had been kept in Claude-private memory, which Codex and Gemini cannot read; the user corrected that, so they now live in the repo's own records. One Global Lesson added - `[skill-description-cost][HIGH][editing-skill-md]`: each SKILL.md character costs ~2.33 tokens against a ceiling with 113 headroom, targeted checks stay green on a breaching tree, and backlog **#199** is the open decision - so it now surfaces in the `/implement` HIGH-lesson review on every host rather than only in one machine's memory. `repo-gotchas §16` extended with the host-side consumer: Codex selects on the SKILL.md `description`; `openai.yaml` is UI metadata; Claude Code does not read `.agents/skills` here.
-- Tests: Pass
-- Registry was at cap 20 with zero LOW entries, so `/retro`'s LOW-only archival could not free a slot. On the user's choice, `[classification-flow]` (MEDIUM, the GENESIS entry) was archived through `append_lesson.py --archive` - chain re-anchored, bridge record in INDEX.jsonl - because `bootstrap.md:25` now encodes it as a rule. Only one lesson was added, not four: two of #437's record errors had violated lessons already present (`[signal-preservation]`, `[audit-verification]`), and adding near-duplicates to a full registry adds length, not obedience. Token aggregate unchanged (delta 0, measured). No subagent review (optional for quick-win), stated rather than implied.
 
