@@ -1,0 +1,33 @@
+# Agentic OS line endings (installed from .agentcortex/templates/downstream.gitattributes).
+#
+# These rules cover only the files Agentic OS installs and the documents its
+# validators read (docs/specs, docs/architecture, docs/adr, docs/reviews).
+# Your product's own files are not covered, so they keep your repository's
+# settings. Add rules for your own files below this block.
+#
+# text=auto leaves binary files, and files already committed with CRLF, alone.
+# eol=lf keeps the covered files LF on Windows checkouts (core.autocrlf=true):
+# the bash validators and hooks read them, and a CR breaks their line matching.
+AGENTS.md                    text=auto eol=lf
+CLAUDE.md                    text=auto eol=lf
+GEMINI.md                    text=auto eol=lf
+.agentcortex-manifest        text eol=lf
+.agentcortex/**              text=auto eol=lf
+.agent/**                    text=auto eol=lf
+.agents/**                   text=auto eol=lf
+.githooks/**                 text=auto eol=lf
+.claude/agents/**            text=auto eol=lf
+.claude/commands/**          text=auto eol=lf
+.codex/INSTALL.md            text=auto eol=lf
+.antigravity/rules.md        text=auto eol=lf
+codex/rules/default.rules    text=auto eol=lf
+installers/deploy_brain.sh   text=auto eol=lf
+docs/specs/**                text=auto eol=lf
+docs/architecture/**         text=auto eol=lf
+docs/adr/**                  text=auto eol=lf
+docs/reviews/**              text=auto eol=lf
+
+# The Windows scripts Agentic OS installs stay CRLF.
+.agentcortex/**/*.ps1        text eol=crlf
+installers/deploy_brain.ps1  text eol=crlf
+installers/deploy_brain.cmd  text eol=crlf

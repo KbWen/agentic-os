@@ -159,6 +159,7 @@ scaffold .agentcortex/templates/adr-tech-stack.md
 scaffold .agentcortex/templates/current_state.md
 scaffold .agentcortex/templates/docs-readme.md
 scaffold .agentcortex/templates/downstream-capabilities.example.yaml
+scaffold .agentcortex/templates/downstream.gitattributes
 scaffold .agentcortex/templates/spec-app-feature.md
 scaffold .agentcortex/templates/user-preferences.yaml
 scaffold .agentcortex/templates/worklog.md

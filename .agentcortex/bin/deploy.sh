@@ -718,6 +718,17 @@ if [ ! -f "$DOWNSTREAM_CURRENT_STATE_TEMPLATE" ]; then
     exit 1
 fi
 
+# The source repository's own .gitattributes sets repo-wide rules (*.md, *.py, *.json ...).
+# Installed into a product, they rewrite the line endings of the product's own files; the
+# downstream template covers only what Agentic OS installs and the docs its validators read.
+DOWNSTREAM_GITATTRIBUTES_TEMPLATE="$REPO_ROOT/.agentcortex/templates/downstream.gitattributes"
+if [ ! -f "$DOWNSTREAM_GITATTRIBUTES_TEMPLATE" ]; then
+    echo "" >&2
+    echo "ERROR: Missing downstream .gitattributes template: .agentcortex/templates/downstream.gitattributes" >&2
+    echo "Deploy refuses to install the source repository's own repo-wide .gitattributes downstream." >&2
+    exit 1
+fi
+
 # --- Dry-run mode: preview only ---
 if $DRY_RUN; then
     echo ""
@@ -752,7 +763,6 @@ if $DRY_RUN; then
         printf '  %s %-10s %s\n' "$status" "($_TIER)" "$rel"
     }
     for f in "$REPO_ROOT"/AGENTS.md "$REPO_ROOT"/CLAUDE.md "$REPO_ROOT"/GEMINI.md \
-             "$REPO_ROOT"/.gitattributes \
              "$REPO_ROOT"/installers/deploy_brain.sh "$REPO_ROOT"/installers/deploy_brain.ps1 "$REPO_ROOT"/installers/deploy_brain.cmd \
              "$REPO_ROOT"/.antigravity/rules.md "$REPO_ROOT"/codex/rules/default.rules \
              "$REPO_ROOT"/.agent/rules/*.md "$REPO_ROOT"/.agent/config.yaml \
@@ -771,6 +781,7 @@ if $DRY_RUN; then
     done
     # Generated downstream runtime SSoT: source template installs to context/current_state.md.
     _dry_print_file "$DOWNSTREAM_CURRENT_STATE_TEMPLATE" ".agentcortex/context/current_state.md"
+    _dry_print_file "$DOWNSTREAM_GITATTRIBUTES_TEMPLATE" ".gitattributes"
     # Runtime tools (whitelist only — not all *.py)
     for _bname in $_runtime_tools; do
         f="$REPO_ROOT/.agentcortex/tools/$_bname"
@@ -851,7 +862,7 @@ deploy_file "$REPO_ROOT/CLAUDE.md" "CLAUDE.md"
 deploy_file "$REPO_ROOT/GEMINI.md" "GEMINI.md"
 
 # --- Deploy: .gitattributes (scaffold — user may extend) ---
-deploy_file "$REPO_ROOT/.gitattributes" ".gitattributes"
+deploy_file "$DOWNSTREAM_GITATTRIBUTES_TEMPLATE" ".gitattributes"
 
 # --- Deploy: wrapper scripts (into installers/ — not root) ---
 mkdir -p "$TARGET/installers"
