@@ -130,6 +130,7 @@ none
 - Skip Attempt: NO
 - Gate Fail Reason: N/A
 - Token Leak: NO
+- Post-ship CI (PR #452, Linux + Windows shard 1): 2 `test_preexisting_sidecar_file_stays_preserved_across_repeated_deploys` cases build a minimal source tree without the new template, so the fail-closed check fired. Fixture seeded; `test_deploy_fails_closed_when_gitattributes_template_missing` added. Local: 8 passed.
 
 ---
 
