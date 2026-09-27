@@ -1104,7 +1104,6 @@ else
     '*.acx-incoming' \
     '.openrouter/' \
     '.claude-chat/' \
-    '.cursor/' \
     '.antigravity/scratch/' \
     '# End Agentic OS Template - Downstream Ignore Defaults'; do
     if ! printf '%s\n' "$DEPLOY_IGNORE_BLOCK" | grep -x -F -q -- "$pattern"; then
