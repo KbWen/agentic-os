@@ -1,0 +1,28 @@
+# Agentic OS line endings (installed from .agentcortex/templates/downstream.gitattributes).
+#
+# These rules cover only the files Agentic OS installs, plus .githooks/ (a git
+# hook must be LF to run). Your product's own files are not covered, so they
+# keep your repository's settings. text=auto leaves binary files, and files
+# already committed with CRLF, alone.
+# Up to v1.8.28 this file set line endings for every file in the repository;
+# if your copy still has those rules, delete them. After that, a file git shows
+# as modified whose `git diff --ignore-cr-at-eol -- <file>` prints nothing only
+# has the old line endings: `git checkout -- <file>` restores it.
+# Add rules for your own files below this block.
+/AGENTS.md                   text=auto eol=lf
+/CLAUDE.md                   text=auto eol=lf
+/GEMINI.md                   text=auto eol=lf
+/.agentcortex-manifest       text eol=lf
+.agentcortex/**              text=auto eol=lf
+.agent/**                    text=auto eol=lf
+.agents/**                   text=auto eol=lf
+.githooks/**                 text=auto eol=lf
+.codex/INSTALL.md            text=auto eol=lf
+.antigravity/rules.md        text=auto eol=lf
+codex/rules/default.rules    text=auto eol=lf
+installers/deploy_brain.sh   text=auto eol=lf
+
+# The Windows scripts Agentic OS installs stay CRLF.
+.agentcortex/**/*.ps1        text eol=crlf
+installers/deploy_brain.ps1  text eol=crlf
+installers/deploy_brain.cmd  text eol=crlf
