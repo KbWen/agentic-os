@@ -78,3 +78,25 @@ source_sha: f3033f1
 - [TRADEOFF] Guarded-path warnings skip additions (`--diff-filter=a`): the install-day
   commit adds those files. Deletions still warn, because `current_state.md` is not in the
   validator's required-files list and nothing else would flag its removal.
+
+---
+
+### [tooling][2026-09-27][fix/scoped-gitattributes]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-scoped-gitattributes-20260927.md`)
+source_sha: 6de3dbb
+
+- [DECISION] The installed `.gitattributes` sets line endings only for the files Agentic OS
+  installs, plus `.githooks/` (a hook must be LF to run). It comes from
+  `.agentcortex/templates/downstream.gitattributes`, not from this repository's own file.
+  Line endings of the product's own files are the product's decision, as the managed
+  `.gitignore` block already treats ignore policy.
+- [CONSTRAINT] No product-wide rule is neutral: `* text=auto` checks text files out with
+  `core.eol` (CRLF on Windows under `core.autocrlf=false`) and stores new files LF in a CRLF
+  repository. Product docs therefore reach the validators with CRs; the bash parsers of
+  product docs must accept CRLF (`validate.sh` domain-doc status, no-Python `target_doc`),
+  as `validate.ps1` already does.
+- [TRADEOFF] Permanent neutrality for future adopters over a one-time step for existing
+  ones. A clone checked out under the old rules keeps CRLF working copies of LF blobs;
+  deploy says so once, only when it replaced the old file, with per-file advice
+  (`git diff --ignore-cr-at-eol` empty -> `git checkout -- <file>`). A printed script was
+  rejected: it deleted skip-worktree files and reverted assume-unchanged edits.

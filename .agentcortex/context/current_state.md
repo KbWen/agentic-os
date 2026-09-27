@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-09-27T01:02:45Z
+- **Last Updated**: 2026-09-27T06:10:09Z
 - **Last Verified**: 2026-09-26
-- **Update Sequence**: 180
+- **Update Sequence**: 181
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -113,6 +113,13 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-scoped-gitattributes-2026-09-27
+- Feature shipped: **The installed `.gitattributes` no longer sets line endings for the product's own files (#215).**
+  - Found by the owner's check that the install must not weigh down or affect product development. The same check measured v1.8.27 -> v1.8.28: 205 files both, +0.6% bytes, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488.
+  - Before: repo-wide rules; a product committed with CRLF saw every touched file rewritten (fixture 7/7). After: 0. The template covers installed paths and `.githooks/` only; two validator parsers of product docs now accept CRLF.
+  - Four independent review rounds, every finding reproduced first. Rejected on the way: keeping `* text=auto` (not neutral), `docs/` rules (rewrote product Markdown), a printed re-checkout script (deleted skip-worktree files).
+- Tests: new install and update notice (real deploys), template contract with 5 failing mutants, the notice's advice in 3 EOL configs, CRLF validator fixture (discriminates on Linux). Full suite: PR #452 CI. SSoT sequence 180->181.
+
 ### Ship-chore-release-v1.8.28-2026-09-27
 - Feature shipped: **v1.8.28** packages the nine PRs merged since v1.8.27.
   - Six of them come from the 2026-09-26 downstream simulation:
@@ -205,12 +212,4 @@
   - scaffold: the `production-readiness` and `systematic-debugging` `SKILL.md`, and `current_state.md` (the adopter's own copy is preserved)
 - **The release notes lead with the one action an adopter may need:** `git rm -r --cached .agentcortex/tools/__pycache__`, for installs that already committed bytecode. A `.gitignore` rule does not untrack files, and deploy deliberately runs no git commands in an adopter's repository. The #437 bullet repeats that unit's carried limitation: no trigger-rate change was measured on any host.
 - Tests: release guard **2 passed** locally, and both validators are recorded in the archived Work Log §Final Verification. This is a subset: the whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. PR #435's local 951-test run and its green CI cover the unchanged code. Post-merge completion per repo-gotchas §12: lightweight `v1.8.27` tag + `gh release create --latest`. That step is NOT complete at PR merge.
-
-### Ship-fix-downstream-ignore-python-bytecode-2026-09-14
-
-- Feature shipped: **contributor PR #435 (issue #430, backlog #191) finished in place, with the owner's approval, after a week without response to review.** The deployed `.gitignore` block now carries `.agentcortex/**/__pycache__/`, so running the framework's own `validate.sh` no longer leaves bytecode for the banner's `git add .agentcortex/` to stage. The PR as submitted added repo-wide `__pycache__/` + `*.pyc` without `managed[]` entries: every re-deploy grew the adopter's file by 14 lines (measured 33 -> 47 -> 61), and the repo-wide pair also ignored the adopter's own bytecode. What shipped: scoped to the framework namespace (all 19 deployed `.py` are under `.agentcortex/tools/`), in `managed[]`, written last in the block. Contributor commit kept; no force-push.
-- **Adopter delta, measured on real deploys against `origin/main`**: fresh install, framework `.pyc` visible to `git status` after `validate.sh` 2 -> 0; upgrade adds 3 lines, then byte-identical on every re-deploy; adopter's own lines and own bytecode policy untouched; validator tallies identical (`86/1/0/8`, `--no-python` `76/1/0/18`). Unchanged: bytecode an adopter already committed stays tracked. The one-time `git rm -r --cached .agentcortex/tools/__pycache__` belongs in the next release notes; deploy does not run git commands in the adopter's repository.
-- **Downstream scenarios were run, not reasoned about**: upgrade from main with committed bytecode, legacy `AI Brain OS` block, CRLF adopter file, subdirectory install in a monorepo, no-Python, and `deploy.ps1` vs `deploy.sh` byte parity. Matrix in the archived Work Log.
-- **The fresh reviewer (same-vendor subagent) found two defects, and both were reproduced before being fixed.** (1) The new double-deploy test read the developer's global git excludes, so it failed on any machine that ignores `__pycache__/` globally. (2) Mixed framework versions deploying into one repository grew `.gitignore` by 10-13 lines per round, because an older `deploy.sh` stops stripping at the first entry it does not know. Writing the entry last cut that to 3 lines per round. The remainder lives in older-version code and is recorded, not claimed fixed. A marker-bounded strip was rejected because it would delete lines adopters added inside the block.
-- Tests: Pass. The full CI-equivalent suite (`tests/ci/ tests/guard/ .agentcortex/tests/`, 951 collected) ran alone at `6a3de6e`: **949 passed, 1 skipped, 1 failed**. The failure was this unit's own: the new test used `write_text(newline=)`, which is 3.10+, and `test_write_text_newline_ratchet` caught it against the 3.9 floor. None of the targeted or mutation runs had included that ratchet. Fixed in `52ef638`, after which the ratchet plus `test_deploy_tiering.py` came to 43 passed, 1 skipped. This is a whole-suite run followed by a changed-file rerun, not one clean run, and it is recorded as such. Validator figures are in the archived Work Log §Final Verification.
 
