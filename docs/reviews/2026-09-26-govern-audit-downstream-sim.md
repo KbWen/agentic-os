@@ -341,3 +341,11 @@ The two product-outcome levers were implemented on `fix/agent-guidance-levers-20
 - **F4 / #204 — refuted as a lever.** Adding the Work-Log step to `CLAUDE.md` changed nothing: zero-hint Claude opened a Work Log in 0/3 runs before and 0/3 after (one run classified quick-win and went straight to code without reading the SSoT). The change was reverted. The pre-mortem's hypothesis that one clause could close the gap does not hold; what does work is starting the task with `/bootstrap <task>` (6/6 engaged). Decision moved to #213.
 - **F3 / #203 — shipped, effect not demonstrated.** v1 (Self-Check only) lost to the existing rule that accepts `file:line` evidence: the re-run review certified "deleted IDs are not recycled" by citing the very `max(id)` line that recycles them. v2 moved the rule into the evidence definition. In two v2 chains the rule never fired, because neither review listed the invariant as a criterion. Governed chains caught the defect 0/4 — one run before the change, three after — against 2/2 no-framework controls. The shipped wording, after two further review rounds (rule placed above both evidence lists, untagged PARTIAL forces NOT READY, receipt written after the Self-Check), was not re-measured. The upstream gap is filed as #212.
 - **Unchanged conclusion:** the verdict above stands, and it is now sharper — wording in the phase files is not where the product-quality lever sits for these models.
+
+## Addendum 2 — the criteria-elicitation lever (#212), measured
+
+Two further levers were tried on 2026-09-27 against the same hidden tests, and neither is shipped:
+- **v1** added a requirement to the bug-fix protocol: name the rule the bug breaks and the input most likely to break the fix. No chain followed it (0/3).
+- **v2** added a `Broken rule` line to the `/plan` output template. Agents did fill it (2/3), but with the symptom-level rule and the reported repro as the boundary. That rule is satisfied by the defective `max(id)+1`.
+
+Across all governed chains, the id-reuse defect was caught 1 time in 10, and the one catch is not attributable to a lever. The finding sharpens the verdict above. Templates change what agents write down, but not which invariant they see in a bug report.
