@@ -2,6 +2,12 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-docs-retro-skill-description-lessons-2026-09-10
+
+- Feature shipped: `/retro` for PR #437. Its durable learnings had been kept in Claude-private memory, which Codex and Gemini cannot read; the user corrected that, so they now live in the repo's own records. One Global Lesson added - `[skill-description-cost][HIGH][editing-skill-md]`: each SKILL.md character costs ~2.33 tokens against a ceiling with 113 headroom, targeted checks stay green on a breaching tree, and backlog **#199** is the open decision - so it now surfaces in the `/implement` HIGH-lesson review on every host rather than only in one machine's memory. `repo-gotchas §16` extended with the host-side consumer: Codex selects on the SKILL.md `description`; `openai.yaml` is UI metadata; Claude Code does not read `.agents/skills` here.
+- Tests: Pass
+- Registry was at cap 20 with zero LOW entries, so `/retro`'s LOW-only archival could not free a slot. On the user's choice, `[classification-flow]` (MEDIUM, the GENESIS entry) was archived through `append_lesson.py --archive` - chain re-anchored, bridge record in INDEX.jsonl - because `bootstrap.md:25` now encodes it as a rule. Only one lesson was added, not four: two of #437's record errors had violated lessons already present (`[signal-preservation]`, `[audit-verification]`), and adding near-duplicates to a full registry adds length, not obedience. Token aggregate unchanged (delta 0, measured). No subagent review (optional for quick-win), stated rather than implied.
+
 ### Ship-docs-skill-description-clarity-2026-09-09
 
 - Feature shipped: Two skill `description` frontmatter lines now lead with their activation conditions instead of their technique, per the repo's own contract at `app-init.md:200` ("description MUST include both capability and activation context"), plus the mechanically regenerated `trigger-compact-index.json`. Product diff: 2 lines + 2 `content_hash` fields.

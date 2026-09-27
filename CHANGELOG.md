@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.8.28] - 2026-09-27
+
+This release comes out of a simulation of the whole downstream loop (2026-09-26). The simulation used real deploys, upgrades from four older versions, and headless Claude Code and Codex sessions building a small product against hidden acceptance tests. The release fixes what that simulation found in the install, update and validation paths. It also records what the simulation did not support: the governed sessions did not build better products than the ungoverned controls. **If you installed the pre-commit hook, re-run the INSTALL copy step after updating.** The hook changes below do not reach an installed copy on their own.
+
+- **Windows teammates' upgrades stop reporting unedited files as locally modified (#202, PR #446).** A manifest checked out CRLF left a carriage return in every stored hash. On the same commit, an upgrade reported 13 false `[OVERWRITE]`s and 3 skips; after the fix, 0 and 0.
+- **The update path survives long Windows paths and no longer deploys from a half-checked-out cache (#206, PR #446).**
+  - Clones and pulls use `core.longpaths`.
+  - A cache is used only if `deploy.sh` is in its index and `git status` is clean. Otherwise it is re-cloned once, and the run aborts with git's own message if that fails too.
+- **`validate.ps1` no longer aborts under Windows PowerShell 5.1 when a git probe fails by design (#214, PR #447).** Windows PowerShell 5.1 is the `powershell` that INSTALL.md and the hook call. The probe fails, and the old script aborted, in three normal situations:
+  - the project is not a git repo;
+  - there is no `origin` after the first `/ship`;
+  - a Checkpoint SHA stopped resolving after a squash.
+
+  With the hook installed, this blocked every commit in such a repo.
+- **Validator messages tell you what to fix (#210, #209, PR #447).**
+  - The missing-receipts FAIL names the log and prints the receipt line to add.
+  - A review NOT READY recorded after a PASS now reopens the loop instead of being ignored.
+  - `ship.md` carries one runnable guarded-write template instead of offering a direct edit.
+  - Python tools print UTF-8 under both validators (#211f).
+  - The Work Log template says the receipt Timestamp is self-reported. Read it from the clock, and never add a receipt for a phase that did not run (#205).
+- **`/review` cannot certify an invariant from the line that breaks it (#203, PR #445).** Code evidence alone leaves a row like "IDs are never reused" unproven; only a test at the boundary proves it. A Red Team observation that contradicts a PROVEN row reopens it. Its effect on outcomes was not demonstrated; see below.
+- **Install-day copy (PR #448):**
+  - `.cursor/` is no longer ignored wholesale (#207).
+  - `--dry-run` previews exactly what deploy writes (#211b).
+  - INSTALL.md says which in-place edits are force-updated and which keep your copy (#211e).
+  - Claude Code users are told to start a task with the slash command itself, with the measured counts (#213).
+- **Hook (PR #449):**
+  - It works in a monorepo package: set `core.hooksPath` to `<sub-dir>/.githooks` (#208).
+  - It says so when the no-Python floor screened fewer credential shapes (#211a).
+  - It no longer warns about SSoT files on the install-day commit, but still warns about edits and deletions (#211c).
+
+- **Governance text that disagreed with the engine now agrees (PR #441).** The command registry no longer advertises `/review` and `/test` as required for quick-win, and it lists `/plan` for hotfix, which the validator requires. `CLAUDE.md`'s tiny-fix line no longer points at a step that says to skip it.
+- **Upstream only:** the 2026-09-20 external review adjudicated (PR #442); a retro lesson on serializing ships through the SSoT (PR #443); the downstream simulation report (PR #444).
+
+**Downstream delta.** Measured with `git diff v1.8.27..HEAD` against the deploy manifest: 12 of the 43 changed files reach an adopter.
+- Force-updated (core): `.agent/workflows/implement.md`, `review.md`, `routing.md`, `ship.md`, `.agentcortex/bin/deploy.sh`, `validate.sh`, `validate.ps1`, `.agentcortex/docs/guides/guarded-context-writes.md`.
+- Kept if you edited them (scaffold, with an `.acx-incoming` sidecar): `.agentcortex/templates/worklog.md`, `.githooks/pre-commit.guard-ssot.sample`, `CLAUDE.md`.
+- Wrapper: `installers/deploy_brain.sh`.
+
+The SSoT template is unchanged, so your own `current_state.md` is untouched.
+
+**What this release does not do.**
+- The simulation's central finding stands. No governed arm beat its no-framework control on hidden tests, and the id-reuse defect was caught in 1 of 10 governed chains.
+- Two levers aimed at that were measured and not shipped (#212). A text rule was not followed. A `/plan` template line was filled in, but with the symptom-level rule.
+- #201 (a sidecar only when the framework actually changed a file) is a proposal awaiting the owner's approval, because it amends ADR-005.
+- The Stop-hook option for #213 was not taken.
+
 ## [1.8.27] - 2026-09-14
 
 This release fixes a first-commit annoyance for any install that runs the framework's Python tools. It also adds two skill-description clarifications and an upstream CI fix. **If you already committed `.agentcortex/tools/__pycache__/`, run `git rm -r --cached .agentcortex/tools/__pycache__` once after updating. A `.gitignore` rule does not untrack files git already tracks, and deploy does not run git commands in your repository.**
