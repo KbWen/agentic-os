@@ -60,3 +60,21 @@ source_sha: 6678949
 - [TRADEOFF] The gate is a correctness check, not a tamper control: untracked files
   pass `--untracked-files=no`. The cache was already fully trusted (its `deploy.sh`
   is executed), so a stronger check would claim protection it cannot give.
+
+---
+
+### [tooling][2026-09-27][fix/hook-monorepo-and-notices]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-hook-monorepo-and-notices-20260927.md`)
+source_sha: f3033f1
+
+- [DECISION] The pre-commit hook locates the framework from its own `.githooks/`
+  directory, not from the repository root: git runs hooks from the top level, so a
+  package-level install otherwise validates the wrong directory and blocks every commit.
+  The repository-root fallback is kept for hooks installed elsewhere.
+- [CONSTRAINT] `core.hooksPath` is resolved from the repository root; a relative
+  `.githooks` set inside a package points at a directory that does not exist there and the
+  hook silently never runs. Deploy prints the sub-directory form only when the target is a
+  sub-directory of its repository.
+- [TRADEOFF] Guarded-path warnings skip additions (`--diff-filter=a`): the install-day
+  commit adds those files. Deletions still warn, because `current_state.md` is not in the
+  validator's required-files list and nothing else would flag its removal.
