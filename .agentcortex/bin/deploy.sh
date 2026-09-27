@@ -560,7 +560,8 @@ IS_UPDATE=false
 if [ -f "$MANIFEST_FILE" ]; then
     IS_UPDATE=true
     echo "Updating Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) in $TARGET..."
-    clean_acx_incoming
+    # A dry run changes nothing: pending sidecars are the adopter's unmerged offers.
+    $DRY_RUN || clean_acx_incoming
 else
     echo "Installing Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) to $TARGET..."
 fi
@@ -602,7 +603,13 @@ if [ -d "$TARGET/agentcortex" ] || [ -d "$TARGET/docs/context" ] || \
     _acx_legacy_artifacts=true
 fi
 
-if $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
+if $DRY_RUN; then
+    # A dry run changes nothing: the migration below moves and deletes legacy paths.
+    if $_acx_legacy_artifacts; then
+        echo ""
+        echo "[DRY RUN] Legacy paths found; a real run migrates them first (agentcortex/, docs/context/, tools/validate.*)."
+    fi
+elif $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
    [ -f "$TARGET/tools/validate.ps1" ] || [ -f "$TARGET/tools/validate.cmd" ]; then
     if $_acx_legacy_artifacts; then
         echo ""
