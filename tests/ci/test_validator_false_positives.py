@@ -359,7 +359,8 @@ def test_crlf_product_docs_parse_like_lf_docs_sh() -> None:
         reviews.mkdir(parents=True, exist_ok=True)
         (reviews / "2099-01-01-crlf.md").write_bytes(
             b"# CRLF review\r\n\r\n```yaml\r\nrouting_actions:\r\n"
-            b'  - finding: "x"\r\n    target_doc: "docs/architecture/payments.md"\r\n'
+            # Unquoted: the old sed kept the CR only in this form (a quoted CRLF line was skipped).
+            b'  - finding: "x"\r\n    target_doc: docs/architecture/payments.md\r\n'
             b'    status: merged\r\n    owner: "test"\r\n```\r\n'
         )
         proc = subprocess.run(

@@ -5,12 +5,14 @@
 # keep your repository's settings. text=auto leaves binary files, and files
 # already committed with CRLF, alone.
 # Up to v1.8.28 this file set line endings for every file in the repository;
-# if your copy still has those rules, delete them. Add rules for your own files
-# below this block.
-AGENTS.md                    text=auto eol=lf
-CLAUDE.md                    text=auto eol=lf
-GEMINI.md                    text=auto eol=lf
-.agentcortex-manifest        text eol=lf
+# if your copy still has those rules, delete them. After that, a file git shows
+# as modified whose `git diff --ignore-cr-at-eol -- <file>` prints nothing only
+# has the old line endings: `git checkout -- <file>` restores it.
+# Add rules for your own files below this block.
+/AGENTS.md                   text=auto eol=lf
+/CLAUDE.md                   text=auto eol=lf
+/GEMINI.md                   text=auto eol=lf
+/.agentcortex-manifest       text eol=lf
 .agentcortex/**              text=auto eol=lf
 .agent/**                    text=auto eol=lf
 .agents/**                   text=auto eol=lf

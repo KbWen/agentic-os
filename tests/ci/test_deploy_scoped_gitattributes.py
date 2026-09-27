@@ -214,6 +214,7 @@ def test_template_sets_no_rule_on_product_files(tmp_path: Path) -> None:
         "build.cmd", "run.bat", "Makefile", "README.md", "docs/guide.md", "docs/specs/diagram.png",
         "docs/specs/checkout.md", "docs/architecture/c4/context.md", "docs/adr/0001-record.md",
         "docs/reviews/q1.md", ".claude/commands/our-release.md", ".claude/agents/our-agent.md",
+        "packages/web/AGENTS.md", "apps/api/CLAUDE.md",  # a monorepo's own agent files
     ]
     framework = {
         "AGENTS.md": "lf", ".agentcortex/bin/validate.sh": "lf", ".agent/workflows/ship.md": "lf",

@@ -1503,9 +1503,9 @@ fi
 if $_acx_old_gitattributes && ! grep -qE "$_ACX_OLD_GITATTRIBUTES_RE" "$TARGET/.gitattributes"; then
     echo ""
     echo "⚠ .gitattributes no longer sets line endings for your own files (up to v1.8.28 it"
-    echo "  did, for every file). If git now shows a file as modified and"
-    echo "  'git diff --ignore-cr-at-eol -- <file>' prints nothing, only its line endings"
-    echo "  differ, left over from the old rules: 'git checkout -- <file>' restores it."
+    echo "  did, for every file). A clone checked out under the old rules can show a file"
+    echo "  as modified once a tool touches it; if 'git diff --ignore-cr-at-eol -- <file>'"
+    echo "  prints nothing, only its line endings differ: 'git checkout -- <file>' restores it."
     echo "  Clones with core.autocrlf=true (the Git for Windows default) are not affected."
 fi
 if [ "$COUNT_CORE_OVERWRITTEN" -gt 0 ]; then
