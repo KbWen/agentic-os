@@ -65,14 +65,15 @@ def _git(repo: Path, *args: str) -> str:
 
 
 def _attr(repo: Path, attr: str, paths: list[str]) -> dict[str, str]:
+    # NUL-separated bytes: text-mode stdin on Windows would turn "\n" into "\r\n",
+    # and git would then look up "AGENTS.md\r", which no rule names.
     out = subprocess.run(
-        ["git", "-C", str(repo), "check-attr", "--stdin", attr],
-        input="\n".join(paths) + "\n", capture_output=True, text=True, check=True,
-    ).stdout
-    values = {}
-    for line in out.splitlines():
-        path, _, value = line.rsplit(": ", 2)
-        values[path] = value
+        ["git", "-C", str(repo), "check-attr", "-z", "--stdin", attr],
+        input=("\0".join(paths) + "\0").encode("utf-8"), capture_output=True, check=True,
+    ).stdout.decode("utf-8")
+    fields = out.split("\0")
+    values = {fields[i]: fields[i + 2] for i in range(0, len(fields) - 2, 3)}
+    assert set(values) == set(paths), sorted(set(paths) ^ set(values))
     return values
 
 
