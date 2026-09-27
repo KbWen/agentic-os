@@ -2,6 +2,15 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.27-2026-09-14
+
+- Feature shipped: **v1.8.27** packages the four units merged since v1.8.26: the downstream bytecode-ignore fix (**PR #435**, #430, contributed by @zerone0x and completed in place), two skill descriptions that now lead with their activation conditions (#437) plus its retro records (#438), the TruffleHog scanner digest completion (#425), and the `custom-*` activation on-ramp row in `docs/INSTALL.md` (#436). The seven canonical version surfaces plus `CITATION.cff date-released` moved 1.8.26 -> 1.8.27 and 2026-09-05 -> 2026-09-14. Each was bumped by an asserted single-occurrence replace and is pinned by `test_release_version_consistency.py` (**2 passed**). **The cut itself changes no engine, gate order, deployed file set, or configuration.**
+- **The adopter delta was measured before the notes were written.** Of the 26 files changed since `v1.8.26`, **6** are in the deploy set:
+  - core: `deploy.sh`, `repo-gotchas.md`, `trigger-compact-index.json`
+  - scaffold: the `production-readiness` and `systematic-debugging` `SKILL.md`, and `current_state.md` (the adopter's own copy is preserved)
+- **The release notes lead with the one action an adopter may need:** `git rm -r --cached .agentcortex/tools/__pycache__`, for installs that already committed bytecode. A `.gitignore` rule does not untrack files, and deploy deliberately runs no git commands in an adopter's repository. The #437 bullet repeats that unit's carried limitation: no trigger-rate change was measured on any host.
+- Tests: release guard **2 passed** locally, and both validators are recorded in the archived Work Log §Final Verification. This is a subset: the whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. PR #435's local 951-test run and its green CI cover the unchanged code. Post-merge completion per repo-gotchas §12: lightweight `v1.8.27` tag + `gh release create --latest`. That step is NOT complete at PR merge.
+
 ### Ship-fix-downstream-ignore-python-bytecode-2026-09-14
 
 - Feature shipped: **contributor PR #435 (issue #430, backlog #191) finished in place, with the owner's approval, after a week without response to review.** The deployed `.gitignore` block now carries `.agentcortex/**/__pycache__/`, so running the framework's own `validate.sh` no longer leaves bytecode for the banner's `git add .agentcortex/` to stage. The PR as submitted added repo-wide `__pycache__/` + `*.pyc` without `managed[]` entries: every re-deploy grew the adopter's file by 14 lines (measured 33 -> 47 -> 61), and the repo-wide pair also ignored the adopter's own bytecode. What shipped: scoped to the framework namespace (all 19 deployed `.py` are under `.agentcortex/tools/`), in `managed[]`, written last in the block. Contributor commit kept; no force-push.

@@ -100,3 +100,15 @@ source_sha: 6de3dbb
   deploy says so once, only when it replaced the old file, with per-file advice
   (`git diff --ignore-cr-at-eol` empty -> `git checkout -- <file>`). A printed script was
   rejected: it deleted skip-worktree files and reverted assume-unchanged edits.
+
+---
+
+### [tooling][2026-09-27][fix/dry-run-read-only]
+source_spec: — (quick-win; Work Log `.agentcortex/context/archive/fix-dry-run-read-only-20260927.md`)
+source_sha: 3d3fdf2
+
+- [CONSTRAINT] `--dry-run` writes nothing into the target: every step that deletes or moves
+  (sidecar cleanup, legacy migration) runs after the dry-run branch or behind `$DRY_RUN`.
+  The only remaining side effect is creating a missing target directory, empty.
+- [DECISION] The dry run reports legacy paths instead of migrating them, so its preview
+  lists statuses as they are before migration.
