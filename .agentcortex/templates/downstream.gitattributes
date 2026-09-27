@@ -1,13 +1,12 @@
 # Agentic OS line endings (installed from .agentcortex/templates/downstream.gitattributes).
 #
-# These rules cover only the files Agentic OS installs and the Markdown its
-# validators read at the top of docs/specs, docs/architecture, docs/adr and
-# docs/reviews. Your product's own files are not covered, so they keep your
-# repository's settings. text=auto leaves binary files, and files already
-# committed with CRLF, alone.
-# Earlier versions installed repo-wide rules here (*.md *.py *.json *.sh *.yaml
-# *.yml text eol=lf; *.ps1 *.cmd *.bat text eol=crlf; * text=auto). If your copy
-# still has them, delete them. Add rules for your own files below this block.
+# These rules cover only the files Agentic OS installs, plus .githooks/ (a git
+# hook must be LF to run). Your product's own files are not covered, so they
+# keep your repository's settings. text=auto leaves binary files, and files
+# already committed with CRLF, alone.
+# Up to v1.8.28 this file set line endings for every file in the repository;
+# if your copy still has those rules, delete them. Add rules for your own files
+# below this block.
 AGENTS.md                    text=auto eol=lf
 CLAUDE.md                    text=auto eol=lf
 GEMINI.md                    text=auto eol=lf
@@ -16,16 +15,10 @@ GEMINI.md                    text=auto eol=lf
 .agent/**                    text=auto eol=lf
 .agents/**                   text=auto eol=lf
 .githooks/**                 text=auto eol=lf
-.claude/agents/**            text=auto eol=lf
-.claude/commands/**          text=auto eol=lf
 .codex/INSTALL.md            text=auto eol=lf
 .antigravity/rules.md        text=auto eol=lf
 codex/rules/default.rules    text=auto eol=lf
 installers/deploy_brain.sh   text=auto eol=lf
-docs/specs/*.md              text=auto eol=lf
-docs/architecture/*.md       text=auto eol=lf
-docs/adr/*.md                text=auto eol=lf
-docs/reviews/*.md            text=auto eol=lf
 
 # The Windows scripts Agentic OS installs stay CRLF.
 .agentcortex/**/*.ps1        text eol=crlf

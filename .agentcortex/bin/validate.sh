@@ -963,7 +963,8 @@ if [[ -d "$ROOT/docs/architecture" ]]; then
   for domain_doc in "$ROOT"/docs/architecture/*.md; do
     [[ -f "$domain_doc" ]] || continue
     [[ "$domain_doc" == *.log.md ]] && continue
-    if ! grep -Eq '^status:[[:space:]]*living$' "$domain_doc" || ! grep -Eq '^domain:[[:space:]]*[^[:space:]]+' "$domain_doc"; then
+    # [[:space:]]*$ absorbs the CR of a doc committed with CRLF (docs/ has no line-ending rule, #215).
+    if ! grep -Eq '^status:[[:space:]]*living[[:space:]]*$' "$domain_doc" || ! grep -Eq '^domain:[[:space:]]*[^[:space:]]+' "$domain_doc"; then
       printf '  domain doc candidate missing full L1 contract (status: living + domain:): %s\n' "$domain_doc"
       domain_doc_frontmatter_warn=$((domain_doc_frontmatter_warn + 1))
     fi
@@ -1021,7 +1022,7 @@ for review in "$ROOT"/docs/reviews/*.md; do
         printf '  routing_actions target_doc does not exist yet: %s (%s)\n' "$review" "$target"
         routing_action_warnings=$((routing_action_warnings + 1))
       fi
-    done < <(sed -n 's/^[[:space:]]*target_doc:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' "$review")
+    done < <(tr -d '\r' < "$review" | sed -n 's/^[[:space:]]*target_doc:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p')
     while IFS= read -r status; do
       [[ -z "$status" ]] && continue
       case "$status" in

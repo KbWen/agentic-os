@@ -344,6 +344,35 @@ routing_actions:
 
 
 @pytest.mark.slow
+@requires_bash
+def test_crlf_product_docs_parse_like_lf_docs_sh() -> None:
+    """#215: the installed .gitattributes no longer pins docs/ to LF, so a doc committed
+    with CRLF reaches the validator with its CRs. The two `$`-anchored bash parsers (the
+    domain doc's `status: living`, the no-Python `target_doc`) must accept it. MSYS grep
+    and sed drop the CR on Windows, so only a Linux/macOS run can fail here."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        arch = target / "docs" / "architecture"
+        arch.mkdir(parents=True, exist_ok=True)
+        (arch / "payments.md").write_bytes(b"---\r\nstatus: living\r\ndomain: payments\r\n---\r\n# Payments\r\n")
+        reviews = target / "docs" / "reviews"
+        reviews.mkdir(parents=True, exist_ok=True)
+        (reviews / "2099-01-01-crlf.md").write_bytes(
+            b"# CRLF review\r\n\r\n```yaml\r\nrouting_actions:\r\n"
+            b'  - finding: "x"\r\n    target_doc: "docs/architecture/payments.md"\r\n'
+            b'    status: merged\r\n    owner: "test"\r\n```\r\n'
+        )
+        proc = subprocess.run(
+            [bash, str(target / ".agentcortex" / "bin" / "validate.sh"), "--no-python"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(target),
+        )
+        out = proc.stdout + proc.stderr
+        assert not [l for l in out.splitlines() if "missing full L1 contract" in l and "payments.md" in l], out[-1500:]
+        assert "routing_actions target_doc must point to" not in out, out[-1500:]
+        assert "routing_actions target_doc does not exist yet" not in out, out[-1500:]
+
+
+@pytest.mark.slow
 @requires_windows
 @requires_bash
 @requires_powershell
