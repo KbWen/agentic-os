@@ -103,7 +103,10 @@ def test_local_edit_without_a_framework_change_is_kept_without_a_sidecar(install
     assert counts["updated"] == 0, "a no-op update writes nothing"
     assert (installed / SSOT).read_bytes() == ssot_before
     assert (installed / ".agentcortex-manifest").read_bytes() == manifest_before, "manifest must not churn"
-    status = subprocess.run([git, "status", "--porcelain"], cwd=installed, capture_output=True, text=True).stdout
+    status = subprocess.run(
+        [git, "status", "--porcelain"], cwd=installed,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    ).stdout
     assert status == "", status
 
 
