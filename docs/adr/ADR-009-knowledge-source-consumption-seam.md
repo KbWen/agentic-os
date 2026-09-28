@@ -41,7 +41,7 @@ markdown KB without requiring the reference KB's tooling.
   `kb-lint.py` + CI, and a `_kb-principles` section literally titled
   *"機器可消費原則（給程式化消費端，如 AgentCortex 治理層）"* — it was optimized
   specifically to be consumed by this framework. (verified `manifest.json`)
-- **Strongest fit = `/review`.** Each standard ships a lint-enforced, uniform
+- **Strongest fit = `/review`.** Each of the reference KB's standards ships a lint-enforced, uniform
   `## 自我稽核 Checklist` (32/36 + variants, listed in manifest `h2`) = ready-made
   review criteria; `**AI 最常漏掉**` is a consistent grep-able plan-risk label.
 - **A 6-expert panel + a 3-scenario simulation (run twice, re-validated after the
@@ -70,11 +70,14 @@ external markdown KB — and can never relax a gate.**
    **Absent → zero reads, zero tokens, zero behavior change** — the no-KB 99%
    inherit ADR-007's proven `N1` exactly.
 2. **Consumption ladder (fail-closed, "broken == absent").**
-   (1) KB has `manifest.json` and `schema_version` matches the known shape →
-   **programmatic query** (`task_routing` + per-page `sha`/`approx_tokens`/`status`),
+   (1) KB has a JSON entrypoint (`manifest.json`, or an index whose line 1 is a
+   `_meta` record) with an **integer** `schema_version` — additive-only, so a
+   higher version is still consumed *(corrected 2026-09-28; was "matches the known
+   shape" — see Amendment)* → **programmatic query** (`task_routing` + per-page `sha`/`approx_tokens`/`status`),
    **never full-load** (the manifest is ~53K tokens — query it, don't paste it);
    (2) else a markdown index (`llms.txt` / `_index.md`) → read that;
-   (3) else / unreadable path / malformed manifest / unknown schema → treat as
+   (3) else / unreadable path / malformed manifest / missing or non-integer
+   `schema_version` → treat as
    **absent**: behavior UNCHANGED (own judgment + web-if-available), one advisory,
    never block. **BYO floor = a readable markdown index; the manifest is an
    OPTIONAL accelerator.** A malformed manifest is **skipped whole**, never
@@ -82,9 +85,12 @@ external markdown KB — and can never relax a gate.**
 3. **One scope-detected consult, peer to `doc-lookup`** (`bootstrap.md §3.6`):
    feature/arch → `/plan` + `/review`, `/implement` on-match; hotfix/quick-win
    on-match ≤1 page; **tiny-fix NEVER**. Resolve standards via manifest
-   `task_routing`; **tiers (必看/建議/可略) are read from
-   `manifest.entry.routing_playbook`, NOT the manifest** (they are not in it);
-   `/review` pulls the uniform `## 自我稽核 Checklist` as criteria. The detector is
+   `task_routing`; **if the KB provides reading tiers** (the reference KB's
+   必看/建議/可略), they are read from where that KB keeps them (there,
+   `manifest.entry.routing_playbook`), NOT assumed to be in the manifest;
+   `/review` pulls the KB's self-audit checklist section as criteria — the section
+   is located by an anchor the **KB declares**, never by a heading the framework
+   hard-codes *(corrected 2026-09-28 — see Amendment)*. The detector is
    `knowledge_sources` present **AND** task in-scope — never an unconditional
    "consult the KB" (which would be a cost + dangling reference for the no-KB 99%).
 4. **Data discipline — KB content is DATA, not instructions.** All KB content
@@ -195,3 +201,84 @@ external, optional, per-adopter directory); the **mixed/cross-module
 `task_routing` fan-out rule** (single-domain keys → fan-out-per-domain + union +
 fall-to-`standards-by-product`) — an implementation detail of the `§3.6` consult,
 specified in the feature spec, not this ADR.
+
+## Amendment (2026-09-28): KB-declared section anchors, additive `schema_version`, visible UNREADABLE
+
+This amendment exists because this ADR's own `review_trigger` fired: a consumed KB's
+machine contract changed. The reference KB now puts a `_meta` record on line 1 of its
+JSONL index (`schema_version`, `kb_version`, `task_routing`, and a `digest` block
+`{dir, applies_to, anchors: {risks, checklist}, instruction}`); its manifest carries
+`schema_version` and the same `digest` object at the top level, ahead of `pages`. Each
+standard's row gets a `digest` path plus `digest_tokens`; other rows have no `digest`
+field. Each digest starts with an HTML comment carrying `sha <12 hex>` that must equal
+the row's `sha`. `schema_version` only ever increases.
+
+Re-reading the Stage-1 text against that change found three defects, and a KB-side pre-mortem added a fourth gap (D below):
+
+1. **Decision 3 named one KB's own headings as what `/review` and `/plan` pull.** The
+   shipped `docs/specs/knowledge-source-seam.md` repeats them, and `bootstrap.md §3.6`
+   paraphrased them as the sections to read. A KB brought by anyone else has no such
+   headings, so the consult extracted nothing and nothing reported it: the seam
+   degraded silently for every KB but one.
+2. **"`schema_version` matches the known shape" (Decision 2) was not testable**, and
+   the most natural reading classified a newer, additive schema as absent.
+3. **"One advisory" for an unreadable KB did not say where it goes.** Recorded only in
+   the Work Log, it was invisible to the person who declared the KB.
+
+Decisions (A–C amend Decisions 2 and 3, D is new, E updates the adopter guidance; everything
+else stands):
+
+- **A. Section anchors are declared by the KB, never by the framework.** The KB
+  declares `digest` at the manifest's top level (entrypoint `manifest.json`) or in the
+  index's line-1 `_meta` (entrypoint `index.jsonl`). The consult then reads the routed
+  standard's `digest` file and checks its first-line `sha` against the row's `sha` — a
+  mismatch means the digest is stale. A row with no `digest` field or an empty one, or a
+  digest file that is missing or unreadable, counts the same; in every case the section
+  is taken from the page instead. `/plan` and `/implement` (on-match) take the section named by
+  `digest.anchors.risks`, `/review` the one named by `.checklist`. A KB with no
+  digest or no anchors, or a file without the anchored heading, is consulted by choosing
+  sections from the routed page's `summary` and headings, within the existing token budget.
+  The `sha` comparison is in-session drift detection, not the cross-session read-skip that
+  Decision 5 gates on `manifest_trusted`; the digest is a KB-derived excerpt and the page stays
+  authoritative (Decision 4). Accepted risk: a page edited without regenerating the KB's outputs
+  leaves row and digest stale together, and the digest is still used; keeping outputs regenerated
+  is the KB's CI job, as for the manifest.
+- **B. `schema_version` is additive-only.** Any integer is accepted; known fields are
+  read and unknown ones ignored; a higher version never makes a KB absent. Missing or
+  non-integer is malformed → UNREADABLE (no third state). The check matches
+  `"schema_version"\s*:\s*<int>` as text in the head of the manifest (or reads the index's
+  line-1 `_meta`), without parsing the whole JSON, so a truncated head is not misread;
+  only if the head lacks it is the whole file searched (not loaded), which also covers a BYO
+  manifest that orders its fields differently. This applies to JSON entrypoints; a markdown
+  index (`llms.txt` / `_index.md`) only has to be readable. A manifest that passes the head
+  check but fails to parse at consult time falls down the ladder (index, then absent).
+- **C. A declared-but-UNREADABLE KB is visible.** Besides the Work Log record,
+  bootstrap shows one non-blocking line in its chat output. With no
+  `knowledge_sources` block, bootstrap stays silent (present-only unchanged).
+- **D. A KB clone off clean `main` is flagged, not demoted.** When the KB root is its own git
+  repo (its top level) and is not on a clean `main` / `master`, bootstrap appends
+  `(WARN: KB not on clean main)` to the `<id>→OK@<kb_version>` record and shows it on one
+  bootstrap line. The KB is still consulted and no gate changes: a checked-out feature
+  branch or uncommitted edit is unreviewed content, which the reader should know about,
+  not a reason to drop the consult.
+- **E. `${ACX_KB_PATH}` is optional.** Its value is the clone root; a literal path is the
+  recommended default because tool processes spawned by a host may not inherit the
+  variable.
+
+| Change | Surface | Tier |
+|---|---|---|
+| A — KB-declared anchors, digest `sha` check, BYO fallback | `bootstrap.md §3.6` `kb-consult` row | **Honor-system** (consult quality, per the Honest enforcement boundary above) |
+| B — additive `schema_version`, head-first check | `bootstrap.md §1b` | **Honor-system** |
+| C — visible UNREADABLE line | `bootstrap.md §1b` | **Honor-system** |
+| D — KB-not-on-clean-main WARN | `bootstrap.md §1b` | **Honor-system** (no validator reads the adopter's KB path; the trust model above keeps it that way) |
+| E — optional `${ACX_KB_PATH}`, literal default | adopter guide + `.example` | Informational |
+
+The structural T1 check is unchanged: `validate.*` still assert the `kb-consult` row
+ships. No validator or schema change: the digest fields live in the KB, not in
+`downstream-capabilities.yaml`, so the `knowledge_sources` allowlist is untouched.
+
+The shipped specs are not edited (`spec-intake.md §8b`); the change is specified in
+`docs/specs/kb-seam-anchor-neutrality.md`, which EXTENDS
+`docs/specs/knowledge-source-seam.md`. Heading names quoted in this ADR's Evidence
+section, and in the shipped specs, describe one reference KB at one point in time. They
+are an example, not framework vocabulary.

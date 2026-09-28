@@ -16,12 +16,23 @@
 
 knowledge_sources:
   - id: kb-main
-    # path: ${ACX_KB_PATH} expands to the KB clone ROOT. Set the env var once per machine --
+    # path: the KB clone ROOT. A literal path is the recommended default (a relative one resolves from
+    # the project root), because tool processes a host spawns may not inherit environment variables.
+    # Optional alternative: path: "${ACX_KB_PATH}" -- the env var holds the clone ROOT
     #   bash:        export ACX_KB_PATH=/path/to/knowledge-base
     #   PowerShell:  $env:ACX_KB_PATH = 'C:/path/to/knowledge-base'
-    # A literal path like "../knowledge-base" also works. Read ONLY when this block is present.
-    path: "${ACX_KB_PATH}"
-    # entrypoint (relative to the resolved root): outputs/manifest.json, or llms.txt / _index.md
+    # The env var is read ONLY when this block is present; unset -> UNREADABLE (treated as absent).
+    # Keep the KB clone on a clean, merged main: otherwise bootstrap records and shows
+    # "(WARN: KB not on clean main)" (a warning only; the KB is still consulted).
+    path: "../knowledge-base"
+    # entrypoint (relative to the resolved root): outputs/manifest.json, a JSONL index whose line 1
+    # is a _meta record (only line 1 + matching rows are read), or llms.txt / _index.md.
+    # schema_version is additive-only: any integer is accepted, unknown fields are ignored.
+    # Optional in the KB: a digest block with KB-declared section anchors, at the manifest top level
+    # (entrypoint manifest.json) or in the index's line-1 _meta (entrypoint index.jsonl), e.g.
+    #   anchors: {risks: "Common AI mistakes", checklist: "Self-audit checklist"}
+    # The framework hard-codes no heading; a KB without digest/anchors still works.
+    # Guide: .agentcortex/docs/guides/connecting-a-knowledge-base.md
     entrypoint: outputs/manifest.json
     # role: FIXED to advisory -- a KB can never be authority
     role: advisory
