@@ -258,6 +258,11 @@ def test_skill_edit_sidecars_and_core_rule_force_updates() -> None:
         custom.parent.mkdir(parents=True, exist_ok=True)
         custom.write_text("# custom-acme\nproject-only skill\n", encoding="utf-8")
 
+        # ADR-005 amendment (#201): a sidecar carries news, so the framework must have
+        # changed the skill since the baseline -- simulated by an older recorded hash.
+        _set_manifest_hash(target / ".agentcortex-manifest", ".agents/skills/api-design/SKILL.md",
+                           hashlib.sha256(b"an older api-design").hexdigest())
+
         second = _deploy(target)
         assert second.returncode == 0, f"update deploy failed:\n{second.stderr}"
 
@@ -987,6 +992,10 @@ def test_genuine_content_edit_still_sidecars_after_eol_fix() -> None:
             skill.read_bytes().replace(b"\r\n", b"\n")  # normalize to LF baseline
             + b"\n<!-- genuine user edit -->\n"
         )
+        # ADR-005 amendment (#201): a sidecar carries news, so the framework must have
+        # changed the skill since the baseline -- simulated by an older recorded hash.
+        _set_manifest_hash(manifest, ".agents/skills/api-design/SKILL.md",
+                           hashlib.sha256(b"an older api-design").hexdigest())
 
         second = _deploy(target)
         assert second.returncode == 0, f"re-deploy failed:\n{second.stderr}"

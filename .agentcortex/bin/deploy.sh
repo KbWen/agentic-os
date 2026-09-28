@@ -43,6 +43,8 @@ fi
 COUNT_UPDATED=0
 COUNT_SKIPPED=0
 COUNT_NEW=0
+COUNT_UNCHANGED=0
+COUNT_KEPT=0
 COUNT_REMOVED=0
 COUNT_CORE_OVERWRITTEN=0
 
@@ -190,12 +192,19 @@ _DEPLOY_QUEUE_TMP=""
 clean_acx_incoming() {
     local count=0
     while IFS= read -r -d '' f; do
+        # ADR-005 amendment (#201): an offer the adopter has not merged and deleted yet
+        # is re-issued below (sidecar_was_pending), so record it before removing it.
+        printf '%s\n' "${f#"$TARGET"/}" >> "$PENDING_SIDECARS_TMP"
         rm -f "$f"
         count=$((count + 1))
     done < <(find "$TARGET" -name '*.acx-incoming' -print0 2>/dev/null || true)
     if [ "$count" -gt 0 ]; then
         echo "  Cleaned $count old .acx-incoming sidecar(s)"
     fi
+}
+
+sidecar_was_pending() {
+    [ -s "$PENDING_SIDECARS_TMP" ] && grep -qxF "$1.acx-incoming" "$PENDING_SIDECARS_TMP"
 }
 
 # --- Smart deploy a single file (internal — called with pre-computed hashes) ---
@@ -258,8 +267,10 @@ _deploy_file_now() {
             if [ "$src_hash" != "$dst_hash" ]; then
                 cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
                 [ -n "$do_chmod" ] && chmod +x "$dst"
+                COUNT_UPDATED=$((COUNT_UPDATED + 1))
+            else
+                COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
             fi
-            COUNT_UPDATED=$((COUNT_UPDATED + 1))
         else
             # Scaffold/wrapper: check if user modified
             if [ -z "$old_manifest_hash" ]; then
@@ -279,7 +290,7 @@ _deploy_file_now() {
                     return 0
                 fi
                 # Same content — no-op; record the matching hash for future runs.
-                COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
             else
                 if [ "$dst_hash" = "$old_manifest_hash" ]; then
                     # User didn't modify — safe to update.
@@ -287,20 +298,33 @@ _deploy_file_now() {
                     if [ "$src_hash" != "$dst_hash" ]; then
                         cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
                         [ -n "$do_chmod" ] && chmod +x "$dst"
+                        COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                    else
+                        COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
                     fi
-                    COUNT_UPDATED=$((COUNT_UPDATED + 1))
                 else
-                    # User modified — skip and write sidecar
-                    if [ "$src_hash" != "$dst_hash" ]; then
+                    # User modified. ADR-005 amendment (2026-09-26, #201): the baseline is the
+                    # framework version last offered to the adopter. Offer it (sidecar) when the
+                    # framework changed since then, or when the last offer is still unmerged
+                    # (its sidecar existed when this run started); otherwise keep the copy
+                    # silently -- a sidecar on every deploy teaches adopters to ignore it.
+                    if [ "$src_hash" = "$dst_hash" ]; then
+                        # User modified but result is same as new version — no action needed
+                        COUNT_UNCHANGED=$((COUNT_UNCHANGED + 1))
+                    elif [ "$src_hash" != "$old_manifest_hash" ] || sidecar_was_pending "$rel"; then
                         cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst.acx-incoming"
                         echo "  [SKIP] $rel (locally modified; new version at $rel.acx-incoming)"
                         COUNT_SKIPPED=$((COUNT_SKIPPED + 1))
-                        # Keep the OLD manifest hash so next deploy still detects modification
-                        record_deployed "$tier" "$rel" "$old_manifest_hash"
+                        # The offered version becomes the baseline. The local edit is still
+                        # detected (the copy differs from it), and once the adopter merges and
+                        # deletes the sidecar it does not come back until the framework
+                        # changes the file again.
+                        record_deployed "$tier" "$rel" "$src_hash"
                         return 0
                     else
-                        # User modified but result is same as new version — no action needed
-                        COUNT_UPDATED=$((COUNT_UPDATED + 1))
+                        COUNT_KEPT=$((COUNT_KEPT + 1))
+                        record_deployed "$tier" "$rel" "$old_manifest_hash"
+                        return 0
                     fi
                 fi
             fi
@@ -552,7 +576,8 @@ for raw in lines:
 
 DEPLOYED_FILES_TMP="$(mktemp)"
 _DEPLOY_QUEUE_TMP="$(mktemp)"
-trap 'rm -f "$DEPLOYED_FILES_TMP" "$_DEPLOY_QUEUE_TMP" "${_src_list_tmp:-}" "${_dst_list_tmp:-}" "${_xlat_tmp:-}" "${TMP_STRIPPED_GITIGNORE:-}" "${TMP_NORMALIZED_GITIGNORE:-}" "${GITIGNORE:-}.tmp"' EXIT
+PENDING_SIDECARS_TMP="$(mktemp)"
+trap 'rm -f "$DEPLOYED_FILES_TMP" "$_DEPLOY_QUEUE_TMP" "$PENDING_SIDECARS_TMP" "${_src_list_tmp:-}" "${_dst_list_tmp:-}" "${_xlat_tmp:-}" "${TMP_STRIPPED_GITIGNORE:-}" "${TMP_NORMALIZED_GITIGNORE:-}" "${GITIGNORE:-}.tmp"' EXIT
 
 SOURCE_COMMIT="$(get_source_commit)"
 IS_UPDATE=false
@@ -1480,7 +1505,14 @@ fi
     echo "---"
     sort -k2 "$DEPLOYED_FILES_TMP"
 } > "$MANIFEST_FILE.tmp"
-mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+# Same content apart from deployed_at (CR-insensitive, #202): keep the tracked file, so a
+# no-op update does not show up in `git status` (#201).
+if [ -f "$MANIFEST_FILE" ] \
+   && [ "$(grep -v '^deployed_at:' "$MANIFEST_FILE.tmp" | tr -d '\r')" = "$(grep -v '^deployed_at:' "$MANIFEST_FILE" | tr -d '\r')" ]; then
+    rm -f "$MANIFEST_FILE.tmp"
+else
+    mv "$MANIFEST_FILE.tmp" "$MANIFEST_FILE"
+fi
 
 # ============================================================
 # Summary
@@ -1492,9 +1524,12 @@ echo "Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
 echo ""
 if $IS_UPDATE; then
     if [ "$COUNT_CORE_OVERWRITTEN" -gt 0 ]; then
-        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed / ${COUNT_UNCHANGED} unchanged / ${COUNT_KEPT} kept"
     else
-        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed / ${COUNT_UNCHANGED} unchanged / ${COUNT_KEPT} kept"
+    fi
+    if [ "$COUNT_KEPT" -gt 0 ]; then
+        echo "  kept = your edits to files the framework has not changed since it last offered them (no sidecar needed)."
     fi
 else
     echo "Installed ${TOTAL_DEPLOYED} files."
