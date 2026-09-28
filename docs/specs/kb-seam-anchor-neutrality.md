@@ -1,7 +1,7 @@
 ---
 id: kb-seam-anchor-neutrality
 title: "KB-Seam Anchor Neutrality (KB-declared digest anchors + additive schema_version)"
-status: frozen
+status: shipped
 classification: feature
 primary_domain: downstream-adaptability
 adr: docs/adr/ADR-009-knowledge-source-consumption-seam.md
@@ -12,7 +12,7 @@ created: 2026-09-28
 
 # Spec: KB-Seam Anchor Neutrality
 
-> **Status**: frozen at `/review` PASS (2026-09-28); `/ship` sets it to `shipped`.
+> **Status**: shipped 2026-09-28 (frozen at `/review` PASS).
 > Decision record: ADR-009 §Amendment (2026-09-28).
 
 ## Problem

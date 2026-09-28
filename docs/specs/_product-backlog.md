@@ -3,7 +3,7 @@ status: living
 title: Product Backlog
 source: governance-bloat-review-2026-04-12 + optimization-round-2026-05-04 + optimization-research-2026-06-02
 created: 2026-04-12
-last_updated: 2026-09-27
+last_updated: 2026-09-28
 ---
 
 # Product Backlog

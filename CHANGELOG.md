@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+**Knowledge-base seam: section anchors now come from the knowledge base, not the framework** (ADR-009 amendment, `docs/specs/kb-seam-anchor-neutrality.md`). Only adopters who declare `knowledge_sources` see a difference; without that block, bootstrap still reads nothing and prints nothing.
+
+- **Anchors are declared by the KB.** For a routed standard, `kb-consult` reads the row's `digest` and checks the `sha` on its first line against the row. It then takes the section named by the KB's own `digest.anchors`: `risks` for `/plan` and `/implement`, `checklist` for `/review`. A missing, empty or stale digest falls back to the same section of the page. No KB heading is hard-coded any more. A KB without digests or anchors is consulted by picking sections from the page's summary and headings.
+- **`schema_version` is additive.** Any integer is accepted, and a higher one never makes a KB absent. It is found by a text match in the head of a JSON entrypoint: the manifest's top level, or line 1 `_meta` of an `index.jsonl`.
+- **A declared KB that cannot be read is visible.** Bootstrap now shows one `⚠️ KB <id> UNREADABLE` line instead of only a Work Log note. A KB clone that is its own git repo and is not on a clean `main` / `master` gets `(WARN: KB not on clean main)`. Neither ever blocks a phase.
+- **`${ACX_KB_PATH}` is optional.** A literal path, resolved from the project root when relative, is the recommended default.
+- **Fixed along the way: a KB with only `llms.txt` was classified UNREADABLE.** The schema check was not scoped to JSON entrypoints, and main had the same defect. A markdown index now only has to be readable.
+
+**Weight:** the lifecycle token total went from 354,488 to 354,903. The 355,000 ceiling is unchanged.
+
+**Downstream delta:** three changed files reach an adopter: `.agent/workflows/bootstrap.md` (force-updated), `.agentcortex/docs/guides/connecting-a-knowledge-base.md`, and `.agentcortex/templates/downstream-capabilities.example.yaml` (scaffold). ADR-009, the spec and the backlog stay upstream.
+
+**Still open:** #217 (format-check the recorded `kb_version`) and #218 (keep the KB's routed order instead of reading the smallest page first).
+
 ## [1.8.29] - 2026-09-27
 
 Right after v1.8.28, the owner asked for a check that installing Agentic OS does not weigh a product down or change how it is developed.
