@@ -16,7 +16,7 @@
 
 **Downstream delta:** three changed files reach an adopter: `.agent/workflows/bootstrap.md` (force-updated), `.agentcortex/docs/guides/connecting-a-knowledge-base.md`, and `.agentcortex/templates/downstream-capabilities.example.yaml` (scaffold). ADR-009, the spec and the backlog stay upstream.
 
-**Still open:** #217 (format-check the recorded `kb_version`), #218 (keep the KB's routed order instead of reading the smallest page first) and #219 (agents often skip the `§1b` KB checks, measured in unprimed runs).
+**Still open:** #218 (keep the KB's routed order instead of reading the smallest page first; P1 — a read KB must not waste tokens) and #217 (format-check the recorded `kb_version`). #219 (agents often skip the `§1b` checks) was closed by the owner: an unread KB is acceptable.
 
 ## [1.8.29] - 2026-09-27
 
