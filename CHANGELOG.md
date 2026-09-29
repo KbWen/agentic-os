@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.8.30] - 2026-09-29
 
 **Knowledge-base seam: section anchors now come from the knowledge base, not the framework** (ADR-009 amendment, `docs/specs/kb-seam-anchor-neutrality.md`). Only adopters who declare `knowledge_sources` see a difference; without that block, bootstrap still reads nothing and prints nothing.
 
@@ -13,6 +13,11 @@
 - **The bootstrap chat template now has an optional `KB:` line** for the UNREADABLE / off-main line, so the output-ceiling rule no longer crowds it out (one unprimed run had recorded the WARN but not shown it). Paid for by trims.
 
 **Weight:** the lifecycle token total went from 354,488 to 354,868. The 355,000 ceiling is unchanged.
+
+**Verified before release, end to end.** Four unprimed sessions (sonnet ×2, opus ×2) ran `/bootstrap` → `/spec` → `/plan` on a database task in a freshly deployed project with a real KB declared, and were never told about the KB:
+- 4 of 4 consulted the right standard through its digest, never the whole page, checked the `sha`, and took only the risks section.
+- None read the irrelevant second routed page, and none was misled by KB content. The KB visibly improved every plan: a transaction per migration, NOT NULL enforced at the database, a rollback path and boundary-input tests.
+- Each consult cost about 5–7K tokens, about 1.3K of it the guidance itself; reading the whole page costs about 12K. The biggest remaining overhead is the routing table, which is folded into #218.
 
 **Downstream delta:** three changed files reach an adopter: `.agent/workflows/bootstrap.md` (force-updated), `.agentcortex/docs/guides/connecting-a-knowledge-base.md`, and `.agentcortex/templates/downstream-capabilities.example.yaml` (scaffold). ADR-009, the spec and the backlog stay upstream.
 
