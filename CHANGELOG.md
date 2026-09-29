@@ -10,11 +10,13 @@
 - **`${ACX_KB_PATH}` is optional.** A literal path, resolved from the project root when relative, is the recommended default.
 - **Fixed along the way: a KB with only `llms.txt` was classified UNREADABLE.** The schema check was not scoped to JSON entrypoints, and main had the same defect. A markdown index now only has to be readable.
 
-**Weight:** the lifecycle token total went from 354,488 to 354,903. The 355,000 ceiling is unchanged.
+- **The bootstrap chat template now has an optional `KB:` line** for the UNREADABLE / off-main line, so the output-ceiling rule no longer crowds it out (one unprimed run had recorded the WARN but not shown it). Paid for by trims.
+
+**Weight:** the lifecycle token total went from 354,488 to 354,868. The 355,000 ceiling is unchanged.
 
 **Downstream delta:** three changed files reach an adopter: `.agent/workflows/bootstrap.md` (force-updated), `.agentcortex/docs/guides/connecting-a-knowledge-base.md`, and `.agentcortex/templates/downstream-capabilities.example.yaml` (scaffold). ADR-009, the spec and the backlog stay upstream.
 
-**Still open:** #217 (format-check the recorded `kb_version`) and #218 (keep the KB's routed order instead of reading the smallest page first).
+**Still open:** #218 (keep the KB's routed order instead of reading the smallest page first; P1 — a read KB must not waste tokens) and #217 (format-check the recorded `kb_version`). #219 (agents often skip the `§1b` checks) was closed by the owner: an unread KB is acceptable.
 
 ## [1.8.29] - 2026-09-27
 
