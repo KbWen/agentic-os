@@ -4,6 +4,7 @@ created: 2026-10-05
 classification: feature
 primary_domain: document-governance
 backlog: 188
+signal_tier: none
 extends: downstream-fork-accommodation
 ---
 
