@@ -324,9 +324,14 @@ _deploy_file_now() {
             # Skip cp when src already matches dst (pure no-op).
             if [ "$src_hash" != "$dst_hash" ]; then
                 # Core still gets the framework version (ADR-005), but the adopter's
-                # file may be untracked or ignored, so back it up first (#188). Plain
-                # cp after rm -f: CP_FLAG=-n/-i must not skip or prompt for the backup.
-                rm -f "$dst.acx-local"
+                # file may be untracked or ignored, so back it up first (#188).
+                # Without a manifest an existing backup may be the only copy of an
+                # earlier original (e.g. an interrupted install), so never replace it.
+                if [ -e "$dst.acx-local" ] || [ -L "$dst.acx-local" ]; then
+                    echo "ERROR: $rel differs from the framework version and $rel.acx-local already exists; it may be your only copy of an earlier version. Move it out of the way and re-run. $rel was left unchanged and the deploy stopped." >&2
+                    exit 1
+                fi
+                # Plain cp: CP_FLAG=-n/-i must not skip or prompt for the backup.
                 if ! cp "$dst" "$dst.acx-local"; then
                     echo "ERROR: could not back up pre-existing $rel to $rel.acx-local; it was left unchanged and the deploy stopped." >&2
                     exit 1

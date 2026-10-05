@@ -586,11 +586,70 @@ def test_brownfield_backup_failure_stops_before_overwrite(env: dict | None) -> N
             "no completed manifest after a failed backup"
 
 
+@pytest.mark.parametrize("env", [None, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_brownfield_existing_backup_stops_before_overwrite(env: dict | None) -> None:
+    """AC-6 (amended 2026-10-05): without a manifest, deploy cannot tell whether an existing
+    .acx-local holds the adopter's only original, so it stops before touching that file."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        target = Path(td) / "proj"
+        rule = target / _BROWNFIELD_TRACKED
+        backup = rule.with_name(rule.name + ".acx-local")
+        rule.parent.mkdir(parents=True)
+        current, older = _user_bytes("current"), _user_bytes("older backup")
+        rule.write_bytes(current)
+        backup.write_bytes(older)
+
+        result = _run_brownfield(script, target, env)
+        assert result.returncode != 0, "an existing backup must stop a first install"
+        assert rule.read_bytes() == current, "the live file must not be replaced"
+        assert backup.read_bytes() == older, "the existing backup must not be overwritten"
+        error = next((line for line in result.stderr.splitlines() if line.startswith("ERROR:")), "")
+        assert f"{_BROWNFIELD_TRACKED}.acx-local" in error, result.stderr
+        assert "deployed successfully" not in result.stdout
+        assert not (target / ".agentcortex-manifest").exists()
+
+        backup.unlink()  # the adopter moves the old backup aside and re-runs
+        retry = _run_brownfield(script, target, env)
+        assert retry.returncode == 0, f"retry failed:\n{retry.stdout}\n{retry.stderr}"
+        assert backup.read_bytes() == current
+
+
+@requires_bash
+def test_brownfield_interrupted_install_retried_from_newer_source_keeps_original() -> None:
+    """Pre-mortem story: a first install stops partway (no manifest); the retry runs from a
+    newer framework version. The adopter's original must still exist afterwards."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        shim = Path(td) / "failing_backup_cp.sh"
+        shim.write_bytes(_FAILING_BACKUP_CP.replace("*.acx-local)", "*plan.md.acx-local)").encode("utf-8"))
+        target = Path(td) / "proj"
+        originals = {_BROWNFIELD_TRACKED: _user_bytes("rule"), _BROWNFIELD_UNTRACKED: _user_bytes("plan")}
+        for rel, data in originals.items():
+            (target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (target / rel).write_bytes(data)
+
+        first = _run_brownfield(script, target, {"BASH_ENV": shim.as_posix()})
+        assert first.returncode != 0 and "cp shim: refusing" in first.stderr, first.stderr
+        assert not (target / ".agentcortex-manifest").exists()
+
+        newer = source_root / _BROWNFIELD_TRACKED
+        newer.write_bytes(newer.read_bytes() + b"\n<!-- newer framework release -->\n")
+        _run_brownfield(script, target)
+        _run_brownfield(script, target)  # an adopter may simply re-run again
+
+        found = [p for p in target.rglob("*") if p.is_file() and p.read_bytes() == originals[_BROWNFIELD_TRACKED]]
+        assert found, "the adopter's original rule bytes must survive the retries"
+
+
 @pytest.mark.parametrize("cp_flag", ["", "-n"], ids=["default", "cp-n"])
 @requires_bash
-def test_brownfield_refreshes_older_backup_and_honors_cp_flag(cp_flag: str) -> None:
-    """AC-6: a stale .acx-local is replaced by the current pre-overwrite bytes; CP_FLAG=-n
-    neither skips the backup nor gets reported as an overwrite it did not perform."""
+def test_brownfield_cp_flag_backs_up_and_reports_truthfully(cp_flag: str) -> None:
+    """AC-3/AC-6: the backup is written whatever CP_FLAG says, and CP_FLAG=-n is not
+    reported as an overwrite it did not perform."""
     with tempfile.TemporaryDirectory() as td:
         source_root = Path(td) / "source"
         script = _brownfield_source(source_root)
@@ -600,11 +659,10 @@ def test_brownfield_refreshes_older_backup_and_honors_cp_flag(cp_flag: str) -> N
         rule.parent.mkdir(parents=True)
         original = _user_bytes("current")
         rule.write_bytes(original)
-        backup.write_bytes(_user_bytes("older backup"))
 
         result = _run_brownfield(script, target, {"CP_FLAG": cp_flag})
         assert result.returncode == 0, f"deploy failed:\n{result.stdout}\n{result.stderr}"
-        assert backup.read_bytes() == original, "the backup must hold the current pre-deploy bytes"
+        assert backup.read_bytes() == original, "the backup must hold the pre-deploy bytes"
         if cp_flag == "-n":
             assert rule.read_bytes() == original, "-n keeps the live file"
             assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is None, \

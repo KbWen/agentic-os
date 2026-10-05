@@ -52,7 +52,7 @@ permission errors before that branch; it is **not** red-test evidence.
 | AC-3 | Each protected collision prints `[OVERWRITE]` with the relative path and actual backup path, and increments the existing `COUNT_CORE_OVERWRITTEN` summary. No message may claim a backup that was not written. |
 | AC-4 | Backup failure exits nonzero before replacing the affected live file. Its original bytes remain intact, and the run does not emit a successful completed-deploy summary or publish a completed manifest. Earlier file operations are not rolled back transactionally. |
 | AC-5 | A missing core destination or one with the same normalized content creates no backup or overwrite notice. A repeat deploy of an unchanged protected file leaves its existing backup intact and does not re-report a collision. CRLF-only differences use the existing normalization rule. |
-| AC-6 | An existing `.acx-local` is a single-generation backup: a new collision refreshes it with the current pre-overwrite live bytes, as already done for updates. Backup creation must not silently skip or prompt under `CP_FLAG=-n` or `-i`; preserve the existing live-copy flag semantics. Test `-n` explicitly, without demanding a live overwrite when that flag forbids one. |
+| AC-6 | *(Amended 2026-10-05, owner-delegated after review.)* On a first install, an existing `<path>.acx-local` (file, directory or link) for a colliding core file stops the deploy nonzero before that file is touched, naming the backup; the adopter moves it aside and re-runs. Without a manifest, deploy cannot tell whether it holds the only copy of an earlier original (an interrupted install retried from a newer source). Updates keep refreshing their single-generation backup as before. Backup creation must not silently skip or prompt under `CP_FLAG=-n` or `-i`; preserve the existing live-copy flag semantics. Test `-n` explicitly, without demanding a live overwrite when that flag forbids one. |
 | AC-7 | Batch hashing and `ACX_FORCE_PERFILE=1` satisfy the same contract. A Windows `deploy.ps1` behavioral smoke confirms the wrapper inherits it; the wrapper implementation stays unchanged unless a concrete defect requires scope review. |
 | AC-8 | Existing scaffold/wrapper preservation, edited-skill sidecars, core update backups, dry-run behavior, manifest format, deployed-file membership, and custom-* namespace behavior remain compatible. |
 | AC-9 | ADR-005 and INSTALL.md describe both first-install core backups and scaffold `.acx-incoming` preservation accurately. INSTALL.md's blanket promise that all existing framework-managed files stay in place is narrowed. |
@@ -79,6 +79,10 @@ permission errors before that branch; it is **not** red-test evidence.
   governance delivery behind `.acx-incoming`.
 - [TRADEOFF] Keep one latest backup, matching existing core-update semantics,
   instead of adding versioned backup storage to a contained data-loss fix.
+- [DECISION] (2026-10-05, after review) A first install never replaces an existing
+  `.acx-local`; it stops and asks the adopter to move it aside. Chosen over refresh
+  (could destroy the only original after an interrupted install retried from a
+  newer source) and over new partial-install state (out of scope).
 - [CONSTRAINT] The preservation invariant is backup-before-replacement, including
   files absent from Git history; backup failure must stop the affected overwrite.
 - [CONSTRAINT] Preserve scaffold/wrapper sidecars and normalized-hash decisions;
@@ -182,8 +186,8 @@ Do not weaken skips, snapshots, or validators to obtain green output.
 
 - A failed backup must precede live replacement. Exercise this with an injected
   copy error; a green happy path alone is insufficient.
-- `.acx-local` may contain an older backup. Refreshing it is the existing
-  latest-only policy, so disclose it rather than promising historical recovery.
+- `.acx-local` may contain an older backup. Updates refresh it (latest-only); a
+  first install stops instead (amended AC-6). Disclose both; no history promise.
 - `CP_FLAG` affects live copy semantics. Ensure backup preservation is reliable
   without broadening this fix into flag-policy redesign or false overwrite claims.
 - Roll back the implementation with a normal revert of the task commits after
