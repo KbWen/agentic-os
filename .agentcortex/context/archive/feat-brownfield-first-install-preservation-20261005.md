@@ -20,7 +20,7 @@
 
 - Agent: Claude Opus 5.5; Platform: claude-code (desktop)
 - Session: `2026-10-05T08:24:28Z-claude-brownfield-exec`
-- Scope authorized: owner approved spec `brownfield-first-install-preservation`; implement, review, test, formal handoff, ship preparation. Do NOT merge. Codex performs final review.
+- Scope (owner request in chat, 2026-10-05): execute spec `brownfield-first-install-preservation` through handoff; Codex final review before merge.
 - Guardrails loaded: §1, §2, §4, §7, §8.1, §10 carried from planning session; Full mode.
 - Override: none (both supported locations absent).
 - Downstream-Capabilities: .agentcortex/context/private/downstream-capabilities.yaml (0 skills, subagent_policy=read-only, knowledge_sources: kb-main→OK@796bb16dadcc)
@@ -113,7 +113,7 @@ none
 - Continued from kbwen-main.md (planning on `main`): moved to task branch per spec §Execution step 1; bootstrap+plan receipts carried verbatim from that log (phases ran under Codex), not re-issued.
 - Spec status draft → frozen on owner approval (chat, 2026-10-05).
 - Backlog #188 Pending → In Progress (bootstrap §1 step 5).
-- Owner (chat, 2026-10-05): "繼續吧" in reply to the explicit AC-6 approve/ship options, then "當然要PR+merge" → AC-6 amendment approved; ship + merge authorized (merge only after CI green).
+- AC-6 amendment and ship/merge: owner decisions in chat 2026-10-05 after the Codex final review; see PR #461 description. Merge gated on all-green CI.
 - AC-30 routing: 7 pending routing_actions target document-governance/tooling/testing/governance logs (#201 Non-goal with its own PR #451; worklog keys, receipt labels, quick-win checks, look-timing, token map) — none concern this task's files; deferred to their own rows.
 - Codex final review: PASS on e80f5ad (.agentcortex/context/private/pr-461-codex-final-review.md); no new defect.
 - ADR Coverage Check: check_adr_coverage.py --paths deploy.sh test_deploy_tiering.py → exit 0, covered by ADR-005 (+ADR-008 for deploy.sh).
