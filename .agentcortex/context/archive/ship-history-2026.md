@@ -2,6 +2,16 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-install-day-copy-2026-09-27
+- Feature shipped: **what an adopter sees on install day now matches what happens (#207, #211 b/d/e, #213 option A).**
+  - #207: the managed `.gitignore` block no longer ignores `.cursor/`. Cursor project rules are meant to be committed, and the block covers the framework's own namespace only. The `managed[]` strip entry stays, so older blocks upgrade clean and adopter lines are untouched.
+  - #211b: `--dry-run` counts reference docs with the deploy's own globs (30 = 30, was 26), and names the `.githooks` sample and the `.gitignore` edit.
+  - #211d: the no-Python note says 3.9+.
+  - #211e: INSTALL.md says which in-place edits are force-updated (rules, workflows, with an `.acx-local` backup) and which keep the adopter's copy (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, skills, with an `.acx-incoming` sidecar).
+  - #213: INSTALL.md tells Claude Code users to start a task with the slash command itself, with the measured counts (6/6 with `/bootstrap`, 1/2 with the prose preface, 0/3 with no hint). The Stop-hook option was not taken.
+- **CI caught what the local runs missed.** Both validator twins listed `.cursor/` as a required pattern of the ignore block, so the first push failed every Framework Validation and Deploy Smoke job. The companion fix removes it from both lists. Under this host's load the local runs had skipped a full framework validate; `validate.ps1` on the fixed tree reports `fail=0`.
+- Tests: new `test_deploy_install_day_copy.py` (dry-run fidelity; old block with `.cursor/` upgrades clean). Each of four mutants fails its target test. The full suite ran in CI on this PR. SSoT sequence 177->178; Ship History rotated at cap 10.
+
 ### Ship-fix-gate-evidence-tooling-2026-09-26
 - Feature shipped: **the gate-evidence tooling now says what is wrong and no longer lets a stale review PASS stand (#209, #210, #214, #205, #211f).**
   - #210: `work logs missing gate evidence receipts` printed a bare count. It now names each log (no section / no receipt line) and prints the canonical receipt line, in both validator twins.

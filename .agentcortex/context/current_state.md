@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-05T11:31:32Z
+- **Last Updated**: 2026-10-05T13:14:13Z
 - **Last Verified**: 2026-10-05
-- **Update Sequence**: 187
+- **Update Sequence**: 188
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -115,6 +115,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.31-2026-10-05
+- Feature shipped: **v1.8.31** packages #461 (#188): a first install backs a differing pre-existing core file up to `<file>.acx-local` before replacing it, names it with `[OVERWRITE]`, and stops nonzero on a failed backup or an existing `.acx-local`. Adopter-facing delta: `.agentcortex/bin/deploy.sh` only.
+- The CHANGELOG names the two pre-existing defects found on the way and not fixed here: #220 (legacy migration deletes a project's own `tools/validate.*` on first install; P1) and #221 (`CP_FLAG` -i/-n; P2).
+- Tests: release guard 2 passed; docs pins 12 passed; full suite on the release PR's CI. After merge: lightweight `v1.8.31` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 187->188; Ship History rotated at cap 10.
+
 ### Ship-feat-brownfield-first-install-preservation-2026-10-05
 - Feature shipped: **a first install no longer silently destroys an adopter's file at a core-tier path (#188).** `deploy.sh` backs a differing pre-existing core file up to `<path>.acx-local` byte-for-byte, prints `[OVERWRITE] <path> (... previous version backed up to <path>.acx-local)`, and stops nonzero before replacing it if the backup fails or a `.acx-local` already exists (no manifest is written). `CP_FLAG=-n` prints `[KEPT]` instead of claiming an overwrite. Updates, scaffold sidecars, tiers, manifest and `deploy.ps1` unchanged. ADR-005 amended; INSTALL.md and both READMEs no longer promise existing files are never overwritten.
 - Review: three fresh-reviewer rounds plus a Codex final review. The pre-mortem found that an interrupted first install retried from a newer source could overwrite the backup holding the original; fixed fail-closed (AC-6 amended with owner approval). Two pre-existing defects reproduced and filed: #220 (legacy migration deletes an adopter's `tools/validate.*`), #221 (`CP_FLAG=-i` swallows a batch-queue record; `-n` update false overwrite claim).
@@ -186,13 +191,3 @@
 - **The self-review caught the first version's gap.** `--diff-filter=M` also silenced a deleted `current_state.md`, which the validator's required-files list does not cover. It is now `--diff-filter=a` plus a direct warning for a missing path. The test reaches the receipt lookup, so removing the `-e` guard fails it.
 - **Adopters get this by re-running the INSTALL copy step**, because the installed hook is a copy.
 - Tests: monorepo layout with a stub validator; `test_ac3` rewritten (add silent, edit and delete warn), since it used to pin warn-on-add; the no-Python notice via a non-startable shim; the banner hint. Six mutants each fail their target test. The full suite ran in CI (PR #449, green before the ship commit). SSoT sequence 178->179; Ship History rotated at cap 10.
-
-### Ship-fix-install-day-copy-2026-09-27
-- Feature shipped: **what an adopter sees on install day now matches what happens (#207, #211 b/d/e, #213 option A).**
-  - #207: the managed `.gitignore` block no longer ignores `.cursor/`. Cursor project rules are meant to be committed, and the block covers the framework's own namespace only. The `managed[]` strip entry stays, so older blocks upgrade clean and adopter lines are untouched.
-  - #211b: `--dry-run` counts reference docs with the deploy's own globs (30 = 30, was 26), and names the `.githooks` sample and the `.gitignore` edit.
-  - #211d: the no-Python note says 3.9+.
-  - #211e: INSTALL.md says which in-place edits are force-updated (rules, workflows, with an `.acx-local` backup) and which keep the adopter's copy (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, skills, with an `.acx-incoming` sidecar).
-  - #213: INSTALL.md tells Claude Code users to start a task with the slash command itself, with the measured counts (6/6 with `/bootstrap`, 1/2 with the prose preface, 0/3 with no hint). The Stop-hook option was not taken.
-- **CI caught what the local runs missed.** Both validator twins listed `.cursor/` as a required pattern of the ignore block, so the first push failed every Framework Validation and Deploy Smoke job. The companion fix removes it from both lists. Under this host's load the local runs had skipped a full framework validate; `validate.ps1` on the fixed tree reports `fail=0`.
-- Tests: new `test_deploy_install_day_copy.py` (dry-run fidelity; old block with `.cursor/` upgrades clean). Each of four mutants fails its target test. The full suite ran in CI on this PR. SSoT sequence 177->178; Ship History rotated at cap 10.

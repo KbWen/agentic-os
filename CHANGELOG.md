@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.31] - 2026-10-05
+
+**A first install no longer silently destroys your files at framework core paths** (#188, ADR-005 amendment, `docs/specs/brownfield-first-install-preservation.md`). Before this release, deploying into an existing project that already had, say, its own `.agent/rules/engineering_guardrails.md` or `.claude/commands/plan.md` replaced the file with no backup and no message. An untracked or gitignored original was gone for good.
+
+- **Backed up, then replaced.** On a first install (no `.agentcortex-manifest` yet), a pre-existing core file whose content differs from the framework version, ignoring line endings, is copied byte-for-byte to `<file>.acx-local`. Only then is it replaced. Each one is named in an `[OVERWRITE] <file> (... previous version backed up to <file>.acx-local)` line and counted in the end-of-run summary. To restore one, copy `<file>.acx-local` back over `<file>`.
+- **Fails closed.** If the backup cannot be written, the deploy stops with a nonzero exit before replacing that file and writes no manifest. If a `<file>.acx-local` already exists on a first install, the deploy also stops and asks you to move it aside first. Without a manifest it cannot tell whether that file is your only copy of an earlier original, which can happen after an interrupted install is retried from a newer version.
+- **Honest under `CP_FLAG`.** The backup is written regardless of `CP_FLAG`. When `CP_FLAG=-n` (or a declined `-i`) keeps your file, the run prints `[KEPT]` instead of claiming an overwrite.
+- Unchanged: updates (they already backed up locally modified core files), the `.acx-incoming` sidecar for `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / skills / templates, tiers, the manifest format and `deploy.ps1`. INSTALL.md and both READMEs no longer promise that existing files are never overwritten.
+
+**Downstream delta:** one adopter-facing file changed, `.agentcortex/bin/deploy.sh`. Everything else in this release (ADR-005, the spec, INSTALL.md, READMEs, tests, backlog) stays upstream.
+
+**Known, not fixed here (filed):** #220 (P1): on a first install, the legacy-path migration still deletes a project's own `tools/validate.sh` / `.ps1` / `.cmd`. If you have such files, back them up before the first deploy. #221 (P2): `CP_FLAG=-i` on the batch path can skip deploying a file, and a `-n` update reports an overwrite it did not perform.
+
 ## [1.8.30] - 2026-09-29
 
 **Knowledge-base seam: section anchors now come from the knowledge base, not the framework** (ADR-009 amendment, `docs/specs/kb-seam-anchor-neutrality.md`). Only adopters who declare `knowledge_sources` see a difference; without that block, bootstrap still reads nothing and prints nothing.
