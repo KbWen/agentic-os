@@ -577,7 +577,10 @@ def test_brownfield_backup_failure_stops_before_overwrite(env: dict | None) -> N
             f"the shim must actually intercept the backup copy:\n{result.stderr}"
         assert result.returncode != 0, "a failed backup must fail the deploy"
         assert rule.read_bytes() == original, "the original must not be replaced"
-        assert _BROWNFIELD_TRACKED in result.stderr, "the error must name the affected file"
+        error = next((line for line in result.stderr.splitlines()
+                      if line.startswith("ERROR: could not back up")), "")
+        assert _BROWNFIELD_TRACKED in error, \
+            f"deploy's own error must name the affected file:\n{result.stderr}"
         assert "deployed successfully" not in result.stdout
         assert not (target / ".agentcortex-manifest").exists(), \
             "no completed manifest after a failed backup"

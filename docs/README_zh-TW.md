@@ -177,7 +177,7 @@ git clone https://github.com/KbWen/agentic-os.git
 | 既有 repo 首次導入 Agentic OS | `/audit`(唯讀,零風險) |
 | 單一明確任務 | `/bootstrap` |
 
-既有檔案永遠不會被覆寫(會存成 `.acx-incoming` sidecar 讓你合併)。Windows / 無 Python 模式、更新、客製化、完整開場提示 → **[docs/INSTALL.md](INSTALL.md)**。
+既有的 `AGENTS.md`、`CLAUDE.md`、skills 等 scaffold 檔案會保留(框架版本另存為 `.acx-incoming` 讓你合併);`.agent/rules/` 等 core 路徑上的不同檔案會先備份成 `.acx-local` 再被取代。Windows / 無 Python 模式、更新、客製化、完整開場提示 → **[docs/INSTALL.md](INSTALL.md)**。
 
 ### 客製化而不衝突
 

@@ -334,7 +334,7 @@ _deploy_file_now() {
                 cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
                 [ -n "$do_chmod" ] && chmod +x "$dst"
                 if [ "$(compute_sha256_normalized "$dst")" = "$src_hash" ]; then
-                    echo "  [OVERWRITE] $rel (pre-existing file replaced by the core framework version; your copy backed up to $rel.acx-local)"
+                    echo "  [OVERWRITE] $rel (pre-existing file replaced by the core framework version; previous version backed up to $rel.acx-local)"
                     COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
                 else
                     echo "  [KEPT] $rel (pre-existing file kept by CP_FLAG=$CP_FLAG; a copy is at $rel.acx-local)"

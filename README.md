@@ -199,7 +199,7 @@ Then tell your agent: *"Read `AGENTS.md` and follow it. Do not claim completion 
 | Existing repo adopting Agentic OS | `/audit` (read-only, zero risk) |
 | Single concrete task | `/bootstrap` |
 
-Existing files are never overwritten (saved as `.acx-incoming` sidecars to merge). Windows / no-Python mode, updating, customizing without conflicts, turning the CI floor into a required check, and the full entry-point templates → **[docs/INSTALL.md](docs/INSTALL.md)**.
+Your existing `AGENTS.md`, `CLAUDE.md`, skills and other scaffold files are kept (the framework version lands beside them as `.acx-incoming` to merge); a different file at a core path such as `.agent/rules/` is backed up to `.acx-local`, then replaced. Windows / no-Python mode, updating, customizing without conflicts, turning the CI floor into a required check, and the full entry-point templates → **[docs/INSTALL.md](docs/INSTALL.md)**.
 
 ## Running the tests
 
