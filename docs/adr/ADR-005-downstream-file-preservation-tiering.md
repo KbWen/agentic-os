@@ -50,14 +50,14 @@ class; keep all framework-authoritative paths force-update.** Concretely, in
 `get_tier()`:
 
 - **Sidecar class** (manifest-mismatch → `.acx-incoming`, SKIP, never silent overwrite): `.agent/skills/**` and `.agents/skills/**`. Skills are *advisory instruction extensions* (they "CANNOT bypass gates" per AGENTS.md §Skill Safety), so a frozen skill costs only missed guidance improvements — and the loss is **visible** via the sidecar + warning. Unmodified skills still force-update normally (scaffold updates when the manifest hash matches).
-- **Force-update class** (unconditional overwrite, **no** sidecar — unchanged behavior): `.agent/rules/*`, `.agent/workflows/*`, `.agent/config.yaml`, `.agentcortex/bin/validate.*`, `.agentcortex/bin/deploy.*`, `.antigravity/rules.md`, `codex/rules/*`, `.agentcortex/tools/**`, `.agentcortex/metadata/**`. These are framework invariants; freezing them is governance drift.
+- **Force-update class** (always receives the framework version, **no** `.acx-incoming` sidecar; a differing local version is first backed up to `.acx-local` — see Amendment 2026-10-05): `.agent/rules/*`, `.agent/workflows/*`, `.agent/config.yaml`, `.agentcortex/bin/validate.*`, `.agentcortex/bin/deploy.*`, `.antigravity/rules.md`, `codex/rules/*`, `.agentcortex/tools/**`, `.agentcortex/metadata/**`. These are framework invariants; freezing them is governance drift.
 - **Reserved namespace (D)**: `custom-*` skill names (`.agent/skills/custom-*/`, `.agents/skills/custom-*/`) are reserved for downstream — the framework guarantees it will **never** ship a skill under that prefix. Net-new `custom-*` skills are already immune (deploy iterates source only); the reservation makes that a published contract so an upstream skill can never later collide with a downstream `custom-*` name. The 14 framework-owned skill names are published in `routing.md` so downstream can avoid collision.
 
 The core-branch code is **unchanged**; only the tier *classification* of skill
 paths moves. This reuses the existing scaffold sidecar machinery (`deploy.sh:154-216`)
 — minimal change, no new code path (DELETE-bias).
 
-**Compliance check**: after a local edit to `.agent/rules/engineering_guardrails.md`, a re-deploy overwrites it with **no** `.acx-incoming`; after a local edit to a framework-shipped skill, a re-deploy produces a `.acx-incoming`, leaves the original untouched, and increments `COUNT_SKIPPED`; a net-new `custom-*` skill remains untouched because the framework never ships that namespace.
+**Compliance check**: after a local edit to `.agent/rules/engineering_guardrails.md`, a re-deploy overwrites it with **no** `.acx-incoming` and keeps the edit in `.acx-local`; after a local edit to a framework-shipped skill, a re-deploy produces a `.acx-incoming`, leaves the original untouched, and increments `COUNT_SKIPPED`; a net-new `custom-*` skill remains untouched because the framework never ships that namespace.
 
 > **🚩 DEVIATION FROM USER'S LITERAL DIRECTIVE (surface for confirmation).** The
 > user chose "extend sidecar to **all** core tier". This ADR narrows that to
@@ -80,3 +80,12 @@ paths moves. This reuses the existing scaffold sidecar machinery (`deploy.sh:154
 **Negative / accepted**: a user who edits a framework skill and ignores the sidecar will miss framework skill improvements (acceptable — visible, and skills are advisory). A new low-severity risk: **sidecar merge paralysis** (user never merges `.acx-incoming`); mitigated by the existing deploy summary warning, optionally a future `/handoff` advisory (deferred — no verified consumer yet).
 
 **Out of scope (honest boundaries)**: shared-SSoT/Work-Log contamination in submodule/monorepo adoption; manifest schema-versioning and tier-history (structural manifest weaknesses, independent of this decision).
+
+## Amendment 2026-10-05: core files are backed up before they are replaced
+
+Spec: `docs/specs/brownfield-first-install-preservation.md` (backlog #188). The Context above describes the core branch as of 2026-06-03; it no longer overwrites silently.
+
+- **Update** (manifest present; shipped earlier under #173): a core file that differs from its manifest baseline and from the framework version is copied to `<path>.acx-local`, then force-updated, with an `[OVERWRITE]` line.
+- **First install** (no manifest; new): a pre-existing core file whose CRLF-normalized hash differs from the framework version is copied byte-for-byte to `<path>.acx-local` before the copy policy runs. The run names the path and its backup and counts it in the existing overwrite summary. Equal or EOL-only-different files are left alone. If the backup cannot be written, the deploy exits nonzero before replacing that file and publishes no manifest; files already written earlier in the run are not rolled back.
+- `.acx-local` keeps one generation, the latest version that was replaced; a later update collision refreshes it. A first install never replaces an existing `.acx-local`: with no manifest it cannot tell whether that file is the only copy of an earlier original (an interrupted install retried from a newer source), so it stops nonzero before touching the file and asks the adopter to move the backup aside. The backup is written whatever `CP_FLAG` says; when `CP_FLAG` (`-n`, or a declined `-i`) keeps the live file, that first-install run prints `[KEPT]` instead of reporting an overwrite. The manifest still records the upstream hash, so a later update treats the kept file as locally modified; under `-n` the update branch then reports an overwrite it did not perform (pre-existing, tracked in the backlog).
+- Core files never get `.acx-incoming`; scaffold and wrapper files keep the `.acx-incoming` behavior above. The tiers and the force-update invariant are unchanged.
