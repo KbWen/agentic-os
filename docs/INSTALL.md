@@ -37,7 +37,9 @@ git clone https://github.com/KbWen/agentic-os.git
 bash installers/deploy_brain.sh .
 ```
 
-> **Existing files won't be overwritten.** If your project already has `AGENTS.md`, `CLAUDE.md`, or other framework-managed files, they are preserved. The new framework version is saved as `<filename>.acx-incoming` sidecar. Review and merge manually — or ask your AI agent: *"Merge each .acx-incoming into its target, preserving my project-specific content and adopting framework updates."*
+> **Existing files: kept, or backed up and replaced.** If your project already has a different `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, skill, template or other scaffold file, your copy stays in place and the framework version is saved beside it as `<filename>.acx-incoming`. Review and merge manually — or ask your AI agent: *"Merge each .acx-incoming into its target, preserving my project-specific content and adopting framework updates."*
+>
+> Rules, workflows, tools, `.claude/commands/` and the other core files are framework-authoritative: a different file you already have at one of those paths is first copied byte-for-byte to `<filename>.acx-local`, then replaced. The deploy prints an `[OVERWRITE]` line naming each one, and stops before replacing a file it could not back up. The `.acx-local` copy is gitignored and may be the only copy of an untracked file. It holds only the latest replaced version: the next deploy that replaces that file overwrites it, so move any backup you want to keep out of the way before re-deploying. To restore, copy `<filename>.acx-local` back over `<filename>`; to keep your changes on later updates, move them into `AGENTS.override.md` or a `custom-*` skill.
 
 > **Monorepo / multi-package?** One deploy governs **one project root** — a single `.agentcortex/` state machine (SSoT, Work Logs, specs) at the target you pass. Agentic OS deliberately does **not** partition shared state across sub-packages (ADR-004/005). For a monorepo, either pick one governed root, or deploy per-package (each sub-project gets its own independent `.agentcortex/`); sibling deploys don't share SSoT.
 

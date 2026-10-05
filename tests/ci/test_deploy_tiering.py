@@ -416,6 +416,228 @@ def test_core_backup_not_skipped_under_cp_flag_n() -> None:
         assert "edit A" not in bk, "stale backup must be replaced, not retained"
 
 
+# ---------------------------------------------------------------------------
+# Brownfield first install (#188, docs/specs/brownfield-first-install-preservation.md)
+# A first deploy (no manifest) into a project that already has a different file at a
+# core-tier path must back the adopter's bytes up to .acx-local before replacing them.
+# A minimal source keeps the per-file path fast enough to run on every platform.
+# ---------------------------------------------------------------------------
+
+_BROWNFIELD_TRACKED = ".agent/rules/engineering_guardrails.md"
+_BROWNFIELD_IGNORED = ".agent/rules/security_guardrails.md"
+_BROWNFIELD_UNTRACKED = ".claude/commands/plan.md"
+_BROWNFIELD_EOL_ONLY = ".agent/rules/state_machine.md"
+_BROWNFIELD_IDENTICAL = ".agent/workflows/review.md"
+_BROWNFIELD_ABSENT = ".agent/workflows/test.md"
+_BROWNFIELD_CORE = (
+    _BROWNFIELD_TRACKED, _BROWNFIELD_IGNORED, _BROWNFIELD_UNTRACKED,
+    _BROWNFIELD_EOL_ONLY, _BROWNFIELD_IDENTICAL, _BROWNFIELD_ABSENT,
+)
+
+
+def _brownfield_source(root: Path) -> Path:
+    """Minimal deploy source: both entry scripts, the two required templates, a few core files."""
+    bin_dir = root / ".agentcortex" / "bin"
+    bin_dir.mkdir(parents=True)
+    for name in ("deploy.sh", "deploy.ps1"):
+        shutil.copy2(DEPLOY_SH.parent / name, bin_dir / name)
+    templates = root / ".agentcortex" / "templates"
+    templates.mkdir(parents=True)
+    for name in ("current_state.md", "downstream.gitattributes"):
+        shutil.copy2(ROOT / ".agentcortex" / "templates" / name, templates / name)
+    for rel in _BROWNFIELD_CORE:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, root / rel)
+    return bin_dir / "deploy.sh"
+
+
+def _run_brownfield(script: Path, target: Path, env: dict | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [bash, str(script), str(target)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(script.parents[2]), env={**os.environ, **env} if env else None,
+    )
+
+
+def _user_bytes(tag: str) -> bytes:
+    """Unique CRLF bytes no framework file contains."""
+    return f"# adopter-owned {tag}\r\nkeep these exact bytes ✓\r\n".encode("utf-8")
+
+
+def _overwrite_line(stdout: str, rel: str) -> str | None:
+    return next((line for line in stdout.splitlines() if f"[OVERWRITE] {rel} " in line), None)
+
+
+@pytest.mark.parametrize("env", [None, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@pytest.mark.skipif(git_path is None, reason="git not available")
+@requires_bash
+def test_brownfield_first_install_backs_up_preexisting_core_files(env: dict | None) -> None:
+    """AC-1/2/3/5/7: tracked, untracked and gitignored originals are all recoverable
+    from .acx-local without Git; the live file is the framework version; each collision
+    is named; equal and EOL-only files are left alone; a repeat deploy keeps the backups."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        target = Path(td) / "proj"
+        target.mkdir()
+
+        git = ["git", "-C", str(target), "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
+        subprocess.run([*git, "init", "-q"], check=True)
+        (target / ".gitignore").write_text(_BROWNFIELD_IGNORED + "\n", encoding="utf-8")
+        originals = {
+            _BROWNFIELD_TRACKED: _user_bytes("tracked"),
+            _BROWNFIELD_IGNORED: _user_bytes("ignored"),
+            _BROWNFIELD_UNTRACKED: _user_bytes("untracked"),
+        }
+        for rel, data in originals.items():
+            (target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (target / rel).write_bytes(data)
+        upstream_eol = (source_root / _BROWNFIELD_EOL_ONLY).read_bytes()
+        lf = upstream_eol.replace(b"\r\n", b"\n")
+        eol_variant = lf if lf != upstream_eol else lf.replace(b"\n", b"\r\n")
+        (target / _BROWNFIELD_EOL_ONLY).write_bytes(eol_variant)
+        (target / _BROWNFIELD_IDENTICAL).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_root / _BROWNFIELD_IDENTICAL, target / _BROWNFIELD_IDENTICAL)
+        subprocess.run([*git, "add", ".gitignore", _BROWNFIELD_TRACKED], check=True)
+        subprocess.run([*git, "commit", "-qm", "adopter"], check=True)
+        # The fixture really covers all three ownership states.
+        assert subprocess.run([*git, "ls-files", "--error-unmatch", _BROWNFIELD_TRACKED],
+                              capture_output=True).returncode == 0
+        assert subprocess.run([*git, "check-ignore", "-q", _BROWNFIELD_IGNORED]).returncode == 0
+        assert subprocess.run([*git, "ls-files", "--error-unmatch", _BROWNFIELD_UNTRACKED],
+                              capture_output=True).returncode != 0
+
+        first = _run_brownfield(script, target, env)
+        assert first.returncode == 0, f"first install failed:\n{first.stdout}\n{first.stderr}"
+
+        manifest = target / ".agentcortex-manifest"
+        for rel, data in originals.items():
+            live = target / rel
+            backup = live.with_name(live.name + ".acx-local")
+            assert backup.read_bytes() == data, f"{rel}: original bytes must be in .acx-local"
+            assert live.read_bytes() == (source_root / rel).read_bytes(), \
+                f"{rel}: core file must become the framework version"
+            assert not live.with_name(live.name + ".acx-incoming").exists(), \
+                f"{rel}: core tier never writes .acx-incoming"
+            assert _manifest_hash(manifest, rel) == _lf_sha256(source_root / rel), \
+                f"{rel}: manifest must record the normalized upstream hash"
+            line = _overwrite_line(first.stdout, rel)
+            assert line is not None and f"{rel}.acx-local" in line, \
+                f"{rel}: the collision and its backup must be named:\n{first.stdout}"
+        assert re.search(r"\b3 locally-modified core file\(s\) were force-updated", first.stdout), \
+            first.stdout
+
+        backups = sorted(p.relative_to(target).as_posix() for p in target.rglob("*.acx-local"))
+        assert backups == sorted(f"{rel}.acx-local" for rel in originals), \
+            "equal, EOL-only and absent destinations must not get a backup"
+        for rel in (_BROWNFIELD_EOL_ONLY, _BROWNFIELD_IDENTICAL, _BROWNFIELD_ABSENT):
+            assert _overwrite_line(first.stdout, rel) is None, f"{rel} must not be reported"
+        assert (target / _BROWNFIELD_EOL_ONLY).read_bytes() == eol_variant, \
+            "an EOL-only difference is not a collision"
+
+        second = _run_brownfield(script, target, env)
+        assert second.returncode == 0, f"repeat deploy failed:\n{second.stdout}\n{second.stderr}"
+        assert "[OVERWRITE]" not in second.stdout, second.stdout
+        for rel, data in originals.items():
+            assert (target / f"{rel}.acx-local").read_bytes() == data, \
+                f"{rel}: a repeat deploy must leave the backup intact"
+
+
+# Test shim, sourced through BASH_ENV (Git for Windows' bash launcher puts /usr/bin ahead
+# of any PATH entry, so a PATH shim would never be reached): refuse every *.acx-local write.
+_FAILING_BACKUP_CP = """cp() {
+    local last
+    for last in "$@"; do :; done
+    case "$last" in *.acx-local) echo "cp shim: refusing $last" >&2; return 1 ;; esac
+    command cp "$@"
+}
+"""
+
+
+@pytest.mark.parametrize("env", [None, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_brownfield_backup_failure_stops_before_overwrite(env: dict | None) -> None:
+    """AC-4: if the backup cannot be written, the original stays in place, the deploy
+    exits nonzero, and neither a success summary nor a manifest is published."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        shim = Path(td) / "failing_backup_cp.sh"
+        shim.write_bytes(_FAILING_BACKUP_CP.encode("utf-8"))
+        target = Path(td) / "proj"
+        rule = target / _BROWNFIELD_TRACKED
+        rule.parent.mkdir(parents=True)
+        original = _user_bytes("backup-failure")
+        rule.write_bytes(original)
+
+        run_env = {**(env or {}), "BASH_ENV": shim.as_posix()}
+        result = _run_brownfield(script, target, run_env)
+
+        assert "cp shim: refusing" in result.stderr, \
+            f"the shim must actually intercept the backup copy:\n{result.stderr}"
+        assert result.returncode != 0, "a failed backup must fail the deploy"
+        assert rule.read_bytes() == original, "the original must not be replaced"
+        assert _BROWNFIELD_TRACKED in result.stderr, "the error must name the affected file"
+        assert "deployed successfully" not in result.stdout
+        assert not (target / ".agentcortex-manifest").exists(), \
+            "no completed manifest after a failed backup"
+
+
+@pytest.mark.parametrize("cp_flag", ["", "-n"], ids=["default", "cp-n"])
+@requires_bash
+def test_brownfield_refreshes_older_backup_and_honors_cp_flag(cp_flag: str) -> None:
+    """AC-6: a stale .acx-local is replaced by the current pre-overwrite bytes; CP_FLAG=-n
+    neither skips the backup nor gets reported as an overwrite it did not perform."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        target = Path(td) / "proj"
+        rule = target / _BROWNFIELD_TRACKED
+        backup = rule.with_name(rule.name + ".acx-local")
+        rule.parent.mkdir(parents=True)
+        original = _user_bytes("current")
+        rule.write_bytes(original)
+        backup.write_bytes(_user_bytes("older backup"))
+
+        result = _run_brownfield(script, target, {"CP_FLAG": cp_flag})
+        assert result.returncode == 0, f"deploy failed:\n{result.stdout}\n{result.stderr}"
+        assert backup.read_bytes() == original, "the backup must hold the current pre-deploy bytes"
+        if cp_flag == "-n":
+            assert rule.read_bytes() == original, "-n keeps the live file"
+            assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is None, \
+                f"an overwrite that did not happen must not be reported:\n{result.stdout}"
+            assert f"{_BROWNFIELD_TRACKED}.acx-local" in result.stdout, \
+                "the backup that was written must still be named"
+        else:
+            assert rule.read_bytes() == (source_root / _BROWNFIELD_TRACKED).read_bytes()
+            assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is not None, result.stdout
+
+
+@requires_powershell
+@requires_bash
+def test_brownfield_first_install_via_deploy_ps1() -> None:
+    """AC-7: the Windows wrapper inherits the same first-install backup."""
+    with tempfile.TemporaryDirectory() as td:
+        source_root = Path(td) / "source"
+        script = _brownfield_source(source_root)
+        target = Path(td) / "proj"
+        rule = target / _BROWNFIELD_TRACKED
+        rule.parent.mkdir(parents=True)
+        original = _user_bytes("ps1")
+        rule.write_bytes(original)
+
+        result = subprocess.run(
+            [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass",
+             "-File", str(script.with_name("deploy.ps1")), str(target)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            cwd=str(source_root),
+        )
+        assert result.returncode == 0, f"deploy.ps1 failed:\n{result.stdout}\n{result.stderr}"
+        assert rule.with_name(rule.name + ".acx-local").read_bytes() == original
+        assert rule.read_bytes() == (source_root / _BROWNFIELD_TRACKED).read_bytes()
+        assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is not None, result.stdout
+
+
 def test_deploy_gitignores_acx_local_sidecar() -> None:
     """#173: the .acx-local backup is deploy-generated; it must be in the
     managed downstream .gitignore block (parity with *.acx-incoming) so it
