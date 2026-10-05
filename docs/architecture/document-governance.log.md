@@ -326,3 +326,22 @@ source_sha: 55e3314
   occurrence. Honest scope of the fix: only an absence with **no stated
   reason** qualifies the line — a fresh deploy still prints unqualified while
   seven checks SKIP and an 18-check family does not run.
+
+### [document-governance][2026-10-05][feat/brownfield-first-install-preservation]
+source_spec: docs/specs/brownfield-first-install-preservation.md
+source_adr: docs/adr/ADR-005-downstream-file-preservation-tiering.md
+source_sha: e80f5ad
+
+- [DECISION] Reuse the existing `.acx-local` core backup contract on first-install
+  collisions; core files still receive the framework version rather than freezing
+  governance delivery behind `.acx-incoming`.
+- [TRADEOFF] Keep one latest backup, matching existing core-update semantics,
+  instead of adding versioned backup storage to a contained data-loss fix.
+- [DECISION] (2026-10-05, after review) A first install never replaces an existing
+  `.acx-local`; it stops and asks the adopter to move it aside. Chosen over refresh
+  (could destroy the only original after an interrupted install retried from a
+  newer source) and over new partial-install state (out of scope).
+- [CONSTRAINT] The preservation invariant is backup-before-replacement, including
+  files absent from Git history; backup failure must stop the affected overwrite.
+- [CONSTRAINT] Preserve scaffold/wrapper sidecars and normalized-hash decisions;
+  the first-install extension must not redesign other deploy branches.
