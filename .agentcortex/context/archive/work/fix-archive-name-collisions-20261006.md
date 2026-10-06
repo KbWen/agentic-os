@@ -57,3 +57,37 @@ Older detail moved out of the active Work Log `.agentcortex/context/work/fix-arc
 - Fix in round 2: AC-6 `token-governance.md:120` add "create it if absent"; ps1 D4 child under local `Continue` (PS 5.1 aborted on child stderr, pre-existing); PASS/WARN only when the child exits 0 (sh + ps1); ps1 `@'...'@` literal here-string; identical re-append = no-op exit 0 (ship retry).
 - Rejected (verified): non-ASCII cp950 (validate.sh:5 exports PYTHONIOENCODING=utf-8; works with it); "keys can contain --" (normalization collapses runs: `hotfix/issue--42` -> `hotfix-issue-42`); casefold/`./` match (keys are lowercase, `log` is a basename).
 - Accepted, no change: root-only Phase-Summary scan leaves M7/gate-schema recursive (spec Non-goal); pre-#106 adopter finals in work/ get an actionable WARN -> release CHANGELOG upgrade note.
+
+## Known Risk (R1-R6, moved verbatim 2026-10-06, review)
+
+- R1 token ceiling (AC-9): ship.md is loaded in all 6 lifecycle scenarios; any net add multiplies. Mitigation: replace the false sentence in place, delete handoff.md:151, remedy text lives in the append_chain_entry error message. Rollback: revert the prose hunk.
+- R2 twin drift: D4 Python embedded twice. Mitigation: AC-3 byte-identity test; snippet avoids `$` and backticks (ps1 `@"` here-string). Rollback: revert both twins together.
+- R3 new SKIP line under --no-python could shift pinned counts in the no-python CI job. Mitigation: grep tests for pinned skip counts before editing; single computed-level emission keeps the native ratchet count.
+- R4 sh failure-path test relies on a PATH shim named `python3` passing the `import sys` probe; Git Bash must treat a shebang file as executable. Fallback: structural assertion (same as the existing ps1 test) + a manual shim run recorded in Evidence.
+- R5 archived files are history: only the 2 legacy files move, contents unchanged (blob SHA check); no INDEX line changes.
+- R6 append guard is deployed: a downstream reship that reuses a `log` name now exits 1 — intended; the error text names the `--N-` remedy.
+
+## Phase Summary (continued, moved verbatim 2026-10-06, test)
+
+- plan: 8 steps, tests first (red on baseline), then D4 twins → git mv legacy → Phase-Summary scan → workflow text → append guard → baseline note → full validation; 13 files + 2 moves; mode Normal | Confidence: 85% — assumes the ship.md sentence swap + handoff.md:151 deletion fit the 132-token headroom (else trim within the same files).
+- implement: D4 root-only + shared `LEVEL|msg` snippet + did-not-run WARN + SKIP in both twins; Phase-Summary scan root-only; 2 legacy logs `git mv`'d; ship §3 collision rule, handoff §6 append + :151 deleted, token-governance §7; append guard; baseline note. Lifecycle −142. Scope = plan minus `test_validator_false_positives.py` (logged). Confidence: 92% — high.
+- review: Not Ready — HIGH validate.ps1 UTF-8 BOM stripped (PS 5.1 parse errors) — routed back to implement; 2 fresh reviewers (AC + red-team).
+
+## Evidence (diagnosis, moved verbatim 2026-10-06, handoff)
+
+- Diagnosis (pre-bootstrap, this session): D4 mutation on a scratch copy of archive/ — baseline `ok:194`; root `fix-gate-evidence-tooling-20260926.md` deleted (work/ same name kept) → `ok:194` (false PASS); both deleted → `missing:fix-gate-evidence-tooling-20260926.md`.
+- INDEX probe: 194 log entries; 11 resolve in BOTH root and work/; 2 only via work/ fallback (`fix-40-validate-missing-workflow-files-20260417.md`, `architecture-change-adr-002-lock-unification.md`); 1 has explicit `work/` prefix; 1 duplicate log value (`claude-relaxed-pare-db9f89.md`, two ships 2026-05-11, one continuous log with both ship receipts — no loss).
+
+## Test Gate Results (AC map + adversarial, moved verbatim 2026-10-06, handoff)
+
+- AC map: AC-1 fragment/root/prefix/dangling tests + slow; AC-2 undecodable, cannot-run structure, shim exit-3, --no-python/-NoPython SKIP; AC-3 identity; AC-4 blob SHAs + live 194; AC-5 scan structure + slow; AC-6/7 workflow text (archive-contract PASS); AC-8 5 append tests; AC-9 lifecycle 354,726; AC-10 validators below + PR CI.
+- Adversarial: BOM, retry no-op, exit-3 shim, undecodable INDEX, non-string log, collision suffix --3-.
+
+## Red Team Findings (moved verbatim 2026-10-06, handoff)
+
+- Full Red Team (fresh acx-reviewer): CRITICAL BOM (fix); MEDIUM retry -> rename -> dangling entry (fix: idempotent identical re-append); LOW x6 adjudicated in Review Feedback. Risk decision: no HIGH left open.
+
+## Known Risk R7 + Evidence round 2 (moved verbatim 2026-10-06, ship)
+
+- R7 (out of scope, follow-up): other `x=$(python)` sites in validate.sh (gate parser, class parser, M8) still abort the run on a nonzero child under `set -e`; D4's `|| true` is pinned only structurally (its broad except makes a nonzero child rare).
+- Round 2 (1528513): red first (5 failed: twin identity, rc structure, BOM pin, CLI retry, no-op re-append); then fast 150 passed; slow 4 passed (sh + shim, ps1 pwsh, ps1 powershell 5.1, existing PS 5.1 git-probe test); PS 5.1 ParseFile errors 0; mutant aefe22f validate.sh gives `[PASS]` on the exit-3 shim, HEAD gives `[WARN] ... did not run`; lifecycle 354,726.
