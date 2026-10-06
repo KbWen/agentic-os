@@ -2,6 +2,17 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-hook-monorepo-and-notices-2026-09-27
+- Feature shipped: **the opt-in pre-commit hook works in a monorepo package and says true things (#208, #211 a/c).**
+  - #208, the silent case: git resolves `core.hooksPath` from the repository root, so running `git config core.hooksPath .githooks` inside a package pointed at nothing and the hook never ran.
+  - #208, the blocking case: pointed correctly, the hook `cd`'d to the repository root and blocked every commit on "missing validate.sh".
+  - The #208 fix: the hook now takes the framework root from its own `.githooks/` location, with the old fallback, and matches guarded paths with `git diff --cached --relative`. INSTALL.md gives the sub-directory command, and deploy prints it only for a sub-directory target.
+  - #211a: without Python, the hook says the floor screened 3 credential shapes to the scanner's 7.
+  - #211c: guarded paths warn on edits and deletions, not on the install-day addition.
+- **The self-review caught the first version's gap.** `--diff-filter=M` also silenced a deleted `current_state.md`, which the validator's required-files list does not cover. It is now `--diff-filter=a` plus a direct warning for a missing path. The test reaches the receipt lookup, so removing the `-e` guard fails it.
+- **Adopters get this by re-running the INSTALL copy step**, because the installed hook is a copy.
+- Tests: monorepo layout with a stub validator; `test_ac3` rewritten (add silent, edit and delete warn), since it used to pin warn-on-add; the no-Python notice via a non-startable shim; the banner hint. Six mutants each fail their target test. The full suite ran in CI (PR #449, green before the ship commit). SSoT sequence 178->179; Ship History rotated at cap 10.
+
 ### Ship-fix-install-day-copy-2026-09-27
 - Feature shipped: **what an adopter sees on install day now matches what happens (#207, #211 b/d/e, #213 option A).**
   - #207: the managed `.gitignore` block no longer ignores `.cursor/`. Cursor project rules are meant to be committed, and the block covers the framework's own namespace only. The `managed[]` strip entry stays, so older blocks upgrade clean and adopter lines are untouched.

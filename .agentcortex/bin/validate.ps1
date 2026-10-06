@@ -495,17 +495,29 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
 # WARN, not FAIL: a genuine historical dangling ref cannot be cleanly removed
 # (append-only chain + git witness forbid entry deletion), so this SURFACES the
 # gap for review rather than blocking. Capability-by-presence; needs Python.
-if ((Test-Path -Path $archiveIndexJsonl -PathType Leaf) -and $script:PythonCommand) {
-    # Pass the path as an argv (sys.argv[1]), NOT interpolated into the Python
-    # source — a repo path containing an apostrophe (e.g. C:\Users\O'Brien\...)
-    # would otherwise produce an unterminated string literal, crash the child,
-    # and (via the empty-output default below) silently mask a dangling ref to
-    # PASS on Windows. Mirror of validate.sh, which already uses argv.
-    $indexRefsOut = (& $script:PythonCommand.Source -c @"
+# The directory is the type: a final log lives in the archive ROOT (/ship §3),
+# while archive/work/ holds /handoff §6 compaction fragments that may share a
+# final log's basename, so a fragment never satisfies an entry. The Python below
+# is byte-identical to validate.sh's (tests/ci/test_archive_name_collisions.py)
+# and prints detail lines, then a final `LEVEL|message` line, or `error`.
+if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
+    if ($script:PythonCommand) {
+        # Pass the path as an argv (sys.argv[1]), NOT interpolated into the Python
+        # source — a repo path containing an apostrophe (e.g. C:\Users\O'Brien\...)
+        # would otherwise produce an unterminated string literal, crash the child,
+        # and (via the empty-output default below) silently mask a dangling ref to
+        # PASS on Windows. Mirror of validate.sh, which already uses argv.
+        # Local 'Continue': under 'Stop', Windows PowerShell 5.1 turns a redirected
+        # native stderr line into a terminating error and aborts the whole run.
+        $indexRefsPrevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $indexRefsOut = (& $script:PythonCommand.Source -c @'
 import json, os, sys
 idx = sys.argv[1]
 archive = os.path.dirname(os.path.abspath(idx))
 missing = []
+misplaced = []
 seen = 0
 try:
     with open(idx, encoding='utf-8') as fh:
@@ -515,35 +527,54 @@ try:
                 continue
             try:
                 entry = json.loads(line)
-            except Exception:
+            except ValueError:
                 continue
-            log = entry.get('log')
-            if not log:
+            log = entry.get('log') if isinstance(entry, dict) else None
+            if not isinstance(log, str) or not log:
                 continue
             seen += 1
-            cands = [os.path.join(archive, log), os.path.join(archive, 'work', log)]
-            if not any(os.path.exists(c) for c in cands):
+            if os.path.exists(os.path.join(archive, log)):
+                continue
+            if os.path.exists(os.path.join(archive, 'work', log)):
+                misplaced.append(log)
+            else:
                 missing.append(log)
-except OSError:
+except Exception:
     print('error')
-    raise SystemExit(0)
-print(('missing:' + ','.join(missing)) if missing else ('ok:%d' % seen))
-"@ $archiveIndexJsonl 2>$null | Out-String).Trim()
-    if ($indexRefsOut -like 'missing:*') {
-        $dangling = $indexRefsOut.Substring('missing:'.Length)
-        $danglingCount = @($dangling -split ',' | Where-Object { $_ -ne '' }).Count
-        Write-Output "  INDEX.jsonl references $danglingCount file(s) not present on disk: $dangling"
-        $indexRefsLevel = 'WARN'
-        $indexRefsMsg = "INDEX.jsonl referenced logs missing on disk: $danglingCount (dangling audit reference)"
-    } elseif ($indexRefsOut -like 'ok:*') {
-        $indexRefsLevel = 'PASS'
-        $indexRefsMsg = "INDEX.jsonl referenced logs all present on disk ($($indexRefsOut.Substring('ok:'.Length)) checked)"
+    sys.exit(0)
+verdict = []
+if missing:
+    print('  INDEX.jsonl references %d file(s) not present on disk: %s' % (len(missing), ','.join(missing)))
+    verdict.append('INDEX.jsonl referenced logs missing on disk: %d (dangling audit reference)' % len(missing))
+if misplaced:
+    print('  INDEX.jsonl references %d log(s) found only under archive/work/, the compaction-fragment directory; move each final log to the archive root: %s' % (len(misplaced), ','.join(misplaced)))
+    verdict.append('INDEX.jsonl referenced logs not in the archive root: %d (found only under archive/work/)' % len(misplaced))
+if verdict:
+    print('WARN|' + '; '.join(verdict))
+else:
+    print('PASS|INDEX.jsonl referenced logs all present on disk (%d checked)' % seen)
+'@ $archiveIndexJsonl 2>$null | Out-String).TrimEnd()
+            $indexRefsRc = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $indexRefsPrevEap
+        }
+        $indexRefsLines = @($indexRefsOut -split "`r?`n")
+        # A child that exited nonzero did not finish: it must not supply a verdict.
+        if ($indexRefsRc -eq 0 -and $indexRefsLines[-1] -match '^(PASS|WARN)\|(.*)$') {
+            $indexRefsLevel = $Matches[1]
+            $indexRefsMsg = $Matches[2]
+            if ($indexRefsLines.Count -gt 1) { $indexRefsLines[0..($indexRefsLines.Count - 2)] | ForEach-Object { Write-Output $_ } }
+        } else {
+            # `error` or empty output = the check did not run; never report it as a PASS.
+            $indexRefsLevel = 'WARN'
+            $indexRefsMsg = 'INDEX.jsonl referenced-file check did not run (python error or empty output) -- verify manually'
+        }
+    } elseif ($NoPython) {
+        $indexRefsLevel = 'SKIP'
+        $indexRefsMsg = 'INDEX.jsonl referenced-file check -- python checks disabled (--NoPython)'
     } else {
-        # Empty/unrecognized output = the child could not run (not a clean 'ok').
-        # WARN rather than silently defaulting to PASS, so a check that failed to
-        # execute cannot mask a dangling reference.
-        $indexRefsLevel = 'WARN'
-        $indexRefsMsg = 'INDEX.jsonl referenced-file check did not run (python error or empty output) -- verify manually'
+        $indexRefsLevel = 'SKIP'
+        $indexRefsMsg = 'INDEX.jsonl referenced-file check -- python unavailable'
     }
     Add-Result -Level $indexRefsLevel -Message $indexRefsMsg
 }
@@ -2078,7 +2109,9 @@ $phaseSummaryViolationList = New-Object System.Collections.Generic.List[string]
 if (Test-Path -Path $archiveDir -PathType Container) {
     # Exclude ship-history-*.md (#171) and global-lessons-archive*.md (#141):
     # neither is a Work Log; neither carries a '## Phase Summary' contract.
-    $archivedLogs = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -Recurse -ErrorAction SilentlyContinue |
+    # Archive root only (no -Recurse): archive/work/ holds /handoff §6 compaction
+    # fragments, which are not Work Logs either (#186).
+    $archivedLogs = Get-ChildItem -Path $archiveDir -Filter '*.md' -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -notlike '.gitkeep*' -and $_.Name -notlike 'ship-history-*' -and $_.Name -notlike 'global-lessons-archive*' }
     foreach ($wl in $archivedLogs) {
         $content = Get-Content -Path $wl.FullName -Raw -Encoding utf8

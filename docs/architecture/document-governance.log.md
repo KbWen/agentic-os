@@ -345,3 +345,14 @@ source_sha: e80f5ad
   files absent from Git history; backup failure must stop the affected overwrite.
 - [CONSTRAINT] Preserve scaffold/wrapper sidecars and normalized-hash decisions;
   the first-install extension must not redesign other deploy branches.
+
+### [document-governance][2026-10-06][fix/archive-name-collisions]
+source_spec: docs/specs/archive-name-collisions.md
+source_sha: 9dbd5ac
+
+- [DECISION] The archive directory is the type discriminator: root holds final Work Logs, `archive/work/` holds compaction fragments; consumers resolve and scan by directory, and the same basename may exist in both.
+- [DECISION] A same-day collision on a final archive uses `<worklog-key>--N-<YYYYMMDD>.md`: normalized keys never contain `--`, and the date stays last for filename-date parsers.
+- [TRADEOFF] D4 stays a native check edited in place, a documented deviation from ADR-006 §3, because the Python wrappers cannot express WARN; byte-identical twin snippets are test-pinned instead.
+- [TRADEOFF] Legacy final logs found under `archive/work/` are moved to the root (location is mutable, content is not) instead of being exempted in validator code.
+- [CONSTRAINT] A `log` already recorded for a different INDEX entry is rejected at append time by `append_chain_entry.py`, not by a validator scan, so the existing duplicate in history needs no grandfathering; an identical re-append is a no-op.
+- [CONSTRAINT] A check that cannot run reports SKIP or WARN, never PASS and never silence.

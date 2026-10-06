@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-05T13:14:13Z
-- **Last Verified**: 2026-10-05
-- **Update Sequence**: 188
+- **Last Updated**: 2026-10-06T10:51:27Z
+- **Last Verified**: 2026-10-06
+- **Update Sequence**: 189
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -58,6 +58,7 @@
   - docs/specs/skill-trigger-accuracy-eval.md — Skill Trigger-Accuracy Eval Suite (46 cases over 14/14 skills; source-only runner delegating to the shipped resolver; cross-skill collision rule), [Shipped 2026-09-01] (backlog #165, issue #398) [Scope: measures a data contract — `detect_by.intent_patterns` has no runtime consumer]
   - docs/specs/kb-seam-anchor-neutrality.md — KB-Seam Anchor Neutrality (anchors declared by the KB in `digest.anchors`, never hard-coded; digest `sha` check with page fallback; additive `schema_version` on JSON entrypoints, markdown index readable=OK; visible UNREADABLE line; off-clean-main WARN; literal path default), [Shipped 2026-09-28] (ADR-009 amendment; follow-ups backlog #217, #218)
   - docs/specs/brownfield-first-install-preservation.md — Brownfield First-Install Preservation (a first install backs a differing core file up to `.acx-local` before replacing it, names it, and stops nonzero on a failed backup or an existing `.acx-local`), [Shipped 2026-10-05, PR #461] (backlog #188, ADR-005 amendment; follow-ups #220, #221)
+  - docs/specs/archive-name-collisions.md — Archive Name Collisions: the archive directory is the file type (D4 resolves an INDEX `log` in the archive root and reports did-not-run as WARN, no Python as SKIP; archived-Work-Log Phase-Summary scan reads the root only; same-day `<worklog-key>--N-<YYYYMMDD>.md`; INDEX duplicate-`log` guard with identical-retry no-op), [Shipped 2026-10-06, PR #464] (backlog #186; follow-ups #222, #223)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -114,6 +115,11 @@
 - [Category: skill-description-cost][Severity: HIGH][Trigger: editing-skill-md][prev: 3edf8155] Every character added to a .agents/skills/*/SKILL.md costs about 2.33 tokens against the aggregate lifecycle ceiling, roughly 8.9x its own size: analyze_token_lifecycle.py counts the whole file once per scenario the skill is a candidate for, plus first-load and continuation. Headroom was 431 before PR #437 and is 113 after it. On #437, rewriting two descriptions to the app-init.md:200 standard reached 355225 against the 355000 ceiling while the targeted tests, both validators and two review rounds all stayed green - only the full suite caught it. Before editing any SKILL.md, measure with analyze_token_lifecycle.py --root . --format json. The conflict between that description contract and this ceiling is open as backlog #199 and needs an owner decision before further skill-description work, including #198.
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
+
+### Ship-fix-archive-name-collisions-2026-10-06
+- Feature shipped: **the archive directory is the file type.** Final Work Logs live in the archive root and `archive/work/` holds compaction fragments. D4 resolves each INDEX `log` in the root only, so a same-named fragment no longer hides a missing final log; a child that did not run is a WARN (validate.sh used to abort under `set -e`) and no Python is a SKIP. The archived-Work-Log Phase-Summary scan reads the root only (#186). `/ship §3`: never overwrite an archive; a same-day reship on a reused key uses `<worklog-key>--2-<YYYYMMDD>.md`. `append_chain_entry.py` refuses a `log` recorded for a different entry; an identical retry is a no-op. Two legacy final logs moved to the root.
+- Review: a 5-seat read-only roundtable plus a tenth man shaped the design (renaming fragments was refuted); 3 fresh reviewers after. Round 1 was NOT READY: a re-indent had stripped validate.ps1's BOM, which breaks Windows PowerShell 5.1 (restored, byte-pinned; the ps1 twin test now also runs under 5.1). AC-8 amended with owner approval after the red-team retry finding. Follow-ups #222 (10 root archives with no INDEX entry), #223 (other `$(python)` sites abort validate.sh on a nonzero child).
+- Tests: new suite 11 fast + 4 slow; full not-slow suite 832 passed; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; lifecycle 354,868 -> 354,726. SSoT sequence 188->189; Ship History rotated at cap 10.
 
 ### Ship-chore-release-v1.8.31-2026-10-05
 - Feature shipped: **v1.8.31** packages #461 (#188): a first install backs a differing pre-existing core file up to `<file>.acx-local` before replacing it, names it with `[OVERWRITE]`, and stops nonzero on a failed backup or an existing `.acx-local`. Adopter-facing delta: `.agentcortex/bin/deploy.sh` only.
@@ -181,13 +187,3 @@
   - #201 is a proposal awaiting the owner's approval, because it amends ADR-005.
 - Tests: release guard 2 passed; docs pins 12 passed. The whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. After merge: lightweight `v1.8.28` tag + `gh release create --latest` (repo-gotchas §12); the release is NOT complete at PR merge. SSoT sequence 179->180; Ship History rotated at cap 10.
 
-### Ship-fix-hook-monorepo-and-notices-2026-09-27
-- Feature shipped: **the opt-in pre-commit hook works in a monorepo package and says true things (#208, #211 a/c).**
-  - #208, the silent case: git resolves `core.hooksPath` from the repository root, so running `git config core.hooksPath .githooks` inside a package pointed at nothing and the hook never ran.
-  - #208, the blocking case: pointed correctly, the hook `cd`'d to the repository root and blocked every commit on "missing validate.sh".
-  - The #208 fix: the hook now takes the framework root from its own `.githooks/` location, with the old fallback, and matches guarded paths with `git diff --cached --relative`. INSTALL.md gives the sub-directory command, and deploy prints it only for a sub-directory target.
-  - #211a: without Python, the hook says the floor screened 3 credential shapes to the scanner's 7.
-  - #211c: guarded paths warn on edits and deletions, not on the install-day addition.
-- **The self-review caught the first version's gap.** `--diff-filter=M` also silenced a deleted `current_state.md`, which the validator's required-files list does not cover. It is now `--diff-filter=a` plus a direct warning for a missing path. The test reaches the receipt lookup, so removing the `-e` guard fails it.
-- **Adopters get this by re-running the INSTALL copy step**, because the installed hook is a copy.
-- Tests: monorepo layout with a stub validator; `test_ac3` rewritten (add silent, edit and delete warn), since it used to pin warn-on-add; the no-Python notice via a non-startable shim; the banner hint. Six mutants each fail their target test. The full suite ran in CI (PR #449, green before the ship commit). SSoT sequence 178->179; Ship History rotated at cap 10.

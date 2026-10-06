@@ -18,8 +18,8 @@ Usage:
     --path .agentcortex/context/archive/INDEX.jsonl
 
 Exit codes:
-  0  success
-  1  usage / parse / IO error
+  0  success (an identical entry already recorded is a no-op: "already-recorded")
+  1  usage / parse / IO error, or the entry's `log` is recorded for a different entry
   2  chain integrity failure during migration
 """
 
@@ -29,6 +29,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Iterator
@@ -36,6 +37,10 @@ from typing import Iterator
 PREV_SHA_FIELD = "prev_sha"
 GENESIS = "GENESIS"
 SHA_LEN = 8
+LOG_FIELD = "log"
+# /ship §3 final-archive name: `<worklog-key>-<YYYYMMDD>.md`, or `<worklog-key>--N-<YYYYMMDD>.md`
+# for a same-day collision (a normalized key never contains `--`).
+ARCHIVE_NAME_RE = re.compile(r"^(?P<key>.+?)(?:--(?P<n>\d+))?-(?P<date>\d{8})\.md$")
 
 
 def canonical(entry: dict) -> str:
@@ -77,12 +82,46 @@ def last_entry(path: Path) -> dict | None:
     return last
 
 
+def _duplicate_log_message(log: str, line_no: int) -> str:
+    """One INDEX entry per archived log: a second ship that reuses a key on the same
+    day must archive under a new name, or INDEX would point at the first ship's log."""
+    m = ARCHIVE_NAME_RE.match(log)
+    if m:
+        name = f"{m.group('key')}--{int(m.group('n') or 1) + 1}-{m.group('date')}.md"
+    else:
+        name = "<worklog-key>--2-<YYYYMMDD>.md"
+    return (
+        f"log '{log}' is already recorded (INDEX line {line_no}) for a different entry; "
+        f"nothing was written. Archive this Work Log under an unused name, e.g. '{name}' "
+        f"(then the next free N), without overwriting the existing archive, and record that name. "
+        f"(Re-running the identical entry, e.g. a ship retry, is accepted as already recorded.)"
+    )
+
+
+def find_recorded(path: Path, entry: dict) -> dict | None:
+    """Return the existing entry when `entry` is an identical re-append (a retried ship);
+    raise ValueError when its `log` is already recorded for a different entry."""
+    log = entry.get(LOG_FIELD)
+    if not isinstance(log, str) or not log:
+        return None
+    for line_no, existing in iter_entries(path):
+        if existing.get(LOG_FIELD) == log:
+            if canonical(existing) == canonical(entry):
+                return existing
+            raise ValueError(_duplicate_log_message(log, line_no))
+    return None
+
+
 def append_chained(path: Path, entry: dict) -> dict:
-    """Append `entry` with computed prev_sha. Returns the entry as written."""
+    """Append `entry` with computed prev_sha. Returns the entry as written, or the
+    existing entry unchanged when `entry` is an identical re-append (see find_recorded)."""
     if not isinstance(entry, dict):
         raise ValueError("entry must be a JSON object")
     if PREV_SHA_FIELD in entry:
         raise ValueError(f"entry must not contain '{PREV_SHA_FIELD}' (computed by helper)")
+    recorded = find_recorded(path, entry)
+    if recorded is not None:
+        return recorded
     prev = last_entry(path)
     entry_with_chain = dict(entry)
     entry_with_chain[PREV_SHA_FIELD] = chain_sha(prev) if prev is not None else GENESIS
@@ -154,6 +193,12 @@ def cmd_append(args: argparse.Namespace) -> int:
         print(f"--entry must be valid JSON: {exc}", file=sys.stderr)
         return 1
     try:
+        recorded = None
+        if isinstance(entry, dict) and PREV_SHA_FIELD not in entry:
+            recorded = find_recorded(Path(args.path), entry)
+        if recorded is not None:
+            print(json.dumps({"status": "already-recorded", "prev_sha": recorded.get(PREV_SHA_FIELD)}))
+            return 0
         written = append_chained(Path(args.path), entry)
     except (ValueError, OSError) as exc:
         print(str(exc), file=sys.stderr)

@@ -61,6 +61,77 @@ class TestAppend(unittest.TestCase):
             with self.assertRaises(ValueError):
                 ace.append_chained(path, {"i": 1, "prev_sha": "manual"})
 
+    # --- spec archive-name-collisions AC-8: one INDEX entry per archived log ---
+
+    def test_rejects_log_already_recorded(self) -> None:
+        """A second same-day ship on a reused key must not point INDEX at the first
+        ship's file: the duplicate `log` is refused and nothing is written."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+            ace.append_chained(path, {"log": "main-20261006.md", "decisions": ["ship 1"]})
+            before = path.read_bytes()
+            with self.assertRaises(ValueError) as ctx:
+                ace.append_chained(path, {"log": "main-20261006.md", "decisions": ["ship 2"]})
+            self.assertIn("--2-", str(ctx.exception))
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_identical_reappend_is_a_noop(self) -> None:
+        """A retried ship re-runs the same append: it is already recorded, so nothing
+        is written and no rename is suggested (a rename would leave a dangling entry)."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+            entry = {"log": "main-20261006.md", "shipped": "2026-10-06"}
+            first = ace.append_chained(path, dict(entry))
+            before = path.read_bytes()
+            again = ace.append_chained(path, dict(entry))
+            self.assertEqual(again, first)
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_duplicate_collision_name_suggests_next_suffix(self) -> None:
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+            ace.append_chained(path, {"log": "main--2-20261006.md", "decisions": ["ship 2"]})
+            with self.assertRaises(ValueError) as ctx:
+                ace.append_chained(path, {"log": "main--2-20261006.md", "decisions": ["ship 3"]})
+            self.assertIn("'main--3-20261006.md'", str(ctx.exception))
+
+    def test_distinct_logs_and_logless_entries_still_append(self) -> None:
+        """The guard keys on `log` only: a `--2-` name and repeated log-less records
+        (e.g. append_lesson.py archive records) append as before."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+            ace.append_chained(path, {"log": "main-20261006.md"})
+            ace.append_chained(path, {"log": "main--2-20261006.md"})
+            ace.append_chained(path, {"type": "lesson_archive"})
+            ace.append_chained(path, {"type": "lesson_archive"})
+            self.assertEqual(len(list(ace.iter_entries(path))), 4)
+            intact, _ = cac.check_chain(path)
+            self.assertTrue(intact)
+
+    def test_cli_duplicate_log_exits_nonzero(self) -> None:
+        """The path /ship actually runs: the CLI exits 1 and names the remedy."""
+        import subprocess
+
+        script = ROOT / ".agentcortex" / "tools" / "append_chain_entry.py"
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+
+            def run(entry: dict) -> "subprocess.CompletedProcess[str]":
+                cmd = [sys.executable, str(script), "append", "--path", str(path),
+                       "--entry", json.dumps(entry)]
+                return subprocess.run(cmd, capture_output=True, text=True,
+                                      encoding="utf-8", errors="replace")
+
+            ship1 = {"log": "main-20261006.md", "decisions": ["ship 1"]}
+            self.assertEqual(run(ship1).returncode, 0)
+            retry = run(ship1)
+            self.assertEqual(retry.returncode, 0, retry.stderr)
+            self.assertIn("already-recorded", retry.stdout)
+            second = run({"log": "main-20261006.md", "decisions": ["ship 2"]})
+            self.assertEqual(second.returncode, 1)
+            self.assertIn("main--2-20261006.md", second.stderr)
+            self.assertEqual(len(list(ace.iter_entries(path))), 1)
+
 
 class TestMigrate(unittest.TestCase):
     def test_assigns_chain_to_existing_entries(self) -> None:

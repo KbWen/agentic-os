@@ -432,44 +432,81 @@ fi
 # a genuine historical dangling ref cannot be cleanly removed (append-only chain
 # + git witness forbid entry deletion), so this SURFACES the gap for review
 # rather than blocking. Capability-by-presence; needs Python for robust JSON.
-if [[ -f "$ARCHIVE_INDEX_JSONL" ]] && [[ -n "$PYTHON_BIN" ]]; then
-  _acx_index_refs_py=$(cat <<'PYEOF'
+# The directory is the type: a final log lives in the archive ROOT (/ship §3),
+# while archive/work/ holds /handoff §6 compaction fragments that may share a
+# final log's basename, so a fragment never satisfies an entry. The Python below
+# is byte-identical to validate.ps1's (tests/ci/test_archive_name_collisions.py)
+# and prints detail lines, then a final `LEVEL|message` line, or `error`.
+if [[ -f "$ARCHIVE_INDEX_JSONL" ]]; then
+  if [[ -n "$PYTHON_BIN" ]]; then
+    _acx_index_refs_py=$(cat <<'PYEOF'
 import json, os, sys
-archive = os.path.dirname(os.path.abspath(sys.argv[1]))
+idx = sys.argv[1]
+archive = os.path.dirname(os.path.abspath(idx))
 missing = []
+misplaced = []
 seen = 0
 try:
-    with open(sys.argv[1], encoding="utf-8") as fh:
+    with open(idx, encoding='utf-8') as fh:
         for line in fh:
             line = line.strip()
             if not line:
                 continue
             try:
                 entry = json.loads(line)
-            except Exception:
+            except ValueError:
                 continue
-            log = entry.get("log")
-            if not log:
+            log = entry.get('log') if isinstance(entry, dict) else None
+            if not isinstance(log, str) or not log:
                 continue
             seen += 1
-            cands = [os.path.join(archive, log), os.path.join(archive, "work", log)]
-            if not any(os.path.exists(c) for c in cands):
+            if os.path.exists(os.path.join(archive, log)):
+                continue
+            if os.path.exists(os.path.join(archive, 'work', log)):
+                misplaced.append(log)
+            else:
                 missing.append(log)
-except OSError:
-    print("error")
+except Exception:
+    print('error')
     sys.exit(0)
-print(("missing:" + ",".join(missing)) if missing else ("ok:%d" % seen))
+verdict = []
+if missing:
+    print('  INDEX.jsonl references %d file(s) not present on disk: %s' % (len(missing), ','.join(missing)))
+    verdict.append('INDEX.jsonl referenced logs missing on disk: %d (dangling audit reference)' % len(missing))
+if misplaced:
+    print('  INDEX.jsonl references %d log(s) found only under archive/work/, the compaction-fragment directory; move each final log to the archive root: %s' % (len(misplaced), ','.join(misplaced)))
+    verdict.append('INDEX.jsonl referenced logs not in the archive root: %d (found only under archive/work/)' % len(misplaced))
+if verdict:
+    print('WARN|' + '; '.join(verdict))
+else:
+    print('PASS|INDEX.jsonl referenced logs all present on disk (%d checked)' % seen)
 PYEOF
 )
-  index_refs_result="$("$PYTHON_BIN" -c "$_acx_index_refs_py" "$ARCHIVE_INDEX_JSONL" 2>/dev/null)"
-  index_refs_level=PASS
-  index_refs_msg="INDEX.jsonl referenced logs all present on disk (${index_refs_result#ok:} checked)"
-  if [[ "$index_refs_result" == missing:* ]]; then
-    _acx_dangling="${index_refs_result#missing:}"
-    _acx_dangling_count="$(printf '%s' "$_acx_dangling" | tr ',' '\n' | grep -c '.')"
-    printf '  INDEX.jsonl references %s file(s) not present on disk: %s\n' "$_acx_dangling_count" "$_acx_dangling"
-    index_refs_level=WARN
-    index_refs_msg="INDEX.jsonl referenced logs missing on disk: ${_acx_dangling_count} (dangling audit reference)"
+    # Capture the exit code: under `set -e` a nonzero child would otherwise abort the
+    # whole run here, and a child that did not finish must not supply a verdict.
+    index_refs_rc=0
+    index_refs_result="$("$PYTHON_BIN" -c "$_acx_index_refs_py" "$ARCHIVE_INDEX_JSONL" 2>/dev/null)" || index_refs_rc=$?
+    index_refs_result="${index_refs_result//$'\r'/}"
+    index_refs_verdict="${index_refs_result##*$'\n'}"
+    [[ "$index_refs_rc" -eq 0 ]] || index_refs_verdict=""
+    case "$index_refs_verdict" in
+      PASS\|*|WARN\|*)
+        [[ "$index_refs_result" == *$'\n'* ]] && printf '%s\n' "${index_refs_result%$'\n'*}"
+        index_refs_level="${index_refs_verdict%%|*}"
+        index_refs_msg="${index_refs_verdict#*|}"
+        ;;
+      *)
+        # `error` or empty output = the check did not run; never report it as a PASS.
+        index_refs_level=WARN
+        index_refs_msg="INDEX.jsonl referenced-file check did not run (python error or empty output) -- verify manually"
+        ;;
+    esac
+  elif [[ "$ACX_NO_PYTHON" -eq 1 ]]; then
+    index_refs_level=SKIP
+    index_refs_msg="INDEX.jsonl referenced-file check -- python checks disabled (--no-python)"
+  else
+    index_refs_level=SKIP
+    index_refs_msg="INDEX.jsonl referenced-file check -- python unavailable"
   fi
   record_result "$index_refs_level" "$index_refs_msg"
 fi
@@ -2217,7 +2254,9 @@ if [[ -d "$ARCHIVE_DIR" ]]; then
   # carry no `## Phase Summary` contract (#171).
   # Also exclude global-lessons-archive*.md: the /retro chain-aware lesson
   # archive is not a Work Log and has no '## Phase Summary' contract (#141).
-  done < <(find "$ARCHIVE_DIR" -name '*.md' -not -name '.gitkeep*' -not -iname 'ship-history-*' -not -iname 'global-lessons-archive*' -print0 2>/dev/null || true)
+  # Archive root only (-maxdepth 1): archive/work/ holds /handoff §6 compaction
+  # fragments, which are not Work Logs either (#186).
+  done < <(find "$ARCHIVE_DIR" -maxdepth 1 -name '*.md' -not -name '.gitkeep*' -not -iname 'ship-history-*' -not -iname 'global-lessons-archive*' -print0 2>/dev/null || true)
 fi
 if [[ "$phase_summary_violations" -gt 0 ]]; then
   record_result WARN "archived Work Logs with empty Phase Summary: ${phase_summary_violations}"
