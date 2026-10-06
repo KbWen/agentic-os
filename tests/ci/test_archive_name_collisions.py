@@ -72,7 +72,7 @@ def _sh_snippet() -> str:
 
 def _ps1_snippet() -> str:
     text = VALIDATE_PS1.read_text(encoding="utf-8")
-    m = re.search(r'\$indexRefsOut = \(& \$script:PythonCommand\.Source -c @"\n(.*?)\n"@', text, re.S)
+    m = re.search(r"\$indexRefsOut = \(& \$script:PythonCommand\.Source -c @'\n(.*?)\n'@", text, re.S)
     assert m, "validate.ps1: D4 here-string not found"
     return m.group(1)
 
@@ -163,9 +163,23 @@ def test_d4_cannot_run_branches_present_in_both_validators() -> None:
     for text, skip in ((sh, D4_SKIP_SH), (ps1, D4_SKIP_PS1)):
         assert D4_DID_NOT_RUN in text
         assert skip in text
-    assert re.search(r'index_refs_result="\$\("\$PYTHON_BIN" -c [^\n]*\)" \|\| true', sh), (
+    assert re.search(r'index_refs_result="\$\("\$PYTHON_BIN" -c [^\n]*\)" \|\| index_refs_rc=\$\?', sh), (
         "validate.sh D4 must not let a failing child abort the run under set -e"
     )
+    assert '[[ "$index_refs_rc" -eq 0 ]] || index_refs_verdict=' in sh, (
+        "validate.sh D4 must not take a verdict from a child that exited nonzero"
+    )
+    block = ps1[ps1.index("$indexRefsOut = "):ps1.index("Add-Result -Level $indexRefsLevel")]
+    assert "$indexRefsRc -eq 0 -and" in block, "validate.ps1 D4 must gate the verdict on the exit code"
+    assert "$ErrorActionPreference = 'Continue'" in ps1[ps1.index("D4: INDEX.jsonl"):ps1.index("$indexRefsOut = ")], (
+        "validate.ps1 D4 must run the child under Continue: PS 5.1 aborts on redirected stderr under Stop"
+    )
+
+
+def test_validate_ps1_keeps_utf8_bom() -> None:
+    """Windows PowerShell 5.1 decodes a BOM-less script in the ANSI code page, and the
+    em dashes in validate.ps1's strings then break its parser (#90 added the BOM)."""
+    assert VALIDATE_PS1.read_bytes().startswith(b"\xef\xbb\xbf")
 
 
 def test_phase_summary_scan_reads_archive_root_only_in_both_validators() -> None:
@@ -213,9 +227,9 @@ def _run_sh(target: Path, *args: str) -> str:
     return proc.stdout + proc.stderr
 
 
-def _run_ps1(target: Path, *args: str) -> str:
+def _run_ps1(target: Path, *args: str, shell: str | None = None) -> str:
     proc = subprocess.run(
-        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+        [shell or powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
          str(target / ".agentcortex" / "bin" / "validate.ps1"), *args],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         cwd=str(target),
@@ -245,19 +259,57 @@ def test_archive_directory_is_the_type_sh() -> None:
         out = _run_sh(target)
         assert f"[WARN] {D4_DID_NOT_RUN}" in out, out[-1500:]
         assert "Summary: pass=" in out, "a failing D4 child must not abort validate.sh"
+        # A child that prints a verdict and then exits nonzero did not finish: no PASS.
+        _write_index(archive, PAIR)
+        shim = Path(td) / "shim"
+        shim.mkdir()
+        (shim / "python3").write_bytes(
+            b'#!/bin/sh\n'
+            b'if [ "$1" = "-c" ] && [ "$2" = "import sys" ]; then exit 0; fi\n'
+            b'echo "PASS|INDEX.jsonl referenced logs all present on disk (1 checked)"\n'
+            b'exit 3\n'
+        )
+        (shim / "python3").chmod(0o755)
+        out = _run_sh_with_path(target, shim)
+        assert f"[WARN] {D4_DID_NOT_RUN}" in out, out[-1500:]
+
+
+def _posix(p: Path) -> str:
+    """Windows path -> Git-bash POSIX form (C:\\x -> /c/x)."""
+    s = str(p)
+    return "/" + s[0].lower() + s[2:].replace("\\", "/") if len(s) >= 2 and s[1] == ":" else s
+
+
+def _run_sh_with_path(target: Path, shim_dir: Path) -> str:
+    """validate.sh with shim_dir first on PATH, prepended inside the shell because the
+    Git-for-Windows bash launcher reorders an inherited PATH (see
+    test_validator_python_discovery.py)."""
+    inner = f'export PATH="{_posix(shim_dir)}:$PATH"; exec "{_posix(target / ".agentcortex" / "bin" / "validate.sh")}"'
+    proc = subprocess.run(
+        [bash, "-c", inner],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(target),
+    )
+    return proc.stdout + proc.stderr
+
+
+# Windows PowerShell 5.1 and pwsh 7 parse and run validate.ps1 differently (encoding,
+# native stderr under Stop), and CI runs only pwsh -- so the twin runs under both.
+_PS_SHELLS = [s for s in (shutil.which("pwsh"), shutil.which("powershell")) if s]
 
 
 @pytest.mark.slow
 @requires_windows
 @requires_bash
 @requires_powershell
-def test_archive_directory_is_the_type_ps1() -> None:
+@pytest.mark.parametrize("shell", _PS_SHELLS, ids=[Path(s).stem for s in _PS_SHELLS])
+def test_archive_directory_is_the_type_ps1(shell: str) -> None:
     with tempfile.TemporaryDirectory() as td:
         target = _deploy(Path(td))
         archive = _seed(target)
-        _assert_directory_is_the_type(_run_ps1(target).replace("\\", "/"))
-        assert f"[SKIP] {D4_SKIP_PS1}" in _run_ps1(target, "-NoPython")
+        _assert_directory_is_the_type(_run_ps1(target, shell=shell).replace("\\", "/"))
+        assert f"[SKIP] {D4_SKIP_PS1}" in _run_ps1(target, "-NoPython", shell=shell)
         (archive / "INDEX.jsonl").write_bytes(b'\xff\xfe not utf-8\n')
-        out = _run_ps1(target)
+        out = _run_ps1(target, shell=shell)
         assert f"[WARN] {D4_DID_NOT_RUN}" in out, out[-1500:]
         assert "Summary: pass=" in out

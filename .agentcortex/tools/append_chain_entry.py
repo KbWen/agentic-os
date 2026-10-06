@@ -91,10 +91,25 @@ def _duplicate_log_message(log: str, line_no: int) -> str:
     else:
         name = "<worklog-key>--2-<YYYYMMDD>.md"
     return (
-        f"log '{log}' is already recorded (INDEX line {line_no}); nothing was written. "
-        f"Archive this Work Log under an unused name, e.g. '{name}' (then --3-, ...), "
-        f"without overwriting the existing archive, and record that name."
+        f"log '{log}' is already recorded (INDEX line {line_no}) for a different entry; "
+        f"nothing was written. Archive this Work Log under an unused name, e.g. '{name}' "
+        f"(then --3-, ...), without overwriting the existing archive, and record that name. "
+        f"(Re-running the identical entry, e.g. a ship retry, is accepted as already recorded.)"
     )
+
+
+def find_recorded(path: Path, entry: dict) -> dict | None:
+    """Return the existing entry when `entry` is an identical re-append (a retried ship);
+    raise ValueError when its `log` is already recorded for a different entry."""
+    log = entry.get(LOG_FIELD)
+    if not isinstance(log, str) or not log:
+        return None
+    for line_no, existing in iter_entries(path):
+        if existing.get(LOG_FIELD) == log:
+            if canonical(existing) == canonical(entry):
+                return existing
+            raise ValueError(_duplicate_log_message(log, line_no))
+    return None
 
 
 def append_chained(path: Path, entry: dict) -> dict:
@@ -103,11 +118,9 @@ def append_chained(path: Path, entry: dict) -> dict:
         raise ValueError("entry must be a JSON object")
     if PREV_SHA_FIELD in entry:
         raise ValueError(f"entry must not contain '{PREV_SHA_FIELD}' (computed by helper)")
-    log = entry.get(LOG_FIELD)
-    if isinstance(log, str) and log:
-        for line_no, existing in iter_entries(path):
-            if existing.get(LOG_FIELD) == log:
-                raise ValueError(_duplicate_log_message(log, line_no))
+    recorded = find_recorded(path, entry)
+    if recorded is not None:
+        return recorded
     prev = last_entry(path)
     entry_with_chain = dict(entry)
     entry_with_chain[PREV_SHA_FIELD] = chain_sha(prev) if prev is not None else GENESIS
@@ -179,6 +192,12 @@ def cmd_append(args: argparse.Namespace) -> int:
         print(f"--entry must be valid JSON: {exc}", file=sys.stderr)
         return 1
     try:
+        recorded = None
+        if isinstance(entry, dict) and PREV_SHA_FIELD not in entry:
+            recorded = find_recorded(Path(args.path), entry)
+        if recorded is not None:
+            print(json.dumps({"status": "already-recorded", "prev_sha": recorded.get(PREV_SHA_FIELD)}))
+            return 0
         written = append_chained(Path(args.path), entry)
     except (ValueError, OSError) as exc:
         print(str(exc), file=sys.stderr)

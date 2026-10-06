@@ -30,3 +30,17 @@ Older detail moved out of the active Work Log `.agentcortex/context/work/fix-arc
   - The 2 legacy work/-only files: non-empty Phase Summary, well-formed receipts, no relative links, already scanned by recursive M7/gate-schema → `git mv` to root adds no WARN (predicted; verify at /test).
   - Seat over-claims corrected: "7 log entries lack `shipped`" → 2 (L150, L155, both in root); line-order of `shipped` is irrelevant to a per-entry cutoff.
   - External signal: logrotate `dateext` on an existing dated destination → error + skip rotation (fail closed, no renumber).
+
+## Drift Log (moved verbatim 2026-10-06, review)
+
+- §12.1 read-before-write: full reads of validate.sh (3121 l), validate.ps1 (2928 l), append_chain_entry.py; ship.md/handoff.md/token-governance.md read per section before edit.
+- Plan deviation (before code): new behavioral tests go in new `tests/ci/test_archive_name_collisions.py` importing helpers; `test_validator_false_positives.py` is not modified (its D4 pins stay valid).
+- Found while reading: sh D4 runs `x="$(python ...)"` under `set -e`, so a nonzero child ABORTS validate.sh before Summary (not just false PASS); fixed under AC-2 with `|| true` + WARN.
+- Compaction 2026-10-06 (implement): log reached 14,150 B (cap 13,311). Completed brainstorm Evidence moved verbatim with an in-place pointer — the #179 reading (verbatim move is not summarize/fold/rewrite), precedent fix/validator-twin-parity-176-175 2026-08-23. #179 hit again.
+
+## Evidence (implement round 1, moved verbatim 2026-10-06)
+
+- Red on baseline 9905177: fast 11 failed (fragment masks final log `ok:1`; undecodable INDEX → traceback; twin snippets differ; duplicate log appended). Slow via scratch baseline_red.py: sh 4/4 RED incl. `aborted, no Summary`; ps1 2/4 RED (other 2 are parity, ps1 already WARNed).
+- Green: new + related fast suites `-m "not slow"` 158 passed; new slow 2 passed (81s); existing slow d4/witness/#171 6 passed (525s).
+- Live: D4 `PASS ... (194 checked)`; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2` (same 5 pre-existing WARNs). Lifecycle 354,868 → 354,726 (ceiling 355,000 unchanged). AC-4 blobs unchanged: 73037ed…, e5898fc…. scan_credentials on 11 changed files: exit 0.
+- Implement final (after receipt, HEAD aefe22f): validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`.

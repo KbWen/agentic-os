@@ -68,19 +68,31 @@ class TestAppend(unittest.TestCase):
         ship's file: the duplicate `log` is refused and nothing is written."""
         with tempfile.TemporaryDirectory() as base_dir:
             path = Path(base_dir) / "INDEX.jsonl"
-            ace.append_chained(path, {"log": "main-20261006.md", "shipped": "2026-10-06"})
+            ace.append_chained(path, {"log": "main-20261006.md", "decisions": ["ship 1"]})
             before = path.read_bytes()
             with self.assertRaises(ValueError) as ctx:
-                ace.append_chained(path, {"log": "main-20261006.md", "shipped": "2026-10-06"})
+                ace.append_chained(path, {"log": "main-20261006.md", "decisions": ["ship 2"]})
             self.assertIn("--2-", str(ctx.exception))
+            self.assertEqual(path.read_bytes(), before)
+
+    def test_identical_reappend_is_a_noop(self) -> None:
+        """A retried ship re-runs the same append: it is already recorded, so nothing
+        is written and no rename is suggested (a rename would leave a dangling entry)."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            path = Path(base_dir) / "INDEX.jsonl"
+            entry = {"log": "main-20261006.md", "shipped": "2026-10-06"}
+            first = ace.append_chained(path, dict(entry))
+            before = path.read_bytes()
+            again = ace.append_chained(path, dict(entry))
+            self.assertEqual(again, first)
             self.assertEqual(path.read_bytes(), before)
 
     def test_duplicate_collision_name_suggests_next_suffix(self) -> None:
         with tempfile.TemporaryDirectory() as base_dir:
             path = Path(base_dir) / "INDEX.jsonl"
-            ace.append_chained(path, {"log": "main--2-20261006.md"})
+            ace.append_chained(path, {"log": "main--2-20261006.md", "decisions": ["ship 2"]})
             with self.assertRaises(ValueError) as ctx:
-                ace.append_chained(path, {"log": "main--2-20261006.md"})
+                ace.append_chained(path, {"log": "main--2-20261006.md", "decisions": ["ship 3"]})
             self.assertIn("'main--3-20261006.md'", str(ctx.exception))
 
     def test_distinct_logs_and_logless_entries_still_append(self) -> None:
@@ -103,11 +115,18 @@ class TestAppend(unittest.TestCase):
         script = ROOT / ".agentcortex" / "tools" / "append_chain_entry.py"
         with tempfile.TemporaryDirectory() as base_dir:
             path = Path(base_dir) / "INDEX.jsonl"
-            entry = json.dumps({"log": "main-20261006.md", "shipped": "2026-10-06"})
-            cmd = [sys.executable, str(script), "append", "--path", str(path), "--entry", entry]
-            first = subprocess.run(cmd, capture_output=True, text=True)
-            self.assertEqual(first.returncode, 0, first.stderr)
-            second = subprocess.run(cmd, capture_output=True, text=True)
+
+            def run(entry: dict) -> "subprocess.CompletedProcess[str]":
+                cmd = [sys.executable, str(script), "append", "--path", str(path),
+                       "--entry", json.dumps(entry)]
+                return subprocess.run(cmd, capture_output=True, text=True)
+
+            ship1 = {"log": "main-20261006.md", "decisions": ["ship 1"]}
+            self.assertEqual(run(ship1).returncode, 0)
+            retry = run(ship1)
+            self.assertEqual(retry.returncode, 0, retry.stderr)
+            self.assertIn("already-recorded", retry.stdout)
+            second = run({"log": "main-20261006.md", "decisions": ["ship 2"]})
             self.assertEqual(second.returncode, 1)
             self.assertIn("main--2-20261006.md", second.stderr)
             self.assertEqual(len(list(ace.iter_entries(path))), 1)

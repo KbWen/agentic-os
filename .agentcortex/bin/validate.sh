@@ -482,10 +482,13 @@ else:
     print('PASS|INDEX.jsonl referenced logs all present on disk (%d checked)' % seen)
 PYEOF
 )
-    # `|| true`: under `set -e` a nonzero child would abort the whole run here.
-    index_refs_result="$("$PYTHON_BIN" -c "$_acx_index_refs_py" "$ARCHIVE_INDEX_JSONL" 2>/dev/null)" || true
+    # Capture the exit code: under `set -e` a nonzero child would otherwise abort the
+    # whole run here, and a child that did not finish must not supply a verdict.
+    index_refs_rc=0
+    index_refs_result="$("$PYTHON_BIN" -c "$_acx_index_refs_py" "$ARCHIVE_INDEX_JSONL" 2>/dev/null)" || index_refs_rc=$?
     index_refs_result="${index_refs_result//$'\r'/}"
     index_refs_verdict="${index_refs_result##*$'\n'}"
+    [[ "$index_refs_rc" -eq 0 ]] || index_refs_verdict=""
     case "$index_refs_verdict" in
       PASS\|*|WARN\|*)
         [[ "$index_refs_result" == *$'\n'* ]] && printf '%s\n' "${index_refs_result%$'\n'*}"

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Alias('no-python')]
     [switch]$NoPython
 )
@@ -507,7 +507,12 @@ if (Test-Path -Path $archiveIndexJsonl -PathType Leaf) {
         # would otherwise produce an unterminated string literal, crash the child,
         # and (via the empty-output default below) silently mask a dangling ref to
         # PASS on Windows. Mirror of validate.sh, which already uses argv.
-        $indexRefsOut = (& $script:PythonCommand.Source -c @"
+        # Local 'Continue': under 'Stop', Windows PowerShell 5.1 turns a redirected
+        # native stderr line into a terminating error and aborts the whole run.
+        $indexRefsPrevEap = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $indexRefsOut = (& $script:PythonCommand.Source -c @'
 import json, os, sys
 idx = sys.argv[1]
 archive = os.path.dirname(os.path.abspath(idx))
@@ -548,9 +553,14 @@ if verdict:
     print('WARN|' + '; '.join(verdict))
 else:
     print('PASS|INDEX.jsonl referenced logs all present on disk (%d checked)' % seen)
-"@ $archiveIndexJsonl 2>$null | Out-String).TrimEnd()
+'@ $archiveIndexJsonl 2>$null | Out-String).TrimEnd()
+            $indexRefsRc = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $indexRefsPrevEap
+        }
         $indexRefsLines = @($indexRefsOut -split "`r?`n")
-        if ($indexRefsLines[-1] -match '^(PASS|WARN)\|(.*)$') {
+        # A child that exited nonzero did not finish: it must not supply a verdict.
+        if ($indexRefsRc -eq 0 -and $indexRefsLines[-1] -match '^(PASS|WARN)\|(.*)$') {
             $indexRefsLevel = $Matches[1]
             $indexRefsMsg = $Matches[2]
             if ($indexRefsLines.Count -gt 1) { $indexRefsLines[0..($indexRefsLines.Count - 2)] | ForEach-Object { Write-Output $_ } }
