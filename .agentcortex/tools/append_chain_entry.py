@@ -19,7 +19,7 @@ Usage:
 
 Exit codes:
   0  success
-  1  usage / parse / IO error
+  1  usage / parse / IO error, or the entry's `log` is already recorded
   2  chain integrity failure during migration
 """
 
@@ -29,6 +29,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Iterator
@@ -36,6 +37,10 @@ from typing import Iterator
 PREV_SHA_FIELD = "prev_sha"
 GENESIS = "GENESIS"
 SHA_LEN = 8
+LOG_FIELD = "log"
+# /ship §3 final-archive name: `<worklog-key>-<YYYYMMDD>.md`, or `<worklog-key>--N-<YYYYMMDD>.md`
+# for a same-day collision (a normalized key never contains `--`).
+ARCHIVE_NAME_RE = re.compile(r"^(?P<key>.+?)(?:--(?P<n>\d+))?-(?P<date>\d{8})\.md$")
 
 
 def canonical(entry: dict) -> str:
@@ -77,12 +82,32 @@ def last_entry(path: Path) -> dict | None:
     return last
 
 
+def _duplicate_log_message(log: str, line_no: int) -> str:
+    """One INDEX entry per archived log: a second ship that reuses a key on the same
+    day must archive under a new name, or INDEX would point at the first ship's log."""
+    m = ARCHIVE_NAME_RE.match(log)
+    if m:
+        name = f"{m.group('key')}--{int(m.group('n') or 1) + 1}-{m.group('date')}.md"
+    else:
+        name = "<worklog-key>--2-<YYYYMMDD>.md"
+    return (
+        f"log '{log}' is already recorded (INDEX line {line_no}); nothing was written. "
+        f"Archive this Work Log under an unused name, e.g. '{name}' (then --3-, ...), "
+        f"without overwriting the existing archive, and record that name."
+    )
+
+
 def append_chained(path: Path, entry: dict) -> dict:
     """Append `entry` with computed prev_sha. Returns the entry as written."""
     if not isinstance(entry, dict):
         raise ValueError("entry must be a JSON object")
     if PREV_SHA_FIELD in entry:
         raise ValueError(f"entry must not contain '{PREV_SHA_FIELD}' (computed by helper)")
+    log = entry.get(LOG_FIELD)
+    if isinstance(log, str) and log:
+        for line_no, existing in iter_entries(path):
+            if existing.get(LOG_FIELD) == log:
+                raise ValueError(_duplicate_log_message(log, line_no))
     prev = last_entry(path)
     entry_with_chain = dict(entry)
     entry_with_chain[PREV_SHA_FIELD] = chain_sha(prev) if prev is not None else GENESIS

@@ -1,0 +1,32 @@
+# Work Log compaction fragment: fix/archive-name-collisions
+
+Older detail moved out of the active Work Log `.agentcortex/context/work/fix-archive-name-collisions.md` by `/handoff §6` compaction. The final log is archived by `/ship` to the archive root.
+
+## Phase Summary
+
+- Compaction fragment of the feature branch `fix/archive-name-collisions`; see the final archived log for phase results.
+
+## Task Description (moved 2026-10-06, implement entry)
+
+- Archive naming collisions found by read-only diagnosis in this session:
+  1. D4 "INDEX.jsonl referenced logs present on disk" (`validate.sh:455`, `validate.ps1:524`) falls back to `archive/work/<log>`; `/handoff §6` compaction overflow uses the same `<key>-<YYYYMMDD>.md` basename as the `/ship §3` final archive, so a missing final archive is masked by the overflow (false PASS).
+  2. `/ship §3` has no rule for a second same-day ship on the same key (downstream doing all work on `main`).
+  3. `/handoff §6` does not name a second same-day compaction; agents improvised `-2`/`-3`; overwrite would lose the only copy of moved detail.
+- Owner direction (chat 2026-10-06): consider more scenarios; roundtable + tenth-man before deciding; do not decide lightly. Public issue may list only this repo's items.
+- Adjacent backlog rows to weigh for overlap: #186 (needs a compaction-fragment naming convention), #155 (depth-shift link hazard on compaction), #179 (§6 cap contradiction), #3 (archive GC / INDEX rotation).
+- Read plan: Full guardrails (done). Next reads at /brainstorm: handoff.md §6, ship.md §3, token-governance.md §8, validate.* archive scans (D4, Phase Summary, M7, M8, archive_contract), check_decision_disposition.py scope, tests touching these. Skipped: shipped specs (AC-28).
+- Phase chain: /brainstorm → /spec → /plan → /implement → /review → /test → /handoff → /ship
+
+## Evidence (moved verbatim 2026-10-06, implement)
+
+- Brainstorm roundtable (5 read-only seats: downstream, validator, minimalist, audit, tenth-man) — primary-verified facts only:
+  - Same-day collisions HAVE happened, no loss: ship ×2 on `main` 2026-06-15 → agent improvised `claude-main-20260615.md`; compaction ×2 → `codex-research-main-20260619{,-2,-3}.md` and "Compacted: 2026-09-09 (twice)" appended into one fragment.
+  - D4 sh twin: child `error`/empty → PASS (`validate.sh:465`); ps1 WARNs (`validate.ps1:541-546`). No-Python: neither twin emits a D4 line.
+  - Phase-Summary (`validate.sh:2220`, `validate.ps1:2081`), M7 (`:2247`) and gate-schema (`:2276`) scans are recursive; `check_decision_disposition.py:274` is root-only (directory = type). #186 root cause = recursion, not naming.
+  - `-compact-` marker collides with real final `archive/fix-160-compact-index-lf-20260808.md`; keys never contain `--` (`bootstrap.md:127`); `FILENAME_DATE_RE` `-(\d{4})(\d{2})(\d{2})\.md$` (`check_decision_disposition.py:82`) cannot date `<key>-<D>-2.md`.
+  - Compaction target is named in 3 deployed docs: `handoff.md:149`, `token-governance.md:120` (§7, not §8 as #186 says), `portable-minimal-kit.md:30`; contract check (`validate.sh:770-795`) only greps the `<worklog-key>-<YYYYMMDD>` substring.
+  - ADR-006 §3 (`ADR-006:38`): a touched native check should be ported; D4 baseline justification #5 cites wrapper exit!=0→FAIL (no WARN) — same rationale as 4 sibling justifications.
+  - Git Bash coreutils 8.32: `mv` overwrites rc=0; `mv -n` refuses but rc=0. `guard_context_write.py` has `MISSING` create-only sentinel (`:42`).
+  - The 2 legacy work/-only files: non-empty Phase Summary, well-formed receipts, no relative links, already scanned by recursive M7/gate-schema → `git mv` to root adds no WARN (predicted; verify at /test).
+  - Seat over-claims corrected: "7 log entries lack `shipped`" → 2 (L150, L155, both in root); line-order of `shipped` is irrelevant to a per-entry cutoff.
+  - External signal: logrotate `dateext` on an existing dated destination → error + skip rotation (fail closed, no renumber).
