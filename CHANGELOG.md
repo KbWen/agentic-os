@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.32] - 2026-10-06
+
+**The archive directory is now the file type, and a validator check that cannot run no longer reports a pass** (#464, `docs/specs/archive-name-collisions.md`). Final Work Logs live in `.agentcortex/context/archive/`; `archive/work/` holds `/handoff` compaction fragments, which can share a final log's name.
+
+- **D4 (INDEX.jsonl referenced logs) looks in the archive root only.** Before, a same-named compaction fragment hid a missing final log and the check passed.
+- **D4 tells the truth when it cannot run.** A Python child that fails is a WARN in both validators (validate.sh used to stop under `set -e` before printing its Summary), and a run without Python is a SKIP instead of no line at all.
+- **The archived-Work-Log Phase-Summary scan reads the archive root only,** so compaction fragments no longer need a `## Phase Summary` to stay quiet.
+- **Same-day archive names.** `/ship` never overwrites an archive: a second ship on the same day under a reused key such as `main` archives to `<worklog-key>--2-<YYYYMMDD>.md`. `/handoff` compaction appends to its fragment instead of overwriting it.
+- **`append_chain_entry.py` refuses a `log` already recorded for a different INDEX entry** and names the next free `--N-` name. Re-running the identical entry (a retried ship) is accepted as already recorded.
+
+**Upgrade note:** if your `INDEX.jsonl` names a final Work Log that sits under `.agentcortex/context/archive/work/` (archives written before #106), validate now WARNs `INDEX.jsonl referenced logs not in the archive root` and names the file. Move it with `git mv .agentcortex/context/archive/work/<file> .agentcortex/context/archive/<file>`; the INDEX entry needs no change.
+
+**Downstream delta:** adopter-facing files changed: `.agent/workflows/ship.md`, `.agent/workflows/handoff.md`, `.agentcortex/bin/validate.sh`, `.agentcortex/bin/validate.ps1`, `.agentcortex/tools/append_chain_entry.py`, `.agentcortex/docs/guides/token-governance.md`, plus the version banner in `.agentcortex/bin/deploy.sh`. The SSoT template is unchanged.
+
 ## [1.8.31] - 2026-10-05
 
 **A first install no longer silently destroys your files at framework core paths** (#188, ADR-005 amendment, `docs/specs/brownfield-first-install-preservation.md`). Before this release, deploying into an existing project that already had, say, its own `.agent/rules/engineering_guardrails.md` or `.claude/commands/plan.md` replaced the file with no backup and no message. An untracked or gitignored original was gone for good.

@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-06T10:51:27Z
+- **Last Updated**: 2026-10-06T12:05:51Z
 - **Last Verified**: 2026-10-06
-- **Update Sequence**: 189
+- **Update Sequence**: 190
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.32-2026-10-06
+- Feature shipped: **v1.8.32** packages #464: the archive directory is the file type (D4 resolves INDEX `log` in the archive root, reports a child that cannot run as WARN and no Python as SKIP; Phase-Summary scan reads the root only; same-day `--N-` archive names; INDEX duplicate-`log` guard with an identical-retry no-op). Adopter-facing delta: `ship.md`, `handoff.md`, `validate.sh`, `validate.ps1`, `append_chain_entry.py`, `token-governance.md`, plus the `deploy.sh` banner.
+- The CHANGELOG leads with the one upgrade action: an INDEX entry pointing at a pre-#106 final log under `archive/work/` now WARNs; `git mv` it to the archive root.
+- Tests: release guard 2 passed; docs pins 12 passed; full suite on the release PR's CI. After merge: lightweight `v1.8.32` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 189->190; Ship History rotated at cap 10.
+
 ### Ship-fix-archive-name-collisions-2026-10-06
 - Feature shipped: **the archive directory is the file type.** Final Work Logs live in the archive root and `archive/work/` holds compaction fragments. D4 resolves each INDEX `log` in the root only, so a same-named fragment no longer hides a missing final log; a child that did not run is a WARN (validate.sh used to abort under `set -e`) and no Python is a SKIP. The archived-Work-Log Phase-Summary scan reads the root only (#186). `/ship §3`: never overwrite an archive; a same-day reship on a reused key uses `<worklog-key>--2-<YYYYMMDD>.md`. `append_chain_entry.py` refuses a `log` recorded for a different entry; an identical retry is a no-op. Two legacy final logs moved to the root.
 - Review: a 5-seat read-only roundtable plus a tenth man shaped the design (renaming fragments was refuted); 3 fresh reviewers after. Round 1 was NOT READY: a re-indent had stripped validate.ps1's BOM, which breaks Windows PowerShell 5.1 (restored, byte-pinned; the ps1 twin test now also runs under 5.1). AC-8 amended with owner approval after the red-team retry finding. Follow-ups #222 (10 root archives with no INDEX entry), #223 (other `$(python)` sites abort validate.sh on a nonzero child).
@@ -161,29 +166,4 @@
   - Before: repo-wide rules; a product committed with CRLF saw every touched file rewritten (fixture 7/7). After: 0. The template covers installed paths and `.githooks/` only; two validator parsers of product docs now accept CRLF.
   - Four independent review rounds, every finding reproduced first. Rejected on the way: keeping `* text=auto` (not neutral), `docs/` rules (rewrote product Markdown), a printed re-checkout script (deleted skip-worktree files).
 - Tests: new install and update notice (real deploys), template contract with 5 failing mutants, the notice's advice in 3 EOL configs, CRLF validator fixture (discriminates on Linux). Full suite: PR #452 CI. SSoT sequence 180->181.
-
-### Ship-chore-release-v1.8.28-2026-09-27
-- Feature shipped: **v1.8.28** packages the nine PRs merged since v1.8.27.
-  - Six of them come from the 2026-09-26 downstream simulation:
-    - the report itself (#444);
-    - #445: `/review` invariant proofs;
-    - #446: CRLF manifests and long-path / partial-cache updates;
-    - #447: validator receipts, the latest review verdict, and the Windows PowerShell 5.1 crash;
-    - #448: install-day copy;
-    - #449: the hook in monorepo packages.
-  - Three came earlier: #441 (governance scope consistency), #442 (external review adjudication) and #443 (retro).
-  - The seven version surfaces plus `CITATION.cff date-released` moved 1.8.27 -> 1.8.28 and 2026-09-14 -> 2026-09-27. Each was bumped by an asserted single-occurrence replace and is pinned by `test_release_version_consistency.py` (2 passed).
-- **The downstream delta was measured, not assumed.**
-  - 12 of the 43 files changed since `v1.8.27` reach an adopter:
-    - core: 4 workflows, `deploy.sh`, both validators, the guard guide;
-    - scaffold: the Work Log template, the hook sample, `CLAUDE.md`;
-    - wrapper: `deploy_brain.sh`.
-  - The SSoT template is unchanged.
-  - The CHANGELOG leads with the one action an adopter must take: re-run the hook's INSTALL copy step.
-- **The release notes keep the unfavourable result.**
-  - No governed arm beat its no-framework control on hidden tests.
-  - The id-reuse defect was caught in 1 of 10 governed chains.
-  - Two #212 levers were measured and not shipped.
-  - #201 is a proposal awaiting the owner's approval, because it amends ADR-005.
-- Tests: release guard 2 passed; docs pins 12 passed. The whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. After merge: lightweight `v1.8.28` tag + `gh release create --latest` (repo-gotchas §12); the release is NOT complete at PR merge. SSoT sequence 179->180; Ship History rotated at cap 10.
 
