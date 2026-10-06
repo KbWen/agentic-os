@@ -2,6 +2,31 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.28-2026-09-27
+- Feature shipped: **v1.8.28** packages the nine PRs merged since v1.8.27.
+  - Six of them come from the 2026-09-26 downstream simulation:
+    - the report itself (#444);
+    - #445: `/review` invariant proofs;
+    - #446: CRLF manifests and long-path / partial-cache updates;
+    - #447: validator receipts, the latest review verdict, and the Windows PowerShell 5.1 crash;
+    - #448: install-day copy;
+    - #449: the hook in monorepo packages.
+  - Three came earlier: #441 (governance scope consistency), #442 (external review adjudication) and #443 (retro).
+  - The seven version surfaces plus `CITATION.cff date-released` moved 1.8.27 -> 1.8.28 and 2026-09-14 -> 2026-09-27. Each was bumped by an asserted single-occurrence replace and is pinned by `test_release_version_consistency.py` (2 passed).
+- **The downstream delta was measured, not assumed.**
+  - 12 of the 43 files changed since `v1.8.27` reach an adopter:
+    - core: 4 workflows, `deploy.sh`, both validators, the guard guide;
+    - scaffold: the Work Log template, the hook sample, `CLAUDE.md`;
+    - wrapper: `deploy_brain.sh`.
+  - The SSoT template is unchanged.
+  - The CHANGELOG leads with the one action an adopter must take: re-run the hook's INSTALL copy step.
+- **The release notes keep the unfavourable result.**
+  - No governed arm beat its no-framework control on hidden tests.
+  - The id-reuse defect was caught in 1 of 10 governed chains.
+  - Two #212 levers were measured and not shipped.
+  - #201 is a proposal awaiting the owner's approval, because it amends ADR-005.
+- Tests: release guard 2 passed; docs pins 12 passed. The whole suite runs on the release PR's CI (Linux + 3 Windows shards) before merge. After merge: lightweight `v1.8.28` tag + `gh release create --latest` (repo-gotchas §12); the release is NOT complete at PR merge. SSoT sequence 179->180; Ship History rotated at cap 10.
+
 ### Ship-fix-hook-monorepo-and-notices-2026-09-27
 - Feature shipped: **the opt-in pre-commit hook works in a monorepo package and says true things (#208, #211 a/c).**
   - #208, the silent case: git resolves `core.hooksPath` from the repository root, so running `git config core.hooksPath .githooks` inside a package pointed at nothing and the hook never ran.
