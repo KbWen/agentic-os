@@ -119,7 +119,8 @@ class TestAppend(unittest.TestCase):
             def run(entry: dict) -> "subprocess.CompletedProcess[str]":
                 cmd = [sys.executable, str(script), "append", "--path", str(path),
                        "--entry", json.dumps(entry)]
-                return subprocess.run(cmd, capture_output=True, text=True)
+                return subprocess.run(cmd, capture_output=True, text=True,
+                                      encoding="utf-8", errors="replace")
 
             ship1 = {"log": "main-20261006.md", "decisions": ["ship 1"]}
             self.assertEqual(run(ship1).returncode, 0)
