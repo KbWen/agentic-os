@@ -18,8 +18,8 @@ Usage:
     --path .agentcortex/context/archive/INDEX.jsonl
 
 Exit codes:
-  0  success
-  1  usage / parse / IO error, or the entry's `log` is already recorded
+  0  success (an identical entry already recorded is a no-op: "already-recorded")
+  1  usage / parse / IO error, or the entry's `log` is recorded for a different entry
   2  chain integrity failure during migration
 """
 
@@ -93,7 +93,7 @@ def _duplicate_log_message(log: str, line_no: int) -> str:
     return (
         f"log '{log}' is already recorded (INDEX line {line_no}) for a different entry; "
         f"nothing was written. Archive this Work Log under an unused name, e.g. '{name}' "
-        f"(then --3-, ...), without overwriting the existing archive, and record that name. "
+        f"(then the next free N), without overwriting the existing archive, and record that name. "
         f"(Re-running the identical entry, e.g. a ship retry, is accepted as already recorded.)"
     )
 
@@ -113,7 +113,8 @@ def find_recorded(path: Path, entry: dict) -> dict | None:
 
 
 def append_chained(path: Path, entry: dict) -> dict:
-    """Append `entry` with computed prev_sha. Returns the entry as written."""
+    """Append `entry` with computed prev_sha. Returns the entry as written, or the
+    existing entry unchanged when `entry` is an identical re-append (see find_recorded)."""
     if not isinstance(entry, dict):
         raise ValueError("entry must be a JSON object")
     if PREV_SHA_FIELD in entry:

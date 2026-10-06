@@ -92,10 +92,14 @@ describe this baseline only.
   hazard named); if the target exists, use `<worklog-key>--2-<YYYYMMDD>.md`
   (then `--3-`, …); INDEX `log` records the actual filename.
 - **AC-8 (INDEX append guard).** `append_chain_entry.py append` rejects, with a
-  nonzero exit and nothing written, an entry whose `log` value already appears
-  in INDEX.jsonl; the error message states the `--N-` remedy. Entries without a
-  `log` field are unaffected; existing duplicates in the chain are not
-  re-checked. Verified by a unit test red on the baseline.
+  nonzero exit and nothing written, an entry whose `log` value is already
+  recorded for a different entry; the error message states the `--N-` remedy.
+  An identical re-append (a retried ship) is a no-op with exit 0, so a retry is
+  never pushed into a rename that would leave the first entry dangling.
+  Entries without a `log` field are unaffected; existing duplicates in the
+  chain are not re-checked. Verified by unit tests red on the baseline.
+  [Updated: 2026-10-06 — amended during review after the red-team retry
+  finding; owner approval in chat, 2026-10-06.]
 - **AC-9 (token budget).** The lifecycle aggregate measured by
   `analyze_token_lifecycle.py` stays ≤ the existing 355,000 ceiling, which is
   not raised (baseline 354,868).
@@ -137,5 +141,5 @@ backlog #186 (resolved here).
 - [DECISION] A same-day collision on a final archive uses `<worklog-key>--N-<YYYYMMDD>.md`: normalized keys never contain `--`, and the date stays last for filename-date parsers.
 - [TRADEOFF] D4 stays a native check edited in place, a documented deviation from ADR-006 §3, because the Python wrappers cannot express WARN; byte-identical twin snippets are test-pinned instead.
 - [TRADEOFF] Legacy final logs found under `archive/work/` are moved to the root (location is mutable, content is not) instead of being exempted in validator code.
-- [CONSTRAINT] Duplicate INDEX `log` values are rejected at append time by `append_chain_entry.py`, not by a validator scan, so the existing duplicate in history needs no grandfathering.
+- [CONSTRAINT] A `log` already recorded for a different INDEX entry is rejected at append time by `append_chain_entry.py`, not by a validator scan, so the existing duplicate in history needs no grandfathering; an identical re-append is a no-op.
 - [CONSTRAINT] A check that cannot run reports SKIP or WARN, never PASS and never silence.

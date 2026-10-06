@@ -44,3 +44,16 @@ Older detail moved out of the active Work Log `.agentcortex/context/work/fix-arc
 - Green: new + related fast suites `-m "not slow"` 158 passed; new slow 2 passed (81s); existing slow d4/witness/#171 6 passed (525s).
 - Live: D4 `PASS ... (194 checked)`; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2` (same 5 pre-existing WARNs). Lifecycle 354,868 → 354,726 (ceiling 355,000 unchanged). AC-4 blobs unchanged: 73037ed…, e5898fc…. scan_credentials on 11 changed files: exit 0.
 - Implement final (after receipt, HEAD aefe22f): validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`.
+
+## Phase Summary (moved verbatim 2026-10-06, implement round 2)
+
+- bootstrap: classified as feature (workflow contract change in ship/handoff + both validator twins + tests; governance paths; downstream-deployed behaviour), 5 skills matched, context loaded. ⚡ ACX
+- brainstorm: 5-seat read-only roundtable + tenth-man + logrotate external signal; lead proposal (rename fragments) refuted; owner chose Option 2 + D-1..D-4 (chat 2026-10-06).
+- spec: `docs/specs/archive-name-collisions.md` AC-1..AC-10; frozen 2026-10-06 on the owner's explicit chat instruction. Lifecycle headroom 132 tokens (354,868 / 355,000) → AC-9 deletion-funded.
+
+## Review Feedback (round 1, moved verbatim 2026-10-06)
+
+- BLOCKING (both reviewers) `validate.ps1:1` BOM stripped by my re-indent (`WriteAllText`); PS 5.1 parse fails; existing slow test `test_validate_ps1_survives_failing_git_probes_on_windows_powershell` red. Fix: restore BOM + byte pin test.
+- Fix in round 2: AC-6 `token-governance.md:120` add "create it if absent"; ps1 D4 child under local `Continue` (PS 5.1 aborted on child stderr, pre-existing); PASS/WARN only when the child exits 0 (sh + ps1); ps1 `@'...'@` literal here-string; identical re-append = no-op exit 0 (ship retry).
+- Rejected (verified): non-ASCII cp950 (validate.sh:5 exports PYTHONIOENCODING=utf-8; works with it); "keys can contain --" (normalization collapses runs: `hotfix/issue--42` -> `hotfix-issue-42`); casefold/`./` match (keys are lowercase, `log` is a basename).
+- Accepted, no change: root-only Phase-Summary scan leaves M7/gate-schema recursive (spec Non-goal); pre-#106 adopter finals in work/ get an actionable WARN -> release CHANGELOG upgrade note.
