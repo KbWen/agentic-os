@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.29-2026-09-27
+- Feature shipped: **v1.8.29** packages #452 (#215: the installed `.gitattributes` no longer sets line endings for the product's own files) and #453 (#216: `deploy.sh --dry-run` deletes and moves nothing). Both came from the owner's check that the install must not weigh down or affect product development; the weight side held (205 files, +0.6% bytes vs v1.8.27, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488).
+- The CHANGELOG leads with the one-time upgrade step for clones checked out under the old repo-wide rules. #201 (PR #451, draft) stays a proposal awaiting the owner's approval.
+- Tests: release guard + docs pins; full suite on the release PR's CI. After merge: lightweight `v1.8.29` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 182->183.
+
 ### Ship-fix-dry-run-read-only-2026-09-27
 - Feature shipped: **`deploy.sh --dry-run` deletes and moves nothing (#216).** Found by the #215 review: on an update the dry run deleted every pending `*.acx-incoming` before its preview (reproduced on v1.8.28: 214 -> 213 files), and on a legacy install it ran the path migration first. Both now run only for a real deploy; README.md's "preview, no changes" is now true for deploy.sh. It also unblocks #451 (#201), under which a deleted sidecar means "merged".
 - Tests: one real deploy + dry run, whole-tree SHA-256 snapshot identical; mutants (cleanup unguarded, migration unguarded) each FAIL. Full suite: PR #453 CI. SSoT sequence 181->182.
