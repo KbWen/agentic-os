@@ -1443,6 +1443,57 @@ def test_no_migration_banner_on_clean_update() -> None:
             "routine re-deploy (manifest present, no legacy dirs) must not print the migration banner"
 
 
+_TOOLS_VALIDATE = ("validate.sh", "validate.ps1", "validate.cmd")
+
+
+@requires_bash
+def test_first_install_keeps_projects_own_tools_validate() -> None:
+    """#220: with no prior Agentic OS install, tools/validate.* belong to the project.
+    A first install used to delete them (no backup, exit 0) and remove tools/."""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        originals = {name: _user_bytes(f"tools/{name}") for name in _TOOLS_VALIDATE}
+        (target / "tools").mkdir(parents=True)
+        for name, data in originals.items():
+            (target / "tools" / name).write_bytes(data)
+        result = _deploy(target)
+        assert result.returncode == 0, result.stderr[-2000:]
+        for name, data in originals.items():
+            path = target / "tools" / name
+            assert path.is_file() and path.read_bytes() == data, \
+                f"tools/{name}: the project's own file must survive a first install byte-for-byte"
+        assert "[MIGRATE]" not in result.stdout, result.stdout[-1500:]
+        assert "Migrating from legacy paths" not in result.stdout, result.stdout[-1500:]
+
+
+@pytest.mark.parametrize("state", ["after-install", "failed-install-residue", "legacy-agentcortex-dir"])
+@requires_bash
+def test_later_deploys_keep_projects_own_tools_validate(state: str) -> None:
+    """#220: install evidence does not prove file ownership. Our own first install writes
+    the manifest, and a failed one leaves .agentcortex/ behind; neither may turn the
+    project's tools/validate.* into deletable "legacy wrappers" on the next run."""
+    with tempfile.TemporaryDirectory() as td:
+        target = Path(td) / "proj"
+        target.mkdir()
+        if state == "after-install":
+            assert _deploy(target).returncode == 0
+        elif state == "failed-install-residue":
+            (target / ".agentcortex").mkdir()
+        else:
+            (target / "agentcortex").mkdir()
+        originals = {name: _user_bytes(f"tools/{name}") for name in _TOOLS_VALIDATE}
+        (target / "tools").mkdir()
+        for name, data in originals.items():
+            (target / "tools" / name).write_bytes(data)
+        result = _deploy(target)
+        assert result.returncode == 0, result.stderr[-2000:]
+        for name, data in originals.items():
+            path = target / "tools" / name
+            assert path.is_file() and path.read_bytes() == data, \
+                f"tools/{name} ({state}): the project's own file must survive"
+        assert "removed legacy tools/" not in result.stdout, result.stdout[-1500:]
+
+
 # ---------------------------------------------------------------------------
 # AC-13: anchored deploy-manifest snapshot (demonstration over green gates)
 # ---------------------------------------------------------------------------

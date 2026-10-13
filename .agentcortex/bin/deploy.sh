@@ -611,14 +611,16 @@ if [ -d "$TARGET/agentcortex" ] || [ -f "$TARGET/.agentcortex-manifest" ]; then
     _acx_legacy_confirmed=true
 fi
 
+# tools/validate.* are never touched: the public framework never shipped them,
+# and no install marker proves ownership (our own first install writes the
+# manifest), so removing them deleted the project's own files (#220).
+
 # Banner only when actual legacy ARTIFACTS exist — a bare .agentcortex-manifest
 # is the normal installed state, and announcing "Migrating from legacy paths"
 # on every routine update was pure noise (sim finding 2026-06-11). The block
 # still runs for manifest-only targets (its steps are silent no-ops).
 _acx_legacy_artifacts=false
-if [ -d "$TARGET/agentcortex" ] || [ -d "$TARGET/docs/context" ] || \
-   [ -f "$TARGET/tools/validate.sh" ] || [ -f "$TARGET/tools/validate.ps1" ] || \
-   [ -f "$TARGET/tools/validate.cmd" ]; then
+if [ -d "$TARGET/agentcortex" ] || [ -d "$TARGET/docs/context" ]; then
     _acx_legacy_artifacts=true
 fi
 
@@ -626,10 +628,9 @@ if $DRY_RUN; then
     # A dry run changes nothing: the migration below moves and deletes legacy paths.
     if $_acx_legacy_artifacts; then
         echo ""
-        echo "[DRY RUN] Legacy paths found; a real run migrates them first (agentcortex/, docs/context/, tools/validate.*)."
+        echo "[DRY RUN] Legacy paths found; a real run migrates them first (agentcortex/, docs/context/)."
     fi
-elif $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
-   [ -f "$TARGET/tools/validate.ps1" ] || [ -f "$TARGET/tools/validate.cmd" ]; then
+elif $_acx_legacy_confirmed; then
     if $_acx_legacy_artifacts; then
         echo ""
         echo "Migrating from legacy paths..."
@@ -706,12 +707,6 @@ elif $_acx_legacy_confirmed || [ -f "$TARGET/tools/validate.sh" ] || \
         rmdir "$TARGET/docs/context" 2>/dev/null || true
         # NOTE: docs/adr/ and docs/specs/ are fixed anchors — do NOT rmdir
     fi
-
-    # tools/validate.* → removed (no longer deployed as wrappers)
-    for ext in sh ps1 cmd; do
-        [ -f "$TARGET/tools/validate.$ext" ] && rm -f "$TARGET/tools/validate.$ext" && echo "  [MIGRATE] removed legacy tools/validate.$ext"
-    done
-    rmdir "$TARGET/tools" 2>/dev/null || true
 
     if $_acx_legacy_artifacts; then
         echo "  Migration complete."

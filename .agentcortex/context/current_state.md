@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-13T03:10:21Z
+- **Last Updated**: 2026-10-13T05:02:27Z
 - **Last Verified**: 2026-10-13
-- **Update Sequence**: 191
+- **Update Sequence**: 192
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-legacy-tools-migration-220-2026-10-13
+- Feature shipped: **a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}` (#220, P1 data loss, same class as #188).** The legacy-path migration used to remove them on a first install with no backup and exit 0. The removal, its gate and its dry-run mention are deleted. The public framework never shipped these files (`c1ced66`, v5.4, had only the removal code), so no install marker can prove ownership. The other legacy migrations are unchanged.
+- Review: the first fix gated the removal on install evidence. A fresh reviewer with a red-team pass reproduced 2 CRITICAL: our own first install writes the manifest, so the next deploy deleted the files; a failed install leaves `.agentcortex/` and the retry deleted them. Both reproduced as RED, then fixed by deleting the step (D-1). The round-2 reviewer compared old vs new over 6 target states.
+- Tests: PR #467 CI 18 pass; deploy suites 71 passed, 2 skipped (pre-existing). Downstream spot-check: v1.8.32 -> candidate upgrade and a deploy.ps1 brownfield install keep the files, downstream validate fail=0. A/B agent sim (hidden test): 5/5 on both arms, no regression. SSoT 191->192; Ship History rotated at cap 10.
+
 ### Ship-chore-prompt-audit-batch1-2026-10-13
 - Feature shipped: **instruction files no longer contradict each other or the repo (#224, prompt audit batch 1).** Five domain skills cite `ADR-00N-project-architecture.md`, the name `/app-init` writes, instead of a nonexistent ADR-002. Guardrails §12.2 defers to the §5.2b truncation rule, and §5.4 extracts at the third consumer, matching its own 3+ line and karpathy-principles. Bootstrap and the Work Log template share one Platform enum (codex-app and codex-web stay distinct; gemini-cli added). Two dead references are gone, and platform lists include Claude Code. Record and a disposition for every audit item: `docs/reviews/2026-10-13-prompt-audit.md`, backlog #224-#228.
 - Review: a refute-only pass before implement changed four items (deletion-funding against the 355k ceiling, the Platform enum, the alias line, H8 moved to #228). The pre-mortem was NOT READY: the karpathy checklist scope had widened to every change, and the record claimed no behaviour change. Both were fixed, and a fresh re-review proved AC-1..AC-10. H6/F2/F3 shift agent behaviour toward rules the repo already stated; tools and validators are unchanged.
@@ -160,7 +165,3 @@
 - Feature shipped: **v1.8.29** packages #452 (#215: the installed `.gitattributes` no longer sets line endings for the product's own files) and #453 (#216: `deploy.sh --dry-run` deletes and moves nothing). Both came from the owner's check that the install must not weigh down or affect product development; the weight side held (205 files, +0.6% bytes vs v1.8.27, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488).
 - The CHANGELOG leads with the one-time upgrade step for clones checked out under the old repo-wide rules. #201 (PR #451, draft) stays a proposal awaiting the owner's approval.
 - Tests: release guard + docs pins; full suite on the release PR's CI. After merge: lightweight `v1.8.29` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 182->183.
-
-### Ship-fix-dry-run-read-only-2026-09-27
-- Feature shipped: **`deploy.sh --dry-run` deletes and moves nothing (#216).** Found by the #215 review: on an update the dry run deleted every pending `*.acx-incoming` before its preview (reproduced on v1.8.28: 214 -> 213 files), and on a legacy install it ran the path migration first. Both now run only for a real deploy; README.md's "preview, no changes" is now true for deploy.sh. It also unblocks #451 (#201), under which a deleted sidecar means "merged".
-- Tests: one real deploy + dry run, whole-tree SHA-256 snapshot identical; mutants (cleanup unguarded, migration unguarded) each FAIL. Full suite: PR #453 CI. SSoT sequence 181->182.
