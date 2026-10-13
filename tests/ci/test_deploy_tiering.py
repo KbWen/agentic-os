@@ -1466,26 +1466,30 @@ def test_first_install_keeps_projects_own_tools_validate() -> None:
         assert "Migrating from legacy paths" not in result.stdout, result.stdout[-1500:]
 
 
-@pytest.mark.parametrize("marker", ["manifest", "dot-agentcortex-dir"])
+@pytest.mark.parametrize("state", ["after-install", "failed-install-residue"])
 @requires_bash
-def test_prior_install_still_removes_legacy_tools_validate(marker: str) -> None:
-    """#220 keeps the v6 migration: with evidence of a prior install (a manifest, or a
-    pre-manifest .agentcortex/ dir), tools/validate.* are the old framework wrappers."""
+def test_later_deploys_keep_projects_own_tools_validate(state: str) -> None:
+    """#220: install evidence does not prove file ownership. Our own first install writes
+    the manifest, and a failed one leaves .agentcortex/ behind; neither may turn the
+    project's tools/validate.* into deletable "legacy wrappers" on the next run."""
     with tempfile.TemporaryDirectory() as td:
         target = Path(td) / "proj"
         target.mkdir()
-        if marker == "manifest":
+        if state == "after-install":
             assert _deploy(target).returncode == 0
         else:
             (target / ".agentcortex").mkdir()
+        originals = {name: _user_bytes(f"tools/{name}") for name in _TOOLS_VALIDATE}
         (target / "tools").mkdir()
-        for name in _TOOLS_VALIDATE:
-            (target / "tools" / name).write_text("# old wrapper\n", encoding="utf-8")
+        for name, data in originals.items():
+            (target / "tools" / name).write_bytes(data)
         result = _deploy(target)
         assert result.returncode == 0, result.stderr[-2000:]
-        for name in _TOOLS_VALIDATE:
-            assert not (target / "tools" / name).exists(), f"legacy tools/{name} must be migrated away"
-            assert f"[MIGRATE] removed legacy tools/{name}" in result.stdout, result.stdout[-1500:]
+        for name, data in originals.items():
+            path = target / "tools" / name
+            assert path.is_file() and path.read_bytes() == data, \
+                f"tools/{name} ({state}): the project's own file must survive"
+        assert "removed legacy tools/" not in result.stdout, result.stdout[-1500:]
 
 
 # ---------------------------------------------------------------------------
