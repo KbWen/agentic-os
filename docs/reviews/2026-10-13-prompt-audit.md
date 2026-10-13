@@ -33,7 +33,8 @@ backlog: "#224, #225, #226, #227, #228"
   creates. `engineering_guardrails.md` both requires and forbids pasting
   terminal output into the Work Log, in two sections that load together.
   Platform lists leave out shipped adapters. All of these are fixable
-  without changing behaviour: backlog #224 (#228 for token figures).
+  without touching tools or validators: backlog #224 (#228 for token
+  figures).
 - **The behavioural findings are hypotheses, not results.** They are numeric
   chat-length caps, the "1-2 findings max" cap on red-team findings, an
   all-caps refactor slogan that the eval pins verbatim, and a vague-input
@@ -141,8 +142,12 @@ re-checked every point below against the files and by running the tools.
 ## Dispositions
 
 - **#224 (do-now, quick-win):** H1–H7, M6, M8, F2, F3, F4. Stale facts and
-  contradictions only, no behaviour change, deletion-funded (see
-  Adjudication).
+  contradictions, deletion-funded (see Adjudication). Tools and validators
+  are unchanged. Three rule texts do change agent behaviour, each toward a
+  rule the repo already stated: H6 (extract at the 3rd consumer), F2 (TDD
+  for feature/architecture-change, bug fixes start from a reproducing
+  test), F3 (the simplification checklist applies only to touched lines
+  during review/refactor).
 - **#228 (refine, quick-win):** H8 + F6. Hand-carried token figures across
   CLAUDE.md, the guides and the benchmark disagree with the files they
   describe. Replace them with a pointer to `analyze_token_lifecycle.py`

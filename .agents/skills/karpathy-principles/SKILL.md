@@ -93,7 +93,7 @@ During /review:
 
 ## Code Simplification Checklist
 
-On lines this change touches, apply Chesterton's Fence — understand WHY before removing:
+When reviewing or refactoring touched lines, apply Chesterton's Fence — understand WHY before removing:
 
 - [ ] Deep nesting (>3 levels) → extract to named functions
 - [ ] Long functions (>50 lines) → split by responsibility
