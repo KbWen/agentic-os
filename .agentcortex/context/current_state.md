@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-13T05:02:27Z
+- **Last Updated**: 2026-10-13T06:57:30Z
 - **Last Verified**: 2026-10-13
-- **Update Sequence**: 192
+- **Update Sequence**: 193
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.33-2026-10-13
+- Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
+- The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).
+- Tests: release-version consistency 2 passed; docs pins 12 passed; lifecycle 42 passed. The whole suite runs on the release PR's CI before merge. After merge: `v1.8.33` tag + `gh release create --latest` (repo-gotchas §12).
+
 ### Ship-fix-legacy-tools-migration-220-2026-10-13
 - Feature shipped: **a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}` (#220, P1 data loss, same class as #188).** The legacy-path migration used to remove them on a first install with no backup and exit 0. The removal, its gate and its dry-run mention are deleted. The public framework never shipped these files (`c1ced66`, v5.4, had only the removal code), so no install marker can prove ownership. The other legacy migrations are unchanged.
 - Review: the first fix gated the removal on install evidence. A fresh reviewer with a red-team pass reproduced 2 CRITICAL: our own first install writes the manifest, so the next deploy deleted the files; a failed install leaves `.agentcortex/` and the retry deleted them. Both reproduced as RED, then fixed by deleting the step (D-1). The round-2 reviewer compared old vs new over 6 target states.
@@ -160,8 +165,3 @@
 - Feature shipped: **the knowledge-base seam no longer hard-codes any KB's headings.** `kb-consult` reads a routed standard's digest, checks its line-1 `sha` against the index row, and takes the section the KB names in `digest.anchors` (risks for `/plan`/`/implement`, checklist for `/review`); missing/empty/stale digest → the page. `schema_version` is additive (any integer; text match on JSON entrypoints). A declared-but-unreadable KB shows one bootstrap line; a KB clone that is its own repo off clean `main` gets a WARN. Neither gates. ADR-009 amendment + `docs/specs/kb-seam-anchor-neutrality.md`.
 - **The takeover re-verified the handoff note instead of trusting it, and that found a defect main also has:** an `llms.txt`-only KB resolved UNREADABLE because the schema check was not scoped to JSON entrypoints. Blind rule simulations (old text as control) showed it; fixed token-negatively. Four fresh review rounds (3 NOT READY, all fixed); every `bootstrap.md` edit net ≤ 0 chars. Accepted risk: a stale digest when a KB does not regenerate its outputs. Follow-ups #217 (fingerprint format check), #218 (routed order vs smallest-first).
 - Tests: CI-path suite `-m "not slow_governance"` **980 passed, 2 skipped**; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2` (5 pre-existing WARN). Lifecycle 354,488 -> 354,903 (ceiling 355,000 unchanged). Real-KB run + 6-case blind sim as expected. SSoT sequence 183->184.
-
-### Ship-chore-release-v1.8.29-2026-09-27
-- Feature shipped: **v1.8.29** packages #452 (#215: the installed `.gitattributes` no longer sets line endings for the product's own files) and #453 (#216: `deploy.sh --dry-run` deletes and moves nothing). Both came from the owner's check that the install must not weigh down or affect product development; the weight side held (205 files, +0.6% bytes vs v1.8.27, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488).
-- The CHANGELOG leads with the one-time upgrade step for clones checked out under the old repo-wide rules. #201 (PR #451, draft) stays a proposal awaiting the owner's approval.
-- Tests: release guard + docs pins; full suite on the release PR's CI. After merge: lightweight `v1.8.29` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 182->183.

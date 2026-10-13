@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.8.33] - 2026-10-13
+
+**A deploy never deletes your own `tools/validate.sh`, `.ps1` or `.cmd`** (#220, P1, the same data-loss class as #188). Before this release, a first install into a project that had its own `tools/validate.*` deleted them with no backup and exit 0, and removed `tools/`. A marker-gated fix would only have delayed the loss by one run, because our own first install writes `.agentcortex-manifest`. The framework never shipped these files publicly, so the legacy-path migration no longer touches `tools/` at all. The other legacy migrations (`agentcortex/`, `docs/context/`) are unchanged. This replaces the 1.8.31 advice to back these files up before the first deploy.
+
+**Instruction files no longer contradict each other or the repo** (#224, prompt audit, `docs/reviews/2026-10-13-prompt-audit.md`).
+
+- The five domain skills (api-design, auth-security, database-design, doc-lookup, frontend-patterns) point at `docs/adr/ADR-00N-project-architecture.md`, the file `/app-init` writes, instead of a nonexistent `ADR-002-project-architecture.md`.
+- `engineering_guardrails.md` §12.2 now follows the §5.2b evidence-truncation rule instead of asking for pasted terminal output. §5.4 extracts a shared abstraction at the third real consumer, which matches its own "3+" line and `karpathy-principles`.
+- The Work Log `Platform` value is the same in `/bootstrap` and the template: `claude-code | codex-app | codex-web | gemini-cli | antigravity | api`.
+- Two dead references are removed. Guardrails §12.1 and §12.4 no longer name Claude-only tools. Platform lists include Claude Code.
+- `methodology.md` scopes TDD as `/bootstrap` §3.6 does, and bug fixes still start from a reproducing test. The `karpathy-principles` simplification checklist applies only when reviewing or refactoring touched lines.
+
+**Downstream delta:**
+- Core files, updated on deploy: `.agentcortex/bin/deploy.sh`, `.agent/rules/engineering_guardrails.md`, `.agent/rules/methodology.md`, `.agent/workflows/bootstrap.md`, `.agent/workflows/handoff.md`, `.agentcortex/metadata/trigger-compact-index.json`.
+- Scaffold files: six `.agents/skills/*/SKILL.md` and `.agentcortex/templates/worklog.md`. If you edited any of them, the new version arrives as `.acx-incoming`.
+- Tools and validators are unchanged.
+- Three rule texts change what an agent does, each toward a rule the repo already stated: the extraction threshold, the TDD scope, and the scope of the simplification checklist.
+
+**Checked downstream before release:**
+- An upgrade from 1.8.32 keeps a project's `tools/validate.sh` byte-identical and offers edited skills as sidecars. A brownfield install via `deploy.ps1` keeps `tools/` and the adopter's `CLAUDE.md`. The downstream validator reports `fail=0` in both cases.
+- An A/B agent session on 1.8.32 and on this release, using a hidden acceptance test that needs a convention found only in the project ADR, scored 5/5 on both. One run per version, so this is directional evidence of no regression, not a measured gain.
+
 ## [1.8.32] - 2026-10-06
 
 **The archive directory is now the file type, and a validator check that cannot run no longer reports a pass** (#464, `docs/specs/archive-name-collisions.md`). Final Work Logs live in `.agentcortex/context/archive/`; `archive/work/` holds `/handoff` compaction fragments, which can share a final log's name.
