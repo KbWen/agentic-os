@@ -93,7 +93,7 @@ During /review:
 
 ## Code Simplification Checklist
 
-When reviewing or refactoring, apply Chesterton's Fence — understand WHY before removing:
+On lines this change touches, apply Chesterton's Fence — understand WHY before removing:
 
 - [ ] Deep nesting (>3 levels) → extract to named functions
 - [ ] Long functions (>50 lines) → split by responsibility
@@ -138,5 +138,5 @@ Load numbered principle sections (`## 1`–`## 4`), `Common Rationalizations`, `
 
 - Source: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT declared upstream; no root LICENSE artifact; provenance asserted)
 - Simplification enrichment: [addyosmani/agent-skills — code-simplification](https://github.com/addyosmani/agent-skills) (MIT)
-- Complements: `writing-plans` (Think Before Coding), `verification-before-completion` (Goal-Driven Execution)
+- Complements: `/plan` (Think Before Coding), `verification-before-completion` (Goal-Driven Execution)
 - Guardrails: `.agent/rules/engineering_guardrails.md` §7 Scope Discipline

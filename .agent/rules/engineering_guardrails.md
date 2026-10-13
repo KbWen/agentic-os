@@ -196,7 +196,7 @@ To prevent Work Log bloat and premature context compaction, agents MUST NOT past
 ### 5.4 YAGNI — You Aren't Gonna Need It
 
 - Do not introduce abstract base classes, mixins, or utility layers unless there are 3+ concrete use cases already in the codebase.
-- Single-file implementation first; refactor to a shared abstraction only when the second real consumer exists.
+- Single-file implementation first; refactor to a shared abstraction only when the third real consumer exists.
 - Adding a new dependency requires justification in the PR or Work Log: explain why existing code cannot solve the problem.
 
 ## 6. Explainability & Traceability
@@ -391,7 +391,7 @@ Before `/ship` writes to `current_state.md`:
 
 ### 12.1 Read-Before-Write
 Any task that modifies an existing file MUST:
-1. Read the full file first using the Read tool.
+1. Read the full file first.
 2. Record in the Work Log what was found: file purpose, key exports, and any sections that will change.
 Skipping this step is a gate violation — the task cannot proceed to Implement.
 
@@ -399,7 +399,7 @@ Skipping this step is a gate violation — the task cannot proceed to Implement.
 - The project's linter/analyzer MUST produce **zero errors** (warnings are allowed but must be noted).
 - The project's test suite MUST pass with **zero failures**.
 - Red on either = no commit, no ship. No exceptions.
-- Evidence (terminal output) MUST be pasted into the Work Log under "Test Gate Results".
+- Evidence MUST be recorded in the Work Log under "Test Gate Results", truncated per §5.2b.
 - *(Project-specific test commands should be defined in `/app-init` or project README.)*
 
 ### 12.3 Migration Safety
@@ -411,7 +411,7 @@ Schema changes to database tables require ALL of the following:
 
 ### 12.4 No Silent File Shadowing
 Before creating any new file:
-1. Use Glob to check if a file with that name already exists anywhere in the project.
+1. Check whether a file with that name already exists anywhere in the project.
 2. If a match is found, document the conflict in the Work Log and resolve intentionally (rename, merge, or replace with justification).
 Never silently overwrite an existing file.
 

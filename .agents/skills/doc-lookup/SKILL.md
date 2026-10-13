@@ -165,5 +165,5 @@ Load `Conventions`, `Doc URL Registry`, `Common Rationalizations`, `Conflict Det
 ## References
 
 - Source enrichment: [addyosmani/agent-skills — source-driven-development](https://github.com/addyosmani/agent-skills) (MIT)
-- Project ADR: `docs/adr/ADR-002-project-architecture.md` § Tech Stack
+- Project ADR: `docs/adr/ADR-00N-project-architecture.md` § Tech Stack
 - Engineering guardrails: `.agent/rules/engineering_guardrails.md`

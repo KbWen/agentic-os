@@ -30,7 +30,7 @@ usage: Used by /bootstrap workflow when creating a new Work Log at .agentcortex/
 
 - Agent: `<model-name>`
 - Session: `<YYYY-MM-DD HH:MM UTC>`
-- Platform: `<claude-code | codex | antigravity | api>`
+- Platform: `<claude-code | codex-app | codex-web | gemini-cli | antigravity | api>`
 - Files Read: `<integer>` (optional — running count of file reads across this session for token-budget instrumentation; bootstrap may seed `0`, later phases may increment when material).
 
 ---

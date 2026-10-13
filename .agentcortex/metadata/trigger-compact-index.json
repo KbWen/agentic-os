@@ -261,7 +261,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "3bb02b81"
+      "content_hash": "d1f9e506"
     },
     {
       "id": "database-design",
@@ -286,7 +286,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "31eb0d40"
+      "content_hash": "89110bff"
     },
     {
       "id": "frontend-patterns",
@@ -309,7 +309,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "209451ab"
+      "content_hash": "f52af629"
     },
     {
       "id": "auth-security",
@@ -338,7 +338,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "ad3e61e3"
+      "content_hash": "86f2a11d"
     },
     {
       "id": "doc-lookup",
@@ -364,7 +364,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "6bdb1299"
+      "content_hash": "2be5eb09"
     },
     {
       "id": "dispatching-parallel-agents",
@@ -444,7 +444,7 @@
         ]
       },
       "load_policy": "phase-entry",
-      "content_hash": "d599b962"
+      "content_hash": "d2e6cf31"
     },
     {
       "id": "production-readiness",

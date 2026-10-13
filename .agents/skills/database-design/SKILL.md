@@ -102,6 +102,6 @@ Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss
 
 ## References
 
-- Project ADR: `docs/adr/ADR-002-project-architecture.md` § Database Design
+- Project ADR: `docs/adr/ADR-00N-project-architecture.md` § Database Design
 - Security guardrails: `.agent/rules/security_guardrails.md` (A03: SQL Injection, A02: Secrets in connection strings)
 - Spec template: `.agentcortex/templates/spec-app-feature.md` § Database Schema

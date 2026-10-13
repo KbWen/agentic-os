@@ -232,7 +232,7 @@ Write `## Session Info` and `## Drift Log` blocks immediately after header:
 ## Session Info
 - Agent: [model name]
 - Session: [timestamp]
-- Platform: [Antigravity / Codex Web / Codex App]
+- Platform: [claude-code | codex-app | codex-web | gemini-cli | antigravity | api]
 - Guardrails loaded: [§ list — e.g., "§1, §2, §4, §7, §8.1, §10 (core)" | "skipped (quick-win)" | "skipped (tiny-fix)"]
 - Override: [loaded override filename(s) + source per §1a | none]
 
@@ -336,8 +336,6 @@ Every non-`tiny-fix` workflow MUST maintain two header fields in the active Work
 
 **Bootstrap exemption**: `/bootstrap` itself is exempt from step 2. It is a context-loading/resume entry point, not a forward state transition. Bootstrap reads `Current Phase` to route the resume (§1 Step 2 Branch Check) but never blocks on transition legality — any `Current Phase` value is a valid starting point for a bootstrap.
 
-This costs < 10 tokens per phase entry and eliminates phase-tracking hallucination.
-
 **Session Caching**: If the agent transitions between phases within the SAME conversation (not resuming from handoff), it MAY trust its in-memory phase state and skip re-reading the Work Log header. The file read is only mandatory when: (a) resuming a Work Log from a prior session, or (b) the agent is uncertain about the current phase. The `Current Phase` header MUST still be written on every phase entry regardless of caching.
 
 ## 3. Expected Output Format
@@ -361,7 +359,7 @@ Everything below — Classification justification, Recommended Skills rule table
 
 ### 3.6 Recommended Skills Rule Table
 
-Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the table above, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. The embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage.
+Write the result to Work Log `## Recommended Skills` (provenance tags as per §3.6a). Chat response shows only the comma list per §3 template. Skip for `tiny-fix`. **No skill metadata file reads required at this stage** — trigger data is embedded in the tables below, and bootstrap does not depend on `.agentcortex/metadata/trigger-registry.yaml` or `trigger-compact-index.json`. The embedded rule table is the canonical low-token trigger source during bootstrap; repos MAY layer registry/compact-index metadata on top later for richer cost_risk signals. **Exception**: The Conflict Pass (below) DOES read `.agent/rules/skill_conflict_matrix.md` once when ≥2 skills are recommended and the task is NOT `tiny-fix`. This is the only file read at this stage.
 
    **Mandatory Skills (always activate when condition met):**
 

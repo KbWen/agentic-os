@@ -32,7 +32,7 @@ Hard completion gate for non-`tiny-fix` tasks. Transitions `TESTED → HANDEDOFF
 
 ## 2. Platform Specialization
 
-- **Antigravity / Codex App**: Auto-write Layer 2, Resume Block, and Gate Receipt to `.agentcortex/context/work/<worklog-key>.md`.
+- **Claude Code / Codex App / Gemini CLI / Antigravity**: Auto-write Layer 2, Resume Block, and Gate Receipt to `.agentcortex/context/work/<worklog-key>.md`.
 - **Codex Web** (no file-write capability):
   - Layer 1 TL;DR: output in chat (same as all platforms).
   - Layer 2 + Resume Block + Gate Receipt: MUST output each as a separate fenced code block in chat with the instruction "Paste the block above into `.agentcortex/context/work/<worklog-key>.md` under `## Phase Summary` / `## Resume` / `## Gate Evidence` respectively." Do NOT proceed to `/ship` until the user confirms the paste is done.

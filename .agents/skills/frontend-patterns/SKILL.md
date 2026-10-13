@@ -106,6 +106,6 @@ Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss
 
 ## References
 
-- Project ADR: `docs/adr/ADR-002-project-architecture.md` § Directory Structure, Naming
+- Project ADR: `docs/adr/ADR-00N-project-architecture.md` § Directory Structure, Naming
 - Spec template: `.agentcortex/templates/spec-app-feature.md` § Frontend
 - Security guardrails: `.agent/rules/security_guardrails.md` (A03: XSS prevention, A07: Auth)
