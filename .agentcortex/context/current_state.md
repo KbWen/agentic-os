@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-06T12:05:51Z
-- **Last Verified**: 2026-10-06
-- **Update Sequence**: 190
+- **Last Updated**: 2026-10-13T03:10:21Z
+- **Last Verified**: 2026-10-13
+- **Update Sequence**: 191
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-prompt-audit-batch1-2026-10-13
+- Feature shipped: **instruction files no longer contradict each other or the repo (#224, prompt audit batch 1).** Five domain skills cite `ADR-00N-project-architecture.md`, the name `/app-init` writes, instead of a nonexistent ADR-002. Guardrails §12.2 defers to the §5.2b truncation rule, and §5.4 extracts at the third consumer, matching its own 3+ line and karpathy-principles. Bootstrap and the Work Log template share one Platform enum (codex-app and codex-web stay distinct; gemini-cli added). Two dead references are gone, and platform lists include Claude Code. Record and a disposition for every audit item: `docs/reviews/2026-10-13-prompt-audit.md`, backlog #224-#228.
+- Review: a refute-only pass before implement changed four items (deletion-funding against the 355k ceiling, the Platform enum, the alias line, H8 moved to #228). The pre-mortem was NOT READY: the karpathy checklist scope had widened to every change, and the record claimed no behaviour change. Both were fixed, and a fresh re-review proved AC-1..AC-10. H6/F2/F3 shift agent behaviour toward rules the repo already stated; tools and validators are unchanged.
+- Tests: PR #466 CI full suite green (18 pass; docs pins 12 passed locally); validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; lifecycle 354,726 -> 354,709, quick-win 29,844 -> 29,835; guardrails directives 84 (cap). SSoT sequence 190->191; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.32-2026-10-06
 - Feature shipped: **v1.8.32** packages #464: the archive directory is the file type (D4 resolves INDEX `log` in the archive root, reports a child that cannot run as WARN and no Python as SKIP; Phase-Summary scan reads the root only; same-day `--N-` archive names; INDEX duplicate-`log` guard with an identical-retry no-op). Adopter-facing delta: `ship.md`, `handoff.md`, `validate.sh`, `validate.ps1`, `append_chain_entry.py`, `token-governance.md`, plus the `deploy.sh` banner.
 - The CHANGELOG leads with the one upgrade action: an INDEX entry pointing at a pre-#106 final log under `archive/work/` now WARNs; `git mv` it to the archive root.
@@ -159,11 +164,3 @@
 ### Ship-fix-dry-run-read-only-2026-09-27
 - Feature shipped: **`deploy.sh --dry-run` deletes and moves nothing (#216).** Found by the #215 review: on an update the dry run deleted every pending `*.acx-incoming` before its preview (reproduced on v1.8.28: 214 -> 213 files), and on a legacy install it ran the path migration first. Both now run only for a real deploy; README.md's "preview, no changes" is now true for deploy.sh. It also unblocks #451 (#201), under which a deleted sidecar means "merged".
 - Tests: one real deploy + dry run, whole-tree SHA-256 snapshot identical; mutants (cleanup unguarded, migration unguarded) each FAIL. Full suite: PR #453 CI. SSoT sequence 181->182.
-
-### Ship-fix-scoped-gitattributes-2026-09-27
-- Feature shipped: **The installed `.gitattributes` no longer sets line endings for the product's own files (#215).**
-  - Found by the owner's check that the install must not weigh down or affect product development. The same check measured v1.8.27 -> v1.8.28: 205 files both, +0.6% bytes, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488.
-  - Before: repo-wide rules; a product committed with CRLF saw every touched file rewritten (fixture 7/7). After: 0. The template covers installed paths and `.githooks/` only; two validator parsers of product docs now accept CRLF.
-  - Four independent review rounds, every finding reproduced first. Rejected on the way: keeping `* text=auto` (not neutral), `docs/` rules (rewrote product Markdown), a printed re-checkout script (deleted skip-worktree files).
-- Tests: new install and update notice (real deploys), template contract with 5 failing mutants, the notice's advice in 3 EOL configs, CRLF validator fixture (discriminates on Linux). Full suite: PR #452 CI. SSoT sequence 180->181.
-
