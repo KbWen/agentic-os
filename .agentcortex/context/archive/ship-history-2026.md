@@ -2,6 +2,13 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-scoped-gitattributes-2026-09-27
+- Feature shipped: **The installed `.gitattributes` no longer sets line endings for the product's own files (#215).**
+  - Found by the owner's check that the install must not weigh down or affect product development. The same check measured v1.8.27 -> v1.8.28: 205 files both, +0.6% bytes, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488.
+  - Before: repo-wide rules; a product committed with CRLF saw every touched file rewritten (fixture 7/7). After: 0. The template covers installed paths and `.githooks/` only; two validator parsers of product docs now accept CRLF.
+  - Four independent review rounds, every finding reproduced first. Rejected on the way: keeping `* text=auto` (not neutral), `docs/` rules (rewrote product Markdown), a printed re-checkout script (deleted skip-worktree files).
+- Tests: new install and update notice (real deploys), template contract with 5 failing mutants, the notice's advice in 3 EOL configs, CRLF validator fixture (discriminates on Linux). Full suite: PR #452 CI. SSoT sequence 180->181.
+
 ### Ship-chore-release-v1.8.28-2026-09-27
 - Feature shipped: **v1.8.28** packages the nine PRs merged since v1.8.27.
   - Six of them come from the 2026-09-26 downstream simulation:
