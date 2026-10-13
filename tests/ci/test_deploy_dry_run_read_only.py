@@ -55,8 +55,9 @@ def test_dry_run_leaves_pending_sidecars_and_legacy_paths_alone(tmp_path: Path) 
     install = _deploy(str(target))
     assert install.returncode == 0, install.stderr[-2000:]
 
-    # An offer the adopter has not merged yet, and legacy paths a real run would migrate:
-    # it deletes docs/context/work (already at .agentcortex/context/work) and tools/validate.sh.
+    # An offer the adopter has not merged yet, and a legacy path a real run would migrate:
+    # it deletes docs/context/work (already at .agentcortex/context/work). tools/validate.sh
+    # is the project's own file, which no run touches (#220).
     (target / "CLAUDE.md.acx-incoming").write_text("offered version\n", encoding="utf-8")
     (target / "tools").mkdir()
     (target / "tools" / "validate.sh").write_text("#!/bin/sh\n", encoding="utf-8")

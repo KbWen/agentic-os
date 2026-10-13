@@ -1466,7 +1466,7 @@ def test_first_install_keeps_projects_own_tools_validate() -> None:
         assert "Migrating from legacy paths" not in result.stdout, result.stdout[-1500:]
 
 
-@pytest.mark.parametrize("state", ["after-install", "failed-install-residue"])
+@pytest.mark.parametrize("state", ["after-install", "failed-install-residue", "legacy-agentcortex-dir"])
 @requires_bash
 def test_later_deploys_keep_projects_own_tools_validate(state: str) -> None:
     """#220: install evidence does not prove file ownership. Our own first install writes
@@ -1477,8 +1477,10 @@ def test_later_deploys_keep_projects_own_tools_validate(state: str) -> None:
         target.mkdir()
         if state == "after-install":
             assert _deploy(target).returncode == 0
-        else:
+        elif state == "failed-install-residue":
             (target / ".agentcortex").mkdir()
+        else:
+            (target / "agentcortex").mkdir()
         originals = {name: _user_bytes(f"tools/{name}") for name in _TOOLS_VALIDATE}
         (target / "tools").mkdir()
         for name, data in originals.items():
