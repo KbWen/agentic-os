@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-13T06:57:30Z
+- **Last Updated**: 2026-10-17T11:23:28Z
 - **Last Verified**: 2026-10-13
-- **Update Sequence**: 193
+- **Update Sequence**: 194
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-deploy-cp-flag-queue-2026-10-17
+- Feature shipped: **`CP_FLAG` no longer breaks two `deploy.sh` promises (#221).** `-i` took its answer from the list deploy was iterating (the batch queue, and the skills `find` stream on the per-file path), so a file was neither deployed nor recorded; both loops now read on fd 3. A `-n` (or declined `-i`) update printed `[OVERWRITE]` and counted a copy that did not happen; the core-update and unmodified-scaffold-update copies now check the post-copy hash (only for `-n`/`-i`), print `[KEPT]`, keep the previous manifest hash, and the summary adds `N kept by CP_FLAG`.
+- Review: self-review + pre-mortem (cp exit status unchanged vs baseline, fd 3 unused elsewhere, piped-stdin buffering of `cp -i` drives one-prompt-per-run tests). Shipped in one PR with the 2026-10-15 token-first queue docs, owner choice.
+- Tests: 10 new cases (batch/per-file × y/n × core/skill, plus `-n` record-and-recover), both fixes mutation-killed (5 and 6 failures); deploy suites 90 passed, 2 skipped; validate.sh `pass=116 warn=5 fail=0 skip=2`. SSoT 193->194; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.33-2026-10-13
 - Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
 - The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).
@@ -161,7 +166,3 @@
 - **Not demonstrated:** the re-sim (sonnet ×2, new template) never reached display — neither run detected the off-main state. Detection skipping is the larger gap, logged as backlog #219 with the measurements.
 - Tests: lifecycle + baseline drift + capabilities gate-safety 95 passed; validate.sh on the final tree (see PR); full suite on the PR CI. SSoT sequence 184->185.
 
-### Ship-feat-kb-digest-consumption-2026-09-28
-- Feature shipped: **the knowledge-base seam no longer hard-codes any KB's headings.** `kb-consult` reads a routed standard's digest, checks its line-1 `sha` against the index row, and takes the section the KB names in `digest.anchors` (risks for `/plan`/`/implement`, checklist for `/review`); missing/empty/stale digest → the page. `schema_version` is additive (any integer; text match on JSON entrypoints). A declared-but-unreadable KB shows one bootstrap line; a KB clone that is its own repo off clean `main` gets a WARN. Neither gates. ADR-009 amendment + `docs/specs/kb-seam-anchor-neutrality.md`.
-- **The takeover re-verified the handoff note instead of trusting it, and that found a defect main also has:** an `llms.txt`-only KB resolved UNREADABLE because the schema check was not scoped to JSON entrypoints. Blind rule simulations (old text as control) showed it; fixed token-negatively. Four fresh review rounds (3 NOT READY, all fixed); every `bootstrap.md` edit net ≤ 0 chars. Accepted risk: a stale digest when a KB does not regenerate its outputs. Follow-ups #217 (fingerprint format check), #218 (routed order vs smallest-first).
-- Tests: CI-path suite `-m "not slow_governance"` **980 passed, 2 skipped**; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2` (5 pre-existing WARN). Lifecycle 354,488 -> 354,903 (ceiling 355,000 unchanged). Real-KB run + 6-case blind sim as expected. SSoT sequence 183->184.

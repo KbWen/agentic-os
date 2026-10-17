@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-feat-kb-digest-consumption-2026-09-28
+- Feature shipped: **the knowledge-base seam no longer hard-codes any KB's headings.** `kb-consult` reads a routed standard's digest, checks its line-1 `sha` against the index row, and takes the section the KB names in `digest.anchors` (risks for `/plan`/`/implement`, checklist for `/review`); missing/empty/stale digest → the page. `schema_version` is additive (any integer; text match on JSON entrypoints). A declared-but-unreadable KB shows one bootstrap line; a KB clone that is its own repo off clean `main` gets a WARN. Neither gates. ADR-009 amendment + `docs/specs/kb-seam-anchor-neutrality.md`.
+- **The takeover re-verified the handoff note instead of trusting it, and that found a defect main also has:** an `llms.txt`-only KB resolved UNREADABLE because the schema check was not scoped to JSON entrypoints. Blind rule simulations (old text as control) showed it; fixed token-negatively. Four fresh review rounds (3 NOT READY, all fixed); every `bootstrap.md` edit net ≤ 0 chars. Accepted risk: a stale digest when a KB does not regenerate its outputs. Follow-ups #217 (fingerprint format check), #218 (routed order vs smallest-first).
+- Tests: CI-path suite `-m "not slow_governance"` **980 passed, 2 skipped**; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2` (5 pre-existing WARN). Lifecycle 354,488 -> 354,903 (ceiling 355,000 unchanged). Real-KB run + 6-case blind sim as expected. SSoT sequence 183->184.
+
 ### Ship-chore-release-v1.8.29-2026-09-27
 - Feature shipped: **v1.8.29** packages #452 (#215: the installed `.gitattributes` no longer sets line endings for the product's own files) and #453 (#216: `deploy.sh --dry-run` deletes and moves nothing). Both came from the owner's check that the install must not weigh down or affect product development; the weight side held (205 files, +0.6% bytes vs v1.8.27, `AGENTS.md` unchanged, lifecycle tokens 354,887 -> 354,488).
 - The CHANGELOG leads with the one-time upgrade step for clones checked out under the old repo-wide rules. #201 (PR #451, draft) stays a proposal awaiting the owner's approval.
