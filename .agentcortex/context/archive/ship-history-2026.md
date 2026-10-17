@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-feat-bootstrap-kb-status-line-2026-09-29
+- Feature shipped: **the `bootstrap.md §3` chat template has an optional `KB:` line** for the `§1b` UNREADABLE / off-main WARN line (follow-up to PR #457). Unprimed sims showed one run that recorded the WARN in its Work Log but left it out of chat under the output-ceiling rule. Paid for by trims: lifecycle 354,903 -> 354,868.
+- **Not demonstrated:** the re-sim (sonnet ×2, new template) never reached display — neither run detected the off-main state. Detection skipping is the larger gap, logged as backlog #219 with the measurements.
+- Tests: lifecycle + baseline drift + capabilities gate-safety 95 passed; validate.sh on the final tree (see PR); full suite on the PR CI. SSoT sequence 184->185.
+
 ### Ship-feat-kb-digest-consumption-2026-09-28
 - Feature shipped: **the knowledge-base seam no longer hard-codes any KB's headings.** `kb-consult` reads a routed standard's digest, checks its line-1 `sha` against the index row, and takes the section the KB names in `digest.anchors` (risks for `/plan`/`/implement`, checklist for `/review`); missing/empty/stale digest → the page. `schema_version` is additive (any integer; text match on JSON entrypoints). A declared-but-unreadable KB shows one bootstrap line; a KB clone that is its own repo off clean `main` gets a WARN. Neither gates. ADR-009 amendment + `docs/specs/kb-seam-anchor-neutrality.md`.
 - **The takeover re-verified the handoff note instead of trusting it, and that found a defect main also has:** an `llms.txt`-only KB resolved UNREADABLE because the schema check was not scoped to JSON entrypoints. Blind rule simulations (old text as control) showed it; fixed token-negatively. Four fresh review rounds (3 NOT READY, all fixed); every `bootstrap.md` edit net ≤ 0 chars. Accepted risk: a stale digest when a KB does not regenerate its outputs. Follow-ups #217 (fingerprint format check), #218 (routed order vs smallest-first).
