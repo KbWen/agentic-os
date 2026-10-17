@@ -205,12 +205,15 @@ clean_acx_incoming() {
 # caller reports and records what was delivered, not what was attempted. Only those
 # two flags can skip, so only they pay for the post-copy hash.
 _cp_framework_version() {
-    local src="$1" dst="$2" src_hash="$3" do_chmod="$4"
-    # Explicit exit: callers test this function, which suspends set -e inside it.
-    cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst" || exit 1
+    local src="$1" dst="$2" src_hash="$3" do_chmod="$4" status=0
+    cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst" || status=$?
     case "$CP_FLAG" in
+        # coreutils >= 9.2 exits 1 when -n skips or -i is answered "no"; 8.x exits 0.
+        # Either way the post-copy hash says whether the framework version landed.
         -n|-i) [ "$(compute_sha256_normalized "$dst")" = "$src_hash" ] || return 1 ;;
     esac
+    # Explicit exit: callers test this function, which suspends set -e inside it.
+    [ "$status" -eq 0 ] || exit "$status"
     if [ -n "$do_chmod" ]; then chmod +x "$dst"; fi
     return 0
 }
@@ -372,9 +375,7 @@ _deploy_file_now() {
                     echo "ERROR: could not back up pre-existing $rel to $rel.acx-local; it was left unchanged and the deploy stopped." >&2
                     exit 1
                 fi
-                cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-                [ -n "$do_chmod" ] && chmod +x "$dst"
-                if [ "$(compute_sha256_normalized "$dst")" = "$src_hash" ]; then
+                if _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod"; then
                     echo "  [OVERWRITE] $rel (pre-existing file replaced by the core framework version; previous version backed up to $rel.acx-local)"
                     COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
                 else
@@ -1004,7 +1005,8 @@ for _keep_pair in \
     "docs/specs/.gitkeep.md" \
     "docs/adr/.gitkeep.md"; do
     if [ -f "$REPO_ROOT/$_keep_pair" ]; then
-        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair"
+        # A placeholder kept by CP_FLAG=-n/-i is fine; coreutils >= 9.2 exits 1 for it.
+        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair" || [ -f "$TARGET/$_keep_pair" ]
     else
         touch "$TARGET/$_keep_pair"
     fi

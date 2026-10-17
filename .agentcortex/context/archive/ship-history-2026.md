@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-archive-name-collisions-2026-10-06
+- Feature shipped: **the archive directory is the file type.** Final Work Logs live in the archive root and `archive/work/` holds compaction fragments. D4 resolves each INDEX `log` in the root only, so a same-named fragment no longer hides a missing final log; a child that did not run is a WARN (validate.sh used to abort under `set -e`) and no Python is a SKIP. The archived-Work-Log Phase-Summary scan reads the root only (#186). `/ship §3`: never overwrite an archive; a same-day reship on a reused key uses `<worklog-key>--2-<YYYYMMDD>.md`. `append_chain_entry.py` refuses a `log` recorded for a different entry; an identical retry is a no-op. Two legacy final logs moved to the root.
+- Review: a 5-seat read-only roundtable plus a tenth man shaped the design (renaming fragments was refuted); 3 fresh reviewers after. Round 1 was NOT READY: a re-indent had stripped validate.ps1's BOM, which breaks Windows PowerShell 5.1 (restored, byte-pinned; the ps1 twin test now also runs under 5.1). AC-8 amended with owner approval after the red-team retry finding. Follow-ups #222 (10 root archives with no INDEX entry), #223 (other `$(python)` sites abort validate.sh on a nonzero child).
+- Tests: new suite 11 fast + 4 slow; full not-slow suite 832 passed; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; lifecycle 354,868 -> 354,726. SSoT sequence 188->189; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.31-2026-10-05
 - Feature shipped: **v1.8.31** packages #461 (#188): a first install backs a differing pre-existing core file up to `<file>.acx-local` before replacing it, names it with `[OVERWRITE]`, and stops nonzero on a failed backup or an existing `.acx-local`. Adopter-facing delta: `.agentcortex/bin/deploy.sh` only.
 - The CHANGELOG names the two pre-existing defects found on the way and not fixed here: #220 (legacy migration deletes a project's own `tools/validate.*` on first install; P1) and #221 (`CP_FLAG` -i/-n; P2).
