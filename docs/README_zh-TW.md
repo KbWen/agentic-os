@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>「Done。」—— 你的 AI coding agent,對著它根本沒測過的程式碼這樣說。</strong><br/>
-  一份 rules 檔只是「請」agent 守規矩。Agentic OS <strong>會去查它到底有沒有做到</strong> —— agent 想跳過測試、跳過 review、或把外洩的密鑰送進 commit,都會撞上你的 git hooks、validator 和 CI,而不是聽 agent 自己一句話。
+  一份 rules 檔只是「請」agent 守規矩。Agentic OS <strong>會去查它到底有沒有做到</strong> —— 只要你開啟 git hook 和一個 CI job(安裝程式會印出兩者的指令),外洩的密鑰會讓 commit 失敗,被跳過的 review 或階段會讓讀 work trail 的 validator 失敗,而不是聽 agent 自己一句話。
 </p>
 
 <p align="center">
@@ -63,19 +63,28 @@ Rotate the exposed secret, remove it from the change, then retry.
 
 </details>
 
-agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測試的綠勾勾、或被跳過的 review 通過 hooks 和 CI —— 那些檢查不管它配不配合都會跑。上面那把金鑰是執行時即時產生、輸出時遮蔽的,所以這個 demo 從不存下真正的密鑰。
+agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後,讓外洩的密鑰或被跳過的 review 通過它們 —— 那些檢查不管它配不配合都會跑。上面那把金鑰是執行時即時產生、輸出時遮蔽的,所以這個 demo 從不存下真正的密鑰。
+
+## 第一天就能用的
+
+不必先接任何線,這三樣就能用:
+
+- **獨立的密鑰閘門。** `scan_credentials.py` 可以掃你指定的檔案、staged diff(`--staged`)或一段 commit 範圍(`--range`),輸出會遮蔽密鑰 —— 就是上面的 demo。安裝程式輸出的兩行指令,就能把它變成你的 pre-commit hook。
+- **開新 session 也不會忘的記憶。** 每個任務都有一份 work log,記下決策、證據與閘門收據;`/handoff` 會寫出接續區塊,下一個 session 或 agent 從 log 接手,而不是從對話。
+- **14 份專家檢查清單,依任務型態自動掛上** —— login 程式碼配 auth-security,migration 配只進不退的檢查。清單在「你得到什麼」底下。
 
 ## 規則 vs. 強制
 
-一份 rules 檔 —— Cursor Rules、或一份單純的 `AGENTS.md` —— 是一段 agent 可以無視的 prompt。Agentic OS 保留那份紀律(先計畫再動手、不做沒人要求的重構),再加上一層 agent 控制不了的東西:
+一份 rules 檔 —— Cursor Rules、或一份單純的 `AGENTS.md` —— 是一段 agent 可以無視的 prompt。Agentic OS 保留那份紀律(先計畫再動手、不做沒人要求的重構),再加上一層 agent 控制不了的東西。**剛安裝好的時候,它什麼都不會自己跑**;安裝程式最後會印出開啟它們的指令。
 
-| 失誤型態 | 誰擋下它 | 在哪 |
+| 失誤型態 | 誰擋下它 | 安裝後就生效? |
 |:---|:---|:---|
-| 密鑰被 commit 進歷史 | `scan_credentials.py`(上面的 demo) | pre-commit hook + CI |
-| 「測試通過」但根本沒測試 | CI 跑真正的測試套件 | pull request |
-| 跳過某個階段、沒有證據 | `validate.sh` 讀 work trail | pre-commit(本機) |
+| 密鑰被 commit 進歷史 | `scan_credentials.py`(上面的 demo) | **否。** 開啟 pre-commit hook(兩行指令),或把掃描加進你的 CI |
+| 跳過某個階段、沒有證據 | `validate.sh` 讀 work trail,少了階段或證據就失敗 | **否。** 自己跑,或放進 hook 和一個 required 的 CI job |
+| 「測試通過」但根本沒測試 | 你的 CI 跑你真正的測試套件;feature 走到 ship 卻沒記錄測試結果時,`validate.sh` 也會失敗 | 只在你的 CI 有跑測試和 validator 的地方 |
+| agent 無視工作流或 skill 檢查清單 | 沒有機器層的檢查 | 只是建議,跟 rules 檔一樣 |
 
-第三列是 rules 檔碰不到的地方:`validate.sh` 會解析每個任務的 work log,只要少了某個必要階段、或它的證據不見了,就讓檢查失敗。本機的 pre-commit hook 是選用的,你可以用 `--no-verify` 繞過;CI 才是那道無法跳過的底線。上面那顆 Security 徽章,就是這個 repo 在自己每次 push 時跑同一套密鑰與 SAST 閘門。
+第二列是 rules 檔碰不到的地方:`validate.sh` 會解析每個任務的 work log,只要少了某個必要階段、或它的證據不見了,就讓檢查失敗。本機的 pre-commit hook 是選用的,你可以用 `--no-verify` 繞過,所以那道無法跳過的底線,是你在 branch protection 設成 required 的 CI job。在這個 repo,那道底線是三個 required check(`Framework Validation`、`ShellCheck`、`Check Markdown Links`);安全掃描(密鑰掃描、SAST、相依套件稽核)每個 PR 都會跑,但除非你把它們加進 branch protection,否則不是合併前必過的檢查。上面那顆 Security 徽章,就是這個 repo 在自己每次 push 時跑同一套密鑰與 SAST 閘門。
 
 ## 分階段把關,依風險縮放
 
@@ -99,7 +108,7 @@ agent 還是可以偷工減料。它做不到的,是讓外洩的密鑰、零測�
 
 | | |
 |:---|:---|
-| **機器強制的底線** | 上面那些失敗模式,是由你的 git hooks、validator 和 CI 攔下的 —— 不是靠 agent 自己回報。agent 可以偷工,但它沒辦法讓那一步通過它管不到的檢查。 |
+| **機器強制的底線** | 開啟之後,上面那些失敗模式由你的 git hooks、validator 和 CI 攔下 —— 不是靠 agent 自己回報。agent 可以偷工,但它沒辦法讓那一步通過它管不到的檢查。 |
 | **依階段自動掛上的 skill** | 工作流會依任務型態,把對的檢查清單放到 agent 面前 —— feature 上 TDD、login 程式碼上 auth-security —— 你不必手動接線。是引導,不是閘門。 |
 | **跨交接還活著的記憶** | 決策與證據存在單一真實狀態檔裡,所以它們會跨 session、跨 agent 留下來,而不是隨對話一起重置。 |
 | **跨平台** | 同一套治理檔通吃每個主流 AI coding agent —— 不管你跑哪一個,規則都一樣。 |
@@ -189,10 +198,13 @@ git clone https://github.com/KbWen/agentic-os.git
 一套給 AI coding agent 的開源治理框架。它讓 Claude Code、Codex、Cursor、Copilot、Antigravity 這類 agent 有一條可重複的工作流 —— plan、build、review、test、ship —— 並用閘門強制,讓它們不能跳步驟、也不能在沒有可驗證證據下宣稱「done」。
 
 **我要怎麼擋住 AI agent 跳過測試、或 ship 沒驗證過的程式碼?**
-這就是核心。密鑰掃描、測試套件、階段/證據 validator 都跑在你的 git hooks 和 CI 裡 —— 所以外洩密鑰、缺測試、跳過的 review 會讓 commit 或 build 失敗,不管 agent 怎麼回報。agent 還是能偷工,只是那個工偷不過它控制不了的檢查。
+這就是核心。開啟之後,密鑰掃描、你的測試套件、階段/證據 validator 都跑在你的 git hooks 和 CI 裡 —— 所以外洩密鑰、缺測試、跳過的 review 會讓 commit 或 build 失敗,不管 agent 怎麼回報。agent 還是能偷工,只是那個工偷不過它控制不了的檢查。
 
 **它跟 Cursor Rules 或單純一份 `AGENTS.md` 差在哪?**
 rules 檔告訴 agent 怎麼做,agent 可以無視。Agentic OS 加上工作流、以及把行為釘住的檢查:階段順序、證據要求、scope 紀律,還有一份跨 session 記住決策的單一真實來源。skill 和紀律仍是 agent 跟隨的「引導」;真正被「強制」的,是那層會讓你 commit 或 CI 失敗的東西 —— 外洩密鑰、缺測試、被跳過的階段。
+
+**agent 回覆裡的 `⚡ ACX` 和 `gate:` 區塊是什麼?**
+`⚡ ACX` 是每則回覆結尾的執行標記,代表 agent 有載入治理檔;少了它,通常表示沒載入。它是 agent 自己標的,不是證明 —— 持久的檢查,是 validator 在 work log 的 Phase Summary 缺少它時發出警告。`gate:` 區塊(`gate`、`classification`、`verdict`、`missing`)會在 agent 進入 `/plan` 或 `/ship` 前印出;`verdict: fail` 會列出缺了什麼,agent 就停在那裡。
 
 **會被綁死在單一 AI 廠商嗎?**
 不會。它是模型無關的 Markdown —— 對 Claude Code(`CLAUDE.md`)、Codex(`AGENTS.md`)和 Gemini / Antigravity(`GEMINI.md`)有原生入口,並透過同一套 workflow 檔支援 Cursor、Copilot 與任何其他 LLM agent。

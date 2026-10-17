@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.31-2026-10-05
+- Feature shipped: **v1.8.31** packages #461 (#188): a first install backs a differing pre-existing core file up to `<file>.acx-local` before replacing it, names it with `[OVERWRITE]`, and stops nonzero on a failed backup or an existing `.acx-local`. Adopter-facing delta: `.agentcortex/bin/deploy.sh` only.
+- The CHANGELOG names the two pre-existing defects found on the way and not fixed here: #220 (legacy migration deletes a project's own `tools/validate.*` on first install; P1) and #221 (`CP_FLAG` -i/-n; P2).
+- Tests: release guard 2 passed; docs pins 12 passed; full suite on the release PR's CI. After merge: lightweight `v1.8.31` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 187->188; Ship History rotated at cap 10.
+
 ### Ship-feat-brownfield-first-install-preservation-2026-10-05
 - Feature shipped: **a first install no longer silently destroys an adopter's file at a core-tier path (#188).** `deploy.sh` backs a differing pre-existing core file up to `<path>.acx-local` byte-for-byte, prints `[OVERWRITE] <path> (... previous version backed up to <path>.acx-local)`, and stops nonzero before replacing it if the backup fails or a `.acx-local` already exists (no manifest is written). `CP_FLAG=-n` prints `[KEPT]` instead of claiming an overwrite. Updates, scaffold sidecars, tiers, manifest and `deploy.ps1` unchanged. ADR-005 amended; INSTALL.md and both READMEs no longer promise existing files are never overwritten.
 - Review: three fresh-reviewer rounds plus a Codex final review. The pre-mortem found that an interrupted first install retried from a newer source could overwrite the backup holding the original; fixed fail-closed (AC-6 amended with owner approval). Two pre-existing defects reproduced and filed: #220 (legacy migration deletes an adopter's `tools/validate.*`), #221 (`CP_FLAG=-i` swallows a batch-queue record; `-n` update false overwrite claim).

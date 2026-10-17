@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-17T13:43:43Z
+- **Last Updated**: 2026-10-17T14:07:20Z
 - **Last Verified**: 2026-10-13
-- **Update Sequence**: 197
+- **Update Sequence**: 198
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-docs-readme-enforcement-matrix-121-2026-10-17
+- Feature shipped: **the README no longer reads as default-on enforcement (#121).** EN and zh-TW: the hero says the hook and CI catch a leaked secret or a skipped phase once you switch them on, and drops the "zero tests" claim the framework cannot back; a "Usable on day one" list front-loads the standalone credential gate, work-log + `/handoff` resume, and the 14 skill checklists; the enforcement table gains an "On after install?" column (No / No / where your CI runs / advisory); the floor paragraph separates this repo's three required checks from the adopter's own required CI job (zh-TW now has that caveat too); a FAQ entry explains `⚡ ACX` and the `gate:` block.
+- Review: every claim checked against deploy.sh, the hook sample, scan_credentials.py and validate.sh; three wording errors self-caught before commit.
+- Tests: docs_pin 12 passed; README pin tests 13 passed; both encoding canaries PASS; validate.sh = validate.ps1 `fail=0`. SSoT 197->198; Ship History rotated at cap 10.
+
 ### Ship-fix-kb-consult-routed-order-218-2026-10-17
 - Feature shipped: **the `kb-consult` row keeps the KB's routed order and greps the route key (#218).** "Smallest `approx_tokens` first" is gone (it told agents to read a secondary standard before the core one); `approx_tokens` now only stops a consult, and the routing lookup is "grep the entrypoint for the task's `task_routing` key, never read the whole file". The KB guide says the same. Net −5 chars; lifecycle 354,709 -> 354,704.
 - **Measured effect is null:** 8 vs 8 headless sessions (sonnet-5.5, synthetic 31-route KB, scored from tool calls) showed 0/8 order inversions and 2/8 whole-manifest reads in both arms. Kept because the old text contradicted the KB's routing and the edit is token-negative; no savings claimed. Reopen trigger recorded on the archived row.
@@ -160,9 +165,4 @@
 - Feature shipped: **the archive directory is the file type.** Final Work Logs live in the archive root and `archive/work/` holds compaction fragments. D4 resolves each INDEX `log` in the root only, so a same-named fragment no longer hides a missing final log; a child that did not run is a WARN (validate.sh used to abort under `set -e`) and no Python is a SKIP. The archived-Work-Log Phase-Summary scan reads the root only (#186). `/ship §3`: never overwrite an archive; a same-day reship on a reused key uses `<worklog-key>--2-<YYYYMMDD>.md`. `append_chain_entry.py` refuses a `log` recorded for a different entry; an identical retry is a no-op. Two legacy final logs moved to the root.
 - Review: a 5-seat read-only roundtable plus a tenth man shaped the design (renaming fragments was refuted); 3 fresh reviewers after. Round 1 was NOT READY: a re-indent had stripped validate.ps1's BOM, which breaks Windows PowerShell 5.1 (restored, byte-pinned; the ps1 twin test now also runs under 5.1). AC-8 amended with owner approval after the red-team retry finding. Follow-ups #222 (10 root archives with no INDEX entry), #223 (other `$(python)` sites abort validate.sh on a nonzero child).
 - Tests: new suite 11 fast + 4 slow; full not-slow suite 832 passed; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; lifecycle 354,868 -> 354,726. SSoT sequence 188->189; Ship History rotated at cap 10.
-
-### Ship-chore-release-v1.8.31-2026-10-05
-- Feature shipped: **v1.8.31** packages #461 (#188): a first install backs a differing pre-existing core file up to `<file>.acx-local` before replacing it, names it with `[OVERWRITE]`, and stops nonzero on a failed backup or an existing `.acx-local`. Adopter-facing delta: `.agentcortex/bin/deploy.sh` only.
-- The CHANGELOG names the two pre-existing defects found on the way and not fixed here: #220 (legacy migration deletes a project's own `tools/validate.*` on first install; P1) and #221 (`CP_FLAG` -i/-n; P2).
-- Tests: release guard 2 passed; docs pins 12 passed; full suite on the release PR's CI. After merge: lightweight `v1.8.31` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 187->188; Ship History rotated at cap 10.
 
