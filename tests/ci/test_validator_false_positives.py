@@ -2220,3 +2220,43 @@ def test_113_no_python_corpus_ps1_is_stronger_fails() -> None:
         assert "incomplete gate receipts" in out, (
             f"the ps1 FAIL must name the incomplete gate receipts:\n{out[-1000:]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# #190: both twins check the capabilities file config.yaml §downstream_capabilities.path
+# names, the one bootstrap §1b reads, not a hardcoded default.
+# ---------------------------------------------------------------------------
+
+_CAP_DEFAULT_LINE = "path: .agentcortex/context/private/downstream-capabilities.yaml"
+_CAP_RETARGETED = ".agentcortex/context/private/caps/team-capabilities.yaml"
+
+
+def _retarget_capabilities(target: Path, body: str) -> None:
+    config = target / ".agent" / "config.yaml"
+    text = config.read_text(encoding="utf-8")
+    assert text.count(_CAP_DEFAULT_LINE) == 1, "config.yaml no longer ships the default path line"
+    config.write_text(text.replace(_CAP_DEFAULT_LINE, f"path: {_CAP_RETARGETED}"), encoding="utf-8")
+    cap = target / _CAP_RETARGETED
+    cap.parent.mkdir(parents=True, exist_ok=True)
+    cap.write_text(body, encoding="utf-8")
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("twin", [
+    pytest.param("sh", marks=requires_bash),
+    pytest.param("ps1", marks=[requires_windows, requires_powershell, requires_bash]),
+])
+def test_190_validators_check_the_configured_capabilities_path(twin: str) -> None:
+    run = _run_validate if twin == "sh" else _run_validate_ps1
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _retarget_capabilities(target, "skills:\n  - id: review\n")
+        out = run(target)
+        assert "[FAIL] downstream-capabilities gate-safety" in out, (
+            f"a gate-unsafe file at the configured path must FAIL validate.{twin}:\n{out[-1200:]}"
+        )
+        (target / _CAP_RETARGETED).write_text("skills:\n  - id: custom-team-review\n", encoding="utf-8")
+        out = run(target)
+        assert "[PASS] downstream-capabilities gate-safety" in out, (
+            f"a gate-safe file at the configured path must PASS validate.{twin}:\n{out[-1200:]}"
+        )

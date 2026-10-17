@@ -683,13 +683,13 @@ check_contains_literal \
 
 # ADR-007: a present downstream-capabilities.yaml MUST be schema gate-safe
 # (gate-relaxation is REJECTED, never clamped). Absent file -> validator exits 0.
+# --root: the tool checks the file config.yaml §downstream_capabilities.path names (#190).
 CAP_VALIDATOR="$ROOT/.agentcortex/tools/validate_downstream_capabilities.py"
-CAP_FILE="$ROOT/.agentcortex/context/private/downstream-capabilities.yaml"
 if [[ -f "$CAP_VALIDATOR" ]]; then
   # python-present + gate-unsafe file -> FAIL (CI always has python). No-python host ->
   # WARN (advisory): the runtime guarantee there is bootstrap §1b agent-discipline, honest
   # per the framework no-python doctrine. (MissingPythonLevel is WARN, not a fake FAIL.)
-  run_python_check "downstream-capabilities gate-safety" WARN "$CAP_VALIDATOR" "$CAP_FILE"
+  run_python_check "downstream-capabilities gate-safety" WARN "$CAP_VALIDATOR" --root "$ROOT"
 else
   record_result SKIP "downstream-capabilities gate-safety -- validator not deployed (safe to ignore)"
 fi

@@ -45,6 +45,7 @@ COUNT_SKIPPED=0
 COUNT_NEW=0
 COUNT_REMOVED=0
 COUNT_CORE_OVERWRITTEN=0
+COUNT_KEPT=0
 
 # --- SHA256 utility (cross-platform) ---
 compute_sha256() {
@@ -198,6 +199,40 @@ clean_acx_incoming() {
     fi
 }
 
+# --- Copy the framework version over an existing file ---
+# _cp_framework_version <src> <dst> <src_hash> <do_chmod> <dst_hash_before>
+# Returns 1 when CP_FLAG=-n, or a "no" answer to -i, left dst as it was (#221), so the
+# caller reports and records what was delivered, not what was attempted. Only those
+# two flags can skip, so only they pay for the post-copy hash.
+# Callers test this function, which suspends set -e inside it: failures exit explicitly.
+_cp_framework_version() {
+    local src="$1" dst="$2" src_hash="$3" do_chmod="$4" dst_before="$5" status=0 now
+    cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst" || status=$?
+    case "$CP_FLAG" in
+        -n|-i)
+            now="$(compute_sha256_normalized "$dst")"
+            if [ "$now" != "$src_hash" ]; then
+                # coreutils >= 9.2 exits 1 for a skip or a "no" (8.x exits 0). A skip leaves
+                # dst untouched and writable; anything else is a real failure.
+                [ "$status" -eq 0 ] && return 1
+                [ -w "$dst" ] && [ "$now" = "$dst_before" ] && return 1
+                exit "$status"
+            fi
+            ;;
+    esac
+    [ "$status" -eq 0 ] || exit "$status"
+    if [ -n "$do_chmod" ]; then chmod +x "$dst" || exit 1; fi
+    return 0
+}
+
+# _record_kept <tier> <rel> <manifest_hash> [note]
+# The manifest keeps the previous hash so the next deploy still sees the difference.
+_record_kept() {
+    echo "  [KEPT] $2 (existing file kept by CP_FLAG=$CP_FLAG; the framework version was not applied${4:+; $4})"
+    COUNT_KEPT=$((COUNT_KEPT + 1))
+    record_deployed "$1" "$2" "$3"
+}
+
 # --- Smart deploy a single file (internal — called with pre-computed hashes) ---
 # _deploy_file_now <src> <rel> <chmod> <src_hash> <dst_hash_or_empty> <old_manifest_hash_or_empty>
 #
@@ -243,21 +278,31 @@ _deploy_file_now() {
                 # content that differs from the framework version as user content.
                 [ "$dst_hash" != "$src_hash" ] && locally_modified=true
             fi
-            if $locally_modified && [ "$dst_hash" != "$src_hash" ]; then
-                # A backup MUST always overwrite a stale .acx-local. Unlike
-                # .acx-incoming (cleaned each run by clean_acx_incoming), the
-                # .acx-local backup persists, so a pre-existing one + a user-set
-                # CP_FLAG=-n/-i would make `cp` silently skip — losing the newest
-                # local edits. Remove first so the backup always lands.
-                rm -f "$dst.acx-local"
-                cp ${CP_FLAG:+"$CP_FLAG"} "$dst" "$dst.acx-local"
-                echo "  [OVERWRITE] $rel (core force-updated; your local edits backed up to $rel.acx-local)"
-                COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
-            fi
             # Skip cp when src and dst already identical (raw bytes match) — pure no-op.
             if [ "$src_hash" != "$dst_hash" ]; then
-                cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-                [ -n "$do_chmod" ] && chmod +x "$dst"
+                local backed_up=false
+                if $locally_modified; then
+                    # A backup MUST always overwrite a stale .acx-local. Unlike
+                    # .acx-incoming (cleaned each run by clean_acx_incoming), the
+                    # .acx-local backup persists, so a pre-existing one + a user-set
+                    # CP_FLAG=-n/-i would make `cp` silently skip — losing the newest
+                    # local edits. Remove first so the backup always lands.
+                    rm -f "$dst.acx-local"
+                    cp ${CP_FLAG:+"$CP_FLAG"} "$dst" "$dst.acx-local"
+                    backed_up=true
+                fi
+                if ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
+                    if $backed_up; then
+                        _record_kept "$tier" "$rel" "${old_manifest_hash:-$src_hash}" "a copy is at $rel.acx-local"
+                    else
+                        _record_kept "$tier" "$rel" "${old_manifest_hash:-$src_hash}"
+                    fi
+                    return 0
+                fi
+                if $backed_up; then
+                    echo "  [OVERWRITE] $rel (core force-updated; your local edits backed up to $rel.acx-local)"
+                    COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
+                fi
             fi
             COUNT_UPDATED=$((COUNT_UPDATED + 1))
         else
@@ -284,9 +329,10 @@ _deploy_file_now() {
                 if [ "$dst_hash" = "$old_manifest_hash" ]; then
                     # User didn't modify — safe to update.
                     # Skip cp when src already matches dst (pure no-op copy).
-                    if [ "$src_hash" != "$dst_hash" ]; then
-                        cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-                        [ -n "$do_chmod" ] && chmod +x "$dst"
+                    if [ "$src_hash" != "$dst_hash" ] \
+                        && ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
+                        _record_kept "$tier" "$rel" "$old_manifest_hash"
+                        return 0
                     fi
                     COUNT_UPDATED=$((COUNT_UPDATED + 1))
                 else
@@ -336,9 +382,7 @@ _deploy_file_now() {
                     echo "ERROR: could not back up pre-existing $rel to $rel.acx-local; it was left unchanged and the deploy stopped." >&2
                     exit 1
                 fi
-                cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst"
-                [ -n "$do_chmod" ] && chmod +x "$dst"
-                if [ "$(compute_sha256_normalized "$dst")" = "$src_hash" ]; then
+                if _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
                     echo "  [OVERWRITE] $rel (pre-existing file replaced by the core framework version; previous version backed up to $rel.acx-local)"
                     COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
                 else
@@ -551,7 +595,9 @@ for raw in lines:
     rm -f "$_src_list_tmp" "$_dst_list_tmp"
 
     # --- Second pass: call _deploy_file_now for each queued entry ---
-    while IFS=$'\t' read -r _q_src _q_rel _q_chmod; do
+    # The queue is read on fd 3: on stdin, CP_FLAG=-i would take its answer from
+    # the next queue record and that file would never be deployed (#221).
+    while IFS=$'\t' read -r _q_src _q_rel _q_chmod <&3; do
         _q_dst="$TARGET/$_q_rel"
         local _sh="${_src_hash[$_q_src]:-}"
         # Fallback: if batch hash missed this file (e.g. Python unavailable or path
@@ -562,7 +608,7 @@ for raw in lines:
         [ -z "$_dh" ] && [ -f "$_q_dst" ] && _dh="$(compute_sha256_normalized "$_q_dst")"
         local _omh="${_mfst_hash[$_q_rel]:-}"
         _deploy_file_now "$_q_src" "$_q_rel" "$_q_chmod" "$_sh" "$_dh" "$_omh"
-    done < "$_DEPLOY_QUEUE_TMP"
+    done 3< "$_DEPLOY_QUEUE_TMP"
 }
 
 # ============================================================
@@ -944,14 +990,15 @@ if [ -d "$REPO_ROOT/.agents/skills" ]; then
         fi
         mkdir -p "$TARGET/.agents/skills/$skill_name"
         # Deploy all files recursively, preserving subdir structure (e.g. agents/openai.yaml)
-        while IFS= read -r -d '' skill_file; do
+        # fd 3, not stdin: the per-file path copies inside this loop (#221).
+        while IFS= read -r -d '' skill_file <&3; do
             rel_to_skill="${skill_file#$skill_dir}"
             # ${path%/*} avoids a $(dirname) subshell
             _parent=".agents/skills/$skill_name/${rel_to_skill%/*}"
             [ "$_parent" = ".agents/skills/$skill_name/$rel_to_skill" ] && _parent=".agents/skills/$skill_name"
             mkdir -p "$TARGET/$_parent"
             deploy_file "$skill_file" ".agents/skills/$skill_name/$rel_to_skill"
-        done < <(find "$skill_dir" -type f -print0)
+        done 3< <(find "$skill_dir" -type f -print0)
     done
 fi
 
@@ -965,7 +1012,10 @@ for _keep_pair in \
     "docs/specs/.gitkeep.md" \
     "docs/adr/.gitkeep.md"; do
     if [ -f "$REPO_ROOT/$_keep_pair" ]; then
-        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair"
+        # A placeholder kept by CP_FLAG=-n/-i is fine (coreutils >= 9.2 exits 1 for it);
+        # with any other flag a failed copy still stops the deploy.
+        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair" \
+            || { case "$CP_FLAG" in -n|-i) [ -w "$TARGET/$_keep_pair" ] ;; *) false ;; esac; }
     else
         touch "$TARGET/$_keep_pair"
     fi
@@ -1505,10 +1555,12 @@ echo ""
 echo "Agentic OS v${ACX_VERSION} (${SOURCE_COMMIT}) deployed successfully!"
 echo ""
 if $IS_UPDATE; then
+    _kept_note=""
+    if [ "$COUNT_KEPT" -gt 0 ]; then _kept_note=" / ${COUNT_KEPT} kept by CP_FLAG"; fi
     if [ "$COUNT_CORE_OVERWRITTEN" -gt 0 ]; then
-        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated (${COUNT_CORE_OVERWRITTEN} locally-modified core force-updated) / ${COUNT_SKIPPED} skipped${_kept_note} / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
     else
-        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
+        echo "Summary: ${COUNT_UPDATED} updated / ${COUNT_SKIPPED} skipped${_kept_note} / ${COUNT_NEW} new / ${COUNT_REMOVED} removed"
     fi
 else
     echo "Installed ${TOTAL_DEPLOYED} files."

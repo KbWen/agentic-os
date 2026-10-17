@@ -59,6 +59,66 @@ def test_empty_file_is_safe(tmp_path):
     assert _check(tmp_path, "").returncode == 0
 
 
+# --root resolves the file bootstrap §1b reads: config.yaml §downstream_capabilities.path,
+# else the default (#190). An unsafe file must be caught wherever the config points.
+_UNSAFE = "skills:\n  - id: review\n"
+_DEFAULT = Path(".agentcortex/context/private/downstream-capabilities.yaml")
+
+
+def _root_check(root, config=None, files=None):
+    if config is not None:
+        (root / ".agent").mkdir(parents=True, exist_ok=True)
+        (root / ".agent" / "config.yaml").write_text(config, encoding="utf-8")
+    for rel, body in (files or {}).items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(body, encoding="utf-8")
+    return subprocess.run([sys.executable, str(VALIDATOR), "--root", str(root)],
+                          capture_output=True, encoding="utf-8", errors="replace")
+
+
+@pytest.mark.parametrize("value", ["caps/team.yaml", '"caps/team.yaml"', "'caps/team.yaml'"])
+def test_root_mode_checks_the_configured_path(tmp_path, value):
+    r = _root_check(tmp_path, f"downstream_capabilities:\n  path: {value}\n",
+                    {"caps/team.yaml": _UNSAFE, _DEFAULT: _SAFE})
+    assert r.returncode == 1 and "custom-" in r.stderr, (r.returncode, r.stderr)
+
+
+def test_root_mode_retargeted_absent_file_is_inert(tmp_path):
+    """The agent reads the configured file, so a stale default file is not what counts."""
+    r = _root_check(tmp_path, "downstream_capabilities:\n  path: caps/team.yaml\n", {_DEFAULT: _UNSAFE})
+    assert r.returncode == 0, r.stderr
+
+
+@pytest.mark.parametrize("config", [
+    "downstream_capabilities:\n  path: caps/team.yaml  # team file\n",
+    "downstream_capabilities:   # section\n  path: caps/team.yaml\n",
+    "\ufeffdownstream_capabilities:\n  path: caps/team.yaml\n",
+    "downstream_capabilities:\n  kb:\n    path: elsewhere.yaml\n  path: caps/team.yaml\n",
+], ids=["inline-comment", "header-comment", "bom", "nested-path-key"])
+def test_root_mode_reads_ordinary_yaml_forms_without_pyyaml(tmp_path, config):
+    """Same answer on every host: these forms once resolved to the default without PyYAML."""
+    r = _root_check(tmp_path, config, {"caps/team.yaml": _UNSAFE})
+    assert r.returncode == 1, (r.returncode, r.stderr)
+
+
+@pytest.mark.parametrize("config", [
+    "downstream_capabilities: {path: caps/team.yaml}\n",
+    "downstream_capabilities:\n\tpath: caps/team.yaml\n",
+    "downstream_capabilities:\n  path: a.yaml\n  path: b.yaml\n",
+], ids=["flow-mapping", "tab-indent", "duplicate-key"])
+def test_root_mode_unsupported_config_fails_closed(tmp_path, config):
+    r = _root_check(tmp_path, config, {"caps/team.yaml": _SAFE})
+    assert r.returncode == 2 and "MALFORMED" in r.stderr, (r.returncode, r.stderr)
+
+
+@pytest.mark.parametrize("config", [None, "worklog_lock:\n  mode: blocking\n",
+                                    "downstream_capabilities:\n  path: ''\n"],
+                         ids=["no-config", "no-section", "empty-path"])
+def test_root_mode_falls_back_to_the_default_path(tmp_path, config):
+    r = _root_check(tmp_path, config, {_DEFAULT: _UNSAFE})
+    assert r.returncode == 1, (r.returncode, r.stderr)
+
+
 @pytest.mark.parametrize("body,needle", [
     ("skills:\n  - id: red-team-adversarial\n    load_policy: on-match\n", "custom-"),
     ("skills:\n  - id: custom-x\n    load_policy: phase-entry\n", "on-match"),

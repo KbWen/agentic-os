@@ -674,6 +674,127 @@ def test_brownfield_cp_flag_backs_up_and_reports_truthfully(cp_flag: str) -> Non
             assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is not None, result.stdout
 
 
+# ---------------------------------------------------------------------------
+# CP_FLAG on an update (#221): `cp -i` must take its answer from the caller's stdin,
+# never from the list deploy.sh is iterating, and a copy that -n or a "no" skipped
+# must not be reported, counted or recorded as delivered.
+# ---------------------------------------------------------------------------
+
+_CP_FLAG_SKILL = (".agents/skills/cp-flag-probe/SKILL.md", ".agents/skills/cp-flag-probe/notes.md")
+
+
+def _manifest_rows(target: Path) -> set[str]:
+    text = (target / ".agentcortex-manifest").read_text(encoding="utf-8")
+    return {parts[1] for parts in map(str.split, text.splitlines())
+            if len(parts) >= 3 and parts[0] in ("core", "scaffold", "wrapper")}
+
+
+def _cp_flag_update_fixture(td: str, changed: tuple[str, ...]) -> tuple[Path, Path, Path, dict[str, bytes]]:
+    """Installed project whose next deploy replaces each file in *changed*.
+
+    The core rule, when changed, also carries a local edit (the #173 backup path)."""
+    source_root = Path(td) / "source"
+    script = _brownfield_source(source_root)
+    for rel in _CP_FLAG_SKILL:
+        (source_root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (source_root / rel).write_bytes(f"# {rel}\n".encode("utf-8"))
+    target = Path(td) / "proj"
+    target.mkdir()
+    first = _run_brownfield(script, target)
+    assert first.returncode == 0, f"install failed:\n{first.stdout}\n{first.stderr}"
+    if _BROWNFIELD_TRACKED in changed:
+        (target / _BROWNFIELD_TRACKED).write_bytes(_user_bytes("edit"))
+    before = {rel: (target / rel).read_bytes() for rel in changed}
+    for rel in changed:
+        (source_root / rel).write_bytes((source_root / rel).read_bytes() + b"\n<!-- newer -->\n")
+    return source_root, script, target, before
+
+
+# One prompt per run: GNU `cp -i` reads a whole buffer from a piped stdin, so a second
+# prompt would see EOF however many answers are queued (a terminal does not do this).
+# The skill file is copied inside a `find` loop on the per-file path, the core rule is not.
+@pytest.mark.parametrize("prompted", [_BROWNFIELD_TRACKED, _CP_FLAG_SKILL[0]], ids=["core", "skill"])
+@pytest.mark.parametrize("answer", ["y", "n"])
+@pytest.mark.parametrize("env", [{}, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_cp_flag_i_reads_answers_from_stdin_not_the_deploy_list(env: dict, answer: str, prompted: str) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        source_root, script, target, before = _cp_flag_update_fixture(td, (prompted,))
+        rows = _manifest_rows(target)
+
+        result = subprocess.run(
+            [bash, str(script), str(target)], input=f"{answer}\n",
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            cwd=str(source_root), env={**os.environ, **env, "CP_FLAG": "-i"}, timeout=180,
+        )
+        assert result.returncode == 0, f"deploy failed:\n{result.stdout}\n{result.stderr}"
+        assert result.stderr.count("overwrite") == 1, f"expected exactly one prompt:\n{result.stderr}"
+        assert _manifest_rows(target) == rows, "every file must still be deployed and recorded"
+        live = (target / prompted).read_bytes()
+        if answer == "y":
+            assert live == (source_root / prompted).read_bytes(), f"'y' must replace {prompted}"
+            assert "[KEPT]" not in result.stdout, result.stdout
+        else:
+            assert live == before[prompted], f"'n' must keep {prompted}"
+            assert f"[KEPT] {prompted} " in result.stdout, result.stdout
+        if prompted == _BROWNFIELD_TRACKED:
+            overwrite = _overwrite_line(result.stdout, _BROWNFIELD_TRACKED)
+            assert (overwrite is not None) == (answer == "y"), result.stdout
+
+
+@pytest.mark.parametrize("env", [{}, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_cp_flag_n_update_reports_and_records_only_what_was_delivered(env: dict) -> None:
+    with tempfile.TemporaryDirectory() as td:
+        source_root, script, target, before = _cp_flag_update_fixture(td, (_BROWNFIELD_TRACKED, *_CP_FLAG_SKILL))
+        manifest = target / ".agentcortex-manifest"
+        old_hash = _manifest_hash(manifest, _BROWNFIELD_TRACKED)
+
+        result = _run_brownfield(script, target, {**env, "CP_FLAG": "-n"})
+        assert result.returncode == 0, f"deploy failed:\n{result.stdout}\n{result.stderr}"
+        assert (target / _BROWNFIELD_TRACKED).read_bytes() == before[_BROWNFIELD_TRACKED]
+        assert _overwrite_line(result.stdout, _BROWNFIELD_TRACKED) is None, \
+            f"an overwrite that did not happen must not be reported:\n{result.stdout}"
+        assert f"[KEPT] {_BROWNFIELD_TRACKED} " in result.stdout, result.stdout
+        assert "/ 3 kept by CP_FLAG /" in result.stdout, result.stdout
+        assert "force-updated" not in result.stdout, result.stdout
+        assert _manifest_hash(manifest, _BROWNFIELD_TRACKED) == old_hash, \
+            "a kept file must keep its previous manifest hash"
+
+        # The difference is still detected, so a default deploy force-updates it with a backup.
+        again = _run_brownfield(script, target, env or None)
+        assert again.returncode == 0, f"deploy failed:\n{again.stdout}\n{again.stderr}"
+        assert (target / _BROWNFIELD_TRACKED).read_bytes() == (source_root / _BROWNFIELD_TRACKED).read_bytes()
+        backup = target / (_BROWNFIELD_TRACKED + ".acx-local")
+        assert backup.read_bytes() == before[_BROWNFIELD_TRACKED]
+        for rel in _CP_FLAG_SKILL:  # kept scaffold files update too, with no sidecar
+            assert (target / rel).read_bytes() == (source_root / rel).read_bytes(), rel
+            assert not (target / (rel + ".acx-incoming")).exists(), rel
+
+
+@pytest.mark.parametrize("env", [{}, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_cp_flag_i_failed_copy_stops_the_deploy(env: dict) -> None:
+    """A copy that fails (read-only target answered "y") is an error, never [KEPT]."""
+    import stat
+    with tempfile.TemporaryDirectory() as td:
+        source_root, script, target, _ = _cp_flag_update_fixture(td, (_CP_FLAG_SKILL[0],))
+        locked = target / _CP_FLAG_SKILL[0]
+        locked.chmod(stat.S_IREAD)
+        try:
+            if os.access(locked, os.W_OK):
+                pytest.skip("cannot make the target read-only here (running as root?)")
+            result = subprocess.run(
+                [bash, str(script), str(target)], input="y\n",
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                cwd=str(source_root), env={**os.environ, **env, "CP_FLAG": "-i"}, timeout=180,
+            )
+        finally:
+            locked.chmod(stat.S_IREAD | stat.S_IWRITE)
+        assert result.returncode != 0, f"a failed copy must stop the deploy:\n{result.stdout}"
+        assert f"[KEPT] {_CP_FLAG_SKILL[0]}" not in result.stdout, result.stdout
+
+
 @requires_powershell
 @requires_bash
 def test_brownfield_first_install_via_deploy_ps1() -> None:
