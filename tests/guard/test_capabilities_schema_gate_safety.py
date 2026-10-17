@@ -89,6 +89,28 @@ def test_root_mode_retargeted_absent_file_is_inert(tmp_path):
     assert r.returncode == 0, r.stderr
 
 
+@pytest.mark.parametrize("config", [
+    "downstream_capabilities:\n  path: caps/team.yaml  # team file\n",
+    "downstream_capabilities:   # section\n  path: caps/team.yaml\n",
+    "\ufeffdownstream_capabilities:\n  path: caps/team.yaml\n",
+    "downstream_capabilities:\n  kb:\n    path: elsewhere.yaml\n  path: caps/team.yaml\n",
+], ids=["inline-comment", "header-comment", "bom", "nested-path-key"])
+def test_root_mode_reads_ordinary_yaml_forms_without_pyyaml(tmp_path, config):
+    """Same answer on every host: these forms once resolved to the default without PyYAML."""
+    r = _root_check(tmp_path, config, {"caps/team.yaml": _UNSAFE})
+    assert r.returncode == 1, (r.returncode, r.stderr)
+
+
+@pytest.mark.parametrize("config", [
+    "downstream_capabilities: {path: caps/team.yaml}\n",
+    "downstream_capabilities:\n\tpath: caps/team.yaml\n",
+    "downstream_capabilities:\n  path: a.yaml\n  path: b.yaml\n",
+], ids=["flow-mapping", "tab-indent", "duplicate-key"])
+def test_root_mode_unsupported_config_fails_closed(tmp_path, config):
+    r = _root_check(tmp_path, config, {"caps/team.yaml": _SAFE})
+    assert r.returncode == 2 and "MALFORMED" in r.stderr, (r.returncode, r.stderr)
+
+
 @pytest.mark.parametrize("config", [None, "worklog_lock:\n  mode: blocking\n",
                                     "downstream_capabilities:\n  path: ''\n"],
                          ids=["no-config", "no-section", "empty-path"])

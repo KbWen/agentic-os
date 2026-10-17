@@ -200,21 +200,28 @@ clean_acx_incoming() {
 }
 
 # --- Copy the framework version over an existing file ---
-# _cp_framework_version <src> <dst> <src_hash> <do_chmod>
+# _cp_framework_version <src> <dst> <src_hash> <do_chmod> <dst_hash_before>
 # Returns 1 when CP_FLAG=-n, or a "no" answer to -i, left dst as it was (#221), so the
 # caller reports and records what was delivered, not what was attempted. Only those
 # two flags can skip, so only they pay for the post-copy hash.
+# Callers test this function, which suspends set -e inside it: failures exit explicitly.
 _cp_framework_version() {
-    local src="$1" dst="$2" src_hash="$3" do_chmod="$4" status=0
+    local src="$1" dst="$2" src_hash="$3" do_chmod="$4" dst_before="$5" status=0 now
     cp ${CP_FLAG:+"$CP_FLAG"} "$src" "$dst" || status=$?
     case "$CP_FLAG" in
-        # coreutils >= 9.2 exits 1 when -n skips or -i is answered "no"; 8.x exits 0.
-        # Either way the post-copy hash says whether the framework version landed.
-        -n|-i) [ "$(compute_sha256_normalized "$dst")" = "$src_hash" ] || return 1 ;;
+        -n|-i)
+            now="$(compute_sha256_normalized "$dst")"
+            if [ "$now" != "$src_hash" ]; then
+                # coreutils >= 9.2 exits 1 for a skip or a "no" (8.x exits 0). A skip leaves
+                # dst untouched and writable; anything else is a real failure.
+                [ "$status" -eq 0 ] && return 1
+                [ -w "$dst" ] && [ "$now" = "$dst_before" ] && return 1
+                exit "$status"
+            fi
+            ;;
     esac
-    # Explicit exit: callers test this function, which suspends set -e inside it.
     [ "$status" -eq 0 ] || exit "$status"
-    if [ -n "$do_chmod" ]; then chmod +x "$dst"; fi
+    if [ -n "$do_chmod" ]; then chmod +x "$dst" || exit 1; fi
     return 0
 }
 
@@ -284,7 +291,7 @@ _deploy_file_now() {
                     cp ${CP_FLAG:+"$CP_FLAG"} "$dst" "$dst.acx-local"
                     backed_up=true
                 fi
-                if ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod"; then
+                if ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
                     if $backed_up; then
                         _record_kept "$tier" "$rel" "${old_manifest_hash:-$src_hash}" "a copy is at $rel.acx-local"
                     else
@@ -323,7 +330,7 @@ _deploy_file_now() {
                     # User didn't modify — safe to update.
                     # Skip cp when src already matches dst (pure no-op copy).
                     if [ "$src_hash" != "$dst_hash" ] \
-                        && ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod"; then
+                        && ! _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
                         _record_kept "$tier" "$rel" "$old_manifest_hash"
                         return 0
                     fi
@@ -375,7 +382,7 @@ _deploy_file_now() {
                     echo "ERROR: could not back up pre-existing $rel to $rel.acx-local; it was left unchanged and the deploy stopped." >&2
                     exit 1
                 fi
-                if _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod"; then
+                if _cp_framework_version "$src" "$dst" "$src_hash" "$do_chmod" "$dst_hash"; then
                     echo "  [OVERWRITE] $rel (pre-existing file replaced by the core framework version; previous version backed up to $rel.acx-local)"
                     COUNT_CORE_OVERWRITTEN=$((COUNT_CORE_OVERWRITTEN + 1))
                 else
@@ -1005,8 +1012,10 @@ for _keep_pair in \
     "docs/specs/.gitkeep.md" \
     "docs/adr/.gitkeep.md"; do
     if [ -f "$REPO_ROOT/$_keep_pair" ]; then
-        # A placeholder kept by CP_FLAG=-n/-i is fine; coreutils >= 9.2 exits 1 for it.
-        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair" || [ -f "$TARGET/$_keep_pair" ]
+        # A placeholder kept by CP_FLAG=-n/-i is fine (coreutils >= 9.2 exits 1 for it);
+        # with any other flag a failed copy still stops the deploy.
+        cp ${CP_FLAG:+"$CP_FLAG"} "$REPO_ROOT/$_keep_pair" "$TARGET/$_keep_pair" \
+            || { case "$CP_FLAG" in -n|-i) [ -w "$TARGET/$_keep_pair" ] ;; *) false ;; esac; }
     else
         touch "$TARGET/$_keep_pair"
     fi

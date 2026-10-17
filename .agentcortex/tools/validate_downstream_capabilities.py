@@ -25,6 +25,7 @@ The shared `_yaml_loader` (which legitimately serves trigger-registry.yaml, wher
 like `trigger_priority` are valid data) is intentionally NOT used or modified here -> zero
 blast radius on its ~20 other consumers.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -295,21 +296,56 @@ def validate(data):
 DEFAULT_CAPABILITIES_PATH = ".agentcortex/context/private/downstream-capabilities.yaml"
 
 
+def _configured_value(text):
+    """`downstream_capabilities.path` from config.yaml text, or None when unset.
+
+    A fixed grammar, read the same way on every host: the shared loader's no-PyYAML
+    fallback misreads inline comments and a BOM, which would point this check at a
+    different file than the agent reads. Any form outside the grammar (flow mapping,
+    tab indent, a repeated section or key) raises, so the caller fails closed (#190)."""
+    lines = text.lstrip("\ufeff").splitlines()
+    starts = [i for i, l in enumerate(lines) if re.match(r"downstream_capabilities\s*:", l)]
+    if not starts:
+        return None
+    if len(starts) > 1:
+        raise _StrictError("downstream_capabilities appears more than once")
+    rest = lines[starts[0]].split(":", 1)[1].strip()
+    if rest and not rest.startswith("#"):
+        raise _StrictError("downstream_capabilities must be a block mapping")
+    values, child_indent = [], None
+    for line in lines[starts[0] + 1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = line[: len(line) - len(line.lstrip())]
+        if not indent:
+            break  # next top-level key
+        if "\t" in indent:
+            raise _StrictError("tab indentation in downstream_capabilities")
+        child_indent = child_indent or indent
+        m = re.match(r" +path\s*:(.*)$", line)
+        if m and indent == child_indent:
+            values.append(m.group(1).strip())
+    if len(values) > 1:
+        raise _StrictError("downstream_capabilities.path appears more than once")
+    if not values:
+        return None
+    raw = values[0]
+    quoted = re.match(r"""(['"])(.*)\1\s*(#.*)?$""", raw)
+    if quoted:
+        return quoted.group(2).strip() or None
+    if raw[:1] in "'\"[{&*!|>":
+        raise _StrictError("unsupported downstream_capabilities.path value %r" % raw)
+    return re.split(r"\s+#", raw, maxsplit=1)[0].strip() or None
+
+
 def configured_path(root):
     """The file bootstrap §1b reads: `.agent/config.yaml §downstream_capabilities.path`
-    relative to root, else the default (#190). The config is framework-owned, so it goes
-    through the shared loader; the capabilities file itself keeps `parse_strict`."""
-    rel = DEFAULT_CAPABILITIES_PATH
+    relative to root, else the default (#190)."""
     config = root / ".agent" / "config.yaml"
+    rel = None
     if config.is_file():
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from _yaml_loader import load_data
-        data = load_data(config)
-        section = data.get("downstream_capabilities") if isinstance(data, dict) else None
-        value = section.get("path") if isinstance(section, dict) else None
-        if isinstance(value, str) and value.strip():
-            rel = value.strip()
-    path = Path(rel)
+        rel = _configured_value(config.read_text(encoding="utf-8-sig"))
+    path = Path(rel or DEFAULT_CAPABILITIES_PATH)
     return path if path.is_absolute() else root / path
 
 

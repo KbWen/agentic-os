@@ -64,7 +64,7 @@ Backlog #230: shrink the active `_product-backlog.md` by moving every Shipped/Ca
 - Gate: plan | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T11:33:00Z
 - Gate: implement | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T11:48:00Z
 - Gate: review | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T11:50:04Z
-- Gate: test | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T12:04:30Z
+- Gate: test | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T11:51:50Z
 - Gate: ship | Verdict: PASS | Classification: quick-win | Timestamp: 2026-10-17T11:52:09Z
 
 ---
@@ -109,6 +109,7 @@ none
 - The #221 ship (commit b1a3b83) edited `_product-backlog.md` (row #221 status, `last_updated`) directly, not through `guard_context_write.py` although Python was available; recorded here because that log is already archived.
 - Pending-row prose compression split out of #230 into new row #232 (per-row judgment; the verbatim moves here are mechanically checkable).
 - Implement and test receipt timestamps are reconstructed from the session timeline, not read from the clock at phase end.
+- 2026-10-17 review correction (PR #470 independent review): the test receipt originally read 12:04:30Z, after the ship receipt (11:52:09Z) and the commit (11:57:26Z); corrected to 11:51:50Z, before the ship clock read. The review line's claim that the `backlog spec links` WARN "disappeared" was wrong: Pending #201 still cites `scaffold-sidecar-on-upstream-change.md` and the WARN is still raised.
 
 ---
 

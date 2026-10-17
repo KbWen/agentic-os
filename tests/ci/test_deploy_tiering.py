@@ -767,6 +767,32 @@ def test_cp_flag_n_update_reports_and_records_only_what_was_delivered(env: dict)
         assert (target / _BROWNFIELD_TRACKED).read_bytes() == (source_root / _BROWNFIELD_TRACKED).read_bytes()
         backup = target / (_BROWNFIELD_TRACKED + ".acx-local")
         assert backup.read_bytes() == before[_BROWNFIELD_TRACKED]
+        for rel in _CP_FLAG_SKILL:  # kept scaffold files update too, with no sidecar
+            assert (target / rel).read_bytes() == (source_root / rel).read_bytes(), rel
+            assert not (target / (rel + ".acx-incoming")).exists(), rel
+
+
+@pytest.mark.parametrize("env", [{}, {"ACX_FORCE_PERFILE": "1"}], ids=["batch", "per-file"])
+@requires_bash
+def test_cp_flag_i_failed_copy_stops_the_deploy(env: dict) -> None:
+    """A copy that fails (read-only target answered "y") is an error, never [KEPT]."""
+    import stat
+    with tempfile.TemporaryDirectory() as td:
+        source_root, script, target, _ = _cp_flag_update_fixture(td, (_CP_FLAG_SKILL[0],))
+        locked = target / _CP_FLAG_SKILL[0]
+        locked.chmod(stat.S_IREAD)
+        try:
+            if os.access(locked, os.W_OK):
+                pytest.skip("cannot make the target read-only here (running as root?)")
+            result = subprocess.run(
+                [bash, str(script), str(target)], input="y\n",
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                cwd=str(source_root), env={**os.environ, **env, "CP_FLAG": "-i"}, timeout=180,
+            )
+        finally:
+            locked.chmod(stat.S_IREAD | stat.S_IWRITE)
+        assert result.returncode != 0, f"a failed copy must stop the deploy:\n{result.stdout}"
+        assert f"[KEPT] {_CP_FLAG_SKILL[0]}" not in result.stdout, result.stdout
 
 
 @requires_powershell

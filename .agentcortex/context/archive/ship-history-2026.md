@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.32-2026-10-06
+- Feature shipped: **v1.8.32** packages #464: the archive directory is the file type (D4 resolves INDEX `log` in the archive root, reports a child that cannot run as WARN and no Python as SKIP; Phase-Summary scan reads the root only; same-day `--N-` archive names; INDEX duplicate-`log` guard with an identical-retry no-op). Adopter-facing delta: `ship.md`, `handoff.md`, `validate.sh`, `validate.ps1`, `append_chain_entry.py`, `token-governance.md`, plus the `deploy.sh` banner.
+- The CHANGELOG leads with the one upgrade action: an INDEX entry pointing at a pre-#106 final log under `archive/work/` now WARNs; `git mv` it to the archive root.
+- Tests: release guard 2 passed; docs pins 12 passed; full suite on the release PR's CI. After merge: lightweight `v1.8.32` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 189->190; Ship History rotated at cap 10.
+
 ### Ship-fix-archive-name-collisions-2026-10-06
 - Feature shipped: **the archive directory is the file type.** Final Work Logs live in the archive root and `archive/work/` holds compaction fragments. D4 resolves each INDEX `log` in the root only, so a same-named fragment no longer hides a missing final log; a child that did not run is a WARN (validate.sh used to abort under `set -e`) and no Python is a SKIP. The archived-Work-Log Phase-Summary scan reads the root only (#186). `/ship §3`: never overwrite an archive; a same-day reship on a reused key uses `<worklog-key>--2-<YYYYMMDD>.md`. `append_chain_entry.py` refuses a `log` recorded for a different entry; an identical retry is a no-op. Two legacy final logs moved to the root.
 - Review: a 5-seat read-only roundtable plus a tenth man shaped the design (renaming fragments was refuted); 3 fresh reviewers after. Round 1 was NOT READY: a re-indent had stripped validate.ps1's BOM, which breaks Windows PowerShell 5.1 (restored, byte-pinned; the ps1 twin test now also runs under 5.1). AC-8 amended with owner approval after the red-team retry finding. Follow-ups #222 (10 root archives with no INDEX entry), #223 (other `$(python)` sites abort validate.sh on a nonzero child).
