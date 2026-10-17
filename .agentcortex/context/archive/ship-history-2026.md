@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.30-2026-09-29
+- Feature shipped: **v1.8.30** packages #457 (the KB seam reads the section the KB itself names in `digest.anchors`, checks the digest `sha`, accepts any integer `schema_version`, and shows one line when a declared KB is unreadable or off clean `main`; an `llms.txt`-only KB works again) and #458 (optional `KB:` line in the bootstrap chat template). Adopters without a KB see no change beyond a slightly smaller always-loaded file.
+- Before the cut, at the owner's request, 4 unprimed end-to-end sessions on a deployed fixture with a real KB: 4/4 consulted the right standard through its digest and took only the risks section; 0/4 read the irrelevant routed page or were misled; ~5–7K KB tokens per consult. Owner bar recorded: an unread KB is fine, a read KB must be correct and token-lean (#218 P1, #219 closed).
+- Tests: release guard + validators; full suite on the release PR's CI. After merge: lightweight `v1.8.30` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 185->186.
+
 ### Ship-feat-bootstrap-kb-status-line-2026-09-29
 - Feature shipped: **the `bootstrap.md §3` chat template has an optional `KB:` line** for the `§1b` UNREADABLE / off-main WARN line (follow-up to PR #457). Unprimed sims showed one run that recorded the WARN in its Work Log but left it out of chat under the output-ceiling rule. Paid for by trims: lifecycle 354,903 -> 354,868.
 - **Not demonstrated:** the re-sim (sonnet ×2, new template) never reached display — neither run detected the off-main state. Detection skipping is the larger gap, logged as backlog #219 with the measurements.

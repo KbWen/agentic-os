@@ -292,11 +292,40 @@ def validate(data):
     return None
 
 
+DEFAULT_CAPABILITIES_PATH = ".agentcortex/context/private/downstream-capabilities.yaml"
+
+
+def configured_path(root):
+    """The file bootstrap §1b reads: `.agent/config.yaml §downstream_capabilities.path`
+    relative to root, else the default (#190). The config is framework-owned, so it goes
+    through the shared loader; the capabilities file itself keeps `parse_strict`."""
+    rel = DEFAULT_CAPABILITIES_PATH
+    config = root / ".agent" / "config.yaml"
+    if config.is_file():
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from _yaml_loader import load_data
+        data = load_data(config)
+        section = data.get("downstream_capabilities") if isinstance(data, dict) else None
+        value = section.get("path") if isinstance(section, dict) else None
+        if isinstance(value, str) and value.strip():
+            rel = value.strip()
+    path = Path(rel)
+    return path if path.is_absolute() else root / path
+
+
 def main():
-    if len(sys.argv) < 2:
-        sys.stderr.write("usage: validate_downstream_capabilities.py <file>\n")
+    if len(sys.argv) < 2 or (sys.argv[1] == "--root" and len(sys.argv) < 3):
+        sys.stderr.write("usage: validate_downstream_capabilities.py <file> | --root <repo>\n")
         return 2
-    path = Path(sys.argv[1])
+    if sys.argv[1] == "--root":
+        try:
+            path = configured_path(Path(sys.argv[2]))
+        except Exception as exc:
+            # Cannot tell which file the agent reads -> fail closed, never a silent pass.
+            sys.stderr.write("MALFORMED: cannot resolve downstream_capabilities.path from .agent/config.yaml (%s)\n" % exc)
+            return 2
+    else:
+        path = Path(sys.argv[1])
     if not path.exists():
         return 0  # absent = inert = safe (present-only)
     try:

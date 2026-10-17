@@ -835,12 +835,12 @@ Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Patte
 # ADR-009: bootstrap MUST ship the kb-consult scope-detected row (§3.6 / §1b knowledge_sources). Structural only; consult quality is honor-system.
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Pattern 'kb-consult' -SuccessMessage 'bootstrap ships KB-consult scope-detected row (ADR-009)' -FailureMessage 'bootstrap missing KB-consult scope-detected row (ADR-009)'
 # ADR-007: a present downstream-capabilities.yaml MUST be schema gate-safe (rejected, not clamped).
+# --root: the tool checks the file config.yaml §downstream_capabilities.path names (#190).
 $capValidator = Join-NormalPath $root '.agentcortex/tools/validate_downstream_capabilities.py'
-$capFile = Join-NormalPath $root '.agentcortex/context/private/downstream-capabilities.yaml'
 if (Test-Path $capValidator) {
     # python-present + gate-unsafe -> FAIL (CI always has python); no-python -> WARN
     # (advisory; bootstrap §1b agent-discipline is the runtime guarantee there).
-    Invoke-PythonCheck -Label 'downstream-capabilities gate-safety' -MissingPythonLevel 'WARN' -ScriptPath $capValidator -Arguments @($capFile)
+    Invoke-PythonCheck -Label 'downstream-capabilities gate-safety' -MissingPythonLevel 'WARN' -ScriptPath $capValidator -Arguments @('--root', $root)
 } else {
     Add-Result -Level 'SKIP' -Message 'downstream-capabilities gate-safety -- validator not deployed (safe to ignore)'
 }

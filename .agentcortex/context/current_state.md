@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-17T11:51:42Z
+- **Last Updated**: 2026-10-17T13:16:36Z
 - **Last Verified**: 2026-10-13
-- **Update Sequence**: 195
+- **Update Sequence**: 196
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-validator-cap-path-190-2026-10-17
+- Feature shipped: **the ADR-007 gate-safety check follows `.agent/config.yaml §downstream_capabilities.path` (#190).** Both validators hardcoded the default file, so a retargeted gate-unsafe capabilities file (reproduced: a non-`custom-*` skill id) passed while bootstrap §1b loaded it. `validate_downstream_capabilities.py --root <repo>` now resolves the configured path (shared loader for the config only; the capabilities file keeps the strict parser; unresolvable → fail closed), and `validate.sh`/`validate.ps1` both call it, so parity holds by construction. Positional `<file>` form kept.
+- Review: self-review + pre-mortem (absolute/`../` paths follow the agent's read; no-python path unchanged; tool and twins ship together). validate.ps1 BOM preserved.
+- Tests: 7 tool-level + 2 twin end-to-end cases; 3 isolated mutants killed (sh hardcoded, ps1 hardcoded, tool ignores config); validator/guard suites 457 passed; validate.sh = validate.ps1 `fail=0`. SSoT 195->196; Ship History rotated at cap 10.
+
 ### Ship-chore-backlog-archive-230-2026-10-17
 - Feature shipped: **the active backlog holds only open work (#230).** Every Shipped/Cancelled row (75 incl. #230) moved byte-for-byte to `_product-backlog-archive.md` under a new 10-column section (the legacy 9-column table is untouched), and the dated notes block (2026-06-19 → 2026-08-09) moved verbatim to its `## Historical Notes`. The active file keeps an explicit queue list and a short summary of the notes that still bind Pending rows. `_product-backlog.md` 196,478 -> 90,151 chars (static size, not measured session tokens). New #232 covers the long Pending-row prose that remains (85K).
 - Review: a scripted verifier against the HEAD baseline (row set, verbatim bytes, Pending order, 10 columns, dependency resolution, notes verbatim) with 4 killed mutants; a tenth-man pass over every moved note restored two row-less reopen triggers to the summary. Backlog writes went through `guard_context_write.py`.
@@ -160,9 +165,4 @@
 - Feature shipped: **a first install no longer silently destroys an adopter's file at a core-tier path (#188).** `deploy.sh` backs a differing pre-existing core file up to `<path>.acx-local` byte-for-byte, prints `[OVERWRITE] <path> (... previous version backed up to <path>.acx-local)`, and stops nonzero before replacing it if the backup fails or a `.acx-local` already exists (no manifest is written). `CP_FLAG=-n` prints `[KEPT]` instead of claiming an overwrite. Updates, scaffold sidecars, tiers, manifest and `deploy.ps1` unchanged. ADR-005 amended; INSTALL.md and both READMEs no longer promise existing files are never overwritten.
 - Review: three fresh-reviewer rounds plus a Codex final review. The pre-mortem found that an interrupted first install retried from a newer source could overwrite the backup holding the original; fixed fail-closed (AC-6 amended with owner approval). Two pre-existing defects reproduced and filed: #220 (legacy migration deletes an adopter's `tools/validate.*`), #221 (`CP_FLAG=-i` swallows a batch-queue record; `-n` update false overwrite claim).
 - Tests: 10 brownfield tests (red on baseline, 6 mutants killed); local deploy suites 56 passed / 2 skipped; validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; PR #461 CI green. SSoT sequence 186->187; Ship History rotated at cap 10.
-
-### Ship-chore-release-v1.8.30-2026-09-29
-- Feature shipped: **v1.8.30** packages #457 (the KB seam reads the section the KB itself names in `digest.anchors`, checks the digest `sha`, accepts any integer `schema_version`, and shows one line when a declared KB is unreadable or off clean `main`; an `llms.txt`-only KB works again) and #458 (optional `KB:` line in the bootstrap chat template). Adopters without a KB see no change beyond a slightly smaller always-loaded file.
-- Before the cut, at the owner's request, 4 unprimed end-to-end sessions on a deployed fixture with a real KB: 4/4 consulted the right standard through its digest and took only the risks section; 0/4 read the irrelevant routed page or were misled; ~5–7K KB tokens per consult. Owner bar recorded: an unread KB is fine, a read KB must be correct and token-lean (#218 P1, #219 closed).
-- Tests: release guard + validators; full suite on the release PR's CI. After merge: lightweight `v1.8.30` tag + `gh release create --latest` (repo-gotchas §12). SSoT sequence 185->186.
 
