@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-deploy-cp-flag-queue-2026-10-17
+- Feature shipped: **`CP_FLAG` no longer breaks two `deploy.sh` promises (#221).** `-i` took its answer from the list deploy was iterating (the batch queue, and the skills `find` stream on the per-file path), so a file was neither deployed nor recorded; both loops now read on fd 3. A `-n` (or declined `-i`) update printed `[OVERWRITE]` and counted a copy that did not happen; the core-update and unmodified-scaffold-update copies now check the post-copy hash (only for `-n`/`-i`), print `[KEPT]`, keep the previous manifest hash, and the summary adds `N kept by CP_FLAG`.
+- Review: self-review + pre-mortem (cp exit status unchanged vs baseline, fd 3 unused elsewhere, piped-stdin buffering of `cp -i` drives one-prompt-per-run tests). Shipped in one PR with the 2026-10-15 token-first queue docs, owner choice.
+- Tests: 10 new cases (batch/per-file × y/n × core/skill, plus `-n` record-and-recover), both fixes mutation-killed (5 and 6 failures); deploy suites 90 passed, 2 skipped; validate.sh `pass=116 warn=5 fail=0 skip=2`. SSoT 193->194; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.33-2026-10-13
 - Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
 - The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).

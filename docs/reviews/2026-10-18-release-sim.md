@@ -88,6 +88,29 @@ The procedure displaced the one-line pointer. Two causes remain possible, instru
 
 Hidden-test outcomes were identical across all three arms. On the `/bootstrap` path, `acx-reviewer` dispatches added Opus cost (#236). Added as a dated note to #231.
 
+## Round 3: KB routing without a prompt hint
+
+This round was added at the owner's request: when a task falls inside what the KB covers, does each model consult it on its own, with the framework installed?
+
+**Setup.**
+- **Product:** `notekit`, a small notes service.
+- **KB:** declared only in `knowledge_sources`; the prompt never mentions it. Six routed standards (migrations, passwords, logging, API errors, caching, timestamps) plus three decoys. Each standard carries one rule a model cannot guess, stated in both the page and its digest's risks section, for example the `scrypt$<salt>$<hash>` storage format, `422` + `VALIDATION_ERROR`, and UTC seconds with `Z`.
+- **Tasks:** six covered by the KB and two not covered (a README typo, a `--version` flag).
+- **Matrix:** plain-task entry vs `/bootstrap` entry, sonnet-5.5 and haiku-4.5: 32 sessions.
+- **Strict consult:** reading a standard page or digest, or querying `task_routing`. The bootstrap §1b health check (`ls manifest`, `grep schema_version`) does not count.
+
+| Model / entry | Consulted (covered) | Applied the KB rule | Applied when the standard was read | Consulted (uncovered) |
+|---|---|---|---|---|
+| sonnet, plain | 0/6 | 0/6 | — | 0/2 |
+| sonnet, `/bootstrap` | 3/6 | 3/6 | 3/3 | 0/2 |
+| haiku, plain | 0/6 | 0/6 | — | 0/2 |
+| haiku, `/bootstrap` | 0/6 | 0/6 | — | 0/2 |
+
+- **When the standard is read, it works (3/3).** In the three `/bootstrap` sonnet runs that stopped at the health check, sonnet made the exact mistakes the KB lists: `400` instead of `422`, and `isoformat()` with microseconds and `+00:00`.
+- **The seam is the gap.** A plain task never reached the KB (0/12). On the `/bootstrap` path, sonnet ran §1b in 6/8 sessions but went on to the routed consult in only half of the covered tasks. haiku never consulted; once it tested a wrong path (`.agentcortex/context/kb/`) and stopped.
+- **No false lookups.** Uncovered tasks consulted nothing (0/8), so the seam does not waste tokens where the KB has nothing to say.
+- **Cost.** The eight `/bootstrap` sonnet sessions cost $16.24 against $2.22 on the plain entry. One auth task classified itself as a hotfix and dispatched the Opus reviewer twice ($2.00 of that run's $6.21; see #236).
+
 ## Limits of this run
 
 - **Sample size.** n = 2–3 per cell, so results are directions and counts, not significance. A round-1 cost gap (p ≈ 0.06) was traced to sampling: no session read any file that differed between the two versions.
