@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-18T02:02:48Z
-- **Last Verified**: 2026-10-13
-- **Update Sequence**: 201
+- **Last Updated**: 2026-10-18T02:35:11Z
+- **Last Verified**: 2026-10-18
+- **Update Sequence**: 202
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.34-2026-10-18
+- Feature shipped: **v1.8.34** packages PR #470: #221 (`CP_FLAG` -i/-n deploy and report what was delivered; coreutils 9.2+ declines no longer abort), #190 (capabilities gate-safety follows the configured path, same answer with or without PyYAML), #233 (Test Gate Results needs a recorded body), #218 (kb-consult keeps the KB's routed order; measured effect null), #121 (README says what is on after install), #230 (backlog archival), plus the independent-review fixes.
+- The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
+- Tests: release-version consistency 2 passed; docs pins 12 passed; PR #470 CI all green on 5d3fbf5. After merge: `v1.8.34` tag + `gh release create --latest` (repo-gotchas §12). SSoT 201->202; Ship History rotated at cap 10.
+
 ### Ship-fix-test-gate-results-body-233-2026-10-18
 - Feature shipped: **the AC-6 Test Gate Results check reads the section, not just its heading (#233, found by the PR #470 review).** The Work Log template ships `## Test Gate Results` with body `none`, so validate.sh and validate.ps1 passed a feature/architecture-change log that reached handoff/ship with no recorded test results. Both twins now count the section only when its body (to the next `#`/`##` heading or `---`, minus blank and `>` guidance lines) is non-empty and not `none`; `###` sub-headings stay part of the body. FAIL/WARN tiering and the shared AC-6 message are unchanged; detail strings say "missing or empty".
 - Adopter delta: a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still the template's `none` now FAILs (intended); other such logs add to the existing WARN.
@@ -159,9 +164,4 @@
 - Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
 - The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).
 - Tests: release-version consistency 2 passed; docs pins 12 passed; lifecycle 42 passed. The whole suite runs on the release PR's CI before merge. After merge: `v1.8.33` tag + `gh release create --latest` (repo-gotchas §12).
-
-### Ship-fix-legacy-tools-migration-220-2026-10-13
-- Feature shipped: **a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}` (#220, P1 data loss, same class as #188).** The legacy-path migration used to remove them on a first install with no backup and exit 0. The removal, its gate and its dry-run mention are deleted. The public framework never shipped these files (`c1ced66`, v5.4, had only the removal code), so no install marker can prove ownership. The other legacy migrations are unchanged.
-- Review: the first fix gated the removal on install evidence. A fresh reviewer with a red-team pass reproduced 2 CRITICAL: our own first install writes the manifest, so the next deploy deleted the files; a failed install leaves `.agentcortex/` and the retry deleted them. Both reproduced as RED, then fixed by deleting the step (D-1). The round-2 reviewer compared old vs new over 6 target states.
-- Tests: PR #467 CI 18 pass; deploy suites 71 passed, 2 skipped (pre-existing). Downstream spot-check: v1.8.32 -> candidate upgrade and a deploy.ps1 brownfield install keep the files, downstream validate fail=0. A/B agent sim (hidden test): 5/5 on both arms, no regression. SSoT 191->192; Ship History rotated at cap 10.
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.8.34] - 2026-10-18
+
+**`CP_FLAG` no longer skips files or misreports copies** (#221). With `CP_FLAG=-i`, `cp` took its answer from the list deploy was working through, so a file could end up neither deployed nor recorded while deploy still exited 0; the prompt now reads your terminal. With `-n`, or a "no" to `-i`, an update printed `[OVERWRITE]` for a copy that did not happen. It now prints `[KEPT]`, keeps the previous manifest hash so the next deploy still sees the difference, and the summary counts `N kept by CP_FLAG`. On coreutils 9.2 or later a declined or skipped copy no longer aborts the deploy; a copy that really fails still stops it.
+
+**The capabilities gate-safety check follows your configured path** (#190). Both validators hardcoded `.agentcortex/context/private/downstream-capabilities.yaml`, so a gate-unsafe file at a retargeted `downstream_capabilities.path` passed while bootstrap loaded it. The path is now read with a fixed grammar that gives the same answer with or without PyYAML, and an unsupported form fails closed.
+
+**Test Gate Results has to contain results** (#233). The AC-6 check only looked for the heading, which the Work Log template already contains, so a feature that reached handoff/ship with `none` there passed. It now needs a non-empty body that is not `none`.
+
+**`kb-consult` keeps the KB's routed order** (#218). "Smallest `approx_tokens` first" is gone; `approx_tokens` only stops a consult. Measured on sonnet-5.5 (8 vs 8 sessions) the change made no difference; it removes an instruction that contradicted the KB's own routing.
+
+**The README says what is on after install** (#121), in English and 繁體中文: a fresh install runs nothing until you enable the pre-commit hook and a CI job, the phase/evidence check runs locally because work logs are gitignored, and a new FAQ entry explains `⚡ ACX` and the `gate:` block. The repo's own backlog now keeps completed rows in its archive (#230).
+
+**Downstream delta:**
+- Core files, updated on deploy: `.agentcortex/bin/deploy.sh`, `.agentcortex/bin/validate.sh`, `.agentcortex/bin/validate.ps1`, `.agentcortex/tools/validate_downstream_capabilities.py`, `.agent/workflows/bootstrap.md`, `.agentcortex/docs/guides/connecting-a-knowledge-base.md`, and the version banners in `.agentcortex/docs/`.
+- You may see a new FAIL: a current-branch feature or architecture-change Work Log at handoff/ship whose Test Gate Results still reads `none`. Record the test command and its result there.
+- If you set `downstream_capabilities.path`, the validators now check that file. A flow mapping, tab indent or repeated key in that section fails closed.
+- With an empty `CP_FLAG` (the default), deploy behaves as before. Scaffold files are unchanged.
+
 ## [1.8.33] - 2026-10-13
 
 **A deploy never deletes your own `tools/validate.sh`, `.ps1` or `.cmd`** (#220, P1, the same data-loss class as #188). Before this release, a first install into a project that had its own `tools/validate.*` deleted them with no backup and exit 0, and removed `tools/`. A marker-gated fix would only have delayed the loss by one run, because our own first install writes `.agentcortex-manifest`. The framework never shipped these files publicly, so the legacy-path migration no longer touches `tools/` at all. The other legacy migrations (`agentcortex/`, `docs/context/`) are unchanged. This replaces the 1.8.31 advice to back these files up before the first deploy.
