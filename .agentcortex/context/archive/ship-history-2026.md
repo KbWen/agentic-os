@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.33-2026-10-13
+- Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
+- The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).
+- Tests: release-version consistency 2 passed; docs pins 12 passed; lifecycle 42 passed. The whole suite runs on the release PR's CI before merge. After merge: `v1.8.33` tag + `gh release create --latest` (repo-gotchas §12).
+
 ### Ship-fix-legacy-tools-migration-220-2026-10-13
 - Feature shipped: **a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}` (#220, P1 data loss, same class as #188).** The legacy-path migration used to remove them on a first install with no backup and exit 0. The removal, its gate and its dry-run mention are deleted. The public framework never shipped these files (`c1ced66`, v5.4, had only the removal code), so no install marker can prove ownership. The other legacy migrations are unchanged.
 - Review: the first fix gated the removal on install evidence. A fresh reviewer with a red-team pass reproduced 2 CRITICAL: our own first install writes the manifest, so the next deploy deleted the files; a failed install leaves `.agentcortex/` and the retry deleted them. Both reproduced as RED, then fixed by deleting the step (D-1). The round-2 reviewer compared old vs new over 6 target states.
