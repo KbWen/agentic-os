@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-18T02:35:11Z
+- **Last Updated**: 2026-10-18T06:15:52Z
 - **Last Verified**: 2026-10-18
-- **Update Sequence**: 202
+- **Update Sequence**: 204
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,14 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-docs-backlog-sim-findings-20261018-r3-2026-10-18
+- Feature shipped: **KB-routing round added to the v1.8.34 sim record (PR #472).** With the KB declared only in `knowledge_sources` and no prompt hint, across six KB-covered tasks: plain-task entry consulted it 0/12 (both models); `/bootstrap` entry: sonnet read the routed standard 3/6 and applied the rule 3/3 when it did (the misses reproduced the KB-listed mistakes), haiku 0/6; uncovered tasks consulted 0/8. #234 and #235 carry the numbers; `docs/reviews/2026-10-18-release-sim.md` has the section.
+- Tests: validate.sh `fail=0`; docs pins 12 passed; credential scan clean. SSoT 203->204; Ship History rotated at cap 10.
+
+### Ship-docs-backlog-sim-findings-20261018-2026-10-18
+- Feature shipped: **v1.8.34 simulation findings filed (intake only, no fixes).** `docs/reviews/2026-10-18-release-sim.md` records a 62-session headless sim (sonnet-5.5, haiku-4.5; no framework vs plain-task entry vs `/bootstrap` entry) and leads with its limit: single small tasks, so nothing about lifecycle value transfers. New backlog rows: #234 plain-task entry never reaches bootstrap (0/24 read it), #235 haiku skips the declared KB and volatile-fact lookups even after `/bootstrap` (control haiku used the KB 3/3; framework haiku never mentioned it), #236 acx-* subagents pin models (reviewer → Opus), #237 validator misses non-template Work Logs, #238 small models fabricate or overstate verification, #239 lifecycle simulation; dated cost note on #231.
+- Tests: validate.sh = validate.ps1 `fail=0`; docs pins 12 passed; credential scan clean. SSoT 202->203; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.34-2026-10-18
 - Feature shipped: **v1.8.34** packages PR #470: #221 (`CP_FLAG` -i/-n deploy and report what was delivered; coreutils 9.2+ declines no longer abort), #190 (capabilities gate-safety follows the configured path, same answer with or without PyYAML), #233 (Test Gate Results needs a recorded body), #218 (kb-consult keeps the KB's routed order; measured effect null), #121 (README says what is on after install), #230 (backlog archival), plus the independent-review fixes.
 - The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
@@ -154,14 +162,4 @@
 - Feature shipped: **the active backlog holds only open work (#230).** Every Shipped/Cancelled row (75 incl. #230) moved byte-for-byte to `_product-backlog-archive.md` under a new 10-column section (the legacy 9-column table is untouched), and the dated notes block (2026-06-19 → 2026-08-09) moved verbatim to its `## Historical Notes`. The active file keeps an explicit queue list and a short summary of the notes that still bind Pending rows. `_product-backlog.md` 196,478 -> 90,151 chars (static size, not measured session tokens). New #232 covers the long Pending-row prose that remains (85K).
 - Review: a scripted verifier against the HEAD baseline (row set, verbatim bytes, Pending order, 10 columns, dependency resolution, notes verbatim) with 4 killed mutants; a tenth-man pass over every moved note restored two row-less reopen triggers to the summary. Backlog writes went through `guard_context_write.py`.
 - Tests: validate.sh = validate.ps1 `fail=0`; backlog consumers + docs pins + governance eval 256 passed, 2 skipped. SSoT 194->195; Ship History rotated at cap 10.
-
-### Ship-fix-deploy-cp-flag-queue-2026-10-17
-- Feature shipped: **`CP_FLAG` no longer breaks two `deploy.sh` promises (#221).** `-i` took its answer from the list deploy was iterating (the batch queue, and the skills `find` stream on the per-file path), so a file was neither deployed nor recorded; both loops now read on fd 3. A `-n` (or declined `-i`) update printed `[OVERWRITE]` and counted a copy that did not happen; the core-update and unmodified-scaffold-update copies now check the post-copy hash (only for `-n`/`-i`), print `[KEPT]`, keep the previous manifest hash, and the summary adds `N kept by CP_FLAG`.
-- Review: self-review + pre-mortem (cp exit status unchanged vs baseline, fd 3 unused elsewhere, piped-stdin buffering of `cp -i` drives one-prompt-per-run tests). Shipped in one PR with the 2026-10-15 token-first queue docs, owner choice.
-- Tests: 10 new cases (batch/per-file × y/n × core/skill, plus `-n` record-and-recover), both fixes mutation-killed (5 and 6 failures); deploy suites 90 passed, 2 skipped; validate.sh `pass=116 warn=5 fail=0 skip=2`. SSoT 193->194; Ship History rotated at cap 10.
-
-### Ship-chore-release-v1.8.33-2026-10-13
-- Feature shipped: **v1.8.33** packages #467 (#220: a deploy never deletes a project's own `tools/validate.{sh,ps1,cmd}`; the legacy removal is deleted, not gated) and #466 (#224: prompt-audit batch 1, which reconciles stale facts and contradictions in the instruction files: skills cite `ADR-00N-project-architecture.md`, guardrails §12.2/§5.4, one Platform enum, dead refs, platform lists).
-- The CHANGELOG replaces the 1.8.31 advice to back up `tools/validate.*` before the first deploy, and states the downstream delta (core vs scaffold files; tools/validators unchanged; three rule texts shift agent behaviour toward already-stated rules).
-- Tests: release-version consistency 2 passed; docs pins 12 passed; lifecycle 42 passed. The whole suite runs on the release PR's CI before merge. After merge: `v1.8.33` tag + `gh release create --latest` (repo-gotchas §12).
 
