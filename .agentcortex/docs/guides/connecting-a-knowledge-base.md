@@ -134,7 +134,8 @@ never required** — a BYO markdown KB without any manifest works fine via the f
 (`llms.txt` / `_index.md`). The accelerators only make the consult cheaper or safer when present.
 
 **Per-page `approx_tokens`** — lets the agent budget by data rather than guessing. When present,
-prefer pages with smaller `approx_tokens` first and cap an extracted section at a few k tokens.
+the agent still reads routed pages in your `task_routing` order and uses `approx_tokens` only to
+stop, capping an extracted section at a few k tokens.
 Without it, the agent falls back to the ≤3-page count cap. Example field shape:
 
 ```json

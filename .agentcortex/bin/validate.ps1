@@ -835,12 +835,12 @@ Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Patte
 # ADR-009: bootstrap MUST ship the kb-consult scope-detected row (§3.6 / §1b knowledge_sources). Structural only; consult quality is honor-system.
 Test-ContainsLiteral -Path (Join-NormalPath $workflowsDir 'bootstrap.md') -Pattern 'kb-consult' -SuccessMessage 'bootstrap ships KB-consult scope-detected row (ADR-009)' -FailureMessage 'bootstrap missing KB-consult scope-detected row (ADR-009)'
 # ADR-007: a present downstream-capabilities.yaml MUST be schema gate-safe (rejected, not clamped).
+# --root: the tool checks the file config.yaml §downstream_capabilities.path names (#190).
 $capValidator = Join-NormalPath $root '.agentcortex/tools/validate_downstream_capabilities.py'
-$capFile = Join-NormalPath $root '.agentcortex/context/private/downstream-capabilities.yaml'
 if (Test-Path $capValidator) {
     # python-present + gate-unsafe -> FAIL (CI always has python); no-python -> WARN
     # (advisory; bootstrap §1b agent-discipline is the runtime guarantee there).
-    Invoke-PythonCheck -Label 'downstream-capabilities gate-safety' -MissingPythonLevel 'WARN' -ScriptPath $capValidator -Arguments @($capFile)
+    Invoke-PythonCheck -Label 'downstream-capabilities gate-safety' -MissingPythonLevel 'WARN' -ScriptPath $capValidator -Arguments @('--root', $root)
 } else {
     Add-Result -Level 'SKIP' -Message 'downstream-capabilities gate-safety -- validator not deployed (safe to ignore)'
 }
@@ -1684,15 +1684,25 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         if ([string]::IsNullOrEmpty($wlClass)) {
             if ($content -match '(?m)^\|\s*(?:\*\*)?[Cc]lassification(?:\*\*)?\s*\|\s*`?([a-zA-Z][\w-]*)') { $wlClass = $Matches[1].Trim() }
         }
+        # (#233) The template ships this heading with body `none`, so the heading alone
+        # proves nothing: the section counts only when its body (minus blank lines and
+        # the template's `>` guidance) is non-empty and not `none`. Mirrors validate.sh.
+        $tgrRecorded = $false
+        $tgrMatch = [regex]::Match($content, '(?ims)^#+[ \t]+Test Gate Results[^\n]*\n(.*?)(?=^##?[ \t]|^---[ \t]*\r?$|\z)')
+        if ($tgrMatch.Success) {
+            $tgrBody = ($tgrMatch.Groups[1].Value -split "\r?\n" | Where-Object { $_.Trim() -and $_ -notmatch '^\s*>' }) -join ''
+            $tgrNorm = ($tgrBody -replace '[`.\s]', '').ToLowerInvariant()
+            $tgrRecorded = ($tgrNorm.Length -gt 0 -and $tgrNorm -ne 'none')
+        }
         if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') `
             -and ($content -match '(?i)Gate:\s*implement') `
-            -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {
+            -and (-not $tgrRecorded)) {
             # AC-6: current-branch at handoff/ship → escalate to FAIL; historical → WARN.
             # Use gate-receipt presence only here ($wlPhaseForResume is set later in this loop iteration).
             $atHandoffOrShip = ($content -match '(?i)Gate:\s*(handoff|ship)\s*\|[^|\r\n]*Verdict:\s*PASS')
             if ($isCurrentBranch -and $atHandoffOrShip) {
                 $currentBranchGateFail++
-                $currentBranchGateFailList.Add("  [Test Gate Results absent] $($wl.Name)")
+                $currentBranchGateFailList.Add("  [Test Gate Results absent or empty] $($wl.Name)")
             } else {
                 $testGateResultsMissing++
             }
