@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-prompt-audit-batch1-2026-10-13
+- Feature shipped: **instruction files no longer contradict each other or the repo (#224, prompt audit batch 1).** Five domain skills cite `ADR-00N-project-architecture.md`, the name `/app-init` writes, instead of a nonexistent ADR-002. Guardrails §12.2 defers to the §5.2b truncation rule, and §5.4 extracts at the third consumer, matching its own 3+ line and karpathy-principles. Bootstrap and the Work Log template share one Platform enum (codex-app and codex-web stay distinct; gemini-cli added). Two dead references are gone, and platform lists include Claude Code. Record and a disposition for every audit item: `docs/reviews/2026-10-13-prompt-audit.md`, backlog #224-#228.
+- Review: a refute-only pass before implement changed four items (deletion-funding against the 355k ceiling, the Platform enum, the alias line, H8 moved to #228). The pre-mortem was NOT READY: the karpathy checklist scope had widened to every change, and the record claimed no behaviour change. Both were fixed, and a fresh re-review proved AC-1..AC-10. H6/F2/F3 shift agent behaviour toward rules the repo already stated; tools and validators are unchanged.
+- Tests: PR #466 CI full suite green (18 pass; docs pins 12 passed locally); validate.sh = validate.ps1 `pass=116 warn=5 fail=0 skip=2`; lifecycle 354,726 -> 354,709, quick-win 29,844 -> 29,835; guardrails directives 84 (cap). SSoT sequence 190->191; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.32-2026-10-06
 - Feature shipped: **v1.8.32** packages #464: the archive directory is the file type (D4 resolves INDEX `log` in the archive root, reports a child that cannot run as WARN and no Python as SKIP; Phase-Summary scan reads the root only; same-day `--N-` archive names; INDEX duplicate-`log` guard with an identical-retry no-op). Adopter-facing delta: `ship.md`, `handoff.md`, `validate.sh`, `validate.ps1`, `append_chain_entry.py`, `token-governance.md`, plus the `deploy.sh` banner.
 - The CHANGELOG leads with the one upgrade action: an INDEX entry pointing at a pre-#106 final log under `archive/work/` now WARNs; `git mv` it to the archive root.

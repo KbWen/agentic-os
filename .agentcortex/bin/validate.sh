@@ -1751,7 +1751,17 @@ PYEOF
     fi
     if [[ "$wl_class" == "feature" || "$wl_class" == "architecture-change" ]]; then
       if <<< "$wl_content" grep -qi 'Gate: implement'; then
-        if ! <<< "$wl_content" grep -qiE '^#+[[:space:]]+Test Gate Results'; then
+        # (#233) The template ships this heading with body `none`, so the heading alone
+        # proves nothing: the section counts only when its body (minus blank lines and
+        # the template's `>` guidance) is non-empty and not `none`.
+        _tgr_body="$(<<< "$wl_content" awk '
+          { sub(/\r$/, "") }
+          /^#+[[:space:]]+Test Gate Results/ { inside = 1; next }
+          inside && (/^##?[[:space:]]/ || /^---[[:space:]]*$/) { exit }
+          inside && !/^[[:space:]]*>/ && NF { print }
+        ')"
+        _tgr_norm="$(printf '%s' "$_tgr_body" | tr -d '`.[:space:]' | tr '[:upper:]' '[:lower:]')"
+        if [[ -z "$_tgr_norm" || "$_tgr_norm" == "none" ]]; then
           # AC-6: current-branch at handoff/ship → FAIL; otherwise WARN.
           # Use gate-receipt presence only here (wl_phase_for_resume is set later in this iteration).
           wl_at_handoff_ship=0
@@ -1762,7 +1772,7 @@ PYEOF
           fi
           if [[ "$wl_at_handoff_ship" -eq 1 ]]; then
             current_branch_gate_fail=$((current_branch_gate_fail + 1))
-            current_branch_gate_fail_list="${current_branch_gate_fail_list}  $(basename "$wl"): Test Gate Results section missing (required for architecture-change/feature at handoff/ship)\n"
+            current_branch_gate_fail_list="${current_branch_gate_fail_list}  $(basename "$wl"): Test Gate Results section missing or empty (required for architecture-change/feature at handoff/ship)\n"
           else
             test_gate_results_missing=$((test_gate_results_missing + 1))
           fi

@@ -107,6 +107,7 @@ def _write_worklog(
     gates: tuple[str, ...],
     resume: str = "none",
     include_test_results: bool = False,
+    test_results_body: str | None = None,
 ) -> None:
     work_dir = target / ".agentcortex" / "context" / "work"
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -118,6 +119,8 @@ def _write_worklog(
         "\n---\n\n## Test Gate Results\n\n- Command: `pytest tests/ci`\n- Result: pass\n"
         if include_test_results else ""
     )
+    if test_results_body is not None:
+        test_section = f"\n---\n\n## Test Gate Results\n\n{test_results_body}\n"
     (work_dir / name).write_bytes(
         f"""# Work Log: {name}
 
@@ -2260,3 +2263,59 @@ def test_190_validators_check_the_configured_capabilities_path(twin: str) -> Non
         assert "[PASS] downstream-capabilities gate-safety" in out, (
             f"a gate-safe file at the configured path must PASS validate.{twin}:\n{out[-1200:]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# #233: the AC-6 Test Gate Results check must read the section body. The template
+# ships the heading with `none`, so a heading-only check passed a feature that
+# reached ship with no recorded test results.
+# ---------------------------------------------------------------------------
+
+_TGR_TEMPLATE = (
+    "> Test-phase gate outcome for `feature`/`architecture-change` logs. Record pass/fail "
+    "counts + the test command. Leave `none` until `/test` runs.\n\nnone"
+)
+_TGR_RESUME = (
+    "- State: fixture\n\n### Read Map (for next agent)\n- x\n\n### Skip List\n- x\n\n"
+    "### Context Snapshot (<= 200 tokens)\nx"
+)
+_TGR_CASES = {
+    "template": (_TGR_TEMPLATE, True),
+    "empty": ("", True),
+    "recorded": ("- Command: `pytest tests/ci`\n- Result: 12 passed", False),
+    "recorded-subheading": ("### Unit\n- Command: `pytest tests/ci`\n- Result: 12 passed", False),
+}
+
+
+def _tgr_fixture(td: str, body: str) -> Path:
+    target = _deploy_with_git_branch(Path(td), "feat/tgr-233")
+    _write_worklog(
+        target, "feat-tgr-233.md", classification="feature", phase="ship",
+        gates=("bootstrap", "plan", "implement", "review", "test", "handoff", "ship"),
+        resume=_TGR_RESUME, test_results_body=body,
+    )
+    return target
+
+
+@pytest.mark.slow
+@requires_bash
+@pytest.mark.parametrize("case", list(_TGR_CASES))
+def test_233_test_gate_results_body_is_required_sh(case: str) -> None:
+    body, must_fail = _TGR_CASES[case]
+    with tempfile.TemporaryDirectory() as td:
+        out = _run_validate(_tgr_fixture(td, body))
+    assert (AC6_FAIL_MSG in out) == must_fail, out[-1500:]
+    assert ("Test Gate Results section missing or empty" in out) == must_fail, out[-1500:]
+
+
+@pytest.mark.slow
+@requires_windows
+@requires_bash
+@requires_powershell
+@pytest.mark.parametrize("case", ["template", "recorded-subheading"])
+def test_233_test_gate_results_body_is_required_ps1(case: str) -> None:
+    body, must_fail = _TGR_CASES[case]
+    with tempfile.TemporaryDirectory() as td:
+        out = _run_validate_ps1(_tgr_fixture(td, body))
+    assert (AC6_FAIL_MSG in out) == must_fail, out[-1500:]
+    assert ("[Test Gate Results absent or empty]" in out) == must_fail, out[-1500:]

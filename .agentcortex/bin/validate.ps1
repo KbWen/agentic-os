@@ -1684,15 +1684,25 @@ if (Test-Path -Path $worklogDir -PathType Container) {
         if ([string]::IsNullOrEmpty($wlClass)) {
             if ($content -match '(?m)^\|\s*(?:\*\*)?[Cc]lassification(?:\*\*)?\s*\|\s*`?([a-zA-Z][\w-]*)') { $wlClass = $Matches[1].Trim() }
         }
+        # (#233) The template ships this heading with body `none`, so the heading alone
+        # proves nothing: the section counts only when its body (minus blank lines and
+        # the template's `>` guidance) is non-empty and not `none`. Mirrors validate.sh.
+        $tgrRecorded = $false
+        $tgrMatch = [regex]::Match($content, '(?ims)^#+[ \t]+Test Gate Results[^\n]*\n(.*?)(?=^##?[ \t]|^---[ \t]*\r?$|\z)')
+        if ($tgrMatch.Success) {
+            $tgrBody = ($tgrMatch.Groups[1].Value -split "\r?\n" | Where-Object { $_.Trim() -and $_ -notmatch '^\s*>' }) -join ''
+            $tgrNorm = ($tgrBody -replace '[`.\s]', '').ToLowerInvariant()
+            $tgrRecorded = ($tgrNorm.Length -gt 0 -and $tgrNorm -ne 'none')
+        }
         if (($wlClass -eq 'feature' -or $wlClass -eq 'architecture-change') `
             -and ($content -match '(?i)Gate:\s*implement') `
-            -and ($content -notmatch '(?im)^#+\s+Test Gate Results')) {
+            -and (-not $tgrRecorded)) {
             # AC-6: current-branch at handoff/ship → escalate to FAIL; historical → WARN.
             # Use gate-receipt presence only here ($wlPhaseForResume is set later in this loop iteration).
             $atHandoffOrShip = ($content -match '(?i)Gate:\s*(handoff|ship)\s*\|[^|\r\n]*Verdict:\s*PASS')
             if ($isCurrentBranch -and $atHandoffOrShip) {
                 $currentBranchGateFail++
-                $currentBranchGateFailList.Add("  [Test Gate Results absent] $($wl.Name)")
+                $currentBranchGateFailList.Add("  [Test Gate Results absent or empty] $($wl.Name)")
             } else {
                 $testGateResultsMissing++
             }
