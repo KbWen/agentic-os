@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-kb-consult-routed-order-218-2026-10-17
+- Feature shipped: **the `kb-consult` row keeps the KB's routed order and greps the route key (#218).** "Smallest `approx_tokens` first" is gone (it told agents to read a secondary standard before the core one); `approx_tokens` now only stops a consult, and the routing lookup is "grep the entrypoint for the task's `task_routing` key, never read the whole file". The KB guide says the same. Net −5 chars; lifecycle 354,709 -> 354,704.
+- **Measured effect is null:** 8 vs 8 headless sessions (sonnet-5.5, synthetic 31-route KB, scored from tool calls) showed 0/8 order inversions and 2/8 whole-manifest reads in both arms. Kept because the old text contradicted the KB's routing and the edit is token-negative; no savings claimed. Reopen trigger recorded on the archived row.
+- Tests: lifecycle ceiling + drift + directive ratchet 56 passed; validate.sh = validate.ps1 `fail=0`. SSoT 196->197; Ship History rotated at cap 10.
+
 ### Ship-fix-validator-cap-path-190-2026-10-17
 - Feature shipped: **the ADR-007 gate-safety check follows `.agent/config.yaml §downstream_capabilities.path` (#190).** Both validators hardcoded the default file, so a retargeted gate-unsafe capabilities file (reproduced: a non-`custom-*` skill id) passed while bootstrap §1b loaded it. `validate_downstream_capabilities.py --root <repo>` now resolves the configured path (shared loader for the config only; the capabilities file keeps the strict parser; unresolvable → fail closed), and `validate.sh`/`validate.ps1` both call it, so parity holds by construction. Positional `<file>` form kept.
 - Review: self-review + pre-mortem (absolute/`../` paths follow the agent's read; no-python path unchanged; tool and twins ship together). validate.ps1 BOM preserved.

@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-19T23:27:25+08:00
+- **Last Updated**: 2026-10-19T23:41:41+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 206
+- **Update Sequence**: 207
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-security-llm-output-row-2026-10-19
+- Feature shipped: **security_guardrails §2 gains a context-triggered "Model output" check.** When changed code calls an LLM or acts on its output (generated SQL, shell, paths, URLs, tool calls), that output is untrusted input: check it against A03 before a sink and check that any tool call or side effect it requests is authorized. Funded by merging §7's duplicate "pattern recognition, not formal verification" bullet (net 0 lines); no directive keyword added, ratchet unchanged. Tier NONE (AI inspection), like §1.
+- Tests: directive ratchet 8 passed; related not-slow subset 280 passed; validate.sh `fail=0`. Local commit only. SSoT 206->207; Ship History rotated at cap 10.
+
 ### Ship-fix-prospec-eval-quickwins-2026-10-19
 - Feature shipped: **five fixes from the 2026-10-19 comparison against an external spec-driven framework.** README, zh-TW README and llms.txt no longer say the validator holds regardless of what the agent reports: they say phase records are agent-written and checked for presence and order, not that the work happened, and that the secret scan and tests are the checks the agent can't argue past (12 sentences). The adopter CI snippet in INSTALL pins checkout/setup-python by full SHA. `deploy.sh --help`/`-h` prints usage; any other unknown flag exits 2 instead of becoming the target directory; `deploy.ps1` forwards unbound flags and passes `$Target` only when bound (`deploy.ps1 --help` used to deploy into `.`). /retro cap archival retires a mechanized LOW/MEDIUM lesson first, with the mechanism and its executor recorded. INSTALL gains a per-platform invocation table.
 - Review: fresh reviewer NOT READY (6 findings incl. a reproduced `-File --dry-run <path>` mis-target) → all fixed → re-review PASS. Pre-existing, not fixed: pwsh 7 `-File` splits `--source=URL` at the colon.
@@ -156,8 +160,3 @@
 - Feature shipped: **the README no longer reads as default-on enforcement (#121).** EN and zh-TW: the hero says the hook and CI catch a leaked secret or a skipped phase once you switch them on, and drops the "zero tests" claim the framework cannot back; a "Usable on day one" list front-loads the standalone credential gate, work-log + `/handoff` resume, and the 14 skill checklists; the enforcement table gains an "On after install?" column (No / No / where your CI runs / advisory); the floor paragraph separates this repo's three required checks from the adopter's own required CI job (zh-TW now has that caveat too); a FAQ entry explains `⚡ ACX` and the `gate:` block.
 - Review: every claim checked against deploy.sh, the hook sample, scan_credentials.py and validate.sh; three wording errors self-caught before commit.
 - Tests: docs_pin 12 passed; README pin tests 13 passed; both encoding canaries PASS; validate.sh = validate.ps1 `fail=0`. SSoT 197->198; Ship History rotated at cap 10.
-
-### Ship-fix-kb-consult-routed-order-218-2026-10-17
-- Feature shipped: **the `kb-consult` row keeps the KB's routed order and greps the route key (#218).** "Smallest `approx_tokens` first" is gone (it told agents to read a secondary standard before the core one); `approx_tokens` now only stops a consult, and the routing lookup is "grep the entrypoint for the task's `task_routing` key, never read the whole file". The KB guide says the same. Net −5 chars; lifecycle 354,709 -> 354,704.
-- **Measured effect is null:** 8 vs 8 headless sessions (sonnet-5.5, synthetic 31-route KB, scored from tool calls) showed 0/8 order inversions and 2/8 whole-manifest reads in both arms. Kept because the old text contradicted the KB's routing and the edit is token-negative; no savings claimed. Reopen trigger recorded on the archived row.
-- Tests: lifecycle ceiling + drift + directive ratchet 56 passed; validate.sh = validate.ps1 `fail=0`. SSoT 196->197; Ship History rotated at cap 10.
