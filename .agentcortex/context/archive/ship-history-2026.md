@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-backlog-archive-230-2026-10-17
+- Feature shipped: **the active backlog holds only open work (#230).** Every Shipped/Cancelled row (75 incl. #230) moved byte-for-byte to `_product-backlog-archive.md` under a new 10-column section (the legacy 9-column table is untouched), and the dated notes block (2026-06-19 → 2026-08-09) moved verbatim to its `## Historical Notes`. The active file keeps an explicit queue list and a short summary of the notes that still bind Pending rows. `_product-backlog.md` 196,478 -> 90,151 chars (static size, not measured session tokens). New #232 covers the long Pending-row prose that remains (85K).
+- Review: a scripted verifier against the HEAD baseline (row set, verbatim bytes, Pending order, 10 columns, dependency resolution, notes verbatim) with 4 killed mutants; a tenth-man pass over every moved note restored two row-less reopen triggers to the summary. Backlog writes went through `guard_context_write.py`.
+- Tests: validate.sh = validate.ps1 `fail=0`; backlog consumers + docs pins + governance eval 256 passed, 2 skipped. SSoT 194->195; Ship History rotated at cap 10.
+
 ### Ship-fix-deploy-cp-flag-queue-2026-10-17
 - Feature shipped: **`CP_FLAG` no longer breaks two `deploy.sh` promises (#221).** `-i` took its answer from the list deploy was iterating (the batch queue, and the skills `find` stream on the per-file path), so a file was neither deployed nor recorded; both loops now read on fd 3. A `-n` (or declined `-i`) update printed `[OVERWRITE]` and counted a copy that did not happen; the core-update and unmodified-scaffold-update copies now check the post-copy hash (only for `-n`/`-i`), print `[KEPT]`, keep the previous manifest hash, and the summary adds `N kept by CP_FLAG`.
 - Review: self-review + pre-mortem (cp exit status unchanged vs baseline, fd 3 unused elsewhere, piped-stdin buffering of `cp -i` drives one-prompt-per-run tests). Shipped in one PR with the 2026-10-15 token-first queue docs, owner choice.
