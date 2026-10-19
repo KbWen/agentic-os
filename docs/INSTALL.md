@@ -137,10 +137,12 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Pinned by full commit SHA (a tag can be re-pointed). Current pins: the agentic-os
+      # repo's .github/workflows/; after that, let Dependabot bump them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0          # full history so the credential scan can diff the PR
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.x'   # without Python the validator degrades to advisory WARN
       - name: Phase & evidence gate
@@ -221,6 +223,17 @@ Always preface your first message with:
 
 > **Claude Code:** start the task with the slash command itself (`/bootstrap <task>`, `/spec-intake`, `/audit`), not with prose alone. In the 2026-09-26 downstream simulation, Claude Code sessions that began with `/bootstrap` opened a Work Log and followed the phases 6/6; sessions given only the preface above did so 1/2, and sessions with no hint 0/3. Codex reads `AGENTS.md` natively and engaged in 6/6 without a slash command.
 
+How each platform starts a governed task:
+
+| Platform | Type | What resolves it |
+|:---|:---|:---|
+| Claude Code | `/bootstrap <task>` (a real slash command) | `.claude/commands/bootstrap.md` |
+| Google Antigravity | `/bootstrap <task>` (a workspace workflow) | `.agent/workflows/bootstrap.md` |
+| Codex | the task in prose ("Bootstrap this task: …") | `AGENTS.md`, loaded natively |
+| Gemini CLI, Cursor, Copilot, others | the task in prose, naming the workflow ("Run the bootstrap workflow for: …") | the agent maps it to `.agent/workflows/bootstrap.md` via `AGENTS.md` / `GEMINI.md` / `.github/copilot-instructions.md` |
+
+CLIs that reserve a leading `/` for their own commands may reject `/bootstrap` typed as text, so use prose there. Only the Claude Code and Codex rows are measured (above); the rest rely on the agent following its entry file.
+
 Then add **one** of the following based on your situation:
 
 **A. Brand-new project, multi-feature idea** — `/spec-intake` first
@@ -242,7 +255,7 @@ Run /audit (read-only) to map the codebase, then /app-init to record
 the tech stack ADR, then /spec-intake when I add features.
 ```
 
-**C. Single concrete task on an established project** — `/bootstrap` directly
+**C. Single concrete task on an established project** — `/bootstrap` directly (as typed in Claude Code or Antigravity; in a CLI that reserves `/`, describe the task in prose per the table above)
 
 ```text
 /bootstrap

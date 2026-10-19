@@ -19,6 +19,13 @@ while [[ $# -gt 0 ]]; do
         --source) ACX_SOURCE="$2"; shift 2 ;;
         --source=*) ACX_SOURCE="${1#--source=}"; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
+        -h|--help)
+            echo "Usage: $0 [--dry-run] [--source <git-url>] [/path/to/your-project]"
+            exit 0 ;;
+        # An unknown flag used to fall through as the target path (--help became a directory).
+        -*) echo "ERROR: Unknown option '$1'." >&2
+            echo "Usage: $0 [--dry-run] [--source <git-url>] [/path/to/your-project]" >&2
+            exit 2 ;;
         *) TARGET="$1"; shift ;;
     esac
 done

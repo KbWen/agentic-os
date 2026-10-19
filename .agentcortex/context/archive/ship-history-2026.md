@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-validator-cap-path-190-2026-10-17
+- Feature shipped: **the ADR-007 gate-safety check follows `.agent/config.yaml §downstream_capabilities.path` (#190).** Both validators hardcoded the default file, so a retargeted gate-unsafe capabilities file (reproduced: a non-`custom-*` skill id) passed while bootstrap §1b loaded it. `validate_downstream_capabilities.py --root <repo>` now resolves the configured path (shared loader for the config only; the capabilities file keeps the strict parser; unresolvable → fail closed), and `validate.sh`/`validate.ps1` both call it, so parity holds by construction. Positional `<file>` form kept.
+- Review: self-review + pre-mortem (absolute/`../` paths follow the agent's read; no-python path unchanged; tool and twins ship together). validate.ps1 BOM preserved.
+- Tests: 7 tool-level + 2 twin end-to-end cases; 3 isolated mutants killed (sh hardcoded, ps1 hardcoded, tool ignores config); validator/guard suites 457 passed; validate.sh = validate.ps1 `fail=0`. SSoT 195->196; Ship History rotated at cap 10.
+
 ### Ship-chore-backlog-archive-230-2026-10-17
 - Feature shipped: **the active backlog holds only open work (#230).** Every Shipped/Cancelled row (75 incl. #230) moved byte-for-byte to `_product-backlog-archive.md` under a new 10-column section (the legacy 9-column table is untouched), and the dated notes block (2026-06-19 → 2026-08-09) moved verbatim to its `## Historical Notes`. The active file keeps an explicit queue list and a short summary of the notes that still bind Pending rows. `_product-backlog.md` 196,478 -> 90,151 chars (static size, not measured session tokens). New #232 covers the long Pending-row prose that remains (85K).
 - Review: a scripted verifier against the HEAD baseline (row set, verbatim bytes, Pending order, 10 columns, dependency resolution, notes verbatim) with 4 killed mutants; a tenth-man pass over every moved note restored two row-less reopen triggers to the summary. Backlog writes went through `guard_context_write.py`.

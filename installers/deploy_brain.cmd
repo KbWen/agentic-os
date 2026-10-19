@@ -28,8 +28,8 @@ exit /b 1
 :: PowerShell -File binds unrecognized --flags to the first positional [string]$Target,
 :: which would corrupt --dry-run / --source, so translate cmd-style args into the PS1
 :: wrapper's typed parameters. deploy supports only --dry-run and --source; any other
-:: token (incl. the validate-only --no-python) falls through to the target, matching
-:: deploy_brain.sh / deploy.sh behavior.
+:: token (incl. the validate-only --no-python) falls through to the target, and deploy.sh
+:: rejects a target that starts with "-" (exit 2) instead of creating that directory.
 set "ACX_DRYRUN="
 set "ACX_SOURCE_ARG="
 set "ACX_TARGET="

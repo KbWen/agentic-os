@@ -99,5 +99,11 @@ if (-not $bashLauncher) {
     exit 1
 }
 
-& $bashLauncher $bashScript "$Target"
+# Forward unbound arguments (--help, --dry-run, typos) so deploy.sh handles or rejects them;
+# dropping them used to run a real deploy into '.' on `deploy.ps1 --help`. Pass $Target only
+# when it was bound: with `-File deploy.ps1 --dry-run C:\proj` the path lands in $args and the
+# default '.' would come last and win. deploy.sh defaults to '.' itself.
+$forward = @($args)
+if ($PSBoundParameters.ContainsKey('Target')) { $forward += $Target }
+& $bashLauncher $bashScript @forward
 exit $LASTEXITCODE

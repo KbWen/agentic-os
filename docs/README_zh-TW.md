@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>「Done。」—— 你的 AI coding agent,對著它根本沒測過的程式碼這樣說。</strong><br/>
-  一份 rules 檔只是「請」agent 守規矩。Agentic OS <strong>會去查它到底有沒有做到</strong> —— 只要你開啟 git hook 和一個 CI job(安裝程式會印出兩者的指令),外洩的密鑰會讓 commit 失敗,被跳過的 review 或階段會讓讀 work trail 的 validator 失敗,而不是聽 agent 自己一句話。
+  一份 rules 檔只是「請」agent 守規矩。Agentic OS <strong>會去查它到底有沒有做到</strong> —— 只要你開啟 git hook 和一個 CI job(安裝程式會印出兩者的指令),外洩的密鑰會讓 commit 失敗,work trail 少了某個階段或它的證據,validator 就會失敗。這些檢查由你掌控。validator 查的是 agent 自己留下的紀錄,所以抓得到紀錄裡少掉的階段,抓不到造假的紀錄,也抓不到根本沒開紀錄的任務。
 </p>
 
 <p align="center">
@@ -21,10 +21,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/concept-hero-zh.png" alt="一個 AI coding agent 自信地宣稱「Done. Tests pass. Shipping it.」,Agentic OS 在這句宣稱上蓋了一個「[citation needed]」的章。Agentic OS 會查證你的 AI agent 所宣稱的事 —— 外洩密鑰、沒寫的測試、被跳過的 review —— 靠 git hooks 和 CI,而不是聽 agent 自己說。" width="820"/>
+  <img src="assets/concept-hero-zh.png" alt="一個 AI coding agent 自信地宣稱「Done. Tests pass. Shipping it.」,Agentic OS 在這句宣稱上蓋了一個「[citation needed]」的章。Agentic OS 會查證你的 AI agent 所宣稱的事 —— 外洩密鑰、沒寫的測試、work trail 裡少掉的階段 —— 靠 git hooks、CI 和本機的 validator。" width="820"/>
 </p>
 
-<p align="center"><sub>它會查你的 AI coding agent 宣稱的事情背後有沒有證據 —— 密鑰、測試、review —— 靠的是 git hooks 和 CI,不是 agent 一句話。下面就是一道閘門實際擋下來的樣子:</sub></p>
+<p align="center"><sub>它會查你的 AI coding agent 宣稱的事情背後有沒有證據 —— 密鑰和測試靠 git hooks 和 CI,階段紀錄靠本機的 validator。下面就是一道閘門實際擋下來的樣子:</sub></p>
 
 <p align="center">
   <img src="assets/workflow-demo-zh.gif" alt="終端機裡,一個 AI coding agent 宣稱任務完成並嘗試 ship;Agentic OS 的閘門因為 work trail 裡沒有 review 或測試的證據而回傳 verdict FAIL、擋下 ship,直到 review、測試與證據都補齊才放行。" width="800"/>
@@ -63,7 +63,7 @@ Rotate the exposed secret, remove it from the change, then retry.
 
 </details>
 
-agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後,讓外洩的密鑰或被跳過的 review 通過它們 —— 那些檢查不管它配不配合都會跑。上面那把金鑰是執行時即時產生、輸出時遮蔽的,所以這個 demo 從不存下真正的密鑰。
+agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後,讓外洩的密鑰通過 hook、讓失敗的測試通過 CI —— 那些檢查不管它配不配合都會跑。review 則是從 agent 自己寫的 work trail 檢查:少了 review 紀錄,本機檢查會失敗;造假的紀錄則抓不到。上面那把金鑰是執行時即時產生、輸出時遮蔽的,所以這個 demo 從不存下真正的密鑰。
 
 ## 第一天就能用的
 
@@ -108,7 +108,7 @@ agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後
 
 | | |
 |:---|:---|
-| **機器強制的底線** | 開啟之後,上面那些失敗模式由你的 git hooks、validator 和 CI 攔下 —— 不是靠 agent 自己回報。agent 可以偷工,但它沒辦法讓那一步通過它管不到的檢查。 |
+| **機器強制的底線** | 開啟之後,上面那些失敗模式由你的 git hooks、validator 和 CI 攔下。密鑰掃描和你的測試不靠 agent 自己回報;validator 讀的是 agent 自己寫的 work trail,所以抓得到缺漏,抓不到造假。 |
 | **依階段自動掛上的 skill** | 工作流會依任務型態,把對的檢查清單放到 agent 面前 —— feature 上 TDD、login 程式碼上 auth-security —— 你不必手動接線。是引導,不是閘門。 |
 | **跨交接還活著的記憶** | 決策與證據存在單一真實狀態檔裡,所以它們會跨 session、跨 agent 留下來,而不是隨對話一起重置。 |
 | **跨平台** | 同一套治理檔通吃每個主流 AI coding agent —— 不管你跑哪一個,規則都一樣。 |
@@ -195,13 +195,13 @@ git clone https://github.com/KbWen/agentic-os.git
 ## 常見問題
 
 **Agentic OS 是什麼?**
-一套給 AI coding agent 的開源治理框架。它讓 Claude Code、Codex、Cursor、Copilot、Antigravity 這類 agent 有一條可重複的工作流 —— plan、build、review、test、ship —— 並用閘門強制,讓它們不能跳步驟、也不能在沒有可驗證證據下宣稱「done」。
+一套給 AI coding agent 的開源治理框架。它讓 Claude Code、Codex、Cursor、Copilot、Antigravity 這類 agent 有一條可重複的工作流 —— plan、build、review、test、ship —— 並檢查它們留下的 work trail,跳過階段或缺少證據時 validator 會失敗,而不是被當成「done」放行。
 
 **我要怎麼擋住 AI agent 跳過測試、或 ship 沒驗證過的程式碼?**
-這就是核心。開啟之後,密鑰掃描和你的測試套件跑在你的 git hooks 和 CI 裡,階段/證據 validator 跑在你本機的 hook 裡 —— 所以外洩密鑰或缺測試會讓 commit 或 build 失敗,跳過的 review 會讓本機檢查失敗,不管 agent 怎麼回報。agent 還是能偷工,只是那個工偷不過它控制不了的檢查。
+這就是核心。開啟之後,密鑰掃描和你的測試套件跑在你的 git hooks 和 CI 裡,階段/證據 validator 跑在你本機的 hook 裡 —— 所以外洩密鑰或缺測試會讓 commit 或 build 失敗,沒有紀錄的 review 會讓本機檢查失敗。這些紀錄是 agent 自己寫的:validator 檢查的是每個階段有沒有留下紀錄、順序對不對,不是背後的工作有沒有真的做。密鑰掃描和你的測試,才是 agent 怎麼說都過不了的檢查。
 
 **它跟 Cursor Rules 或單純一份 `AGENTS.md` 差在哪?**
-rules 檔告訴 agent 怎麼做,agent 可以無視。Agentic OS 加上工作流、以及把行為釘住的檢查:階段順序、證據要求、scope 紀律,還有一份跨 session 記住決策的單一真實來源。skill 和紀律仍是 agent 跟隨的「引導」;真正被「強制」的,是那層會讓你 commit 或 CI 失敗的東西 —— 外洩密鑰、缺測試、被跳過的階段。
+rules 檔告訴 agent 怎麼做,agent 可以無視。Agentic OS 加上工作流、以及把行為釘住的檢查:階段順序、證據要求、scope 紀律,還有一份跨 session 記住決策的單一真實來源。skill 和紀律仍是 agent 跟隨的「引導」;真正被「強制」的,是那層會讓你 commit 或 CI 失敗的東西 —— 外洩密鑰、缺測試 —— 再加上一道本機檢查,work trail 少了階段就失敗。
 
 **agent 回覆裡的 `⚡ ACX` 和 `gate:` 區塊是什麼?**
 `⚡ ACX` 是每則回覆結尾的執行標記,代表 agent 有載入治理檔;少了它,通常表示沒載入。它是 agent 自己標的,不是證明 —— 持久的檢查,是 validator 在 work log 缺少它時發出警告。`gate:` 區塊(`gate`、`classification`、`verdict`、`missing`)會在 agent 進入 `/plan` 或 `/ship` 前印出;`verdict: fail` 會列出缺了什麼,agent 就停在那裡。

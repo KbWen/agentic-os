@@ -32,6 +32,7 @@ Work Log content (NOT chat):
      ```
 
      This moves the entry to `.agentcortex/context/archive/global-lessons-archive.md`, re-anchors the successor's `[prev:]` to the archived entry's own predecessor, and writes a `lesson_archive` bridge record to the hash-chained `INDEX.jsonl` — so `check_lesson_chain.py` verifies the shortened chain GREEN while a removal WITHOUT a record still FAILs (fail-closed). HIGH-severity entries are pinned (the tool refuses to archive them) and can only be removed by explicit user request.
+   - **Retire mechanized lessons first**: before falling back to the oldest LOW entry, prefer a LOW/MEDIUM entry whose root cause is now enforced. Record in the Work Log the mechanism (`file:line` or test name), what runs it (validator, CI job, hook), and that no recurrence postdates it. A checker nothing runs does not count. For a HIGH entry, put the same evidence to the user instead.
    - **Append the new lesson** with `append_lesson.py` (it section-locates `## Global Lessons`, computes the `[prev:]` chain hash, and inserts before `## Ship History` — do NOT use `guard_context_write.py --mode append`, whose `O_APPEND` writes land at file end under Ship History):
 
      ```bash
