@@ -117,7 +117,7 @@ jobs:
       # turns that drift red. Resolve a new digest with:
       #   docker buildx imagetools inspect ghcr.io/trufflesecurity/trufflehog:<version>
       - name: Scan for secrets
-        uses: trufflesecurity/trufflehog@20652fbbdefffcdaa493a5bf57ab2ac6b1db715b  # v3.97.1
+        uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9  # v3.99.2
         with:
           image: ghcr.io/trufflesecurity/trufflehog@sha256
           version: "deb2af10659a488a14d262a323addcde099d99827a1cf1dc4e93c17915c39f08"
