@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-cp-flag-coreutils-exit-2026-10-17
+- Feature shipped: **a declined `CP_FLAG=-i` or skipped `-n` copy no longer aborts the deploy on coreutils >= 9.2 (#221 follow-up).** PR #470's Linux CI failed the four "answered n" cases: newer coreutils exits 1 on a declined/skipped copy (8.32 exits 0), and `set -e` (or the helper's explicit exit) stopped the deploy, pre-existing before #221. `_cp_framework_version` now lets the post-copy hash decide kept vs delivered for `-n`/`-i` on either coreutils; the first-install core copy uses the same helper; a kept `.gitkeep.md` placeholder is accepted. Other nonzero cp statuses still stop the deploy.
+- Review: accepted residual — a genuine cp failure under `-n`/`-i` that leaves the file unchanged reads as `[KEPT]` (cp's own error still prints).
+- Tests: CI reproduced locally with a coreutils-9.2 `cp` shim (pre-fix 4 failed, fixed 13 + 21 passed); real coreutils 8.32 deploy suites 70 passed, 2 skipped. SSoT 198->199; Ship History rotated at cap 10.
+
 ### Ship-docs-readme-enforcement-matrix-121-2026-10-17
 - Feature shipped: **the README no longer reads as default-on enforcement (#121).** EN and zh-TW: the hero says the hook and CI catch a leaked secret or a skipped phase once you switch them on, and drops the "zero tests" claim the framework cannot back; a "Usable on day one" list front-loads the standalone credential gate, work-log + `/handoff` resume, and the 14 skill checklists; the enforcement table gains an "On after install?" column (No / No / where your CI runs / advisory); the floor paragraph separates this repo's three required checks from the adopter's own required CI job (zh-TW now has that caveat too); a FAQ entry explains `⚡ ACX` and the `gate:` block.
 - Review: every claim checked against deploy.sh, the hook sample, scan_credentials.py and validate.sh; three wording errors self-caught before commit.
