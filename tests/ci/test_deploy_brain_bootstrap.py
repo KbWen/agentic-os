@@ -357,3 +357,225 @@ def test_every_clone_and_pull_enables_long_paths() -> None:
     assert 'acx_git -C "$ACX_CACHE" status' in gate.group(1)
     plain = re.findall(r'(?<![\w-])git -C "\$ACX_CACHE" (?:ls-files|status)', text)
     assert not plain, f"cache reads without core.longpaths: {plain}"
+
+
+# --- --ref pins an update to a release (2026-10-19) -------------------------------
+# Without it an update always takes the source's default-branch HEAD.
+
+ARGS_STUB = '#!/usr/bin/env bash\necho "{marker} ARGS:$*"\n'
+
+
+def _make_tagged_source(path: Path) -> str:
+    """Source repo with tag v1.0.0 (marker RELEASE-ONE) and a newer main (marker MAIN-HEAD)."""
+    canonical = path / ".agentcortex" / "bin"
+    canonical.mkdir(parents=True)
+    stub = canonical / "deploy.sh"
+    stub.write_bytes(ARGS_STUB.format(marker="RELEASE-ONE").encode("utf-8"))
+    _git("init", "-b", "main", cwd=path)
+    _git("add", "-A", cwd=path)
+    _git("commit", "-m", "v1", cwd=path)
+    _git("tag", "v1.0.0", cwd=path)
+    stub.write_bytes(ARGS_STUB.format(marker="MAIN-HEAD").encode("utf-8"))
+    _git("commit", "-am", "main moves on", cwd=path)
+    return path.as_posix()
+
+
+def _run_brain(project: Path, *args: str, **extra_env: str) -> subprocess.CompletedProcess:
+    env = {k: v for k, v in os.environ.items() if k not in ("ACX_SOURCE", "ACX_REF")}
+    env.update(extra_env)
+    return subprocess.run(
+        [bash, str(project / "installers" / "deploy_brain.sh"), *args],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(project), env=env,
+    )
+
+
+@requires_bash
+@requires_git
+@pytest.mark.parametrize("form", ["flag", "equals", "env"])
+def test_ref_pins_the_update_to_the_tag(tmp_path: Path, form: str) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    _git("clone", source, str(project / ".agentcortex-src"), cwd=tmp_path)  # cache on main
+
+    if form == "flag":
+        result = _run_brain(project, "--ref", "v1.0.0", ".")
+    elif form == "equals":
+        result = _run_brain(project, "--ref=v1.0.0", ".")
+    else:
+        result = _run_brain(project, ".", ACX_REF="v1.0.0")
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "RELEASE-ONE" in result.stdout, combined
+    assert "MAIN-HEAD" not in result.stdout, "a pinned update must not deploy main"
+    assert "Deploying v1.0.0 (commit " in result.stdout
+    # deploy.sh rejects unknown flags, so --ref must be consumed by the wrapper.
+    assert "ARGS:." in result.stdout and "--ref" not in result.stdout.split("ARGS:")[-1]
+
+
+@requires_bash
+@requires_git
+def test_unpinned_run_after_a_pinned_one_returns_to_the_default_branch(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    pinned = _run_brain(project, "--ref", "v1.0.0", ".")
+    assert pinned.returncode == 0 and "RELEASE-ONE" in pinned.stdout, pinned.stdout + pinned.stderr
+
+    result = _run_brain(project, ".")
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "pinned to a release; re-cloning the default branch" in combined
+    assert "MAIN-HEAD" in result.stdout, combined
+
+
+@requires_bash
+@requires_git
+@pytest.mark.parametrize("bad", ["-u", "v1;rm", "$(id)", "a b"])
+def test_invalid_ref_is_rejected_before_any_fetch(tmp_path: Path, bad: str) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+
+    result = _run_brain(project, "--ref", bad, ".")
+
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "--ref must be a tag or branch name" in result.stderr
+    assert not (project / ".agentcortex-src").exists(), "nothing may be fetched for a bad ref"
+
+
+@requires_bash
+@requires_git
+def test_ref_without_a_value_is_rejected(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    result = _run_brain(project, "--ref")
+    assert result.returncode == 2
+    assert "--ref requires a tag or branch name" in result.stderr
+
+
+@requires_bash
+@requires_git
+def test_ref_on_a_source_checkout_asks_for_a_checkout_instead(tmp_path: Path) -> None:
+    """First run from a cloned source (no manifest, canonical present) deploys that checkout."""
+    checkout = tmp_path / "checkout"
+    (checkout / "installers").mkdir(parents=True)
+    shutil.copy2(DEPLOY_BRAIN_SH, checkout / "installers" / "deploy_brain.sh")
+    (checkout / ".agentcortex" / "bin").mkdir(parents=True)
+    (checkout / ".agentcortex" / "bin" / "deploy.sh").write_bytes(
+        ARGS_STUB.format(marker="CHECKOUT").encode("utf-8"))
+
+    result = _run_brain(checkout, "--ref", "v1.0.0", str(tmp_path / "target"))
+
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "git checkout v1.0.0" in result.stderr
+    assert "CHECKOUT" not in result.stdout
+
+
+powershell = shutil.which("powershell") or shutil.which("pwsh")
+
+
+@requires_bash
+@requires_git
+@pytest.mark.skipif(powershell is None, reason="PowerShell not available")
+def test_ps1_wrapper_passes_ref_through(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    shutil.copy2(ROOT / "installers" / "deploy_brain.ps1", project / "installers" / "deploy_brain.ps1")
+    env = {k: v for k, v in os.environ.items() if k not in ("ACX_SOURCE", "ACX_REF")}
+
+    result = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+         str(project / "installers" / "deploy_brain.ps1"), "-Target", ".", "-Ref", "v1.0.0"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(project), env=env,
+    )
+
+    combined = result.stdout + result.stderr
+    assert result.returncode == 0, combined
+    assert "RELEASE-ONE" in result.stdout and "MAIN-HEAD" not in result.stdout, combined
+
+
+@requires_bash
+@requires_git
+def test_ref_branch_pin_does_not_stick_to_later_unpinned_updates(tmp_path: Path) -> None:
+    """A branch ref clones onto a symbolic branch; without a detach the next unpinned
+    update would `git pull` the pinned branch forever (review finding, 2026-10-19)."""
+    source = _make_tagged_source(tmp_path / "src")
+    src = Path(source)
+    _git("checkout", "-b", "release/1.x", "v1.0.0", cwd=src)
+    _git("checkout", "main", cwd=src)
+    project = _make_project(tmp_path / "proj", source)
+
+    pinned = _run_brain(project, "--ref", "release/1.x", ".")
+    assert pinned.returncode == 0 and "RELEASE-ONE" in pinned.stdout, pinned.stdout + pinned.stderr
+
+    result = _run_brain(project, ".")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "MAIN-HEAD" in result.stdout, "an unpinned update must return to the default branch"
+
+
+@requires_bash
+@requires_git
+def test_ref_missing_on_the_source_keeps_the_existing_cache(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    _git("clone", source, str(project / ".agentcortex-src"), cwd=tmp_path)
+    head_before = (project / ".agentcortex-src" / ".git" / "HEAD").read_text(encoding="utf-8")
+
+    result = _run_brain(project, "--ref", "v9.9.9", ".")
+
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "no tag or branch named 'v9.9.9' found" in result.stderr
+    assert (project / ".agentcortex-src" / ".git" / "HEAD").read_text(encoding="utf-8") == head_before
+
+
+@requires_bash
+@requires_git
+def test_ref_empty_equals_form_is_rejected_not_a_silent_unpin(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    result = _run_brain(project, "--ref=", ".", ACX_REF="v1.0.0")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "MAIN-HEAD" not in result.stdout
+
+
+@requires_bash
+@requires_git
+def test_ref_from_env_on_a_source_checkout_names_the_variable(tmp_path: Path) -> None:
+    checkout = tmp_path / "checkout"
+    (checkout / "installers").mkdir(parents=True)
+    shutil.copy2(DEPLOY_BRAIN_SH, checkout / "installers" / "deploy_brain.sh")
+    (checkout / ".agentcortex" / "bin").mkdir(parents=True)
+    (checkout / ".agentcortex" / "bin" / "deploy.sh").write_bytes(
+        ARGS_STUB.format(marker="CHECKOUT").encode("utf-8"))
+    result = _run_brain(checkout, str(tmp_path / "target"), ACX_REF="v1.0.0")
+    assert result.returncode == 2
+    assert "ACX_REF" in result.stderr
+
+
+cmd_exe = shutil.which("cmd")
+
+
+@requires_bash
+@requires_git
+@pytest.mark.skipif(cmd_exe is None or powershell is None, reason="cmd.exe + PowerShell (Windows) only")
+def test_cmd_wrapper_ref_with_shell_metacharacters_is_not_executed(tmp_path: Path) -> None:
+    source = _make_tagged_source(tmp_path / "src")
+    project = _make_project(tmp_path / "proj", source)
+    for name in ("deploy_brain.ps1", "deploy_brain.cmd"):
+        shutil.copy2(ROOT / "installers" / name, project / "installers" / name)
+    env = {k: v for k, v in os.environ.items() if k not in ("ACX_SOURCE", "ACX_REF")}
+
+    hostile = subprocess.run(
+        [cmd_exe, "/c", r"installers\deploy_brain.cmd", "--ref", "x&echo CMD-INJECTED", "."],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(project), env=env,
+    )
+    assert "CMD-INJECTED" not in hostile.stdout.replace("x&echo CMD-INJECTED", ""), hostile.stdout
+    assert hostile.returncode == 2, hostile.stdout + hostile.stderr
+
+    ok = subprocess.run(
+        [cmd_exe, "/c", r"installers\deploy_brain.cmd", "--ref", "v1.0.0", "."],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(project), env=env,
+    )
+    assert ok.returncode == 0, ok.stdout + ok.stderr
+    assert "RELEASE-ONE" in ok.stdout

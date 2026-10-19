@@ -37,6 +37,8 @@ git clone https://github.com/KbWen/agentic-os.git
 bash installers/deploy_brain.sh .
 ```
 
+To stay on a release instead of the latest commit, pin the update to a tag: `bash installers/deploy_brain.sh --ref v1.8.34 .` (PowerShell: `-Ref v1.8.34`; `ACX_REF` in the environment works too). The next update without `--ref` returns to the latest version.
+
 > **Existing files at framework paths: kept, or backed up and replaced.** If your project already has a different `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, skill, template or other scaffold file, your copy stays in place and the framework version is saved beside it as `<filename>.acx-incoming`. Review and merge manually — or ask your AI agent: *"Merge each .acx-incoming into its target, preserving my project-specific content and adopting framework updates."*
 >
 > Rules, workflows, tools, `.claude/commands/` and the other core files are framework-authoritative: a different file you already have at one of those paths is first copied byte-for-byte to `<filename>.acx-local`, then replaced. The deploy prints an `[OVERWRITE]` line naming each one, and stops before replacing a file it could not back up. Once the deploy completes, `.acx-local` files are gitignored; a backup may be the only copy of an untracked file. It holds only the latest replaced version: a later update that replaces the file again overwrites it, so move any backup you want to keep out of the way before updating. A first install never overwrites an existing `.acx-local`; it stops and asks you to move it aside. To restore, copy `<filename>.acx-local` back over `<filename>`; to keep your changes on later updates, move them into `AGENTS.override.md` or a `custom-*` skill.

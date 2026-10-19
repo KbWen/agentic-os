@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-19T23:41:41+08:00
+- **Last Updated**: 2026-10-20T00:17:07+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 207
+- **Update Sequence**: 208
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-deploy-brain-ref-2026-10-19
+- Feature shipped: **an update can be pinned to a release.** `installers/deploy_brain.sh --ref <tag-or-branch>` (also `--ref=`, `ACX_REF`; `deploy_brain.ps1 -Ref`; `deploy_brain.cmd --ref`) clones that ref instead of the source's default-branch HEAD and prints the pinned commit. The ref is allow-listed (no leading `-`), checked with `ls-remote` before the cache is touched (a missing ref exits 2 and changes nothing), and consumed by the wrapper (deploy.sh rejects unknown flags). The cache is detached after a pinned clone, so the next update without `--ref` returns to the default branch, including after a branch pin. On a source checkout `--ref` exits 2 and asks for a `git checkout` instead. `deploy_brain.cmd` now passes `--source`/`--ref` through the environment, closing a pre-existing `&` break-out on its command line.
+- Review: fresh reviewer NOT READY (branch pin stuck; missing ref deleted the cache; cmd metacharacter break-out; lows) → fixed → re-review PASS with repros on git 2.53.
+- Tests: 16 new `--ref` tests (each fails on HEAD or on the first iteration); deploy suites 104 passed; not-slow 852 passed; validate.sh `fail=0`. Hotfix-class (installer source selection). Local commit only. SSoT 207->208; Ship History rotated at cap 10.
+
 ### Ship-fix-security-llm-output-row-2026-10-19
 - Feature shipped: **security_guardrails §2 gains a context-triggered "Model output" check.** When changed code calls an LLM or acts on its output (generated SQL, shell, paths, URLs, tool calls), that output is untrusted input: check it against A03 before a sink and check that any tool call or side effect it requests is authorized. Funded by merging §7's duplicate "pattern recognition, not formal verification" bullet (net 0 lines); no directive keyword added, ratchet unchanged. Tier NONE (AI inspection), like §1.
 - Tests: directive ratchet 8 passed; related not-slow subset 280 passed; validate.sh `fail=0`. Local commit only. SSoT 206->207; Ship History rotated at cap 10.
@@ -155,8 +160,3 @@
 - Feature shipped: **a declined `CP_FLAG=-i` or skipped `-n` copy no longer aborts the deploy on coreutils >= 9.2 (#221 follow-up).** PR #470's Linux CI failed the four "answered n" cases: newer coreutils exits 1 on a declined/skipped copy (8.32 exits 0), and `set -e` (or the helper's explicit exit) stopped the deploy, pre-existing before #221. `_cp_framework_version` now lets the post-copy hash decide kept vs delivered for `-n`/`-i` on either coreutils; the first-install core copy uses the same helper; a kept `.gitkeep.md` placeholder is accepted. Other nonzero cp statuses still stop the deploy.
 - Review: accepted residual — a genuine cp failure under `-n`/`-i` that leaves the file unchanged reads as `[KEPT]` (cp's own error still prints).
 - Tests: CI reproduced locally with a coreutils-9.2 `cp` shim (pre-fix 4 failed, fixed 13 + 21 passed); real coreutils 8.32 deploy suites 70 passed, 2 skipped. SSoT 198->199; Ship History rotated at cap 10.
-
-### Ship-docs-readme-enforcement-matrix-121-2026-10-17
-- Feature shipped: **the README no longer reads as default-on enforcement (#121).** EN and zh-TW: the hero says the hook and CI catch a leaked secret or a skipped phase once you switch them on, and drops the "zero tests" claim the framework cannot back; a "Usable on day one" list front-loads the standalone credential gate, work-log + `/handoff` resume, and the 14 skill checklists; the enforcement table gains an "On after install?" column (No / No / where your CI runs / advisory); the floor paragraph separates this repo's three required checks from the adopter's own required CI job (zh-TW now has that caveat too); a FAQ entry explains `⚡ ACX` and the `gate:` block.
-- Review: every claim checked against deploy.sh, the hook sample, scan_credentials.py and validate.sh; three wording errors self-caught before commit.
-- Tests: docs_pin 12 passed; README pin tests 13 passed; both encoding canaries PASS; validate.sh = validate.ps1 `fail=0`. SSoT 197->198; Ship History rotated at cap 10.

@@ -1,6 +1,7 @@
 param(
     [string]$Target = '.',
     [string]$Source = '',
+    [string]$Ref = '',
     [switch]$DryRun
 )
 
@@ -99,6 +100,7 @@ if (-not $bashLauncher) {
 $bashArgs = @()
 if ($DryRun) { $bashArgs += '--dry-run' }
 if ($Source) { $bashArgs += '--source'; $bashArgs += $Source }
+if ($Ref) { $bashArgs += '--ref'; $bashArgs += $Ref }
 $bashArgs += "$Target"
 
 # Always delegate to deploy_brain.sh — it handles install vs update routing (NVM-style).
