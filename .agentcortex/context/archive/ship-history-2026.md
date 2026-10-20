@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-release-v1.8.34-2026-10-18
+- Feature shipped: **v1.8.34** packages PR #470: #221 (`CP_FLAG` -i/-n deploy and report what was delivered; coreutils 9.2+ declines no longer abort), #190 (capabilities gate-safety follows the configured path, same answer with or without PyYAML), #233 (Test Gate Results needs a recorded body), #218 (kb-consult keeps the KB's routed order; measured effect null), #121 (README says what is on after install), #230 (backlog archival), plus the independent-review fixes.
+- The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
+- Tests: release-version consistency 2 passed; docs pins 12 passed; PR #470 CI all green on 5d3fbf5. After merge: `v1.8.34` tag + `gh release create --latest` (repo-gotchas §12). SSoT 201->202; Ship History rotated at cap 10.
+
 ### Ship-fix-test-gate-results-body-233-2026-10-18
 - Feature shipped: **the AC-6 Test Gate Results check reads the section, not just its heading (#233, found by the PR #470 review).** The Work Log template ships `## Test Gate Results` with body `none`, so validate.sh and validate.ps1 passed a feature/architecture-change log that reached handoff/ship with no recorded test results. Both twins now count the section only when its body (to the next `#`/`##` heading or `---`, minus blank and `>` guidance lines) is non-empty and not `none`; `###` sub-headings stay part of the body. FAIL/WARN tiering and the shared AC-6 message are unchanged; detail strings say "missing or empty".
 - Adopter delta: a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still the template's `none` now FAILs (intended); other such logs add to the existing WARN.

@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T12:02:59+08:00
+- **Last Updated**: 2026-10-20T12:38:13+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 211
+- **Update Sequence**: 212
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-standing-instruction-not-approval-2026-10-20
+- Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
+- Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
+
 ### Ship-feat-test-evidence-freshness-2026-10-20
 - Feature shipped: **a recorded test run is tied to the code it tested.** New `.agentcortex/tools/record_test_run.py`: `run` executes the suite without a shell and appends `- Test run: … | exit | tree | at` to Test Gate Results, where `tree` is `git write-tree` of a temporary index (the real index is never written) excluding `.agentcortex/context/`; `check` FAILs a current-branch log whose latest run failed before a test/ship PASS receipt, or whose code changed after that run (or was unstable) once a ship receipt exists, and WARNs otherwise. Opt-in by presence of a `Test run:` line. Wired through `run_python_check` in both validators, shipped in both `deploy.sh` whitelist sites; `/test` and `/ship` pre-merge run the suite through it. README and zh-TW say what it does not catch (a hand-typed line, a command that is not the real suite, a tree git cannot read).
 - Review: fresh reviewer NOT READY (racy-git index copy, unreachable ship claim, string timestamps, unstable/no-op gaps, Windows shims, detached HEAD) → fixed; two re-review rounds (Unicode separators, unfingerprintable tree, date-only) → fixed or disclosed.
@@ -155,11 +159,6 @@
 ### Ship-docs-backlog-sim-findings-20261018-2026-10-18
 - Feature shipped: **v1.8.34 simulation findings filed (intake only, no fixes).** `docs/reviews/2026-10-18-release-sim.md` records a 62-session headless sim (sonnet-5.5, haiku-4.5; no framework vs plain-task entry vs `/bootstrap` entry) and leads with its limit: single small tasks, so nothing about lifecycle value transfers. New backlog rows: #234 plain-task entry never reaches bootstrap (0/24 read it), #235 haiku skips the declared KB and volatile-fact lookups even after `/bootstrap` (control haiku used the KB 3/3; framework haiku never mentioned it), #236 acx-* subagents pin models (reviewer → Opus), #237 validator misses non-template Work Logs, #238 small models fabricate or overstate verification, #239 lifecycle simulation; dated cost note on #231.
 - Tests: validate.sh = validate.ps1 `fail=0`; docs pins 12 passed; credential scan clean. SSoT 202->203; Ship History rotated at cap 10.
-
-### Ship-chore-release-v1.8.34-2026-10-18
-- Feature shipped: **v1.8.34** packages PR #470: #221 (`CP_FLAG` -i/-n deploy and report what was delivered; coreutils 9.2+ declines no longer abort), #190 (capabilities gate-safety follows the configured path, same answer with or without PyYAML), #233 (Test Gate Results needs a recorded body), #218 (kb-consult keeps the KB's routed order; measured effect null), #121 (README says what is on after install), #230 (backlog archival), plus the independent-review fixes.
-- The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
-- Tests: release-version consistency 2 passed; docs pins 12 passed; PR #470 CI all green on 5d3fbf5. After merge: `v1.8.34` tag + `gh release create --latest` (repo-gotchas §12). SSoT 201->202; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 
