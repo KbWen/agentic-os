@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T10:51:45+08:00
+- **Last Updated**: 2026-10-20T12:02:59+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 210
+- **Update Sequence**: 211
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -30,7 +30,6 @@
 - **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
   - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
-  - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20) [Updated: 2026-07-01 — AC-5 first-party SHA-pin] [Updated: 2026-09-07 — AC-5 scanner-digest/wrapper bump-drift instrument, PR #425]
   - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
   - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
   - docs/specs/downstream-fork-accommodation.md — Downstream Fork/Clone Accommodation (override layer activation + deploy skill-sidecar tiering + README fork stance + custom/* namespace), [Shipped 2026-06-03] (ADR-004 + ADR-005)
@@ -59,6 +58,7 @@
   - docs/specs/brownfield-first-install-preservation.md — Brownfield First-Install Preservation (a first install backs a differing core file up to `.acx-local` before replacing it, names it, and stops nonzero on a failed backup or an existing `.acx-local`), [Shipped 2026-10-05, PR #461] (backlog #188, ADR-005 amendment; follow-ups #220, #221)
   - docs/specs/archive-name-collisions.md — Archive Name Collisions: the archive directory is the file type (D4 resolves an INDEX `log` in the archive root and reports did-not-run as WARN, no Python as SKIP; archived-Work-Log Phase-Summary scan reads the root only; same-day `<worklog-key>--N-<YYYYMMDD>.md`; INDEX duplicate-`log` guard with identical-retry no-op), [Shipped 2026-10-06, PR #464] (backlog #186; follow-ups #222, #223)
   - docs/specs/kb-plain-entry.md — Declared KB on the plain-task entry (present-only startup line in AGENTS.md + CLAUDE.md; consult the KB before planning/reviewing a change in a KB-routed domain; no /bootstrap needed; AC-5 amended by owner: one routing check + one related page on uncovered tasks), [Shipped 2026-10-20] (backlog #234)
+  - docs/specs/test-evidence-freshness.md — Test Evidence Freshness (record_test_run.py: suite run without a shell, exit + code fingerprint in Test Gate Results; validate/ship FAIL on a failed run before a PASS receipt or code changed after the run once shipped; opt-in; stale/failed caught, forged not), [Shipped 2026-10-20]
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-feat-test-evidence-freshness-2026-10-20
+- Feature shipped: **a recorded test run is tied to the code it tested.** New `.agentcortex/tools/record_test_run.py`: `run` executes the suite without a shell and appends `- Test run: … | exit | tree | at` to Test Gate Results, where `tree` is `git write-tree` of a temporary index (the real index is never written) excluding `.agentcortex/context/`; `check` FAILs a current-branch log whose latest run failed before a test/ship PASS receipt, or whose code changed after that run (or was unstable) once a ship receipt exists, and WARNs otherwise. Opt-in by presence of a `Test run:` line. Wired through `run_python_check` in both validators, shipped in both `deploy.sh` whitelist sites; `/test` and `/ship` pre-merge run the suite through it. README and zh-TW say what it does not catch (a hand-typed line, a command that is not the real suite, a tree git cannot read).
+- Review: fresh reviewer NOT READY (racy-git index copy, unreachable ship claim, string timestamps, unstable/no-op gaps, Windows shims, detached HEAD) → fixed; two re-review rounds (Unicode separators, unfingerprintable tree, date-only) → fixed or disclosed.
+- Tests: 27 tool tests (mutants killed: no exclusion, no branch filter, shell launch, ship-fail off, copyfile); full CI suite recorded through the tool; lifecycle 354,901. Local commit only. SSoT 210->211; Ship History rotated at cap 10.
+
 ### Ship-feat-kb-plain-entry-2026-10-20
 - Feature shipped: **a declared knowledge base is consulted on a plain-task entry (#234).** One present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup: when `downstream-capabilities.yaml` declares `knowledge_sources`, read that block at task start (no `/bootstrap` needed) and consult the KB before planning or reviewing a change in a KB-routed domain; outside the routes, no KB read; not for tiny-fix. Re-running the 2026-10-18 Round 3 harness: sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost, an eighth of the `/bootstrap` entry; haiku never read the capabilities file (#235 stays open). Uncovered tasks now pay one manifest routing check and sometimes one related page; the owner amended AC-5 to allow that, re-confirmed on corrected figures after the first figures were miscounted. Report: `docs/reviews/2026-10-20-kb-plain-entry-sim.md`.
 - Review: fresh reviewer NOT READY (AC-5 unmet, CLAUDE.md wording, echo-passable eval, stale compact index, report errors) → fixed; re-review caught the miscounted AC-5 figures → corrected and re-asked.
@@ -156,11 +161,7 @@
 - The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
 - Tests: release-version consistency 2 passed; docs pins 12 passed; PR #470 CI all green on 5d3fbf5. After merge: `v1.8.34` tag + `gh release create --latest` (repo-gotchas §12). SSoT 201->202; Ship History rotated at cap 10.
 
-### Ship-fix-test-gate-results-body-233-2026-10-18
-- Feature shipped: **the AC-6 Test Gate Results check reads the section, not just its heading (#233, found by the PR #470 review).** The Work Log template ships `## Test Gate Results` with body `none`, so validate.sh and validate.ps1 passed a feature/architecture-change log that reached handoff/ship with no recorded test results. Both twins now count the section only when its body (to the next `#`/`##` heading or `---`, minus blank and `>` guidance lines) is non-empty and not `none`; `###` sub-headings stay part of the body. FAIL/WARN tiering and the shared AC-6 message are unchanged; detail strings say "missing or empty".
-- Adopter delta: a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still the template's `none` now FAILs (intended); other such logs add to the existing WARN.
-- Tests: 6 new twin cases on git-branched deployed fixtures; 3 isolated mutants killed; validator + guard suites 471 passed; validate.sh = validate.ps1 `fail=0`. SSoT 200->201; Ship History rotated at cap 10.
-
 ## Spec Index Archive
 
+  - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20) [Updated: 2026-07-01 — AC-5 first-party SHA-pin] [Updated: 2026-09-07 — AC-5 scanner-digest/wrapper bump-drift instrument, PR #425]
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)

@@ -862,6 +862,10 @@ Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -Missi
 # entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
 # silent no-op until a fork sets document_lifecycle.decision_disposition_since.
 Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
+# ADR-006: test evidence freshness (docs/specs/test-evidence-freshness.md); opt-in by a
+# recorded `Test run:` line. FAIL on a failed run before a PASS receipt, or on code changed
+# after the latest run once a ship receipt exists.
+Invoke-PythonCheck -Label 'test evidence freshness (current-branch work log)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/record_test_run.py') -Arguments @('check', '--root', $root)
 # ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
 # referents must exist on disk; PR/Issue referents are format-checked only, no
 # network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when

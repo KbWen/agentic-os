@@ -82,6 +82,7 @@ agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後
 | 密鑰被 commit 進歷史 | `scan_credentials.py`(上面的 demo) | **否。** 開啟 pre-commit hook(兩行指令),或把掃描加進你的 CI |
 | 跳過某個階段、沒有證據 | `validate.sh` 讀 work trail,少了階段或證據就失敗 | **否。** 自己跑,或放進 pre-commit hook。work log 被 gitignore,CI 看不到它 |
 | 「測試通過」但根本沒測試 | 你的 CI 跑你真正的測試套件 | 只在你的 CI 有跑測試的地方 |
+| 測試記為通過之後程式碼又改了(或那次其實失敗) | `record_test_run.py` 實際跑測試,記下結束碼和程式碼指紋;`/ship` 會跑它的檢查,log 還在進行中時 `validate.sh` 也會:最後一次執行失敗卻有之後的 PASS 收據,或執行後程式碼又改了,就失敗 | **否。** 要透過它跑測試。它抓得到過期或失敗的紀錄,抓不到手打的 `Test run:` 行、記錄的指令其實不是你真正的測試,或 git 讀不了的工作樹(只發 WARN) |
 | agent 無視工作流或 skill 檢查清單 | 沒有機器層的檢查 | 只是建議,跟 rules 檔一樣 |
 
 第二列是 rules 檔碰不到的地方:`validate.sh` 會解析每個任務的 work log,只要少了某個必要階段、或它的證據不見了,就讓檢查失敗。這項檢查在 work log 所在的地方跑:你的電腦上,手動執行或放在選用的 pre-commit hook 裡,而 `--no-verify` 可以繞過 hook。work log 被 gitignore,所以 CI 跑不了它。required 的 CI job 能強制的,是密鑰掃描、你的測試套件,以及 `validate.sh` 對框架檔案的結構檢查;把這些 job 在 branch protection 設成 required。在這個 repo,那道底線是三個 required check(`Framework Validation`、`ShellCheck`、`Check Markdown Links`);安全掃描(密鑰掃描、SAST、相依套件稽核)每個 PR 都會跑,但除非你把它們加進 branch protection,否則不是合併前必過的檢查。上面那顆 Security 徽章,就是這個 repo 在自己每次 push 時跑同一套密鑰與 SAST 閘門。
