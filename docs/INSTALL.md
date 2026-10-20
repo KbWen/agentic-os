@@ -37,7 +37,7 @@ git clone https://github.com/KbWen/agentic-os.git
 bash installers/deploy_brain.sh .
 ```
 
-To stay on a release instead of the latest commit, pin the update to a tag: `bash installers/deploy_brain.sh --ref v1.8.34 .` (PowerShell: `-Ref v1.8.34`; `ACX_REF` in the environment works too). The next update without `--ref` returns to the latest version.
+To stay on a release instead of the latest commit, pin the update to a tag: `bash installers/deploy_brain.sh --ref v1.8.35 .` (PowerShell: `-Ref v1.8.35`; `ACX_REF` in the environment works too). The next update without `--ref` returns to the latest version.
 
 > **Existing files at framework paths: kept, or backed up and replaced.** If your project already has a different `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, skill, template or other scaffold file, your copy stays in place and the framework version is saved beside it as `<filename>.acx-incoming`. Review and merge manually — or ask your AI agent: *"Merge each .acx-incoming into its target, preserving my project-specific content and adopting framework updates."*
 >

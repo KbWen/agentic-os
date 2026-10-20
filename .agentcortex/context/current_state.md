@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T15:44:47+08:00
+- **Last Updated**: 2026-10-20T16:46:39+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 216
+- **Update Sequence**: 217
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.35-2026-10-20
+- Feature shipped: **v1.8.35** packages PR #475 (README states what the validator checks; `record_test_run.py` test-evidence freshness with tiered WARN; declared KB on plain-task entry #234; `deploy_brain --ref`; deploy `--help` / unknown-flag rejection; brownfield "governance not active" notice; guardrails §8 standing instructions; LLM-output security row; document-governance L1 restructure; TruffleHog digest; #239 lifecycle pilot report) and PR #476 (#236: acx-* subagents inherit the session model).
+- The CHANGELOG names the new validator line, the stricter `deploy.sh` flag handling and the core files updated on deploy, from a real 1.8.34 → candidate upgrade (206 updated, 1 new, 0 removed, downstream `fail=0`).
+- Tests: release-version consistency 2 passed; docs/pin tests 26 passed; validate.sh `fail=0`. After merge: `v1.8.35` tag + `gh release create --latest` (repo-gotchas §12). SSoT 216->217; Ship History rotated at cap 10.
+
 ### Ship-fix-acx-subagent-model-inherit-2026-10-20
 - Feature shipped: **acx-* subagents run on the session's model (#236).** The five shims pinned their model (acx-reviewer opus, the rest sonnet), overriding the user's choice; in the #239 lifecycle pilot the reviewer's Opus cost about $12 of the governed arm's $42. All five now declare `model: inherit`; the Claude platform guide (EN + zh-TW) says why. Claude-only surface, so no other platform changes. Owner chose "inherit" in chat 2026-10-20.
 - Tests: headless dispatch from a haiku session → the subagent ran on haiku only; a control with the old pin showed Opus. Agent/doc/skill tests 328 passed; deploy tiering 69 passed; validate.sh `fail=0`. Local commit only. SSoT 215->216; Ship History rotated at cap 10.
@@ -154,10 +159,6 @@
 - Feature shipped: **an update can be pinned to a release.** `installers/deploy_brain.sh --ref <tag-or-branch>` (also `--ref=`, `ACX_REF`; `deploy_brain.ps1 -Ref`; `deploy_brain.cmd --ref`) clones that ref instead of the source's default-branch HEAD and prints the pinned commit. The ref is allow-listed (no leading `-`), checked with `ls-remote` before the cache is touched (a missing ref exits 2 and changes nothing), and consumed by the wrapper (deploy.sh rejects unknown flags). The cache is detached after a pinned clone, so the next update without `--ref` returns to the default branch, including after a branch pin. On a source checkout `--ref` exits 2 and asks for a `git checkout` instead. `deploy_brain.cmd` now passes `--source`/`--ref` through the environment, closing a pre-existing `&` break-out on its command line.
 - Review: fresh reviewer NOT READY (branch pin stuck; missing ref deleted the cache; cmd metacharacter break-out; lows) → fixed → re-review PASS with repros on git 2.53.
 - Tests: 16 new `--ref` tests (each fails on HEAD or on the first iteration); deploy suites 104 passed; not-slow 852 passed; validate.sh `fail=0`. Hotfix-class (installer source selection). Local commit only. SSoT 207->208; Ship History rotated at cap 10.
-
-### Ship-fix-security-llm-output-row-2026-10-19
-- Feature shipped: **security_guardrails §2 gains a context-triggered "Model output" check.** When changed code calls an LLM or acts on its output (generated SQL, shell, paths, URLs, tool calls), that output is untrusted input: check it against A03 before a sink and check that any tool call or side effect it requests is authorized. Funded by merging §7's duplicate "pattern recognition, not formal verification" bullet (net 0 lines); no directive keyword added, ratchet unchanged. Tier NONE (AI inspection), like §1.
-- Tests: directive ratchet 8 passed; related not-slow subset 280 passed; validate.sh `fail=0`. Local commit only. SSoT 206->207; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 
