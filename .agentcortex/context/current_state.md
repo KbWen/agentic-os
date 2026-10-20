@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T01:04:55+08:00
+- **Last Updated**: 2026-10-20T10:51:45+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 209
+- **Update Sequence**: 210
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -30,7 +30,6 @@
 - **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
   - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
-  - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20) [Updated: 2026-07-01 — AC-5 first-party SHA-pin] [Updated: 2026-09-07 — AC-5 scanner-digest/wrapper bump-drift instrument, PR #425]
   - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
   - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
@@ -59,6 +58,7 @@
   - docs/specs/kb-seam-anchor-neutrality.md — KB-Seam Anchor Neutrality (anchors declared by the KB in `digest.anchors`, never hard-coded; digest `sha` check with page fallback; additive `schema_version` on JSON entrypoints, markdown index readable=OK; visible UNREADABLE line; off-clean-main WARN; literal path default), [Shipped 2026-09-28] (ADR-009 amendment; follow-ups backlog #217, #218)
   - docs/specs/brownfield-first-install-preservation.md — Brownfield First-Install Preservation (a first install backs a differing core file up to `.acx-local` before replacing it, names it, and stops nonzero on a failed backup or an existing `.acx-local`), [Shipped 2026-10-05, PR #461] (backlog #188, ADR-005 amendment; follow-ups #220, #221)
   - docs/specs/archive-name-collisions.md — Archive Name Collisions: the archive directory is the file type (D4 resolves an INDEX `log` in the archive root and reports did-not-run as WARN, no Python as SKIP; archived-Work-Log Phase-Summary scan reads the root only; same-day `<worklog-key>--N-<YYYYMMDD>.md`; INDEX duplicate-`log` guard with identical-retry no-op), [Shipped 2026-10-06, PR #464] (backlog #186; follow-ups #222, #223)
+  - docs/specs/kb-plain-entry.md — Declared KB on the plain-task entry (present-only startup line in AGENTS.md + CLAUDE.md; consult the KB before planning/reviewing a change in a KB-routed domain; no /bootstrap needed; AC-5 amended by owner: one routing check + one related page on uncovered tasks), [Shipped 2026-10-20] (backlog #234)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-feat-kb-plain-entry-2026-10-20
+- Feature shipped: **a declared knowledge base is consulted on a plain-task entry (#234).** One present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup: when `downstream-capabilities.yaml` declares `knowledge_sources`, read that block at task start (no `/bootstrap` needed) and consult the KB before planning or reviewing a change in a KB-routed domain; outside the routes, no KB read; not for tiny-fix. Re-running the 2026-10-18 Round 3 harness: sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost, an eighth of the `/bootstrap` entry; haiku never read the capabilities file (#235 stays open). Uncovered tasks now pay one manifest routing check and sometimes one related page; the owner amended AC-5 to allow that, re-confirmed on corrected figures after the first figures were miscounted. Report: `docs/reviews/2026-10-20-kb-plain-entry-sim.md`.
+- Review: fresh reviewer NOT READY (AC-5 unmet, CLAUDE.md wording, echo-passable eval, stale compact index, report errors) → fixed; re-review caught the miscounted AC-5 figures → corrected and re-asked.
+- Tests: not-slow 852 passed; slow 199 passed, 2 skipped; ratchet + lifecycle 56; eval 58; 26 headless sim sessions. Local commit only. SSoT 209->210; Ship History rotated at cap 10.
+
 ### Ship-docs-govern-docs-restructure-document-governance-2026-10-20
 - Feature shipped: **document-governance L1 caught up with its decision log.** L1 was last rewritten 2026-04-25 while 13 L2 entries accumulated (threshold 5), and bootstrap reads L1 as the current design reference. `/govern-docs --restructure` (owner-approved diff, 2026-10-20) adds the current state of governed writes and the audit trail (guard, INDEX hash chain, archive directory as the type, SSoT caps), decision capture, validator-tool integration, "no hand-carried counts", "a check that cannot run says so", delegated-output trust, and the rejected `design_tool` escape. 45 → 70 lines; L2 gets a restructure record and nothing else.
 - Tests: validate.sh `fail=0`; docs/domain/lifecycle tests 146 passed. Local commit only. SSoT 208->209; Ship History rotated at cap 10.
@@ -156,6 +161,6 @@
 - Adopter delta: a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still the template's `none` now FAILs (intended); other such logs add to the existing WARN.
 - Tests: 6 new twin cases on git-branched deployed fixtures; 3 isolated mutants killed; validator + guard suites 471 passed; validate.sh = validate.ps1 `fail=0`. SSoT 200->201; Ship History rotated at cap 10.
 
-### Ship-fix-pr470-review-findings-2026-10-17
-- Feature shipped: **fixes from the independent review of PR #470 (two fresh reviewers; every finding re-verified before acting).** Corrections to earlier entries in this PR: **#121** — the README no longer says the phase/evidence check can run in a required CI job (work logs are gitignored downstream, so it runs locally only) nor that validate.sh fails a feature with no recorded test results (the check only sees the template's heading; new backlog #233, P1, not fixed here). **#218** — the "grep the entrypoint" lookup wording is reverted (it contradicted ADR-009's read-the-markdown-index rung for BYO KBs); only the routed-order change ships, row −18 chars vs v1.8.33. **#190** — `configured_path` no longer goes through `_yaml_loader`, whose no-PyYAML fallback misread inline comments and a BOM so an unsafe retargeted file passed; a fixed-grammar reader gives the same answer on every host and fails closed on unsupported forms. **#221 follow-up** — a real cp failure under `-n`/`-i` stops the deploy instead of reading as `[KEPT]`; the `.gitkeep.md` tolerance is limited to `-n`/`-i`; a `chmod +x` failure exits. Also: the #230 log's test timestamp and a false WARN claim corrected with dated notes; standing notes gain #78's reopen preconditions; #232 stats recomputed.
-- Tests: 5 mutants killed; capabilities tests 61 passed with and without PyYAML; regression 514 passed, 2 skipped; validate.sh = validate.ps1 `fail=0`. SSoT 199->200; Ship History rotated at cap 10.
+## Spec Index Archive
+
+  - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
