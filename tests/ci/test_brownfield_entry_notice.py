@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -61,7 +62,7 @@ def test_brownfield_deploy_and_validators_name_the_unmerged_entry_files(tmp_path
     assert f"{NOTE} AGENTS.md CLAUDE.md still hold your own version" in sh.stdout
     summary_sh = [l for l in sh.stdout.splitlines() if l.startswith("Summary:")]
 
-    if powershell:
+    if powershell and sys.platform == "win32":  # validate.ps1 is the native Windows validator
         ps = _run([powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
                    str(proj / ".agentcortex" / "bin" / "validate.ps1")], proj)
         assert f"{NOTE} AGENTS.md CLAUDE.md still hold your own version" in ps.stdout
