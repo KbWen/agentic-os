@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T12:38:13+08:00
+- **Last Updated**: 2026-10-20T12:45:24+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 212
+- **Update Sequence**: 213
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-trufflehog-3.99.2-digest-2026-10-20
+- Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
+- Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
+
 ### Ship-fix-standing-instruction-not-approval-2026-10-20
 - Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
 - Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
@@ -155,10 +159,6 @@
 ### Ship-docs-backlog-sim-findings-20261018-r3-2026-10-18
 - Feature shipped: **KB-routing round added to the v1.8.34 sim record (PR #472).** With the KB declared only in `knowledge_sources` and no prompt hint, across six KB-covered tasks: plain-task entry consulted it 0/12 (both models); `/bootstrap` entry: sonnet read the routed standard 3/6 and applied the rule 3/3 when it did (the misses reproduced the KB-listed mistakes), haiku 0/6; uncovered tasks consulted 0/8. #234 and #235 carry the numbers; `docs/reviews/2026-10-18-release-sim.md` has the section.
 - Tests: validate.sh `fail=0`; docs pins 12 passed; credential scan clean. SSoT 203->204; Ship History rotated at cap 10.
-
-### Ship-docs-backlog-sim-findings-20261018-2026-10-18
-- Feature shipped: **v1.8.34 simulation findings filed (intake only, no fixes).** `docs/reviews/2026-10-18-release-sim.md` records a 62-session headless sim (sonnet-5.5, haiku-4.5; no framework vs plain-task entry vs `/bootstrap` entry) and leads with its limit: single small tasks, so nothing about lifecycle value transfers. New backlog rows: #234 plain-task entry never reaches bootstrap (0/24 read it), #235 haiku skips the declared KB and volatile-fact lookups even after `/bootstrap` (control haiku used the KB 3/3; framework haiku never mentioned it), #236 acx-* subagents pin models (reviewer → Opus), #237 validator misses non-template Work Logs, #238 small models fabricate or overstate verification, #239 lifecycle simulation; dated cost note on #231.
-- Tests: validate.sh = validate.ps1 `fail=0`; docs pins 12 passed; credential scan clean. SSoT 202->203; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 

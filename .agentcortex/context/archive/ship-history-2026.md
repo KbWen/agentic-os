@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-docs-backlog-sim-findings-20261018-2026-10-18
+- Feature shipped: **v1.8.34 simulation findings filed (intake only, no fixes).** `docs/reviews/2026-10-18-release-sim.md` records a 62-session headless sim (sonnet-5.5, haiku-4.5; no framework vs plain-task entry vs `/bootstrap` entry) and leads with its limit: single small tasks, so nothing about lifecycle value transfers. New backlog rows: #234 plain-task entry never reaches bootstrap (0/24 read it), #235 haiku skips the declared KB and volatile-fact lookups even after `/bootstrap` (control haiku used the KB 3/3; framework haiku never mentioned it), #236 acx-* subagents pin models (reviewer → Opus), #237 validator misses non-template Work Logs, #238 small models fabricate or overstate verification, #239 lifecycle simulation; dated cost note on #231.
+- Tests: validate.sh = validate.ps1 `fail=0`; docs pins 12 passed; credential scan clean. SSoT 202->203; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.34-2026-10-18
 - Feature shipped: **v1.8.34** packages PR #470: #221 (`CP_FLAG` -i/-n deploy and report what was delivered; coreutils 9.2+ declines no longer abort), #190 (capabilities gate-safety follows the configured path, same answer with or without PyYAML), #233 (Test Gate Results needs a recorded body), #218 (kb-consult keeps the KB's routed order; measured effect null), #121 (README says what is on after install), #230 (backlog archival), plus the independent-review fixes.
 - The CHANGELOG names the new FAIL an adopter may see (a current-branch feature/arch-change log at handoff/ship whose Test Gate Results is still `none`) and lists the core files updated on deploy, taken from a real deploy.
