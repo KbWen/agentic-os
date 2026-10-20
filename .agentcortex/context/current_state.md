@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-20T12:45:24+08:00
+- **Last Updated**: 2026-10-20T12:54:12+08:00
 - **Last Verified**: 2026-10-19
-- **Update Sequence**: 213
+- **Update Sequence**: 214
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -58,7 +58,7 @@
   - docs/specs/brownfield-first-install-preservation.md — Brownfield First-Install Preservation (a first install backs a differing core file up to `.acx-local` before replacing it, names it, and stops nonzero on a failed backup or an existing `.acx-local`), [Shipped 2026-10-05, PR #461] (backlog #188, ADR-005 amendment; follow-ups #220, #221)
   - docs/specs/archive-name-collisions.md — Archive Name Collisions: the archive directory is the file type (D4 resolves an INDEX `log` in the archive root and reports did-not-run as WARN, no Python as SKIP; archived-Work-Log Phase-Summary scan reads the root only; same-day `<worklog-key>--N-<YYYYMMDD>.md`; INDEX duplicate-`log` guard with identical-retry no-op), [Shipped 2026-10-06, PR #464] (backlog #186; follow-ups #222, #223)
   - docs/specs/kb-plain-entry.md — Declared KB on the plain-task entry (present-only startup line in AGENTS.md + CLAUDE.md; consult the KB before planning/reviewing a change in a KB-routed domain; no /bootstrap needed; AC-5 amended by owner: one routing check + one related page on uncovered tasks), [Shipped 2026-10-20] (backlog #234)
-  - docs/specs/test-evidence-freshness.md — Test Evidence Freshness (record_test_run.py: suite run without a shell, exit + code fingerprint in Test Gate Results; validate/ship FAIL on a failed run before a PASS receipt or code changed after the run once shipped; opt-in; stale/failed caught, forged not), [Shipped 2026-10-20]
+  - docs/specs/test-evidence-freshness.md — Test Evidence Freshness (record_test_run.py: suite run without a shell, exit + code fingerprint in Test Gate Results; validate/ship FAIL on a failed run before a PASS receipt or code changed after the run once shipped; opt-in; stale/failed caught, forged not), [Shipped 2026-10-20] [Updated: 2026-10-20 — AC-5 tested-tier WARN when no run is recorded]
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-fix-test-evidence-tier-warn-2026-10-20
+- Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
+- Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
+
 ### Ship-chore-trufflehog-3.99.2-digest-2026-10-20
 - Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
 - Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
@@ -155,10 +159,6 @@
 ### Ship-codex-kb-bounded-retrieval-20261019-2026-10-19
 - Feature shipped: optional bounded KB item/section evidence in the existing advisory seam; original phases, digest/source fallback and no-runtime path preserved. Non-release PR closure.
 - Tests: capability 61; lifecycle 42; metadata fresh; validate fail=0; configured-path/raw LF evidence passed. Code dba7caada06d; log: archive/codex-kb-bounded-retrieval-20261019-20261019.md.
-
-### Ship-docs-backlog-sim-findings-20261018-r3-2026-10-18
-- Feature shipped: **KB-routing round added to the v1.8.34 sim record (PR #472).** With the KB declared only in `knowledge_sources` and no prompt hint, across six KB-covered tasks: plain-task entry consulted it 0/12 (both models); `/bootstrap` entry: sonnet read the routed standard 3/6 and applied the rule 3/3 when it did (the misses reproduced the KB-listed mistakes), haiku 0/6; uncovered tasks consulted 0/8. #234 and #235 carry the numbers; `docs/reviews/2026-10-18-release-sim.md` has the section.
-- Tests: validate.sh `fail=0`; docs pins 12 passed; credential scan clean. SSoT 203->204; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 

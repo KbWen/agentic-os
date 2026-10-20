@@ -179,6 +179,17 @@ def _header_branch(path: Path) -> str | None:
     return m.group(1) if m else None
 
 
+TESTED_TIERS = ("feature", "architecture-change", "hotfix")
+
+
+def _needs_recorded_run(path: Path) -> bool:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"^- Classification:\s*`?([a-z-]+)`?", text, re.M)
+    if not m or m.group(1) not in TESTED_TIERS:
+        return False
+    return any(r[0] in ("test", "ship") and r[1] == "PASS" for r in _receipts(text))
+
+
 def _receipts(text: str) -> list[tuple[str, str, _dt.datetime | None]]:
     out = []
     for line in text.splitlines():
@@ -242,8 +253,15 @@ def cmd_check(args: argparse.Namespace) -> int:
                 logs.append(p)  # multi-person variant <owner>-<key>.md of this branch
     recorded = [p for p in logs
                 if any(RUN_RE.match(l) for l in p.read_text(encoding="utf-8", errors="replace").splitlines())]
+    # Tiers that require automated tests: a test/ship PASS with no recorded run is reported
+    # (WARN, never FAIL) so the gap is visible; other tiers stay opt-in and silent.
+    unrecorded = [p for p in logs if p not in recorded and _needs_recorded_run(p)]
+    for p in unrecorded:
+        print(f"WARN: {p.name}: a test/ship PASS receipt exists but no test run was recorded; "
+              "run the suite through `.agentcortex/tools/record_test_run.py run`")
     if not recorded:
-        print("test evidence freshness: no recorded test run on the current branch (opt-in; nothing checked)")
+        if not unrecorded:
+            print("test evidence freshness: no recorded test run on the current branch (opt-in; nothing checked)")
         return 0
     current = fingerprint(root)
     all_fails, all_warns = [], []

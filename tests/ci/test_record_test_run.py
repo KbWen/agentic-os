@@ -175,12 +175,28 @@ def test_ac5_before_ship_a_stale_run_only_warns(tmp_path: Path) -> None:
 
 
 @requires_git
-def test_ac5_a_log_without_a_recorded_run_is_not_checked(tmp_path: Path) -> None:
+def test_ac5_a_tested_tier_log_without_a_recorded_run_warns_but_never_fails(tmp_path: Path) -> None:
+    """AC-5 as updated 2026-10-20: feature/architecture-change/hotfix + a test/ship PASS
+    receipt + no recorded run is reported (WARN), still never a FAIL."""
     repo, _log = _repo(tmp_path, receipts="- Gate: ship | Verdict: PASS | Classification: feature | Timestamp: 2999-01-01T00:00:00Z")
     (repo / "src" / "app.py").write_text("x = 2\n", encoding="utf-8")
     result = _tool(repo, "check", "--root", str(repo))
     assert result.returncode == 0
-    assert "nothing checked" in result.stdout
+    assert "no test run was recorded" in result.stdout and result.stdout.startswith("WARN: ")
+
+
+@requires_git
+@pytest.mark.parametrize("cls, receipt, warns", [
+    ("quick-win", "ship", False),   # tier where tests are optional stays silent
+    ("hotfix", "test", True),
+    ("feature", "implement", False),  # no test/ship PASS yet
+])
+def test_ac5_unrecorded_warning_follows_tier_and_receipt(tmp_path: Path, cls: str, receipt: str, warns: bool) -> None:
+    repo, log = _repo(tmp_path, receipts=f"- Gate: {receipt} | Verdict: PASS | Classification: {cls} | Timestamp: 2999-01-01T00:00:00Z")
+    log.write_text(log.read_text(encoding="utf-8").replace("Classification: `feature`", f"Classification: `{cls}`"), encoding="utf-8")
+    result = _tool(repo, "check", "--root", str(repo))
+    assert result.returncode == 0
+    assert ("no test run was recorded" in result.stdout) is warns, result.stdout
 
 
 @requires_git

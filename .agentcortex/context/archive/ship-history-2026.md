@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-docs-backlog-sim-findings-20261018-r3-2026-10-18
+- Feature shipped: **KB-routing round added to the v1.8.34 sim record (PR #472).** With the KB declared only in `knowledge_sources` and no prompt hint, across six KB-covered tasks: plain-task entry consulted it 0/12 (both models); `/bootstrap` entry: sonnet read the routed standard 3/6 and applied the rule 3/3 when it did (the misses reproduced the KB-listed mistakes), haiku 0/6; uncovered tasks consulted 0/8. #234 and #235 carry the numbers; `docs/reviews/2026-10-18-release-sim.md` has the section.
+- Tests: validate.sh `fail=0`; docs pins 12 passed; credential scan clean. SSoT 203->204; Ship History rotated at cap 10.
+
 ### Ship-docs-backlog-sim-findings-20261018-2026-10-18
 - Feature shipped: **v1.8.34 simulation findings filed (intake only, no fixes).** `docs/reviews/2026-10-18-release-sim.md` records a 62-session headless sim (sonnet-5.5, haiku-4.5; no framework vs plain-task entry vs `/bootstrap` entry) and leads with its limit: single small tasks, so nothing about lifecycle value transfers. New backlog rows: #234 plain-task entry never reaches bootstrap (0/24 read it), #235 haiku skips the declared KB and volatile-fact lookups even after `/bootstrap` (control haiku used the KB 3/3; framework haiku never mentioned it), #236 acx-* subagents pin models (reviewer → Opus), #237 validator misses non-template Work Logs, #238 small models fabricate or overstate verification, #239 lifecycle simulation; dated cost note on #231.
 - Tests: validate.sh = validate.ps1 `fail=0`; docs pins 12 passed; credential scan clean. SSoT 202->203; Ship History rotated at cap 10.

@@ -54,7 +54,7 @@ Work Log(s) (canonical key normalization, owner-prefixed variants included). Per
 
 | State | Result |
 |---|---|
-| no `Test run:` line | PASS, silent (opt-in; an adopter who never records loses nothing) |
+| no `Test run:` line | PASS, silent (opt-in) — except a feature/architecture-change/hotfix log with a `test` or `ship` PASS receipt: WARN text naming the recorder, never a FAIL *[Updated: 2026-10-20]* |
 | latest run `exit` ≠ 0 and a `test` or `ship` PASS receipt follows it | FAIL |
 | latest run `tree` ≠ current fingerprint and a `ship` receipt exists | FAIL |
 | latest run `tree` ≠ current fingerprint, no `ship` receipt | WARN text (PASS line) |
@@ -87,6 +87,8 @@ removes.
    receipt exists, and when the fingerprint differs and a ship receipt exists.
 5. AC-5: `check` exits 0 with WARN text for a differing fingerprint before ship and for
    `unstable`; exits 0 silently for a log with no `Test run:` line.
+   *[Updated 2026-10-20 — owner decision in chat (wave 2): a tested-tier log with a test/ship PASS
+   receipt and no recorded run now WARNs; still never a FAIL.]*
 6. AC-6: validate.sh and validate.ps1 report the same tally for the check on one fixture.
 7. AC-7: The tool ships downstream (both whitelist sites + golden) and a fresh deploy's
    validator runs it (no unexpected-absence count).
