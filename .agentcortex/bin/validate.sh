@@ -3150,6 +3150,14 @@ else
 fi
 
 echo ""
+# Brownfield: an unmerged entry-file sidecar is why the AGENTS.md checks above fail.
+_entry_pending=""
+for _f in AGENTS.md CLAUDE.md GEMINI.md; do
+  [[ -f "$ROOT/$_f.acx-incoming" ]] && _entry_pending="$_entry_pending $_f"
+done
+if [[ -n "$_entry_pending" ]]; then
+  echo "NOTE: governance is not active:${_entry_pending} still hold your own version and the framework's is in <file>.acx-incoming. Merge each sidecar into its file, then re-run; AGENTS.md-related FAILs above come from this."
+fi
 printf 'Summary: pass=%s warn=%s fail=%s skip=%s\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
   echo "Agentic OS integrity check failed"

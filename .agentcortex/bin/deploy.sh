@@ -1581,6 +1581,18 @@ if [ "$COUNT_SKIPPED" -gt 0 ]; then
     echo "  → Manual merge:  diff each pair, keep your content + adopt framework updates, then re-run deploy."
     echo "  → AI-assisted:   ask your AI agent — \"merge each *.acx-incoming into its target, preserving project-specific content and adopting framework updates, then delete the sidecars\""
 fi
+# An entry file kept as the project's own copy means agents load none of the framework's
+# rules: say so plainly instead of leaving it to the generic merge hint above.
+_acx_entry_pending=""
+for _f in AGENTS.md CLAUDE.md GEMINI.md; do
+    [ -f "$TARGET/$_f.acx-incoming" ] && _acx_entry_pending="$_acx_entry_pending $_f"
+done
+if [ -n "$_acx_entry_pending" ]; then
+    echo ""
+    echo "!! GOVERNANCE IS NOT ACTIVE YET:${_acx_entry_pending} kept your own version."
+    echo "   Agents read these files, so none of the framework's rules apply until each"
+    echo "   <file>.acx-incoming is merged into it. validate.sh fails until then."
+fi
 if $_acx_old_gitattributes && ! grep -qE "$_ACX_OLD_GITATTRIBUTES_RE" "$TARGET/.gitattributes"; then
     echo ""
     echo "⚠ .gitattributes no longer sets line endings for your own files (up to v1.8.28 it"

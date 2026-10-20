@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-codex-kb-bounded-retrieval-20261019-2026-10-19
+- Feature shipped: optional bounded KB item/section evidence in the existing advisory seam; original phases, digest/source fallback and no-runtime path preserved. Non-release PR closure.
+- Tests: capability 61; lifecycle 42; metadata fresh; validate fail=0; configured-path/raw LF evidence passed. Code dba7caada06d; log: archive/codex-kb-bounded-retrieval-20261019-20261019.md.
+
 ### Ship-docs-backlog-sim-findings-20261018-r3-2026-10-18
 - Feature shipped: **KB-routing round added to the v1.8.34 sim record (PR #472).** With the KB declared only in `knowledge_sources` and no prompt hint, across six KB-covered tasks: plain-task entry consulted it 0/12 (both models); `/bootstrap` entry: sonnet read the routed standard 3/6 and applied the rule 3/3 when it did (the misses reproduced the KB-listed mistakes), haiku 0/6; uncovered tasks consulted 0/8. #234 and #235 carry the numbers; `docs/reviews/2026-10-18-release-sim.md` has the section.
 - Tests: validate.sh `fail=0`; docs pins 12 passed; credential scan clean. SSoT 203->204; Ship History rotated at cap 10.

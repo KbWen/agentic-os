@@ -2942,6 +2942,11 @@ if ($stWarnCount -gt 0) {
 }
 
 Write-Output ''
+# Brownfield: an unmerged entry-file sidecar is why the AGENTS.md checks above fail.
+$entryPending = @('AGENTS.md', 'CLAUDE.md', 'GEMINI.md') | Where-Object { Test-Path -LiteralPath (Join-NormalPath $root "$_.acx-incoming") -PathType Leaf }
+if (@($entryPending).Count -gt 0) {
+    Write-Output "NOTE: governance is not active: $(@($entryPending) -join ' ') still hold your own version and the framework's is in <file>.acx-incoming. Merge each sidecar into its file, then re-run; AGENTS.md-related FAILs above come from this."
+}
 Write-Output "Summary: pass=$($script:PassCount) warn=$($script:WarnCount) fail=$($script:FailCount) skip=$($script:SkipCount)"
 if ($script:FailCount -gt 0) {
     Write-Output 'Agentic OS integrity check failed'
