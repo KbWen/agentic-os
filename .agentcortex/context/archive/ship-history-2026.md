@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-security-llm-output-row-2026-10-19
+- Feature shipped: **security_guardrails §2 gains a context-triggered "Model output" check.** When changed code calls an LLM or acts on its output (generated SQL, shell, paths, URLs, tool calls), that output is untrusted input: check it against A03 before a sink and check that any tool call or side effect it requests is authorized. Funded by merging §7's duplicate "pattern recognition, not formal verification" bullet (net 0 lines); no directive keyword added, ratchet unchanged. Tier NONE (AI inspection), like §1.
+- Tests: directive ratchet 8 passed; related not-slow subset 280 passed; validate.sh `fail=0`. Local commit only. SSoT 206->207; Ship History rotated at cap 10.
+
 ### Ship-fix-prospec-eval-quickwins-2026-10-19
 - Feature shipped: **five fixes from the 2026-10-19 comparison against an external spec-driven framework.** README, zh-TW README and llms.txt no longer say the validator holds regardless of what the agent reports: they say phase records are agent-written and checked for presence and order, not that the work happened, and that the secret scan and tests are the checks the agent can't argue past (12 sentences). The adopter CI snippet in INSTALL pins checkout/setup-python by full SHA. `deploy.sh --help`/`-h` prints usage; any other unknown flag exits 2 instead of becoming the target directory; `deploy.ps1` forwards unbound flags and passes `$Target` only when bound (`deploy.ps1 --help` used to deploy into `.`). /retro cap archival retires a mechanized LOW/MEDIUM lesson first, with the mechanism and its executor recorded. INSTALL gains a per-platform invocation table.
 - Review: fresh reviewer NOT READY (6 findings incl. a reproduced `-File --dry-run <path>` mis-target) → all fixed → re-review PASS. Pre-existing, not fixed: pwsh 7 `-File` splits `--source=URL` at the colon.

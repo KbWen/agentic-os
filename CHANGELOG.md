@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.8.35] - 2026-10-20
+
+**The README says what the validator actually checks.** In English, 繁體中文 and `llms.txt`, phase records are described as agent-written: the validator checks that each phase left one, in order, not that the work behind it happened. The secret scan and your test suite are the checks an agent cannot argue past.
+
+**Test evidence is tied to the code it tested.** `.agentcortex/tools/record_test_run.py run --worklog <log> -- <test command>` runs your suite without a shell and records the exit code and a fingerprint of the code (runtime state under `.agentcortex/context/` excluded). `validate.sh` and `/ship` fail a current-branch log whose latest recorded run failed before a PASS receipt, or whose code changed after that run once it is shipping. A feature/architecture-change/hotfix log with a test or ship PASS and no recorded run gets a WARN. It catches stale and failed evidence, not a hand-typed line.
+
+**A declared knowledge base is consulted on a plain task** (#234). If `downstream-capabilities.yaml` declares `knowledge_sources`, `AGENTS.md` and `CLAUDE.md` now say to read it at task start and consult the KB before planning or reviewing a change in a KB-routed domain — no `/bootstrap` needed. Re-running the 2026-10-18 harness, sonnet applied the KB's rule on 6 of 6 covered tasks (0 of 6 before) at the same cost; haiku was unaffected (#235).
+
+**`acx-*` subagents run on your session's model** (#236). They pinned opus (reviewer) and sonnet; a haiku session was silently upgraded.
+
+**Installers.** `deploy_brain.sh --ref <tag>` (`-Ref` in PowerShell, or `ACX_REF`) pins an update to a release. `deploy.sh --help` prints usage, and an unknown flag exits 2 instead of becoming the target directory; `deploy.ps1 --help` no longer deploys into the current directory. When your project keeps its own `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`, deploy and both validators now say plainly that governance is not active until the `.acx-incoming` sidecar is merged.
+
+**Rules and docs.** `engineering_guardrails` §8: a standing instruction ("keep going", permission to merge) does not answer an owner decision such as freezing a spec or amending an ADR. `security_guardrails` §2 reviews LLM output as untrusted input. `/retro` retires a lesson first when its root cause is now enforced. `docs/INSTALL.md` pins its CI snippet's actions by SHA and lists how each platform starts a governed task. The repo's own TruffleHog moves to v3.99.2 with its image digest.
+
+**Measured, not claimed:** a first lifecycle simulation (#239, six chained releases, n=1) found governed and no-framework runs equal in quality and the governed run about 53× the cost on tasks that left no headroom — `docs/reviews/2026-10-20-lifecycle-sim-pilot.md`.
+
+**Downstream delta:**
+- Core files, updated on deploy: `.agent/rules/engineering_guardrails.md`, `.agent/rules/security_guardrails.md`, `.agent/workflows/test.md`, `.agent/workflows/ship.md`, `.agent/workflows/retro.md`, `.agentcortex/bin/deploy.sh`, `.agentcortex/bin/deploy.ps1`, `.agentcortex/bin/validate.sh`, `.agentcortex/bin/validate.ps1`, `.agentcortex/tools/record_test_run.py` (new), `.claude/agents/acx-*.md`, `.agentcortex/metadata/trigger-compact-index.json`, `installers/deploy_brain.*`, and the version banners in `.agentcortex/docs/`.
+- Scaffold files: `AGENTS.md` and `CLAUDE.md`. If you edited them, the new version arrives as `.acx-incoming` — and deploy now tells you governance is not active until you merge it.
+- New validator line: "test evidence freshness". Silent unless a Work Log records a test run, or a tested-tier log has a PASS receipt with no recorded run (WARN).
+- `deploy.sh` now rejects unknown flags with exit 2. A script that passed an unsupported flag used to deploy into a directory named after it.
+
+**Checked downstream before release:**
+- An upgrade from 1.8.34 updated 206 files, added `record_test_run.py`, removed nothing and left the project's own files byte-identical; the downstream validator reported `fail=0` with the new test-evidence line present and `acx-reviewer` at `model: inherit`.
+
 ## [1.8.34] - 2026-10-18
 
 **`CP_FLAG` no longer skips files or misreports copies** (#221). With `CP_FLAG=-i`, `cp` took its answer from the list deploy was working through, so a file could end up neither deployed nor recorded while deploy still exited 0; the prompt now reads your terminal. With `-n`, or a "no" to `-i`, an update printed `[OVERWRITE]` for a copy that did not happen. It now prints `[KEPT]`, keeps the previous manifest hash so the next deploy still sees the difference, and the summary counts `N kept by CP_FLAG`. On coreutils 9.2 or later a declined or skipped copy no longer aborts the deploy; a copy that really fails still stops it.
