@@ -35,11 +35,13 @@ Handoff timing is governed by the cross-platform SSoT — `AGENTS.md §Context P
 
 | Shim | Phase | Skills injected | Model |
 |---|---|---|---|
-| `acx-implementer.md` | /implement | verification-before-completion | sonnet |
-| `acx-reviewer.md` | /review | red-team-adversarial | opus |
-| `acx-tester.md` | /test | verification-before-completion, test-driven-development | sonnet |
-| `acx-handoff.md` | /handoff | verification-before-completion | sonnet |
-| `acx-shipper.md` | /ship | production-readiness | sonnet |
+| `acx-implementer.md` | /implement | verification-before-completion | inherit |
+| `acx-reviewer.md` | /review | red-team-adversarial | inherit |
+| `acx-tester.md` | /test | verification-before-completion, test-driven-development | inherit |
+| `acx-handoff.md` | /handoff | verification-before-completion | inherit |
+| `acx-shipper.md` | /ship | production-readiness | inherit |
+
+**Model**: every shim uses `model: inherit`, so a subagent runs on the session's model and the user's model choice (and its cost) carries into delegated phases. A pinned model silently upgraded haiku users, and `acx-reviewer`'s Opus pin cost about $12 of the governed arm's $42 in the 2026-10-20 lifecycle pilot (backlog #236); pin one only with a measured reason.
 
 **Design rule**: shim bodies are ≤5 lines pointing to the canonical workflow file. All logic lives in `.agent/workflows/`. If phase rules change, update the workflow — not the shim.
 
