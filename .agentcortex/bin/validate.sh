@@ -717,6 +717,12 @@ run_python_check "ssot section caps (ship history + spec index)" WARN "$ROOT/.ag
 # document_lifecycle.decision_disposition_since. No-python -> WARN; tool absent -> SKIP.
 run_python_check "decision disposition (archived work logs)" WARN "$ROOT/.agentcortex/tools/check_decision_disposition.py" --root "$ROOT"
 
+# ADR-006: test evidence freshness (docs/specs/test-evidence-freshness.md). FAILs a
+# current-branch log whose latest recorded test run failed before a PASS receipt, or
+# whose code changed after that run once a ship receipt exists. Opt-in: a log with no
+# `Test run:` line is not checked. No-python -> WARN; tool absent -> SKIP.
+run_python_check "test evidence freshness (current-branch work log)" WARN "$ROOT/.agentcortex/tools/record_test_run.py" check --root "$ROOT"
+
 # ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
 # referents must exist on disk; PR/Issue referents are format-checked only, no
 # network call) as a Python tool behind run_python_check. WARN-tier / never-FAIL
@@ -3144,6 +3150,14 @@ else
 fi
 
 echo ""
+# Brownfield: an unmerged entry-file sidecar is why the AGENTS.md checks above fail.
+_entry_pending=""
+for _f in AGENTS.md CLAUDE.md GEMINI.md; do
+  [[ -f "$ROOT/$_f.acx-incoming" ]] && _entry_pending="$_entry_pending $_f"
+done
+if [[ -n "$_entry_pending" ]]; then
+  echo "NOTE: governance is not active:${_entry_pending} still hold your own version and the framework's is in <file>.acx-incoming. Merge each sidecar into its file, then re-run; AGENTS.md-related FAILs above come from this."
+fi
 printf 'Summary: pass=%s warn=%s fail=%s skip=%s\n' "$PASS_COUNT" "$WARN_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
   echo "Agentic OS integrity check failed"

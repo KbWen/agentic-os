@@ -5,6 +5,7 @@
 > See L1 Synthesis: [docs/architecture/document-governance.md](document-governance.md)
 
 ---
+<!-- Restructured: 2026-10-20 | L2 entries absorbed: 0 | Active entries: 14 -->
 
 ### [document-governance][2026-04-25][architecture-change/adr-002-lock-unification]
 source_spec: docs/specs/lock-unification.md

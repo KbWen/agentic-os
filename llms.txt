@@ -1,8 +1,8 @@
 # Agentic OS
 
-> Agentic OS is an open-source governance framework for AI coding agents. It gives agents — Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Google Antigravity, and any Markdown-reading LLM agent — a repeatable plan → build → review → test → ship workflow with enforced quality gates, so they can't skip steps, drift from scope, or claim completion without evidence.
+> Agentic OS is an open-source governance framework for AI coding agents. It gives agents — Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Google Antigravity, and any Markdown-reading LLM agent — a repeatable plan → build → review → test → ship workflow with quality gates: a credential scan and a validator that fails when a task's work trail is missing a phase or its evidence.
 
-Agentic OS installs into any project as a set of Markdown governance files plus optional Python validation tooling. Every task is classified (tiny-fix, quick-win, feature, hotfix, architecture-change) and flows through mandatory phases; nothing is "done" without verifiable evidence; and a single source of truth (SSoT) persists decisions across agent sessions so context survives between conversations.
+Agentic OS installs into any project as a set of Markdown governance files plus optional Python validation tooling. Every task is classified (tiny-fix, quick-win, feature, hotfix, architecture-change) and flows through mandatory phases; each phase is expected to leave a record and its evidence in the task's work trail, which a local validator checks; and a single source of truth (SSoT) persists decisions across agent sessions so context survives between conversations.
 
 ## Documentation
 

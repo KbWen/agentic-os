@@ -117,7 +117,7 @@ Phase-specific: Evidence = specific commands, outputs, versions; Communication G
 
 **Pre-merge / pre-PR closure (always applies before /ship):**
 1. Re-sync with mainline: `git fetch origin && git merge origin/<main-branch>` (use repo's default branch) — verify no conflicts or behavioral drift
-2. Re-run minimal required tests + critical regression tests after sync
+2. Re-run minimal required tests + critical regression tests after sync (via `record_test_run.py run` if the log records runs; its `check` must then exit 0, else `verdict: fail`)
 3. Verify documentation, migration scripts, configuration changes are all committed
 4. Select closure option and state it explicitly:
    - **Merge now**: Verification complete, risks acceptable

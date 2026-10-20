@@ -214,6 +214,7 @@ To prevent Work Log bloat and premature context compaction, agents MUST NOT past
 
 - **Default**: Conservative, Explainable, Stable.
 - **When Uncertain**: State ambiguity, provide 2-3 options, DEFER high-impact decisions to user.
+- **Standing instructions are not gate answers**: "keep going", "finish this wave" or permission to merge cover execution inside decided scope. They do not answer a decision the governance reserves for the owner — freezing or unfreezing a spec, amending an accepted ADR or a frozen AC, a force push, an owner-decision backlog row. Ask that question explicitly, keep the work a draft until it is answered, and record where it was answered (chat date, PR), not an approval sentence.
 
 ### 8.1 Bug Fix Protocol
 

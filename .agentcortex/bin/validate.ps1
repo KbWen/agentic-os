@@ -862,6 +862,10 @@ Invoke-PythonCheck -Label 'ssot section caps (ship history + spec index)' -Missi
 # entries missing a ship-time marker). WARN-tier / never-FAIL (tool ALWAYS exits 0);
 # silent no-op until a fork sets document_lifecycle.decision_disposition_since.
 Invoke-PythonCheck -Label 'decision disposition (archived work logs)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/check_decision_disposition.py') -Arguments @('--root', $root)
+# ADR-006: test evidence freshness (docs/specs/test-evidence-freshness.md); opt-in by a
+# recorded `Test run:` line. FAIL on a failed run before a PASS receipt, or on code changed
+# after the latest run once a ship receipt exists.
+Invoke-PythonCheck -Label 'test evidence freshness (current-branch work log)' -MissingPythonLevel 'WARN' -ScriptPath (Join-NormalPath $root '.agentcortex/tools/record_test_run.py') -Arguments @('check', '--root', $root)
 # ADR-006: advisory Work Log `## External References` existence check (Spec/ADR
 # referents must exist on disk; PR/Issue referents are format-checked only, no
 # network call). WARN-tier / never-FAIL (tool ALWAYS exits 0); silent no-op when
@@ -2938,6 +2942,11 @@ if ($stWarnCount -gt 0) {
 }
 
 Write-Output ''
+# Brownfield: an unmerged entry-file sidecar is why the AGENTS.md checks above fail.
+$entryPending = @('AGENTS.md', 'CLAUDE.md', 'GEMINI.md') | Where-Object { Test-Path -LiteralPath (Join-NormalPath $root "$_.acx-incoming") -PathType Leaf }
+if (@($entryPending).Count -gt 0) {
+    Write-Output "NOTE: governance is not active: $(@($entryPending) -join ' ') still hold your own version and the framework's is in <file>.acx-incoming. Merge each sidecar into its file, then re-run; AGENTS.md-related FAILs above come from this."
+}
 Write-Output "Summary: pass=$($script:PassCount) warn=$($script:WarnCount) fail=$($script:FailCount) skip=$($script:SkipCount)"
 if ($script:FailCount -gt 0) {
     Write-Output 'Agentic OS integrity check failed'

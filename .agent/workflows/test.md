@@ -3,7 +3,7 @@ description: Workflow for test
 ---
 # /test
 
-Design and execute minimal necessary tests. AI drives the entire process autonomously — classify depth, generate skeletons, write tests, run adversarial cases, and persist evidence. Human review is optional, not a gate.
+Design and run minimal necessary tests autonomously: classify depth, generate skeletons, write tests, run adversarial cases, persist evidence. Human review is optional, not a gate.
 
 ## Step 0: Phase Verification
 
@@ -11,14 +11,12 @@ Design and execute minimal necessary tests. AI drives the entire process autonom
 
 ## Step 1: Auto-Classify Test Depth
 
-Read the task classification from the active Work Log (`Classification:` field). If no Work Log exists (e.g., tiny-fix fast-path from bootstrap §0), infer classification from the scope of changes (number of files, modules touched, whether logic changed).
+Read `Classification:` from the active Work Log. With no Work Log (tiny-fix fast-path), infer it from the scope of changes (files, modules, whether logic changed).
 
 Apply the test depth matrix from `.agent/workflows/test-classify.md` to determine:
 - How many tests are needed (scope)
 - What evidence format to use (rigor)
 - Whether adversarial testing is required (Red Team)
-
-Do NOT ask the user which depth to use — infer it autonomously.
 
 ## Step 2: Generate Test Skeleton
 
@@ -95,7 +93,7 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
      - **`feature` / `architecture-change` / `hotfix`**: do NOT write a PASS test-gate receipt — Gate 2 is unsatisfied (see Step 4b). Record manual-trace output as partial evidence in `## Evidence` and the gap in `## Known Risk`. STOP and surface to the user: "⚠️ Test gate unsatisfied — no automated tests. Provide a test runner or explicitly accept the manual-trace gap before /ship."
   6. **`quick-win` only**: skip the "Run all tests" line below and proceed directly to **Step 4b**. (`feature` / `architecture-change` / `hotfix`: step 5 is terminal — do not proceed further.)
 
-Run all tests. Capture pass/fail output as evidence.
+Run all tests (with Python, via `.agentcortex/tools/record_test_run.py run --worklog <log> -- <cmd>`). Capture pass/fail output as evidence.
 
 ## Step 4: Adversarial Test Cases (Auto-Triggered)
 

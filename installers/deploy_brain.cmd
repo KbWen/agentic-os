@@ -27,11 +27,12 @@ exit /b 1
 :run_wrapper_ps1
 :: PowerShell -File binds unrecognized --flags to the first positional [string]$Target,
 :: which would corrupt --dry-run / --source, so translate cmd-style args into the PS1
-:: wrapper's typed parameters. deploy supports only --dry-run and --source; any other
-:: token (incl. the validate-only --no-python) falls through to the target, matching
-:: deploy_brain.sh / deploy.sh behavior.
+:: wrapper's typed parameters. deploy supports only --dry-run, --source and --ref; any other
+:: token (incl. the validate-only --no-python) falls through to the target, and deploy.sh
+:: rejects a target that starts with "-" (exit 2) instead of creating that directory.
+:: --source and --ref travel as ACX_SOURCE / ACX_REF in the environment (deploy_brain.sh
+:: reads both), so a value containing & | < > is never re-parsed as a cmd command line.
 set "ACX_DRYRUN="
-set "ACX_SOURCE_ARG="
 set "ACX_TARGET="
 :parse_args
 if "%~1"=="" goto run_ps1_invoke
@@ -39,20 +40,29 @@ if /i "%~1"=="--dry-run" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
 if /i "%~1"=="-DryRun" (set "ACX_DRYRUN=-DryRun" & shift & goto parse_args)
 if /i "%~1"=="--source" goto take_source
 if /i "%~1"=="-Source" goto take_source
+if /i "%~1"=="--ref" goto take_ref
+if /i "%~1"=="-Ref" goto take_ref
 set "ACX_TARGET=%~1"
 shift
 goto parse_args
 
 :take_source
 if "%~2"=="" (echo [ERROR] --source requires a value. & exit /b 1)
-set "ACX_SOURCE_ARG=-Source ""%~2"""
+set "ACX_SOURCE=%~2"
+shift
+shift
+goto parse_args
+
+:take_ref
+if "%~2"=="" (echo [ERROR] --ref requires a value. & exit /b 2)
+set "ACX_REF=%~2"
 shift
 shift
 goto parse_args
 
 :run_ps1_invoke
 if not defined ACX_TARGET set "ACX_TARGET=."
-powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%deploy_brain.ps1" -Target "%ACX_TARGET%" %ACX_SOURCE_ARG% %ACX_DRYRUN%
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%deploy_brain.ps1" -Target "%ACX_TARGET%" %ACX_DRYRUN%
 exit /b %errorlevel%
 
 :run_wrapper_bash

@@ -8,6 +8,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CANONICAL="$PROJECT_ROOT/.agentcortex/bin/deploy.sh"
 
 ACX_SOURCE="${ACX_SOURCE:-}"
+ACX_REF="${ACX_REF:-}"
 ACX_CACHE="$PROJECT_ROOT/.agentcortex-src"
 MANIFEST="$PROJECT_ROOT/.agentcortex-manifest"
 
@@ -31,6 +32,27 @@ if [[ -z "$ACX_SOURCE" ]]; then
     done
 fi
 
+# --ref <tag-or-branch> pins an update to a release instead of the source's default
+# branch. It is consumed here (deploy.sh rejects unknown flags), so it is removed from
+# the arguments passed on. ACX_REF in the environment is the same setting.
+_fwd=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --ref)
+            if [[ $# -lt 2 || -z "$2" ]]; then echo "ERROR: --ref requires a tag or branch name." >&2; exit 2; fi
+            ACX_REF="$2"; shift 2 ;;
+        --ref=*)
+            if [[ -z "${1#--ref=}" ]]; then echo "ERROR: --ref requires a tag or branch name." >&2; exit 2; fi
+            ACX_REF="${1#--ref=}"; shift ;;
+        *) _fwd+=("$1"); shift ;;
+    esac
+done
+if [[ ${#_fwd[@]} -gt 0 ]]; then set -- "${_fwd[@]}"; else set --; fi
+if [[ -n "$ACX_REF" ]] && { [[ "$ACX_REF" == -* ]] || [[ ! "$ACX_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; }; then
+    echo "ERROR: --ref must be a tag or branch name (letters, digits, . _ / -), got: '$ACX_REF'" >&2
+    exit 2
+fi
+
 # Try to read source_repo from manifest
 if [[ -z "$ACX_SOURCE" && -f "$MANIFEST" ]]; then
     # tr -d: a manifest checked out CRLF (Windows autocrlf) must not leave a CR in the URL.
@@ -42,6 +64,11 @@ fi
 #   Manifest present (already installed) → always fetch fresh source for update
 #   No canonical, no manifest          → fresh bootstrap (only installers/ available)
 if [[ ! -f "$MANIFEST" && -f "$CANONICAL" ]]; then
+    if [[ -n "$ACX_REF" ]]; then
+        echo "ERROR: --ref selects what to fetch, but this run deploys the checkout it is in." >&2
+        echo "Check out the release first (git checkout $ACX_REF), then run without --ref / ACX_REF." >&2
+        exit 2
+    fi
     exec bash "$CANONICAL" "$@"
 fi
 
@@ -89,7 +116,33 @@ remove_cache_or_die() {
     fi
 }
 
-if [[ -d "$ACX_CACHE/.git" ]]; then
+clone_source() {
+    if [[ -n "$ACX_REF" ]]; then
+        acx_git -c advice.detachedHead=false clone --depth 1 --branch "$ACX_REF" -- "$ACX_SOURCE" "$ACX_CACHE"
+        # Detach even for a branch ref, so the next unpinned run re-clones the default
+        # branch instead of pulling the pinned one.
+        acx_git -C "$ACX_CACHE" checkout -q --detach
+    else
+        acx_git clone --depth 1 -- "$ACX_SOURCE" "$ACX_CACHE"
+    fi
+}
+
+# R2: a ref the source does not have must fail before the existing cache is removed.
+if [[ -n "$ACX_REF" ]] && ! acx_git ls-remote --exit-code -- "$ACX_SOURCE" "refs/tags/$ACX_REF" "refs/heads/$ACX_REF" >/dev/null 2>&1; then
+    echo "ERROR: no tag or branch named '$ACX_REF' found at $ACX_SOURCE (or the source could not be reached). Nothing was changed." >&2
+    exit 2
+fi
+
+if [[ -d "$ACX_CACHE/.git" && -n "$ACX_REF" ]]; then
+    echo "Pinning to $ACX_REF: re-cloning the cached source at that ref..."
+    remove_cache_or_die
+    clone_source
+elif [[ -d "$ACX_CACHE/.git" ]] && ! acx_git -C "$ACX_CACHE" symbolic-ref -q HEAD >/dev/null 2>&1; then
+    # A pinned run leaves the cache on a detached HEAD, which `git pull` cannot update.
+    echo "Cached source is pinned to a release; re-cloning the default branch..."
+    remove_cache_or_die
+    clone_source
+elif [[ -d "$ACX_CACHE/.git" ]]; then
     # A cache cloned from a different repo (e.g. pre-migration source) must
     # never be pulled or deployed from — verify origin matches the resolved source.
     CACHE_ORIGIN="$(git -C "$ACX_CACHE" remote get-url origin 2>/dev/null || true)"
@@ -99,21 +152,21 @@ if [[ -d "$ACX_CACHE/.git" ]]; then
         echo "  configured:   $ACX_SOURCE" >&2
         echo "Re-cloning from the configured source..." >&2
         remove_cache_or_die
-        acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+        clone_source
     else
         echo "Updating cached Agentic OS source..."
         if ! acx_git -C "$ACX_CACHE" pull 2>&1; then
             echo "" >&2
             echo "Failed to update cached source. Removing stale cache and re-cloning..." >&2
             remove_cache_or_die
-            acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+            clone_source
         fi
     fi
 else
     echo "Cloning Agentic OS from $ACX_SOURCE..."
     # Clean up any partial clone left by a prior interrupted attempt
     [[ -d "$ACX_CACHE" ]] && remove_cache_or_die
-    acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+    clone_source
 fi
 
 # A failed checkout (e.g. a path over MAX_PATH) leaves an empty index; `git pull`
@@ -130,7 +183,7 @@ cache_is_intact() {
 if ! cache_is_intact; then
     echo "Cached Agentic OS source failed its integrity check (partial checkout, modified files, or unreadable). Re-cloning..." >&2
     remove_cache_or_die
-    acx_git clone --depth 1 "$ACX_SOURCE" "$ACX_CACHE"
+    clone_source
     if ! cache_is_intact; then
         # A checkout that fails (e.g. Filename too long) already stopped at the clone
         # above; what reaches here is a source without deploy.sh, a cache git refuses to
@@ -141,6 +194,10 @@ if ! cache_is_intact; then
         echo "If .agentcortex/bin/deploy.sh is not known to git, check source_repo in .agentcortex-manifest." >&2
         exit 1
     fi
+fi
+
+if [[ -n "$ACX_REF" ]]; then
+    echo "Deploying $ACX_REF (commit $(acx_git -C "$ACX_CACHE" rev-parse --short HEAD))."
 fi
 
 CACHED_CANONICAL="$ACX_CACHE/.agentcortex/bin/deploy.sh"

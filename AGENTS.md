@@ -31,6 +31,7 @@ MUST reply in the user's input language — detect it from their latest message 
 ## vNext State Model
 
 - **Init Read**: MUST read `.agentcortex/context/current_state.md` (SSoT) + `.agentcortex/context/work/<worklog-key>.md` (Work Log). **Exception**: `tiny-fix` tasks (< 3 files, no semantic change, unambiguous scope) MAY skip SSoT and Work Log reads — AGENTS.md alone provides sufficient governance context.
+- **Knowledge base on any entry**: when `.agentcortex/context/private/downstream-capabilities.yaml` declares `knowledge_sources:`, read that block at task start (no `/bootstrap` needed) and consult the declared KB per `bootstrap.md §3.6` `kb-consult` before planning or reviewing a change in a KB-routed domain; a task outside the KB's routes needs no KB read. Not for `tiny-fix`; file absent → nothing to read.
 - **Prohibited**: Blind directory scanning (`ls -R .agentcortex/context/`). Read files precisely guided by SSoT.
 - **SSoT Recovery Exception**: If Spec Index is `[STALE]`/empty, ONE targeted scan (`list_dir docs/specs/`) allowed — then update `current_state.md` and log recovery.
 - **Active Backlog**: `docs/specs/_product-backlog.md` — living index for multi-feature work. Bootstrap checks it; Ship updates it. Free-read (~200 tokens).

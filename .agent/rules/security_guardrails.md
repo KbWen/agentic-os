@@ -25,6 +25,7 @@ When reviewing or completing code changes, AI MUST check for:
 
 - **Always On**: A01 (Access Control), A02 (Secrets), A03 (Injection) — checked on EVERY code change.
 - **Context-Triggered**: A04–A10 — checked when the changed code touches the relevant domain (e.g., A06 only when dependencies change, A09 only when logging code is modified).
+- **Model output** (context-triggered): when the changed code calls an LLM or acts on its output — generated SQL, shell, file paths, URLs, or tool calls — treat that output as untrusted input. Check it against A03 before it reaches a sink, and check that any tool call or side effect it requests is authorized.
 - **Severity Threshold**: Any finding rated HIGH or CRITICAL blocks `/review` verdict. MEDIUM findings are flagged but do not block.
 
 ## 3. Secret Detection
@@ -67,7 +68,6 @@ When security issues are found, output using this structure:
 
 ## 7. Boundaries
 
-- This is **static analysis by AI inspection**, not runtime scanning.
+- This is **static analysis by AI inspection** (pattern recognition, not formal verification), not runtime scanning.
 - AI does NOT execute external security tools unless the project has them configured.
-- Findings are based on pattern recognition and code understanding, not formal verification.
 - When uncertain about severity, default to the HIGHER severity and flag for human review.

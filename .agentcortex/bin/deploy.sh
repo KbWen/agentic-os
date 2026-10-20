@@ -19,6 +19,13 @@ while [[ $# -gt 0 ]]; do
         --source) ACX_SOURCE="$2"; shift 2 ;;
         --source=*) ACX_SOURCE="${1#--source=}"; shift ;;
         --dry-run) DRY_RUN=true; shift ;;
+        -h|--help)
+            echo "Usage: $0 [--dry-run] [--source <git-url>] [/path/to/your-project]"
+            exit 0 ;;
+        # An unknown flag used to fall through as the target path (--help became a directory).
+        -*) echo "ERROR: Unknown option '$1'." >&2
+            echo "Usage: $0 [--dry-run] [--source <git-url>] [/path/to/your-project]" >&2
+            exit 2 ;;
         *) TARGET="$1"; shift ;;
     esac
 done
@@ -818,7 +825,7 @@ if $DRY_RUN; then
     _dry_count=0
     # Enumerate only the files that are actually deployed (mirrors real deploy logic).
     # Runtime Python tools are a whitelist — NOT all *.py in tools/.
-    _runtime_tools="guard_context_write.py _yaml_loader.py check_command_sync.py check_text_integrity.py check_text_integrity.ps1 text_integrity_baseline.txt sync_skills.sh lint_governed_writes.py check_lifecycle_frontmatter.py check_audit_chain.py check_lesson_chain.py check_ssot_caps.py check_decision_disposition.py check_adr_coverage.py append_chain_entry.py append_lesson.py recover_worklog_lock.py lint_spec_drift.py run_governance_eval.py scan_credentials.py credential_floor.sh credential_floor.ps1 generate_safety_nucleus.py validate_downstream_capabilities.py"
+    _runtime_tools="guard_context_write.py _yaml_loader.py check_command_sync.py check_text_integrity.py check_text_integrity.ps1 text_integrity_baseline.txt sync_skills.sh lint_governed_writes.py check_lifecycle_frontmatter.py check_audit_chain.py check_lesson_chain.py check_ssot_caps.py check_decision_disposition.py record_test_run.py check_adr_coverage.py append_chain_entry.py append_lesson.py recover_worklog_lock.py lint_spec_drift.py run_governance_eval.py scan_credentials.py credential_floor.sh credential_floor.ps1 generate_safety_nucleus.py validate_downstream_capabilities.py"
     _dry_print_file() {
         local src="$1"
         local rel="$2"
@@ -1050,6 +1057,7 @@ runtime_tools=(
   check_lesson_chain.py
   check_ssot_caps.py
   check_decision_disposition.py
+  record_test_run.py
   check_adr_coverage.py
   append_chain_entry.py
   append_lesson.py
@@ -1572,6 +1580,18 @@ if [ "$COUNT_SKIPPED" -gt 0 ]; then
     echo ""
     echo "  → Manual merge:  diff each pair, keep your content + adopt framework updates, then re-run deploy."
     echo "  → AI-assisted:   ask your AI agent — \"merge each *.acx-incoming into its target, preserving project-specific content and adopting framework updates, then delete the sidecars\""
+fi
+# An entry file kept as the project's own copy means agents load none of the framework's
+# rules: say so plainly instead of leaving it to the generic merge hint above.
+_acx_entry_pending=""
+for _f in AGENTS.md CLAUDE.md GEMINI.md; do
+    [ -f "$TARGET/$_f.acx-incoming" ] && _acx_entry_pending="$_acx_entry_pending $_f"
+done
+if [ -n "$_acx_entry_pending" ]; then
+    echo ""
+    echo "!! GOVERNANCE IS NOT ACTIVE YET:${_acx_entry_pending} kept your own version."
+    echo "   Agents read these files, so none of the framework's rules apply until each"
+    echo "   <file>.acx-incoming is merged into it. validate.sh fails until then."
 fi
 if $_acx_old_gitattributes && ! grep -qE "$_ACX_OLD_GITATTRIBUTES_RE" "$TARGET/.gitattributes"; then
     echo ""
