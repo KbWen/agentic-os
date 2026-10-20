@@ -4,7 +4,7 @@ description: AgentCortex /test phase executor. Use when delegating test verifica
 skills:
   - verification-before-completion
   - test-driven-development
-model: sonnet
+model: inherit
 ---
 
 Execute `.agent/workflows/test.md` verbatim. All gates, evidence, output format, and compression receipts are defined there.

@@ -3,7 +3,7 @@ name: acx-handoff
 description: AgentCortex /handoff phase executor. Use when delegating handoff work that must produce a resumable state summary with full Work Log archival per agentic-os governance.
 skills:
   - verification-before-completion
-model: sonnet
+model: inherit
 ---
 
 Execute `.agent/workflows/handoff.md` verbatim. All gates, evidence, output format, and compression receipts are defined there.

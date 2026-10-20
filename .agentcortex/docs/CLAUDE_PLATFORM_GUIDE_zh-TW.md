@@ -35,11 +35,13 @@ Handoff 時機依跨平台正本 — `AGENTS.md §Context Pruning`（context 佔
 
 | Shim | 階段 | 注入的 Skill | Model |
 |---|---|---|---|
-| `acx-implementer.md` | /implement | verification-before-completion | sonnet |
-| `acx-reviewer.md` | /review | red-team-adversarial | opus |
-| `acx-tester.md` | /test | verification-before-completion, test-driven-development | sonnet |
-| `acx-handoff.md` | /handoff | verification-before-completion | sonnet |
-| `acx-shipper.md` | /ship | production-readiness | sonnet |
+| `acx-implementer.md` | /implement | verification-before-completion | inherit |
+| `acx-reviewer.md` | /review | red-team-adversarial | inherit |
+| `acx-tester.md` | /test | verification-before-completion, test-driven-development | inherit |
+| `acx-handoff.md` | /handoff | verification-before-completion | inherit |
+| `acx-shipper.md` | /ship | production-readiness | inherit |
+
+**模型**：每個 shim 都用 `model: inherit`，subagent 跟著 session 的模型跑，使用者選的模型（和它的成本）會帶進被委派的階段。過去固定的模型會把 haiku 使用者悄悄升級，而 `acx-reviewer` 固定 Opus，在 2026-10-20 的生命週期模擬裡占了治理組約 $42 中的 $12（backlog #236）；除非有量測過的理由，不要再固定模型。
 
 **設計守則**：shim 本體 ≤5 行，只指向 canonical workflow 檔案。所有邏輯都在 `.agent/workflows/`。階段規則變更時，更新 workflow，而非 shim。
 
