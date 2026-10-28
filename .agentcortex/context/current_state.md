@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-28T19:23:48+08:00
-- **Last Verified**: 2026-10-28
-- **Update Sequence**: 218
+- **Last Updated**: 2026-10-29T00:13:34+08:00
+- **Last Verified**: 2026-10-29
+- **Update Sequence**: 219
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-release-v1.8.36-2026-10-29
+- Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
+- Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
+- Publication: PR #480 final archived-head CI must pass before authorized merge, tag and latest GitHub Release; those remote states are verified after this preparation record.
+
 ### Ship-codex-docs-design-onboarding-2026-10-28
 - Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
 - Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.
@@ -154,10 +159,6 @@
 - Feature shipped: **a declared knowledge base is consulted on a plain-task entry (#234).** One present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup: when `downstream-capabilities.yaml` declares `knowledge_sources`, read that block at task start (no `/bootstrap` needed) and consult the KB before planning or reviewing a change in a KB-routed domain; outside the routes, no KB read; not for tiny-fix. Re-running the 2026-10-18 Round 3 harness: sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost, an eighth of the `/bootstrap` entry; haiku never read the capabilities file (#235 stays open). Uncovered tasks now pay one manifest routing check and sometimes one related page; the owner amended AC-5 to allow that, re-confirmed on corrected figures after the first figures were miscounted. Report: `docs/reviews/2026-10-20-kb-plain-entry-sim.md`.
 - Review: fresh reviewer NOT READY (AC-5 unmet, CLAUDE.md wording, echo-passable eval, stale compact index, report errors) → fixed; re-review caught the miscounted AC-5 figures → corrected and re-asked.
 - Tests: not-slow 852 passed; slow 199 passed, 2 skipped; ratchet + lifecycle 56; eval 58; 26 headless sim sessions. Local commit only. SSoT 209->210; Ship History rotated at cap 10.
-
-### Ship-docs-govern-docs-restructure-document-governance-2026-10-20
-- Feature shipped: **document-governance L1 caught up with its decision log.** L1 was last rewritten 2026-04-25 while 13 L2 entries accumulated (threshold 5), and bootstrap reads L1 as the current design reference. `/govern-docs --restructure` (owner-approved diff, 2026-10-20) adds the current state of governed writes and the audit trail (guard, INDEX hash chain, archive directory as the type, SSoT caps), decision capture, validator-tool integration, "no hand-carried counts", "a check that cannot run says so", delegated-output trust, and the rejected `design_tool` escape. 45 → 70 lines; L2 gets a restructure record and nothing else.
-- Tests: validate.sh `fail=0`; docs/domain/lifecycle tests 146 passed. Local commit only. SSoT 208->209; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 
