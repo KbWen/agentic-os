@@ -223,7 +223,9 @@ rules 檔告訴 agent 怎麼做,agent 可以無視。Agentic OS 加上工作流�
 | 核心原則與測試標準 | [設計哲學](../.agentcortex/docs/AGENT_PHILOSOPHY_zh-TW.md) · [測試協議](../.agentcortex/docs/TESTING_PROTOCOL_zh-TW.md) |
 | 平台專屬注意事項 | [Codex](../.agentcortex/docs/CODEX_PLATFORM_GUIDE_zh-TW.md) · [Claude](../.agentcortex/docs/CLAUDE_PLATFORM_GUIDE_zh-TW.md) |
 | 連接外部知識庫(選用) | [連接知識庫](../.agentcortex/docs/guides/connecting-a-knowledge-base.md) |
-| Bring your own design and brand conventions (no KB required) | [Design onboarding](../.agentcortex/docs/guides/bringing-your-own-design.md) |
+| Bring your own design and brand conventions (no KB required) | [Design onboarding (online)](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/bringing-your-own-design.md) |
+
+The design guide is also installed locally at `.agentcortex/docs/guides/bringing-your-own-design.md` (relative to your project root).
 
 ## 貢獻
 
