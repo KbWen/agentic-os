@@ -10,6 +10,8 @@
 
 **Release verification:** the release workflow checks the full CI suite, canonical version consistency, and actual downstream install/update behavior. Recorded results and source fingerprints are retained in the release Work Log.
 
+**CI compatibility:** the existing Python 3.9 validation job uses Ubuntu 24.04, where upstream binaries are available, after `ubuntu-latest` moved to 26.04. The Python 3.9 check remains enabled.
+
 ## [1.8.35] - 2026-10-20
 
 **The README says what the validator actually checks.** In English, 繁體中文 and `llms.txt`, phase records are described as agent-written: the validator checks that each phase left one, in order, not that the work behind it happened. The secret scan and your test suite are the checks an agent cannot argue past.
