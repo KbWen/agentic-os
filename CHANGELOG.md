@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.8.36] - 2026-10-28
+## [1.8.36] - 2026-10-29
 
 **Bring your own design without a knowledge base.** The new design onboarding guide explains how to use readable design-tool references, local exports, or a completed committed Markdown/ASCII wireframe with the existing design-first workflow. It distinguishes a source link from actual inspection, approval, and visual comparison.
 
