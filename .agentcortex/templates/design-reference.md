@@ -66,4 +66,3 @@ Record only details present in the source. Mark missing details as unknown or pe
 - Findings/deviations: <specific evidence; use none only if compared and none found>
 - Follow-up or design-owner decision: <reference, or pending>
 - Reviewer and date: <...>
-
