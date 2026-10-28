@@ -65,6 +65,7 @@ core .agentcortex/docs/TESTING_PROTOCOL_zh-TW.md
 core .agentcortex/docs/guides/antigravity-v5-runtime.md
 core .agentcortex/docs/guides/audit-guardrails.md
 core .agentcortex/docs/guides/audit-guardrails_zh-TW.md
+core .agentcortex/docs/guides/bringing-your-own-design.md
 core .agentcortex/docs/guides/connecting-a-knowledge-base.md
 core .agentcortex/docs/guides/context-budget.md
 core .agentcortex/docs/guides/doc-governance.md
@@ -158,6 +159,8 @@ scaffold .agent/skills/verification-before-completion
 scaffold .agentcortex/context/current_state.md
 scaffold .agentcortex/templates/adr-tech-stack.md
 scaffold .agentcortex/templates/current_state.md
+scaffold .agentcortex/templates/custom-brand-design.SKILL.md
+scaffold .agentcortex/templates/design-reference.md
 scaffold .agentcortex/templates/docs-readme.md
 scaffold .agentcortex/templates/downstream-capabilities.example.yaml
 scaffold .agentcortex/templates/downstream.gitattributes
