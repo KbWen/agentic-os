@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.36] - 2026-10-29
+
+**Bring your own design without a knowledge base.** The new design onboarding guide explains how to use readable design-tool references, local exports, or a completed committed Markdown/ASCII wireframe with the existing design-first workflow. It distinguishes a source link from actual inspection, approval, and visual comparison.
+
+**Copyable project customization.** Two inert templates provide a design handoff record and a `custom-brand-design` native skill. The guide covers project-owned brand notes, the metadata mirror, optional phase-scoped capability registration and nested personal preferences, preserving existing settings when merging examples. Copying a template alone does not guarantee activation in every agent.
+
+**Downstream delta:** `.agentcortex/docs/guides/bringing-your-own-design.md` is a new core reference guide; `.agentcortex/templates/design-reference.md` and `.agentcortex/templates/custom-brand-design.SKILL.md` are new scaffold templates. Both README Docs tables link the guide, and canonical release banners are updated. Existing deployment globs deliver the files; no new design-tool connector, compulsory KB, gate policy, or automated visual signoff is introduced.
+
+**Release verification:** the release workflow checks the full CI suite, canonical version consistency, and actual downstream install/update behavior. Recorded results and source fingerprints are retained in the release Work Log.
+
+**CI compatibility:** the existing Python 3.9 validation job uses Ubuntu 24.04, where upstream binaries are available, after `ubuntu-latest` moved to 26.04. The Python 3.9 check remains enabled.
+
 ## [1.8.35] - 2026-10-20
 
 **The README says what the validator actually checks.** In English, 繁體中文 and `llms.txt`, phase records are described as agent-written: the validator checks that each phase left one, in order, not that the work behind it happened. The secret scan and your test suite are the checks an agent cannot argue past.

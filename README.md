@@ -250,6 +250,9 @@ Yes — MIT licensed. Fork it and ship it.
 | The principles & the test standard | [Agent Philosophy](.agentcortex/docs/AGENT_PHILOSOPHY.md) · [Testing Protocol](.agentcortex/docs/TESTING_PROTOCOL.md) |
 | Platform-specific notes | [Codex](.agentcortex/docs/CODEX_PLATFORM_GUIDE.md) · [Claude](.agentcortex/docs/CLAUDE_PLATFORM_GUIDE.md) |
 | Connect an external knowledge base (optional) | [Connecting a knowledge base](.agentcortex/docs/guides/connecting-a-knowledge-base.md) |
+| Bring your own design and brand conventions (no KB required) | [Design onboarding (online)](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/bringing-your-own-design.md) |
+
+The design guide is also installed locally at `.agentcortex/docs/guides/bringing-your-own-design.md` (relative to your project root).
 
 ## Contributing
 
