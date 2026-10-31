@@ -168,7 +168,7 @@ Tool exit codes:
    - MUST output migration plan and await user `OK` before ANY move/rename.
 5. **Active Backlog Detection**:
    - Check if `docs/specs/_product-backlog.md` exists.
-   - If it exists, read ONLY the Feature Inventory table (~200 tokens). Report in bootstrap output:
+   - If it exists, read ONLY the Feature Inventory table. Report in bootstrap output:
 
      ```
      Active Backlog: docs/specs/_product-backlog.md

@@ -28,8 +28,8 @@ without routing every task through `/bootstrap`.
    row. `CLAUDE.md` Startup (steps 1–5) and `AGENTS.md §vNext State Model → Init Read`
    name SSoT, guardrails and the Work Log, not the capabilities file.
 3. Forcing `/bootstrap` on every task is not the fix: the same simulation measured the
-   `/bootstrap` entry at ≈7× the plain entry's cost (sonnet $1.99 vs $0.29 median, small
-   feature) with identical hidden-test outcomes.
+   `/bootstrap` entry at ≈5.5× the plain entry's cost (sonnet $1.61 vs $0.29 median, small
+   feature; corrected 2026-10-31, see the report) with identical hidden-test outcomes.
 
 ## Design
 
@@ -71,6 +71,6 @@ file is absent (one existence check). The consult itself stays as specified by A
 
 ## Domain Decisions
 
-- [DECISION] Fix the entry surface, not the routing: a present-only startup line instead of forcing `/bootstrap` (measured ≈7× cost, same outcomes).
+- [DECISION] Fix the entry surface, not the routing: a present-only startup line instead of forcing `/bootstrap` (measured ≈5.5× cost, same outcomes).
 - [CONSTRAINT] Ship only if the re-run beats the 0/12 baseline; otherwise revert and record the null result.
 - [DECISION] AC-5 amended (owner, 2026-10-20, re-confirmed on corrected figures): an uncovered task may cost one manifest routing check plus one topically related page; knowing whether the KB covers a task requires the routing check.

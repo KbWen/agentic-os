@@ -26,7 +26,7 @@
 
 **Rules and docs.** `engineering_guardrails` §8: a standing instruction ("keep going", permission to merge) does not answer an owner decision such as freezing a spec or amending an ADR. `security_guardrails` §2 reviews LLM output as untrusted input. `/retro` retires a lesson first when its root cause is now enforced. `docs/INSTALL.md` pins its CI snippet's actions by SHA and lists how each platform starts a governed task. The repo's own TruffleHog moves to v3.99.2 with its image digest.
 
-**Measured, not claimed:** a first lifecycle simulation (#239, six chained releases, n=1) found governed and no-framework runs equal in quality and the governed run about 53× the cost on tasks that left no headroom — `docs/reviews/2026-10-20-lifecycle-sim-pilot.md`.
+**Measured, not claimed:** a first lifecycle simulation (#239, six chained releases, n=1) found governed and no-framework runs equal in quality and the governed run about 25× the cost on tasks that left no headroom (corrected 2026-10-31 from 53×, a scoring error) — `docs/reviews/2026-10-20-lifecycle-sim-pilot.md`.
 
 **Downstream delta:**
 - Core files, updated on deploy: `.agent/rules/engineering_guardrails.md`, `.agent/rules/security_guardrails.md`, `.agent/workflows/test.md`, `.agent/workflows/ship.md`, `.agent/workflows/retro.md`, `.agentcortex/bin/deploy.sh`, `.agentcortex/bin/deploy.ps1`, `.agentcortex/bin/validate.sh`, `.agentcortex/bin/validate.ps1`, `.agentcortex/tools/record_test_run.py` (new), `.claude/agents/acx-*.md`, `.agentcortex/metadata/trigger-compact-index.json`, `installers/deploy_brain.*`, and the version banners in `.agentcortex/docs/`.

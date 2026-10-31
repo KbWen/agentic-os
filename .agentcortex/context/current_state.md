@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-29T00:13:34+08:00
+- **Last Updated**: 2026-10-31T17:12:38+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 219
+- **Update Sequence**: 220
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-docs-sim-cost-backlog-compression-2026-10-31
+- Feature shipped: **simulation costs corrected and the backlog compressed (#232, #189).** Costs that summed `total_cost_usd` across resumed-session events are recomputed from the last event per session: #239 pilot 53× -> 25×, `/bootstrap` entry 7× -> 5.5×, Round 3 $9.58 vs $2.08; each report states the correction. `_product-backlog.md` 96,962 -> 43,276 bytes: 74 rows shortened with `[more]` links to the originals, kept verbatim in the archive; the false "~200 tokens" figure removed from 4 sites. Owner chose both in chat 2026-10-31.
+- Review: fresh reviewer compared 74/74 rows: 0 inverted facts, 9 lost conditions plus 1 unsupported claim, all fixed; fixes checked by script, not re-reviewed.
+- Tests: row check FAILS none; not-slow 881 passed, 1 failed on gitignored `scratch/` files outside this change; validate.sh = validate.ps1 `fail=0`; lifecycle 354,881. Draft PR, merge awaits CI. SSoT 219->220; Ship History rotated at cap 10.
+
 ### Ship-release-v1.8.36-2026-10-29
 - Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
 - Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
@@ -154,11 +159,6 @@
 - Feature shipped: **a recorded test run is tied to the code it tested.** New `.agentcortex/tools/record_test_run.py`: `run` executes the suite without a shell and appends `- Test run: … | exit | tree | at` to Test Gate Results, where `tree` is `git write-tree` of a temporary index (the real index is never written) excluding `.agentcortex/context/`; `check` FAILs a current-branch log whose latest run failed before a test/ship PASS receipt, or whose code changed after that run (or was unstable) once a ship receipt exists, and WARNs otherwise. Opt-in by presence of a `Test run:` line. Wired through `run_python_check` in both validators, shipped in both `deploy.sh` whitelist sites; `/test` and `/ship` pre-merge run the suite through it. README and zh-TW say what it does not catch (a hand-typed line, a command that is not the real suite, a tree git cannot read).
 - Review: fresh reviewer NOT READY (racy-git index copy, unreachable ship claim, string timestamps, unstable/no-op gaps, Windows shims, detached HEAD) → fixed; two re-review rounds (Unicode separators, unfingerprintable tree, date-only) → fixed or disclosed.
 - Tests: 27 tool tests (mutants killed: no exclusion, no branch filter, shell launch, ship-fail off, copyfile); full CI suite recorded through the tool; lifecycle 354,901. Local commit only. SSoT 210->211; Ship History rotated at cap 10.
-
-### Ship-feat-kb-plain-entry-2026-10-20
-- Feature shipped: **a declared knowledge base is consulted on a plain-task entry (#234).** One present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup: when `downstream-capabilities.yaml` declares `knowledge_sources`, read that block at task start (no `/bootstrap` needed) and consult the KB before planning or reviewing a change in a KB-routed domain; outside the routes, no KB read; not for tiny-fix. Re-running the 2026-10-18 Round 3 harness: sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost, an eighth of the `/bootstrap` entry; haiku never read the capabilities file (#235 stays open). Uncovered tasks now pay one manifest routing check and sometimes one related page; the owner amended AC-5 to allow that, re-confirmed on corrected figures after the first figures were miscounted. Report: `docs/reviews/2026-10-20-kb-plain-entry-sim.md`.
-- Review: fresh reviewer NOT READY (AC-5 unmet, CLAUDE.md wording, echo-passable eval, stale compact index, report errors) → fixed; re-review caught the miscounted AC-5 figures → corrected and re-asked.
-- Tests: not-slow 852 passed; slow 199 passed, 2 skipped; ratchet + lifecycle 56; eval 58; 26 headless sim sessions. Local commit only. SSoT 209->210; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 
