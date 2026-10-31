@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-feat-kb-plain-entry-2026-10-20
+- Feature shipped: **a declared knowledge base is consulted on a plain-task entry (#234).** One present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup: when `downstream-capabilities.yaml` declares `knowledge_sources`, read that block at task start (no `/bootstrap` needed) and consult the KB before planning or reviewing a change in a KB-routed domain; outside the routes, no KB read; not for tiny-fix. Re-running the 2026-10-18 Round 3 harness: sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost, an eighth of the `/bootstrap` entry; haiku never read the capabilities file (#235 stays open). Uncovered tasks now pay one manifest routing check and sometimes one related page; the owner amended AC-5 to allow that, re-confirmed on corrected figures after the first figures were miscounted. Report: `docs/reviews/2026-10-20-kb-plain-entry-sim.md`.
+- Review: fresh reviewer NOT READY (AC-5 unmet, CLAUDE.md wording, echo-passable eval, stale compact index, report errors) → fixed; re-review caught the miscounted AC-5 figures → corrected and re-asked.
+- Tests: not-slow 852 passed; slow 199 passed, 2 skipped; ratchet + lifecycle 56; eval 58; 26 headless sim sessions. Local commit only. SSoT 209->210; Ship History rotated at cap 10.
+
 ### Ship-fix-security-llm-output-row-2026-10-19
 - Feature shipped: **security_guardrails §2 gains a context-triggered "Model output" check.** When changed code calls an LLM or acts on its output (generated SQL, shell, paths, URLs, tool calls), that output is untrusted input: check it against A03 before a sink and check that any tool call or side effect it requests is authorized. Funded by merging §7's duplicate "pattern recognition, not formal verification" bullet (net 0 lines); no directive keyword added, ratchet unchanged. Tier NONE (AI inspection), like §1.
 - Tests: directive ratchet 8 passed; related not-slow subset 280 passed; validate.sh `fail=0`. Local commit only. SSoT 206->207; Ship History rotated at cap 10.
