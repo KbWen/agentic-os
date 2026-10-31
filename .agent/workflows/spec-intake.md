@@ -61,7 +61,7 @@ Before processing any input, glob `docs/specs/_research-*.md`:
 4. **After decomposition is complete** (Feature Inventory saved to `_product-backlog.md` and at least one feature spec generated), `_raw-intake.md` MUST be deleted. It has served its purpose — the structured specs are now the SSoT. `/ship` MUST verify `_raw-intake.md` does not exist for the current intake; if it does, delete it before archival. Previously archived `_raw-intake-<date>.md` files MUST also be deleted by `/ship` once all features from that intake are Shipped or Cancelled.
 
 **Why this matters**:
-- Conversation context stays lean: only the Feature Inventory table (~200 tokens) needs to be in active conversation, not the full spec
+- Conversation context stays lean: only the Feature Inventory table needs to be in active conversation, not the full spec
 - Context compression can safely discard the original paste without data loss — everything is in files
 - Cross-session resilience: if the user runs `/handoff` and starts a new conversation, the next session reads `_product-backlog.md` and individual specs, not a lost conversation blob
 - Aligns with `context-budget.md` principle: minimize governance reads per turn
@@ -346,7 +346,7 @@ After the first feature is shipped, the product backlog becomes the long-term co
 **Flow** (skips decomposition — already done):
 
 ```
-AI reads _product-backlog.md (~200 tokens)
+AI reads _product-backlog.md
     ↓
 Shows remaining Pending and Deferred features with dependency status:
   "Pending: #2 Dashboard (blocked by #1 ✅), #3 DB Schema (ready)
@@ -359,7 +359,7 @@ Normal flow: spec → freeze → bootstrap → plan → implement → ship
 /ship updates _product-backlog.md: feature status → Shipped
 ```
 
-**Token savings**: No re-read of `_raw-intake.md` or full product spec. Backlog table is the only input (~200 tokens). Each subsequent feature costs LESS context than the first because:
+**Token savings**: No re-read of `_raw-intake.md` or full product spec. Backlog table is the only input. Each subsequent feature costs LESS context than the first because:
 - Shipped feature specs are frozen reference → skip unless explicitly needed
 - Backlog narrows → fewer rows to evaluate
 - Lessons from prior features accumulate in Work Log / Global Lessons
