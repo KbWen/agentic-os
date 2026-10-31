@@ -33,8 +33,8 @@ the hidden acceptance test checking the KB-only rule.
 
 | Arm | Covered: consulted (scored) | Covered: consulted (strict / transcripts) | Covered: rule applied | Uncovered: KB page read (transcripts) | Cost |
 |---|---|---|---|---|---|
-| sonnet plain, 2026-10-18 baseline | 0/6 | 0/6 | 0/6 | 0/2 | $2.22 (8) |
-| sonnet `/bootstrap`, 2026-10-18 | 5/6 | 3/6 (strict, per that report) | 3/6 | — | $16.24 (8) |
+| sonnet plain, 2026-10-18 baseline | 0/6 | 0/6 | 0/6 | 0/2 | $2.08 (8) |
+| sonnet `/bootstrap`, 2026-10-18 | 5/6 | 3/6 (strict, per that report) | 3/6 | — | $9.58 (8) |
 | sonnet plain, Run A | 4/6 | 6/6 | **6/6** | 1/2 (release standard) | $1.93 (8) |
 | sonnet plain, Run B | 5/6 | 6/6 | **6/6** | 1/4 (179 chars) | $2.24 (10) |
 | haiku plain, 2026-10-18 baseline | 0/6 | 0/6 | 0/6 | 0/2 | $0.99 (8) |
@@ -64,8 +64,10 @@ the hidden acceptance test checking the KB-only rule.
 ## Decision
 
 AC-4 met: covered-task consults 0/12 → 6/12 from transcripts (sonnet 6/6, haiku 0/6), KB
-rule applied 0/12 → 6/12, sonnet cost about the same as the plain baseline and an eighth of
-the `/bootstrap` entry. AC-5 as written not met: an uncovered task now costs a routing check against the KB
+rule applied 0/12 → 6/12, sonnet cost about the same as the plain baseline and a fifth of
+the `/bootstrap` entry (corrected 2026-10-31 from "an eighth", with the two baseline costs above:
+the 2026-10-18 scorer overstated resumed sessions; Run A and B sessions had no follow-ups, so
+their costs stand). AC-5 as written not met: an uncovered task now costs a routing check against the KB
 manifest (about 3–4k characters) and, in 1 of 2 Run B sessions, one related page. An
 earlier owner ruling was given on miscounted figures (~200 characters, 2/2); re-asked with
 these, the owner amended AC-5 to allow one routing check plus one related page (2026-10-20).

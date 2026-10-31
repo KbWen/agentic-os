@@ -222,3 +222,7 @@ source_review: docs/reviews/2026-10-20-kb-plain-entry-sim.md
 - [DECISION] #234: a declared knowledge base reaches a plain-task session through one present-only line in `AGENTS.md §vNext State Model` and `CLAUDE.md` Startup, not by routing every task through `/bootstrap` (measured ≈7× the cost with equal outcomes). sonnet applied the KB rule 6/6 on covered tasks (0/6 before) at the plain entry's cost; haiku never read the capabilities file (#235).
 - [DECISION] AC-5 amended by the owner (2026-10-20, re-confirmed on corrected figures): an uncovered task may cost one manifest routing check plus one topically related page — knowing whether the KB covers a task requires the routing check.
 - [CONSTRAINT] The Round 3 scorer misses `cd <dir>/kb && cat …` reads and counts a Work Log write that names a KB slug as a read; report transcript counts beside scored ones until the scorer is fixed.
+
+### [governance][2026-10-31][docs/sim-cost-backlog-compression]
+
+- [CONSTRAINT] Correction to the 2026-10-20 #234 entry: the `/bootstrap` entry measured about 5.5× the plain entry's cost, not 7×. `total_cost_usd` in a stream's result event is cumulative for a resumed session, so a scorer takes the last event per session and never sums them; the sum overstates exactly the runs that got a follow-up reply, which are the governed ones.

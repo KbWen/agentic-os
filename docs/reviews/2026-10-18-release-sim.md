@@ -84,9 +84,11 @@ The procedure displaced the one-line pointer. Two causes remain possible, instru
 |---|---|---|
 | No framework | $0.10 | $0.12 |
 | Plain entry | $0.29 | $0.43 |
-| `/bootstrap` entry | $1.99 (≈3.8M context tokens) | $0.62 |
+| `/bootstrap` entry | $1.61 (≈3.8M context tokens) | $0.47 |
 
 Hidden-test outcomes were identical across all three arms. On the `/bootstrap` path, `acx-reviewer` dispatches added Opus cost (#236). Added as a dated note to #231.
+
+**Corrected 2026-10-31:** the `/bootstrap` figures were first reported as $1.99 and $0.62, and Round 3's below as $16.24, $2.22, $2.00 and $6.21. The scorer added up `total_cost_usd` across a resumed session's result events, and that value is cumulative, so only runs with a follow-up reply were overstated. The figures on this page now use each session's last event.
 
 ## Round 3: KB routing without a prompt hint
 
@@ -109,7 +111,7 @@ This round was added at the owner's request: when a task falls inside what the K
 - **When the standard is read, it works (3/3).** In the three `/bootstrap` sonnet runs that stopped at the health check, sonnet made the exact mistakes the KB lists: `400` instead of `422`, and `isoformat()` with microseconds and `+00:00`.
 - **The seam is the gap.** A plain task never reached the KB (0/12). On the `/bootstrap` path, sonnet ran §1b in 6/8 sessions but went on to the routed consult in only half of the covered tasks. haiku never consulted; once it tested a wrong path (`.agentcortex/context/kb/`) and stopped.
 - **No false lookups.** Uncovered tasks consulted nothing (0/8), so the seam does not waste tokens where the KB has nothing to say.
-- **Cost.** The eight `/bootstrap` sonnet sessions cost $16.24 against $2.22 on the plain entry. One auth task classified itself as a hotfix and dispatched the Opus reviewer twice ($2.00 of that run's $6.21; see #236).
+- **Cost.** The eight `/bootstrap` sonnet sessions cost $9.58 against $2.08 on the plain entry. One auth task classified itself as a hotfix and dispatched the Opus reviewer twice ($0.67 of that run's $1.95; see #236).
 
 ## Limits of this run
 

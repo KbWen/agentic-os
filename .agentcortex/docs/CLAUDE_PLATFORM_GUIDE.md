@@ -41,7 +41,7 @@ Handoff timing is governed by the cross-platform SSoT — `AGENTS.md §Context P
 | `acx-handoff.md` | /handoff | verification-before-completion | inherit |
 | `acx-shipper.md` | /ship | production-readiness | inherit |
 
-**Model**: every shim uses `model: inherit`, so a subagent runs on the session's model and the user's model choice (and its cost) carries into delegated phases. A pinned model silently upgraded haiku users, and `acx-reviewer`'s Opus pin cost about $12 of the governed arm's $42 in the 2026-10-20 lifecycle pilot (backlog #236); pin one only with a measured reason.
+**Model**: every shim uses `model: inherit`, so a subagent runs on the session's model and the user's model choice (and its cost) carries into delegated phases. A pinned model silently upgraded haiku users, and `acx-reviewer`'s Opus pin cost about $6 of the governed arm's $20 in the 2026-10-20 lifecycle pilot (backlog #236); pin one only with a measured reason.
 
 **Design rule**: shim bodies are ≤5 lines pointing to the canonical workflow file. All logic lives in `.agent/workflows/`. If phase rules change, update the workflow — not the shim.
 

@@ -49,7 +49,7 @@ As scored by the pre-registered tests:
 | Regression (19 cumulative) | 18/19 | 18/19 |
 | Decision adherence, steps 4–6 (6) | **6/6** | **6/6** |
 | Style adherence (4) | 4/4 | 4/4 |
-| Cost | **$0.79** | **$41.79** |
+| Cost (corrected 2026-10-31) | **$0.79** | **$20.11** |
 | Wall time | ~3 min | ~74 min |
 | Follow-ups needed | 0 | 6 |
 
@@ -73,9 +73,12 @@ With both corrections the arms are equal on every quality measure.
 
 ## What differed
 
-- **Cost: about 53×.** About $12 of the governed $41.79 ($12.13, steps 4–6) is Opus spent by `acx-reviewer`
+- **Cost: about 25×.** About $6 of the governed $20.11 ($5.99, steps 4–6) is Opus spent by `acx-reviewer`
   subagents (pinned model, #236). Most of the rest is long Sonnet sessions: step 5 alone took
-  103 turns and $26.53.
+  91 main-thread API calls and $6.55. **Corrected 2026-10-31:** this page first said $41.79,
+  53×, $12.13 and $26.53 because `scripts/score.py` added up `total_cost_usd` across a resumed
+  session's result events, and that value is cumulative. The figures here are each session's
+  last event; pricing each message's usage independently gives $21.18.
 - **Where the decision was recorded.** Control wrote it into `CLAUDE.md` and `README.md`.
   Claude Code loads `CLAUDE.md` automatically, so that is an effective way to carry a decision
   forward. Governed wrote two ADRs, three specs, an L2 domain log, SSoT entries and archived
@@ -100,6 +103,7 @@ something said in an earlier conversation, or with a weaker model.
    "categories are case-insensitive") and later steps whose natural implementation breaks them.
 3. Add a weaker-model arm (haiku) where unaided quality is lower.
 4. Unpin the reviewer model (#236) or account for it separately; cap cost per run.
+5. Score cost from the last `total_cost_usd` per session, never a sum of result events.
 
 ## Evidence
 
