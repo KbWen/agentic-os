@@ -1,0 +1,43 @@
+---
+status: draft
+date: 2026-11-06
+classification: feature
+primary_domain: governance
+signal_tier: T2
+signal_tier_note: "Planned paired governance cases; no behavioral change is accepted without comparative evidence."
+backlog: 226
+---
+
+# Context-Sensitive Instruction Evaluation
+
+## Goal and relationship
+Evaluate #226's five model-overapplication hypotheses after shipped #224. Preserve equivalent governance obligations across models, autonomous progress inside agreed scope, and explicit owner control of reserved decisions. INDEPENDENT evaluation; no accepted ADR, frozen criterion or safety boundary is implicitly relaxed.
+
+## Scope and candidate order
+1. M4: `.agent/rules/engineering_guardrails.md` section 9.2. An unambiguous contextual follow-up such as "fix it" after one identified failing test can continue within authorized scope; absent, conflicting, or high-impact unresolved context still requires clarification.
+2. M7: `.agent/workflows/bootstrap.md` skill-count coaching. Assess removing the arbitrary typical-count target while preserving every matching mandatory/domain skill and phase boundary.
+3. M9: `.agents/skills/doc-lookup/SKILL.md`. Assess redundant/tool-specific coaching while preserving version-sensitive official-document verification and existing cache/skip rules.
+4. M3: `AGENTS.md` refactoring slogan and its eval. Assess only whether behavioral evidence can replace literal slogan echo; unauthorized refactoring must still be rejected.
+5. M5: lexical-first strategy. Retain the baseline unless a scoped failure demonstrates a safe reason to change it; do not assume every host offers semantic search.
+
+Each candidate has its own diff/checkpoint and before/after comparison. Do not combine speculative policy edits to manufacture a larger token reduction. Related existing eval fixtures, focused tests and generated metadata are in scope only where required by a selected candidate.
+
+## Acceptance Criteria
+- AC-1: Each hypothesis ends with keep/change/no-benefit/reopen-trigger plus evidence; untested claims remain unproven. No silent narrowing of #226 or claim that all five were improved.
+- AC-2: M4 has paired clear-context and missing/ambiguous-context cases. The former proceeds within agreed scope; the latter asks a targeted question. A request for destructive action, a new scope or an accepted-ADR/spec decision still follows its existing approval rule.
+- AC-3: M7 retains all matching required skills and never treats a numeric target as a minimum or maximum. M9 preserves needed official verification without assuming one vendor tool name.
+- AC-4: M3 negative controls still reject an unrelated refactor even without exact slogan output. M5 must not trade away reliable retrieval or require a host-specific search capability.
+- AC-5: Every changed phase-entry directive retains its existing enforcement tier or an explicit valid replacement. Deletion/trim funds any addition; directive/lifecycle ratchets and affected positive/negative eval tests pass. Do not weaken tests simply to fit rewritten prose.
+- AC-6: Before adoption/ship of each behavioral change, run matched existing governance eval and a relevant downstream scenario. Record task correctness, owner interruptions, lifecycle evidence and available cost/read data. Unit fixtures alone are insufficient.
+- AC-7: If behavior does not improve or a protection regresses, retain/restore the corresponding baseline and record the disposition. No universal saving percentage or proof from the old small pilot.
+
+## Sequence, constraints and rollback
+Queue after C1's scoped disposition, including a keep/no-change outcome; a positive C1 result is not a prerequisite for C2. Owner confirmation freezes this draft; it does not authorize amendments to other accepted ADRs or a paid model budget. Implement only one hypothesis at a time; evaluate each independently. Final independent verification may be delegated to Claude, with no advance PASS receipts. Complete the legal review -> test -> handoff -> ship sequence. No lifecycle consolidation, new cache/router, provider-specific governance exemption or unrelated refactor. Revert only the tested candidate's own hunks after checking current state.
+
+## Risks
+Contextual intent resolution can overreach into a new scope or reserved decision. Paired ambiguous/destructive/owner-decision cases must reject that behavior; clear ordinary context never supplies missing approval.
+
+## Domain Decisions
+- [CONSTRAINT] Context can resolve ordinary task references; it cannot supply a reserved owner decision.
+- [DECISION] Start with clear-context follow-up behavior, then assess remaining hypotheses independently.
+- [TRADEOFF] Keeping an unproven rule is preferable to claiming a model-specific improvement without comparative evidence.
