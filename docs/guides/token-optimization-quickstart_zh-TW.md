@@ -101,13 +101,15 @@ Agentic OS 已經在 `.agent/config.yaml` 中設定了自動限制：
 
 ---
 
-## 4. 善用 Provider 快取（雙模策略）
+## 4. 沿用上下文，避免重複讀取
 
-現代 LLM 供應商（Anthropic Claude、Google Gemini、OpenAI）會自動快取穩定的 Prompt 前綴，提供高達 90% 的折扣。你不需要做任何設定——但你可以最大化效益：
+供應商快取取決於模型與執行環境；多讀一次檔案並不保證命中快取。
 
-- **全新 Session**：對於獨立的 `tiny-fix` 任務，Agent 會跳過讀取 Guardrails。這能直接省下約 3,500 Base Tokens，因為沒有舊快取可以利用。
-- **進行中的 Session（混合任務）**：如果目前的 Session 在前面的回合已經讀取過 Guardrails，後續回合**不要跳過它**。保持前綴一致能觸發大幅度的快取折扣，這比跳過它而導致 Cache Miss 還要便宜得多。
-- **不要在對話中重複貼上治理文件。** 它們已經在 Context 中了。
+- **全新上下文**：依任務分類的讀取要求與既有豁免執行。
+- **進行中的上下文**：沿用已載入且適用的指令；不要只為快取折扣重新讀取 Guardrails。
+- **恢復上下文**：必要資訊不可用或可能過時時，遵循既有恢復與 Read-Once 規則。各階段必要讀取、安全規則、驗證與交接要求維持不變。
+
+正式讀取規範見 [Context Budget](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md)。快取節省須有實測依據。
 
 ---
 

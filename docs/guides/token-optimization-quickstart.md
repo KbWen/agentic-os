@@ -101,13 +101,15 @@ Or manually move old entries from `current_state.md` into `.agentcortex/context/
 
 ---
 
-## 4. Leverage Provider Context Caching (Dual-Mode Strategy)
+## 4. Reuse Context without Duplicate Reads
 
-Modern LLM providers (Anthropic Claude, Google Gemini, OpenAI) automatically cache stable prompt prefixes, offering massive discounts (up to 90% off). You don't need to configure this, but you can maximize its benefit:
+Provider caching depends on your model and host; an extra file read does not guarantee a cache hit.
 
-- **Fresh Sessions**: For standalone `tiny-fix` tasks, the agent skips reading guardrails. This saves ~3,500 base tokens outright since there's no prior cache to leverage.
-- **Active Sessions (Mixed-Task)**: If your session already loaded guardrails earlier, **do not skip them** in subsequent turns. Keeping the prompt prefix identical triggers a massive cache discount, which is cheaper than breaking the cache by skipping them.
-- **Don't re-paste governance docs** mid-conversation. They're already in context.
+- **Fresh context**: Follow the task classification's reading requirements and existing exemptions.
+- **Ongoing context**: Reuse applicable instructions already loaded. Do not reread Guardrails solely to obtain a cache discount.
+- **Recovery**: Follow existing recovery and Read-Once rules when context is unavailable or may be stale. Required phase-entry reads, safety rules, verification, and handoff remain unchanged.
+
+See [Context Budget](https://github.com/KbWen/agentic-os/blob/main/.agentcortex/docs/guides/context-budget.md) for the canonical reading guidance. Report cache savings only when measured.
 
 ---
 

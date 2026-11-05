@@ -18,7 +18,7 @@ Define the **maximum read scope** per task classification to prevent agents from
 | SKIP | `current_state.md`, `engineering_guardrails.md`, Work Logs, Specs, ADRs, all guides | — |
 
 > **Why skip guardrails?** AGENTS.md §Core Directives already provides: scope discipline ("UNAUTHORIZED REFACTORING STRICTLY PROHIBITED"), evidence requirement, and tiny-fix fast-path rules (< 3 files, no semantic change). Reading the full 14KB guardrails file for a typo fix wastes ~3,500 tokens. If the task turns out to be larger than tiny-fix, the agent must escalate and load guardrails at that point.
-> **Prompt Caching Note**: If this is a mixed-task session and guardrails were already read in a previous turn, **MUST NOT skip**. Continuing to read guardrails preserves the prefix cache and is cheaper than causing a cache miss.
+> **Context Reuse Note**: Reuse applicable guardrails already loaded in this context. Do not read them again solely for caching. Existing Read-Once exceptions and phase-entry reading contracts still apply.
 
 **Max file reads: 1-2** (governance + target files)
 
@@ -34,7 +34,7 @@ Define the **maximum read scope** per task classification to prevent agents from
 | SKIP | `engineering_guardrails.md`, ADRs, all guides, archived logs, unrelated specs | — |
 
 > **Why skip guardrails?** Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §7 quick-win classification. The full 14KB guardrails file adds ~3,500 tokens with no additional value for contained, single-module changes.
-> **Prompt Caching Note**: If this is a mixed-task session and guardrails were already read in a previous turn, **MUST NOT skip**. Continuing to read guardrails preserves the prefix cache and is cheaper than causing a cache miss.
+> **Context Reuse Note**: Reuse applicable guardrails already loaded in this context. Do not read them again solely for caching. Existing Read-Once exceptions and phase-entry reading contracts still apply.
 
 **Max file reads: 3-5**
 
@@ -117,9 +117,11 @@ This guide operationalizes `token-governance.md` §1 (Task-Level Token Budget) b
 | Reading all specs from Spec Index | Read ONLY specs tagged as relevant to current task |
 | Reading platform guides for non-platform tasks | Skip unless the task targets that platform |
 
-## Prompt Caching Awareness (Dual-Mode Strategy)
+## Prompt Caching Awareness (Context Reuse)
 
-Agentic OS optimizes for LLM prompt caching (Anthropic, Google Gemini, OpenAI). These systems provide massive token discounts (up to 90%) for **exactly matching prompt prefixes**.
+Provider caching depends on the model, runtime, and eligible prompt boundaries. Retaining existing conversation context is distinct from appending another file read; a duplicate read does not guarantee a cache hit.
 
-- **Fresh Session (No Cache)**: `tiny-fix` and `quick-win` skip guardrails. This saves ~3,500 base tokens because there is no prior cache to hit.
-- **Active Session (Mixed-Task)**: If a session previously read guardrails (e.g., started as `feature` then did a `tiny-fix`), the agent **SHOULD NOT skip** the guardrails. Re-reading them preserves the prompt prefix, triggering a cache hit. Breaking the prefix causes a cache miss, which costs more than the tokens saved by skipping.
+- **Fresh context**: Follow classification-based reading requirements, including existing tiny-fix and quick-win exemptions.
+- **Ongoing context**: Reuse applicable loaded instructions under Read-Once. Do not reread guardrails solely for caching.
+- **Required recovery**: Follow existing recovery and Read-Once rules when context is unavailable or may be stale. Classification escalation and phase-entry contracts, including fresh shared-contracts reads, remain in force.
+- **Measurement**: Use actual provider usage when exposed; otherwise cache hits and savings remain unknown. Caching adds no gate and changes no safety, phase, evidence, or handoff requirement.
