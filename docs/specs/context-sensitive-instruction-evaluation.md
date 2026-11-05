@@ -34,6 +34,12 @@ Each candidate has its own diff/checkpoint and before/after comparison. Do not c
 ## Sequence, constraints and rollback
 Queue after C1's scoped disposition, including a keep/no-change outcome; a positive C1 result is not a prerequisite for C2. Owner confirmation freezes this draft; it does not authorize amendments to other accepted ADRs or a paid model budget. Implement only one hypothesis at a time; evaluate each independently. Final independent verification may be delegated to Claude, with no advance PASS receipts. Complete the legal review -> test -> handoff -> ship sequence. No lifecycle consolidation, new cache/router, provider-specific governance exemption or unrelated refactor. Revert only the tested candidate's own hunks after checking current state.
 
+## Predeclared evaluation contract
+- Before each hypothesis, freeze matched cases, expected actions and the relevant metric. M4 measures correct continue/clarify/refuse decisions and unnecessary questions; M7 measures needed/irrelevant skill loads; M9 measures necessary/missing/duplicate document lookups; M3 measures actual authorized changed paths and rejection of unrelated refactors; M5 measures retrieval success and unnecessary retrieval work.
+- Pair ordinary positive cases with missing/ambiguous context, destructive action, reserved owner decisions and out-of-scope decoys as relevant. Ground truth and arm labels stay hidden from an independent scorer; an exact slogan echo is never sufficient proof of safe behavior.
+- Adopt a candidate only if it improves its predeclared failure/work metric on at least one case without a regression in any declared protection case. Zero baseline failures or no observed improvement means no demonstrated benefit; retain the corresponding baseline. Report correct-action, unauthorized-action and omitted-phase/evidence counts separately.
+- Reversible candidates can be built before comparison, one checkpoint each. Current external/live comparison authorization is zero runs; later Claude work needs an explicit finite call/cost allowance for each hypothesis. Budget exhaustion leaves that hypothesis unproven and does not authorize more runs or lower protections.
+
 ## Risks
 Contextual intent resolution can overreach into a new scope or reserved decision. Paired ambiguous/destructive/owner-decision cases must reject that behavior; clear ordinary context never supplies missing approval.
 

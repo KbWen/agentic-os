@@ -35,6 +35,13 @@ The heading layout below is a testable hypothesis, not a finding that the curren
 ## Verification and sequencing
 First preserve A's checkpoint, then freeze this spec with owner confirmation. Plan and implement one bounded candidate, run local structural/regression checks, then obtain independent review and behavior evidence. Claude may perform the deferred model runs; their commands, results and cost limits must be explicit. No paid run is implied by spec approval. Complete review -> test -> handoff -> ship in the legal order.
 
+## Predeclared evaluation contract
+- Comparison unit: the same complete downstream task and final acceptance checkpoint, with matched fixture, model/version, effort, tools, permissions and context/cache setup; declare cases before seeing outputs.
+- Read-volume metric: governance-source characters actually returned to the agent in tool transcripts across the complete task, including duplicate reads. Record retrieval calls and exposed token/cost fields separately; file size is not runtime read volume and characters are not billed tokens.
+- Adoption requires all predeclared behavior/phase/recovery checks to remain correct, lower aggregate source-read characters and at least one strict reduction in a nonmatching-branch case. If extra retrieval calls erase the demonstrated benefit or costs are unavailable, report that limitation and do not claim an economic saving.
+- A safety, applicability, recovery or required-evidence regression rejects the candidate. No demonstrated reduction retains the baseline. Report results as scoped observations, not universal model reliability.
+- Reversible candidate construction may precede comparison evidence; adoption/ship may not. Current external/live comparison authorization is zero runs; a later Claude run needs its own explicit finite call/cost allowance, stopping when exhausted with an unproven result.
+
 ## Non-goals
 SSoT restructuring; removing phases; shortening mandatory shared-contract reads; modifying skill-count guidance (#226); general numeric cleanup (#228); weakening safety or replacing product state with provider memory.
 
