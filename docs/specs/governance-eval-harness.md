@@ -25,6 +25,17 @@ Turn the [enforcement][HIGH] Global Lesson ("a MUST without a hook/validator/tes
 - AC-8: `docs/guides/delete-bias-workflow.md` runbook: when to run, transcript-mode vs live-mode, how to read coverage, the delete-bias procedure step-by-step, and the honest boundary (measured-when-run, not always-on enforcement; substring scoring is paraphrase-brittle by design and tuned with expect/forbid pairs).
 - AC-9: `tests/guard/test_governance_eval.py`: scoring matrix (pass/fail per expectation type), skipped/error statuses, JSON determinism (two runs byte-identical), coverage zero-detection, malformed-YAML behavior (clear error, non-zero exit), subset-parser compatibility (monkeypatch PyYAML away), and seed-case schema validation (every case id unique + `protects` resolves against the live rule inventory).
 
+## DELETE-bias comparison completeness follow-up (2026-11-06)
+
+The non-interactive diff now emits an `INCOMPLETE` error with non-zero exit and no verdict
+unless both inputs are JSON objects with non-empty `cases` lists, unique non-empty string
+ids, `pass`/`fail` statuses only, and identical case-id cohorts. This does not change AC-2:
+the runner may still report missing transcripts as `skipped` with exit 0; such output is
+not complete input for a delete-bias verdict. Existing `fail` cases remain valid lexical
+diagnostic signals, not semantic proof. Matching ids alone do not establish that prompts,
+coverage, or contexts are equivalent, and baseline failures must be reviewed before using
+any status flips as deletion evidence. No automatic deletion is authorized or implemented.
+
 ## Non-goals
 
 - No always-on CI job: the optional manual-dispatch CI hook from issue #151 is deferred until a concrete trigger exists (DELETE-bias; validate's coverage WARN is the standing consumer). Recorded as follow-up, not shipped here.

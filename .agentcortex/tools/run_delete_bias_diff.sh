@@ -107,24 +107,46 @@ import json, sys
 baseline_text = sys.argv[1]
 mutated_text  = sys.argv[2]
 
-try:
-    baseline = json.loads(baseline_text)
-    mutated  = json.loads(mutated_text)
-except json.JSONDecodeError as exc:
-    print(f"error: could not parse JSON: {exc}", file=sys.stderr)
-    sys.exit(1)
+def incomplete(message):
+    print(f"error: INCOMPLETE comparison: {message}", file=sys.stderr)
+    sys.exit(2)
 
-def by_id(data):
-    return {c["id"]: c["status"] for c in data.get("cases", [])}
+def parse_complete_result(text, label):
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        incomplete(f"{label} JSON is malformed at line {exc.lineno}, column {exc.colno}")
+    if not isinstance(data, dict):
+        incomplete(f"{label} result must be a JSON object")
+    cases = data.get("cases")
+    if not isinstance(cases, list) or not cases:
+        incomplete(f"{label} result must contain a non-empty cases list")
 
-base_map = by_id(baseline)
-mut_map  = by_id(mutated)
+    by_id = {}
+    for index, case in enumerate(cases):
+        if not isinstance(case, dict):
+            incomplete(f"{label} case at index {index} must be an object")
+        case_id = case.get("id")
+        if not isinstance(case_id, str) or not case_id.strip():
+            incomplete(f"{label} case at index {index} must have a non-empty string id")
+        if case_id in by_id:
+            incomplete(f"{label} result contains duplicate case ids")
+        status = case.get("status")
+        if status not in ("pass", "fail"):
+            incomplete(f"{label} result contains a status outside pass/fail")
+        by_id[case_id] = status
+    return by_id
 
-all_ids = sorted(set(base_map) | set(mut_map))
+base_map = parse_complete_result(baseline_text, "baseline")
+mut_map = parse_complete_result(mutated_text, "mutated")
+if set(base_map) != set(mut_map):
+    incomplete("baseline and mutated case cohorts differ")
+
+all_ids = sorted(base_map)
 flipped = []
 for cid in all_ids:
-    b = base_map.get(cid, "missing")
-    m = mut_map.get(cid,  "missing")
+    b = base_map[cid]
+    m = mut_map[cid]
     if b != m:
         flipped.append((cid, b, m))
 

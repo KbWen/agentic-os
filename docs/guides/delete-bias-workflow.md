@@ -100,6 +100,14 @@ and WARN when zero-coverage rules exist.
 | **Zero flips** | Rule is vacuous for the current case set. Candidate for deletion — but first check if there is a coverage gap (add cases). |
 | **Any flips** | Rule is load-bearing. At least one case changes from pass to fail (or vice versa) when the rule is removed. Do not delete without replacing. |
 
+The non-interactive comparer emits an `INCOMPLETE` error and exits non-zero without a
+verdict if either result is malformed, empty, has duplicate/invalid case rows, includes
+anything other than `pass`/`fail`, or has a different case-id cohort. The eval runner's
+missing-transcript `skipped` status remains valid runner output, but it cannot support a
+DELETE-bias comparison. Same ids do not prove equivalent prompts, contexts, or coverage;
+review baseline failures and the actual fixtures before interpreting flips. These are
+lexical diagnostic signals, not proof that a rule is safe to delete.
+
 ## Honest boundaries
 
 This measurement is **point-in-time**, not always-on enforcement:
