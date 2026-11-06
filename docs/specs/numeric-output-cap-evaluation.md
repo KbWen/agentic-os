@@ -1,5 +1,6 @@
 ---
-status: draft
+status: frozen
+frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
 primary_domain: governance
@@ -12,6 +13,8 @@ backlog: 225
 
 ## Goal and relationship
 Evaluate whether numeric response/finding caps suppress necessary product evidence or actionable findings. INDEPENDENT evaluation following shipped #224; preserve concise communication, scope discipline and ADR-011's accepted dispositions. A cap is not removed merely because a model is newer.
+
+Product-level judgment concerns defects prevented and later rework, with prior product behavior/decisions preserved and total review/repair usage counted. Finding counts and output length are diagnostic measures; neither alone proves safer or cheaper product delivery. Longitudinal outcomes remain unknown until observed.
 
 ## Scope and targets
 - Inventory the existing chat/template caps cited by #225 and the Lite-mode token/finding caps in `.agents/skills/red-team-adversarial/SKILL.md`.

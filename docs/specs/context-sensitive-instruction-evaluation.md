@@ -1,5 +1,6 @@
 ---
-status: draft
+status: frozen
+frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
 primary_domain: governance
@@ -12,6 +13,8 @@ backlog: 226
 
 ## Goal and relationship
 Evaluate #226's five model-overapplication hypotheses after shipped #224. Preserve equivalent governance obligations across models, autonomous progress inside agreed scope, and explicit owner control of reserved decisions. INDEPENDENT evaluation; no accepted ADR, frozen criterion or safety boundary is implicitly relaxed.
+
+Judge autonomy by avoidable owner interventions and context-recovery work per comparable accepted product change, while preserving prior behavior/decisions and counting all executor/retry/review usage. Fewer questions cannot be achieved by skipping necessary owner decisions; fewer rewritten rules or passing fixtures alone are not product success.
 
 ## Scope and candidate order
 1. M4: `.agent/rules/engineering_guardrails.md` section 9.2. An unambiguous contextual follow-up such as "fix it" after one identified failing test can continue within authorized scope; absent, conflicting, or high-impact unresolved context still requires clarification.

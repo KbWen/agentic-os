@@ -1,5 +1,6 @@
 ---
-status: draft
+status: frozen
+frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
 primary_domain: governance
@@ -12,6 +13,8 @@ backlog: 231
 
 ## Goal
 Make existing conditional bootstrap instructions easier to retrieve without loading irrelevant branches. Preserve long-term product continuity and every current obligation; reduce actual unnecessary reads rather than chasing file size.
+
+Product-level judgment uses observed product behavior and prior-decision continuity, all-executor usage per comparable accepted deliverable, and avoidable owner intervention. Section-read counts below diagnose a mechanism; they do not establish lifecycle benefit. State any unobserved follow-up outcome as unknown.
 
 ## Relationship
 INDEPENDENT follow-up to ADR-001 Decision 3 (amended by A at 8e259c7). This refines delivery of existing bootstrap rules and does not replace the lifecycle, safety floor, skill policy or accepted ADRs. The original backlog #231 remains authoritative for disposition.
