@@ -258,14 +258,11 @@ The following inputs MUST NOT trigger any state transition or execution:
 
 Correct behavior: Confirm receipt, optionally ask what the next step should be.
 
-### 9.2 Vague Inputs (Must Clarify)
+### 9.2 Contextual Follow-ups and Unresolved Intent
 
-Inputs without a clear action verb or direction MUST prompt a clarification question:
+Resolve short follow-ups against the active authorized task. Continue only when action and target are unambiguous; absent, conflicting or unresolved context MUST prompt a targeted clarification.
 
-- EN: "fix it", "tweak something", "make it better", "adjust this"
-- ZH: "弄一下", "調整一下", "改改看", "處理一下"
-
-NEVER guess intent. NEVER proceed on vague input.
+Context NEVER authorizes new scope, destructive actions or reserved ADR/spec decisions; apply their existing approval gates.
 
 ### 9.3 Search Policy (Lexical-first)
 

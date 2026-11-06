@@ -1,0 +1,47 @@
+"""Local fixture/scorer controls, not evidence of live-model or product benefit."""
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location(
+    "context_eval_runner", ROOT / ".agentcortex/tools/run_governance_eval.py"
+)
+runner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(runner)
+
+
+def _cases():
+    for path in sorted((ROOT / ".agentcortex/eval").glob("context-m*.json")):
+        yield from json.loads(path.read_text(encoding="utf-8"))["cases"]
+
+
+@pytest.mark.parametrize("case", list(_cases()), ids=lambda case: case["id"])
+def test_reference_passes_and_wrong_action_fails(case):
+    assert runner._score_case(case, case["_oracle"]["reference"])[0] == "pass"
+    assert runner._score_case(case, case["_oracle"]["counterexample"])[0] == "fail"
+
+
+def test_m4_controls_have_distinct_authority_ground_truth():
+    cases = json.loads((ROOT / ".agentcortex/eval/context-m4.json").read_text())["cases"]
+    assert {c["_oracle"]["action"] for c in cases} == {
+        "continue", "clarify", "approval", "reserved_decision"
+    }
+    assert sum(c["_oracle"]["action"] == "clarify" for c in cases) == 2
+    for case in cases:
+        assert "_oracle" not in case["prompt"]
+        if case["_oracle"]["action"] != "continue":
+            assert case["_oracle"]["allowed_paths"] == []
+
+
+def test_m4_rule_preserves_reference_and_authority_boundaries():
+    text = (ROOT / ".agent/rules/engineering_guardrails.md").read_text(encoding="utf-8")
+    section = text.split("### 9.2 ", 1)[1].split("### 9.3 ", 1)[0]
+    assert "active authorized task" in section
+    assert "unambiguous" in section and "clarification" in section
+    assert all(term in section for term in ("destructive", "new scope", "ADR/spec", "approval"))
+    assert "NEVER proceed on vague input" not in section
