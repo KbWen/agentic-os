@@ -1178,6 +1178,30 @@ def test_handoff_implement_reverse_edge_not_illegal_ps1() -> None:
         )
 
 
+@requires_powershell
+@requires_windows
+@pytest.mark.slow
+def test_handoff_ship_skip_review_still_illegal_ps1() -> None:
+    """Negative control: the PS1 reverse edge must preserve the M10 stale-review guard."""
+    with tempfile.TemporaryDirectory() as td:
+        target = _deploy_for_validator_fixture(Path(td))
+        _write_worklog(
+            target,
+            "feature-reverse-edge-bad.md",
+            classification="feature",
+            phase="ship",
+            gates=(
+                "bootstrap", "plan", "implement", "review", "test", "handoff",
+                "implement", "ship",
+            ),
+            resume="- State: fixture\n\n### Read Map (for next agent)\n- x\n\n### Skip List\n- x\n\n### Context Snapshot (<= 200 tokens)\nx",
+        )
+        out = _run_validate_ps1(target)
+        assert ILLEGAL_PROGRESSION_MARK in out, (
+            f"[ps1] implement->ship after reverse edge must stay illegal (stale review):\n{out[-800:]}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # NOT-READY re-review remediation hint: a feature log that goes
 # bootstrap/plan/implement PASS -> review NOT READY -> review PASS with NO

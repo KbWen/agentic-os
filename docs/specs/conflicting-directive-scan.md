@@ -2,7 +2,7 @@
 status: shipped
 title: Conflicting-Directive Scan + Resolution
 date: 2026-07-26
-revised: 2026-07-26
+revised: 2026-11-06
 classification: feature
 source: backlog #145
 primary_domain: governance
@@ -126,6 +126,18 @@ retained only as evidence for AC-9's fenced-block requirement.
   implement begins.
 - **AC-13** `handoff.md §6` instructs a `## Phase Summary` in the overflow file, and
   `test_171_ship_history_no_phase_summary_warn` passes with a real compaction on disk.
+
+## AC-7 verification follow-up (2026-11-06)
+
+Added `test_handoff_ship_skip_review_still_illegal_ps1` beside the legal PowerShell
+reverse-edge control. It seeds a deployed temporary fixture with
+`bootstrap → plan → implement → review → test → handoff → implement → ship` and asserts
+that the real `validate.ps1` output retains `illegal gate progression`, matching the
+existing Bash negative control. The 2026-11-06 native host run passed all three targeted
+PS/Bash integration checks
+(the new PS1 negative case, the existing PS1 legal reverse-edge control, and the Bash
+negative control). This verification adds no runtime behavior and changes neither an
+AC nor AC-7's disposition.
 
 ## Domain Decisions
 
