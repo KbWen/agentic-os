@@ -37,12 +37,12 @@ architecture-change   │ Full Red Team    │ Adversarial Cases + Beast Mode
 
 ### Lite Red Team (hotfix)
 
-Minimal overhead (≤300 tokens output). Focus exclusively on the fix point:
+Keep the report concise. Focus exclusively on the fix point:
 
 1. **Fix-Point Attack Vector**: Does the fix itself introduce a new attack surface? (e.g., a validation fix that changes error behavior, a permission fix that alters fallback logic)
 2. **Regression Attack**: Could an attacker exploit the old behavior to bypass the fix? (e.g., race condition in the fix window)
 
-Output: 1-2 findings max, using the Red Team Report format below.
+Report every distinct actionable fix-point finding; group repeated instances of one root cause. Use the Red Team Report format below.
 
 ### Full Red Team (feature / architecture-change)
 
