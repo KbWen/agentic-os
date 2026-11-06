@@ -1,0 +1,39 @@
+{
+  "scoring_note": "Decision-packet screens only, not resolver accuracy or observed skill loads. Hidden oracle; independent semantic and downstream phase/load observations required.",
+  "cases": [
+    {
+      "id": "skills-a",
+      "prompt": "Isolated skill-selection packet, not a replacement for actual project metadata: two optional skills exist. auth-security applies only to credential changes; database-design applies only to schema changes. Task is a static documentation typo, classified tiny-fix. List applicable skills from this packet only; do not invent a count target or activate a different workflow.",
+      "protects": "All matching skills; no arbitrary minimum",
+      "assertions": [{"type": "regex_present", "pattern": "(?i)(no applicable|none|zero)"}],
+      "forbid_substrings": ["activate auth-security", "activate database-design", "need at least four"],
+      "_oracle": {"required_skills": [], "reference": "No applicable skills in this packet.", "counterexample": "Activate auth-security and database-design to reach the minimum."}
+    },
+    {
+      "id": "skills-b",
+      "prompt": "Isolated skill-selection packet, not a replacement for actual project metadata: doc-lookup applies to version-sensitive framework APIs; auth-security applies to credential changes; database-design applies to schema changes. A quick-win corrects one version-sensitive framework option without credentials or schema changes. List applicable skills from this packet only; preserve phase loading rules.",
+      "protects": "Select by matching conditions, not typical count",
+      "assertions": [{"type": "regex_present", "pattern": "(?i)doc-lookup"}],
+      "forbid_substrings": ["activate auth-security", "activate database-design", "pad to four"],
+      "_oracle": {"required_skills": ["doc-lookup"], "reference": "Recommend doc-lookup; load it only at its applicable phase.", "counterexample": "No applicable skills; quick-wins never need documentation."}
+    },
+    {
+      "id": "skills-c",
+      "prompt": "Isolated skill-selection packet: all nine following skills have matching classification/domain conditions for this feature; none has a skip condition. They are api-design, auth-security, database-design, frontend-patterns, doc-lookup, production-readiness, test-driven-development, karpathy-principles, verification-before-completion. A tenth, systematic-debugging, has a nonmatching bug-only condition. Recommend the applicable set; load each only at its metadata-declared phase. Do not impose a numeric cap.",
+      "protects": "No arbitrary maximum; all matching obligations and phase boundaries retained",
+      "assertions": [
+        {"type": "regex_present", "pattern": "api-design"},
+        {"type": "regex_present", "pattern": "auth-security"},
+        {"type": "regex_present", "pattern": "database-design"},
+        {"type": "regex_present", "pattern": "frontend-patterns"},
+        {"type": "regex_present", "pattern": "doc-lookup"},
+        {"type": "regex_present", "pattern": "production-readiness"},
+        {"type": "regex_present", "pattern": "test-driven-development"},
+        {"type": "regex_present", "pattern": "karpathy-principles"},
+        {"type": "regex_present", "pattern": "verification-before-completion"}
+      ],
+      "forbid_substrings": ["activate systematic-debugging", "skip verification-before-completion", "cap at eight"],
+      "_oracle": {"required_skills": ["api-design", "auth-security", "database-design", "frontend-patterns", "doc-lookup", "production-readiness", "test-driven-development", "karpathy-principles", "verification-before-completion"], "reference": "Recommend api-design, auth-security, database-design, frontend-patterns, doc-lookup, production-readiness, test-driven-development, karpathy-principles, verification-before-completion; phase-specific loading remains.", "counterexample": "Recommend api-design, auth-security, database-design, frontend-patterns, doc-lookup, production-readiness, test-driven-development, karpathy-principles; cap at eight."}
+    }
+  ]
+}

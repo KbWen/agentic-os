@@ -378,7 +378,7 @@ Write the result to Work Log `## Recommended Skills` (provenance tags as per §3
    | `subagent-driven-development` | implement | 4+ files or cross-module scope | feature, architecture-change |
    | `using-git-worktrees` | bootstrap, implement | Parallel branch isolation needed | feature, architecture-change |
 
-   **Rule**: Do NOT limit to "0-2 skills". Recommend ALL skills whose conditions are met. A typical `feature` task should activate 4-8 skills.
+   **Rule**: Recommend ALL skills whose conditions are met.
    **Conflict Pass**: After choosing `Recommended Skills`, read `.agent/rules/skill_conflict_matrix.md` ONCE. If any recommended pair is marked `partial-conflict` or `conflict`, write the chosen precedence or scoping strategy to `## Conflict Resolution` in the Work Log. Later phases reuse that note instead of re-reading the matrix.
 
 ### 3.6a. User Skill Preference Merge (Capability-by-Presence)
