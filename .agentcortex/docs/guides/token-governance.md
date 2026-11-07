@@ -114,12 +114,7 @@ Use these defaults to keep handoff/state docs short across repositories:
 - `WORKLOG_KEEP_RECENT_ENTRIES=5`
 - `WORKLOG_ARCHIVE_DIR=.agentcortex/context/archive/work`
 
-Compaction procedure:
-
-1. Keep only: `## Session Info`, latest `## Resume`, latest `## Known Risk`, latest 5 delta entries.
-2. Move older entries to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md` (append, never overwrite; create it if absent).
-3. Add a pointer line in the active log: `Compacted: <date>, archive: <path>`.
-4. Never compact away the evidence required by `/ship` gate.
+Compaction procedure: follow `.agent/workflows/handoff.md` §6 (canonical; thresholds in `.agent/config.yaml` §worklog). Protected sections stay active verbatim: `## Gate Evidence`, `## Evidence`, `## Skill Notes`, `## Conflict Resolution`, `## Session Info`, latest `## Resume`; also keep latest `## Known Risk` and the latest N deltas. Older entries move append-only to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md`, with a `Compacted: <date>, archive: <path>` pointer line.
 
 ## 8. Output Brevity (AI Response Token Discipline)
 

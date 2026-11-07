@@ -41,10 +41,10 @@ description: Design schemas and migrations when persistent data structures chang
 
 ### Migration Rules
 - **One migration per logical change** (don't mix table creation with data backfill)
-- **Migrations MUST be reversible**: every `up` must have a corresponding `down`
+- **Reversible by default**: every `up` has a `down`, unless the project ADR picks forward-only (`engineering_guardrails.md` §12.3)
 - **Never modify a shipped migration**: create a new migration instead
 - **Data migrations separate from schema migrations**: schema first, data second
-- **Test rollback**: after writing migration, verify `down` works cleanly
+- **Test rollback** (reversible strategy): verify `down` works cleanly
 
 ### Query Patterns
 - Use parameterized queries / ORM bindings — NEVER string concatenation for SQL
@@ -71,7 +71,7 @@ During /implement:
 - [ ] Migration file created (not manual SQL against DB)
 - [ ] Foreign keys have indexes
 - [ ] NOT NULL and DEFAULT constraints set appropriately
-- [ ] Migration tested: up → verify → down → verify → up
+- [ ] Migration tested: up → verify → down → verify → up (if reversible)
 - [ ] No raw SQL string concatenation (use parameterized queries)
 
 During /review:
@@ -95,7 +95,7 @@ Load `Conventions`, `Anti-Patterns`, and `References` on full read or cache miss
 - **God table**: One table with 30+ columns. Normalize or split by domain.
 - **Missing indexes on FK**: Every foreign key needs an index. Databases don't add them automatically (except some).
 - **String-typed everything**: Using VARCHAR for dates, numbers, booleans. Use proper types.
-- **No migration rollback**: Writing `up` without `down`. You will need to rollback someday.
+- **No migration rollback**: `up` without `down` under a reversible strategy.
 - **Mixing DDL and DML**: Schema changes and data backfill in the same migration. Split them.
 - **SELECT * in production code**: Fetching all columns when you need two. Wastes memory and bandwidth.
 - **Trusting application-only validation**: No DB constraints means bad data WILL get in eventually.

@@ -40,9 +40,7 @@ When generating test skeletons for `feature` or `architecture-change` tasks:
 Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/test` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's test-phase rules:
 
 **IF `test-driven-development` is active:**
-- Verify every piece of production code written during /implement has a corresponding test
-- If gaps found: write the missing tests NOW before proceeding
-- All tests MUST pass after completion — no "known failures" allowed
+- Verify every production piece written during `/implement` has a corresponding test; write missing tests NOW before proceeding. All tests MUST pass after completion — no known failures allowed.
 
 **IF `auth-security` is active — add these mandatory test cases:**
 - [ ] Unauthenticated request → 401
@@ -69,11 +67,7 @@ Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry 
 - [ ] Form submission disabled during request (no double-submit)
 
 **IF `systematic-debugging` is active (test failures encountered):**
-- PAUSE test writing. Execute 4-phase debug process:
-  1. Observe: Record exact failure message, input conditions, stack trace
-  2. Hypothesize: Propose 1-3 root causes for the failure
-  3. Verify: Isolate the cause by changing ONE variable at a time
-  4. Fix: Minimal fix + re-run all tests to confirm no regression
+- PAUSE test writing; apply the skill's Four-Phase Process: MFR (Minimal Reproducible Failure: exact failure message, inputs, stack trace) before any fix, falsifiable hypotheses tested ONE variable at a time, minimal fix, then re-run all tests to confirm no regression. Log each failed patch in the Work Log as `Patch Attempt [N]: <result>`; 2-Strike ESC (`engineering_guardrails.md` §8.1): 2 failures → STOP, defer to user.
 - Resume test implementation only after root cause is resolved with evidence.
 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
@@ -160,9 +154,10 @@ After tests are complete and evidence is persisted, append one line to `## Phase
 ## Heading-Scoped Read Note
 
 For token budgeting and future automation, `/test` entry reads only:
+- `Step 0: Phase Verification`
 - `Step 1: Auto-Classify Test Depth`
 - `Step 2: Generate Test Skeleton`
 - `Step 3: Skill-Aware Test Implementation`
 - `Step 4: Adversarial Test Cases`
 
-Read `Step 4b: Verification Before Completion` and `Step 5: Persist Evidence` only when preparing the test completion summary.
+Read `Step 4b: Verification Before Completion`, `Step 5: Persist Evidence` (Hard Gate), `Output Compression Rule` and `Phase Summary Update` only when preparing the test completion summary.

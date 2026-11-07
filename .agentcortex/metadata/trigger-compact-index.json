@@ -166,7 +166,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "762ab7b7"
+      "content_hash": "545ee58b"
     },
     {
       "id": "verification-before-completion",
@@ -286,7 +286,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "89110bff"
+      "content_hash": "29a900be"
     },
     {
       "id": "frontend-patterns",

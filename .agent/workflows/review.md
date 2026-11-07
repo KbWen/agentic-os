@@ -46,13 +46,8 @@ When `/review` dispatches a sub-agent for adversarial review (e.g., `acx-reviewe
 **Cross-vendor caveat**: even fresh same-vendor sub-agents share training-data blind spots (Lesson 4faa557a). For `architecture-change` and trust-boundary work, the review MUST add at least one external signal: WebFetch of authoritative published sources, `/ask-openrouter` to a different vendor, OR human review. Single-vendor adversarial roundtables are theatre for these classifications.
 
 **IF `doc-lookup` is active during review:**
-- For each framework API call in the diff, verify it matches official documentation:
-  - Method signatures, parameter order, return types are correct
-  - No deprecated APIs used without explicit migration plan
-  - Config values are valid per official docs (not invented)
-- If `/implement` left `// TODO: verify against official docs` caveat comments, resolve them NOW via WebFetch
-- Check that `package.json` / `pubspec.yaml` / `requirements.txt` pinned version matches the doc version that was consulted
-- Flag any framework API usage that lacks a `Ref:` trace in the Work Log
+Delegate to [doc-lookup](../../.agents/skills/doc-lookup/SKILL.md): Conventions, Doc URL Registry, Fetch Protocol (including Trust Boundary and Failure Handling), and Checklist. Reuse current guidance; for cold, partial, or stale guidance, load applicable sections via the shared phase-entry metadata/cache protocol.
+- Across the full diff, verify API signatures, parameter order, and return types against official docs. Apply the skill Checklist for config, deprecations/migration, pinned versions, and implement TODOs; an unavailable lookup or training-data fallback remains unverified and does not resolve caveats. Flag missing `Ref:` traces in the Work Log (required by this caller even if the skill permits a code comment).
 
 ## Minimum Checks
 
@@ -295,12 +290,17 @@ Reference: <https://code.claude.com/docs/en/ultrareview>.
 ## Heading-Scoped Read Note
 
 For token budgeting and future automation, `/review` entry reads only:
+- `Phase Verification`
+- `Work Log Compaction Check`
+- `Spec Drift Advisory`
 - `Skill-Aware Review (Pre-Check)`
+- `Adversarial Reviewer Freshness Invariant`
 - `Minimum Checks`
+- `Error Observability Compliance`
 - `Design Compliance Check`
 - `Burden of Proof Protocol`
 - `Security Scan`
 - `Red Team Scan`
 - `Self-Check Protocol`
 
-Read `Output Format`, `Domain Decisions Tag Validation`, and `Phase Summary Update` only when preparing the final review output.
+Read `Output Format`, `Domain Decisions Tag Validation`, `Backlog Finding Registration`, `Phase Summary Update` and (on NOT READY) `Reverse Transition` only when preparing the final review output.

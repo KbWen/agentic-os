@@ -45,7 +45,7 @@ AI MUST perform these steps **before** invoking `claude` (canonical order per `e
 1. **Record `Requested Executor: Claude CLI`** in the Work Log **first**. `/claude-cli` is an explicit user request, so any later fallback MUST be disclosed (step 3), never silent.
 2. **Classify** the task per `engineering_guardrails.md` §10.1, then **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` with classification, goal, target files, constraints, and whether the delegated step is implementation, testing, or both.
 3. **Availability + Auth Check**: run `claude -v` and `claude auth status --text` (cache per session). On failure, fall back to native execution, **disclose** the substitution to the user (final handoff at latest), and record `Actual Executor: native (reason: cli-missing | auth-missing)`. On success, record `Actual Executor: Claude CLI`.
-4. **Baseline Capture** (before invoking `claude`): snapshot the worktree with `git status --porcelain` + `git diff` so post-flight rollback can distinguish Claude's edits from files already **dirty at baseline**. Prefer an isolated git worktree for write-capable runs.
+4. **Baseline Capture** (§8.2): `git status --porcelain` + `git diff` before invoking `claude`; paths already **dirty at baseline** are not Claude's. Prefer an isolated git worktree for write-capable runs.
 5. **Generate the Claude command** by injecting governance context and a constrained target-file list.
    - The AI agent, not the user, composes the final prompt.
    - The final prompt MUST include task scope, target files, constraints, and the expected output shape before it is sent to `claude`.
@@ -145,8 +145,7 @@ AI → User: Claude 補了 parser 的邊界與錯誤路徑測試，我已經檢�
 | --- | --- |
 | Claude CLI not installed | Fall back to native execution; **disclose** the substitution (explicit request) and record `Actual Executor: native` |
 | Claude auth missing | Fall back to native execution; **disclose** the substitution and record `Actual Executor: native` |
-| Claude abnormal exit (timeout / nonzero / kill) | **STOP — do not retry.** Wait for termination, re-derive state vs the pre-flight baseline, record partial state, reconcile before any re-invocation |
-| Claude modified wrong files | Reverse only Claude-attributable hunks; never whole-file-revert a path **dirty at baseline** (surgical revert or escalate); log + warn |
+| Claude abnormal exit / modified wrong files | Follow §3 Post-Flight steps 0–1 (STOP, do not retry, reconcile; surgical hunk revert only, never whole-file-revert a path dirty at baseline) |
 | Claude output unclear | The orchestrating agent reviews the diff manually and applies standard review |
 | Task too complex for delegation | Reject delegation and continue with native execution |
 
