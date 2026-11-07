@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-10-31T17:12:38+08:00
+- **Last Updated**: 2026-11-07T18:00:33+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 220
+- **Update Sequence**: 221
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-workflow-route-fixes-2026-11-07
+- Feature shipped: **workflow route fixes from the W0 dedup inventory.** Copied method text in implement/test/review/ship/bootstrap and the CLI workflows is trimmed where a canonical skill or section holds it, while every caller floor a quick-win run needs stays self-contained (ADR-005 preserves customized skills on upgrade): debugging floors carry `Patch Attempt [N]: <result>` and 2-Strike STOP inline; TDD and doc-lookup point to their skills. Correctness: database-design now allows the §12.3 forward-only strategy; the compaction guide matches the handoff §6 protected set; read notes list mandatory sections; bootstrap phase column gains `plan` for database-design/auth-security. 13 unmerged parent-feature commits and the rejected entry-path candidate are excluded. Net -46 lines of instruction text; a 2026-11-07 plain-entry comparison showed no attributable cost or quality effect (agents read no workflows on plain entry). Owner chose to merge in chat 2026-11-07.
+- Review: independent reviewer NOT READY (shipped-spec trace, undefined MFR/§8.1, unpinned caveat, private IDs in docstrings) → fixed; re-review PASS.
+- Tests: full CI-equivalent 1116 passed, 2 skipped; new guard tests mutation-checked; validate.sh fail=0. SSoT 220->221; Ship History rotated at cap 10.
+
 ### Ship-docs-sim-cost-backlog-compression-2026-10-31
 - Feature shipped: **simulation costs corrected and the backlog compressed (#232, #189).** Costs that summed `total_cost_usd` across resumed-session events are recomputed from the last event per session: #239 pilot 53× -> 25×, `/bootstrap` entry 7× -> 5.5×, Round 3 $9.58 vs $2.08; each report states the correction. `_product-backlog.md` 96,962 -> 43,276 bytes: 74 rows shortened with `[more]` links to the originals, kept verbatim in the archive; the false "~200 tokens" figure removed from 4 sites. Owner chose both in chat 2026-10-31.
 - Review: fresh reviewer compared 74/74 rows: 0 inverted facts, 9 lost conditions plus 1 unsupported claim, all fixed; fixes checked by script, not re-reviewed.
@@ -154,11 +159,6 @@
 ### Ship-fix-standing-instruction-not-approval-2026-10-20
 - Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
 - Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
-
-### Ship-feat-test-evidence-freshness-2026-10-20
-- Feature shipped: **a recorded test run is tied to the code it tested.** New `.agentcortex/tools/record_test_run.py`: `run` executes the suite without a shell and appends `- Test run: … | exit | tree | at` to Test Gate Results, where `tree` is `git write-tree` of a temporary index (the real index is never written) excluding `.agentcortex/context/`; `check` FAILs a current-branch log whose latest run failed before a test/ship PASS receipt, or whose code changed after that run (or was unstable) once a ship receipt exists, and WARNs otherwise. Opt-in by presence of a `Test run:` line. Wired through `run_python_check` in both validators, shipped in both `deploy.sh` whitelist sites; `/test` and `/ship` pre-merge run the suite through it. README and zh-TW say what it does not catch (a hand-typed line, a command that is not the real suite, a tree git cannot read).
-- Review: fresh reviewer NOT READY (racy-git index copy, unreachable ship claim, string timestamps, unstable/no-op gaps, Windows shims, detached HEAD) → fixed; two re-review rounds (Unicode separators, unfingerprintable tree, date-only) → fixed or disclosed.
-- Tests: 27 tool tests (mutants killed: no exclusion, no branch filter, shell launch, ship-fail off, copyfile); full CI suite recorded through the tool; lifecycle 354,901. Local commit only. SSoT 210->211; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 
