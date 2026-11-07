@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-04-23
-amended: 2026-11-06
+amended: 2026-11-07
 deciders: "@kbwen, AI Agent (Claude Opus 4.6)"
 classification: architecture-change
 applies_to:
@@ -144,7 +144,7 @@ and a rejected ADR leaves no ADR Index entry.
 
 ## Decision 3: Context Reuse without Duplicate Reads
 
-Amended 2026-11-06 with owner approval: clarify context reuse under existing Read-Once and phase-entry rules; replace the reread-for-caching premise.
+Amended 2026-11-07 (owner decision in chat, 2026-11-07): clarify context reuse under existing Read-Once and phase-entry rules; replace the reread-for-caching premise.
 
 ### Problem
 
