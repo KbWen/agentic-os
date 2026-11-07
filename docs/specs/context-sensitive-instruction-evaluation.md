@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
@@ -45,6 +45,15 @@ Queue after C1's scoped disposition, including a keep/no-change outcome; a posit
 
 ## Risks
 Contextual intent resolution can overreach into a new scope or reserved decision. Paired ambiguous/destructive/owner-decision cases must reject that behavior; clear ordinary context never supplies missing approval.
+
+
+## Disposition (2026-11-07)
+Haiku, 3 reps per arm, injected section, arm-blind grading. Evidence: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`.
+- M4 §9.2: **retain baseline; candidate reverted**. 12/15 baseline vs 11/15 candidate decisions correct; no improvement. Reopen: an observed task where the agent asked an unnecessary question after an unambiguous, authorized follow-up.
+- M7 skill-count coaching: **retain baseline; candidate reverted**. 6/9 vs 5/9 and more safety flags; no demonstrated benefit. Reopen: observed under- or over-recommendation traced to the count line.
+- M9 doc-lookup: **retain baseline; candidate reverted**. Neither arm invented an unavailable tool (10/15 each), so there was no headroom. Reopen: an observed run that called or claimed a tool the host lacks.
+- M3 slogan eval and M5 lexical-first: baseline kept as assessed on 2026-11-06; screening fixtures and tests stay.
+- The guard tests that pinned candidate wording for M4 and M9 were removed with the candidates; packet tests stay.
 
 ## Domain Decisions
 - [CONSTRAINT] Context can resolve ordinary task references; it cannot supply a reserved owner decision.

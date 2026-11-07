@@ -2,6 +2,8 @@
 
 ## Status and decision boundary
 
+**Outcome (2026-11-07):** matched comparison and owner decisions in `2026-11-07-workflow-candidate-comparison.md` — C1 and A adopted; B, M4, M7, M9 retained at baseline; M3/M5 unchanged.
+
 Local candidate implementation, offline checks, and one capped internal M4 pre-screen only; not an adoption decision or a formal review/test/ship PASS. All comparisons need independent adjudication before adoption. Keep the corresponding baseline if no benefit is demonstrated. No production release, merge or push is authorized by this assessment.
 
 The product objective is durable product correctness across versions, lower total work per accepted deliverable and fewer avoidable owner interventions. Full lifecycle, historical decisions, safety, scope and evidence obligations remain. A cheaper executor or a shorter prompt is not sufficient evidence of success.

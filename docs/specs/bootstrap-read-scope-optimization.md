@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
@@ -50,6 +50,11 @@ SSoT restructuring; removing phases; shortening mandatory shared-contract reads;
 
 ## Risks and rollback
 Heading-only changes may save no runtime tokens or increase tool calls. Compare real traces and revert the candidate if it does not help. A missing conditional branch is a correctness failure. Roll back only the candidate's reviewed hunks and preserve all unrelated and untracked state.
+
+
+## Disposition (2026-11-07)
+- B: **retain baseline; candidate reverted** (AC-7). Explicit `/bootstrap`, Haiku, 12 runs: both arms read all of `bootstrap.md` in one Read call (mean 50,618 vs 50,353 chars, −0.5%), so no avoidable read was shown; obligation misses were no worse than baseline. The structural test that pinned the candidate headings was removed with it. Evidence: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`.
+- Reopen trigger: agents observed reading `bootstrap.md` by section (offset/limit or heading-targeted reads) on a supported host, so scoped headings could cut read volume.
 
 ## Domain Decisions
 - [CONSTRAINT] Complete product-lifecycle obligations and cross-model compliance constrain optimization.

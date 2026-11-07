@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
@@ -44,6 +44,14 @@ Queue after B; only one feature enters implementation at a time. Owner confirmat
 
 ## Risks
 Removing a ceiling can increase report noise or cause scope expansion. The finding rubric, out-of-scope decoys and baseline comparison must distinguish useful completeness from extra prose.
+
+
+## Disposition (2026-11-07)
+- C1 Lite red-team cap: **adopted**. Haiku, 3 reps per arm, injected section, arm-blind grading: true findings 7 → 9, false findings 3 → 1, no safety loss; on the three-defect case the candidate found two in every rep, the baseline one in two of three. Neither arm found the third defect, so the predeclared bar "every fixture defect found" (AC-2) was not met. Owner decision in chat, 2026-11-07: adopt on a strict completeness gain with fewer false findings and no protection loss; this replaces the "every defect" adoption bar for C1 only. The baseline "1-2 findings max" cap cannot report three distinct defects by construction. Plain-entry runs do not read the skill, so the downstream effect is unproven. Evidence: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`.
+- AC-1 cap inventory, untested caps kept unchanged:
+  - `AGENTS.md` "≤8 lines prose": keep (ADR-011 `keep-honest-unenforced`). Reopen: a real task whose required evidence was cut by the cap.
+  - Phase template line/token caps (≤6/10/15/25 lines, ≤600 tokens): keep, untested. Reopen: the same signal for a phase output.
+  - Red-team Lite "≤300 tokens" and "1-2 findings max": replaced by C1 above.
 
 ## Domain Decisions
 - [CONSTRAINT] Report completeness and long-term traceability take precedence over a numeric response ceiling.

@@ -161,40 +161,39 @@ Tool exit codes:
 - **SSoT Heartbeat Record** (AC-26): Read `Update Sequence` from `current_state.md` header. Record `SSoT Sequence: <N>` in the Work Log header. This value is checked again before entering `/ship` or `/handoff`.
 
 <!-- SCOPE: Steps 3-6 are conditional — skip steps whose preconditions are not met -->
-### Step 3: Private context (when present)
-IF `.agentcortex/context/private/` exists, SCAN for local-only instructions. Keep these gitignored files local.
-- **Resumable research notes** (Ref: `research.md §Persist Before Browse`): if the scan finds any `research-*.md` note, surface it as resumable context — name the file and its current source / next action — so a new session continues prior research instead of restarting, without a human having to remember the note exists. Present-only: no note → no extra reads or prompts; multiple matches → list them and ask which to resume.
-### Step 4: Migration (migration tasks only)
-- Follow `.agentcortex/docs/guides/migration.md`. Actively scan and suggest file reorganization.
-- MUST output migration plan and await user `OK` before ANY move/rename.
-### Step 5: Active backlog (when present)
-- Check if `docs/specs/_product-backlog.md` exists.
-- If it exists, read ONLY the Feature Inventory table. Report in bootstrap output:
+3. IF `.agentcortex/context/private/` exists, SCAN for local-only instructions (e.g., private Git workflows, environment-specific configs). These files are gitignored and contain context that should NOT be committed.
+   - **Resumable research notes** (Ref: `research.md §Persist Before Browse`): if the scan finds any `research-*.md` note, surface it as resumable context — name the file and its current source / next action — so a new session continues prior research instead of restarting, without a human having to remember the note exists. Present-only: no note → no extra reads or prompts; multiple matches → list them and ask which to resume.
+4. **Migration/Integration Scenario** *(skip if not a migration task)*:
+   - Follow `.agentcortex/docs/guides/migration.md`. Actively scan and suggest file reorganization.
+   - MUST output migration plan and await user `OK` before ANY move/rename.
+5. **Active Backlog Detection**:
+   - Check if `docs/specs/_product-backlog.md` exists.
+   - If it exists, read ONLY the Feature Inventory table. Report in bootstrap output:
 
-  ```
-  Active Backlog: docs/specs/_product-backlog.md
-  Progress: [N] shipped, [M] pending, [K] deferred
-  ```
+     ```
+     Active Backlog: docs/specs/_product-backlog.md
+     Progress: [N] shipped, [M] pending, [K] deferred
+     ```
 
-- If user intent matches a pending backlog feature, route to `/spec-intake` §8a (continuation) instead of fresh bootstrap.
-- **Status advance**: If bootstrap is starting work on a backlog feature whose row is `Pending`, update that row's status to `In Progress`. This is the only valid `Pending → In Progress` transition; `Pending → Shipped` directly is invalid.
-- **Kind & Priority assignment**: When adding or updating a backlog item from this bootstrap session, set:
-  - `Kind`: use the most specific origin — precedence: `review-finding` (surfaced by `/review` or `/audit`) > `hotfix-spawn` (systemic issue from hotfix) > `quick-win` (small, no spec needed, classification-derived) > `feature` (default). A quick-win that originated from a review finding MUST be marked `review-finding`, not `quick-win` — classification and origin are independent.
-  - `Priority`: ask if not already set — `P0` (blocking), `P1` (high value), `P2` (nice to have), `—` (not yet prioritized, default on silence — do NOT block bootstrap waiting for an answer).
-- **Label cluster check (quick-win only)**: If the task classifies as `quick-win` AND the backlog has a `Labels` column, identify the label(s) for the current task using the **label reuse rule** (read existing label values from the backlog's `Labels` column and pick the closest match — only create a new label when none fit), then count same-label pending items (excluding Shipped/Cancelled). If 3+ items share a label with no existing feature spec covering them, surface:
-  ```
-  📎 Label cluster: [N] '[label]' items in backlog with no parent spec.
-  Consider creating a feature spec to unify them before this quick-win? (yes / no / never ask again for '[label]')
-  ```
-  This is advisory — user may decline and proceed directly. If user replies "never ask again" or equivalent, append `<!-- cluster-declined: <label> <YYYY-MM-DD> count:<N> -->` to the backlog's `## Source Summary` (where `count` is the current same-label item count). Skip this label in future checks UNLESS the count has grown by ≥3 since decline, OR 90 days have passed — whichever comes first.
-- If no backlog exists, skip this step.
-### Step 6: Raw material (when provided)
-- If user provided a spec, document, or raw material BEFORE bootstrap, check whether `/spec-intake` was already run:
-  - Frozen spec exists (`status: frozen`, `source: external`) → **Bootstrap Lite**: skip spec generation, read existing spec directly. Task classification is derived from spec's Feature Inventory tier.
-  - No frozen spec exists → run `/spec-intake` workflow BEFORE continuing bootstrap. Do NOT proceed past Step 6 until spec-intake is complete.
-- **External authority rule**: Treat substantial external architecture or product material as `/spec-intake` input even when the user frames it as "background context". This includes imported design docs, PRDs, acceptance-criteria lists, rollout plans, or any multi-paragraph external material carrying requirements or architectural assumptions. Architecture specs, PRDs, and requests like `"continue from this spec"`, `"請從這份 spec 繼續"`, or `"use this document as the plan"` are all `/spec-intake` inputs, not design authority. Do NOT let conversation-carried external specs override an existing Domain Doc L1.
-- **Orphaned `_raw-intake.md` Recovery**: If `docs/specs/_raw-intake.md` exists (with `status: raw`) but no `_product-backlog.md` and no frozen external spec, a previous spec-intake was interrupted mid-flow. Warn: `"⚠️ Orphaned raw intake detected. Resume spec-intake from existing _raw-intake.md? (yes/no)"`. If yes, run `/spec-intake` starting from Step 2 (skip §1/§1a — raw file already exists).
-- AI MUST autonomously extract requirements, constraints, and ACs. Burden of organization is on the AI, NOT the user. Never ask user to restructure input.
+   - If user intent matches a pending backlog feature, route to `/spec-intake` §8a (continuation) instead of fresh bootstrap.
+   - **Status advance**: If bootstrap is starting work on a backlog feature whose row is `Pending`, update that row's status to `In Progress`. This is the only valid `Pending → In Progress` transition; `Pending → Shipped` directly is invalid.
+   - **Kind & Priority assignment**: When adding or updating a backlog item from this bootstrap session, set:
+     - `Kind`: use the most specific origin — precedence: `review-finding` (surfaced by `/review` or `/audit`) > `hotfix-spawn` (systemic issue from hotfix) > `quick-win` (small, no spec needed, classification-derived) > `feature` (default). A quick-win that originated from a review finding MUST be marked `review-finding`, not `quick-win` — classification and origin are independent.
+     - `Priority`: ask if not already set — `P0` (blocking), `P1` (high value), `P2` (nice to have), `—` (not yet prioritized, default on silence — do NOT block bootstrap waiting for an answer).
+   - **Label cluster check (quick-win only)**: If the task classifies as `quick-win` AND the backlog has a `Labels` column, identify the label(s) for the current task using the **label reuse rule** (read existing label values from the backlog's `Labels` column and pick the closest match — only create a new label when none fit), then count same-label pending items (excluding Shipped/Cancelled). If 3+ items share a label with no existing feature spec covering them, surface:
+     ```
+     📎 Label cluster: [N] '[label]' items in backlog with no parent spec.
+     Consider creating a feature spec to unify them before this quick-win? (yes / no / never ask again for '[label]')
+     ```
+     This is advisory — user may decline and proceed directly. If user replies "never ask again" or equivalent, append `<!-- cluster-declined: <label> <YYYY-MM-DD> count:<N> -->` to the backlog's `## Source Summary` (where `count` is the current same-label item count). Skip this label in future checks UNLESS the count has grown by ≥3 since decline, OR 90 days have passed — whichever comes first.
+   - If no backlog exists, skip this step.
+6. **Large Raw Material Processing** (Chats, Whitepapers, Specs):
+   - If user provided a spec, document, or raw material BEFORE bootstrap, check whether `/spec-intake` was already run:
+     - Frozen spec exists (`status: frozen`, `source: external`) → **Bootstrap Lite**: skip spec generation, read existing spec directly. Task classification is derived from spec's Feature Inventory tier.
+     - No frozen spec exists → run `/spec-intake` workflow BEFORE continuing bootstrap. Do NOT proceed past Step 6 until spec-intake is complete.
+   - **External authority rule**: Treat substantial external architecture or product material as `/spec-intake` input even when the user frames it as "background context". This includes imported design docs, PRDs, acceptance-criteria lists, rollout plans, or any multi-paragraph external material carrying requirements or architectural assumptions. Architecture specs, PRDs, and requests like `"continue from this spec"`, `"請從這份 spec 繼續"`, or `"use this document as the plan"` are all `/spec-intake` inputs, not design authority. Do NOT let conversation-carried external specs override an existing Domain Doc L1.
+   - **Orphaned `_raw-intake.md` Recovery**: If `docs/specs/_raw-intake.md` exists (with `status: raw`) but no `_product-backlog.md` and no frozen external spec, a previous spec-intake was interrupted mid-flow. Warn: `"⚠️ Orphaned raw intake detected. Resume spec-intake from existing _raw-intake.md? (yes/no)"`. If yes, run `/spec-intake` starting from Step 2 (skip §1/§1a — raw file already exists).
+   - AI MUST autonomously extract requirements, constraints, and ACs. Burden of organization is on the AI, NOT the user. Never ask user to restructure input.
 <!-- END conditional steps -->
 7. Classify task per `engineering_guardrails.md`.
 
@@ -378,7 +377,7 @@ Write the result to Work Log `## Recommended Skills` (provenance tags as per §3
    | `subagent-driven-development` | implement | 4+ files or cross-module scope | feature, architecture-change |
    | `using-git-worktrees` | bootstrap, implement | Parallel branch isolation needed | feature, architecture-change |
 
-   **Rule**: Recommend ALL skills whose conditions are met.
+   **Rule**: Do NOT limit to "0-2 skills". Recommend ALL skills whose conditions are met. A typical `feature` task should activate 4-8 skills.
    **Conflict Pass**: After choosing `Recommended Skills`, read `.agent/rules/skill_conflict_matrix.md` ONCE. If any recommended pair is marked `partial-conflict` or `conflict`, write the chosen precedence or scoping strategy to `## Conflict Resolution` in the Work Log. Later phases reuse that note instead of re-reading the matrix.
 
 ### 3.6a. User Skill Preference Merge (Capability-by-Presence)
