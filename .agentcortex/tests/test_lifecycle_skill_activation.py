@@ -32,9 +32,9 @@ MANDATORY_SKILLS = {
 SCOPE_DETECTED_SKILLS = {
     "test-driven-development": {"phases": ["implement", "test"], "classifications": ["feature", "architecture-change"]},
     "api-design": {"phases": ["implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix"]},
-    "database-design": {"phases": ["implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix"]},
+    "database-design": {"phases": ["plan", "implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix"]},
     "frontend-patterns": {"phases": ["implement", "review", "test"], "classifications": ["feature", "architecture-change"]},
-    "auth-security": {"phases": ["implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix", "quick-win", "tiny-fix"]},
+    "auth-security": {"phases": ["plan", "implement", "review", "test"], "classifications": ["feature", "architecture-change", "hotfix", "quick-win", "tiny-fix"]},
 }
 
 PHASE_TRIGGERED_SKILLS = {}

@@ -86,11 +86,11 @@ After evidence is recorded, prompt once per ship (not re-prompted on retry): *"D
 
 **Scope**: This check applies ONLY to `feature` and `architecture-change` classifications. `tiny-fix`, `quick-win`, and `hotfix` are exempt.
 
-Before ship, verify the delivered code meets production observability requirements:
+Before ship, verify the delivered code meets production observability requirements (method: `.agents/skills/production-readiness/SKILL.md`):
 
-1. **Error boundary defined**: all error-handling paths use a production-observable logger (per §5.2a). No debug-only logging as sole error path.
-2. **Log sink documented**: Work Log records where errors are reported (e.g., "Sentry via `Logger.error()`", "stdout → CloudWatch", or "Crashlytics via `FirebaseCrashlytics.recordError()`"). If the project has no production logging infrastructure yet, document that as a Known Risk.
-3. **Rollback telemetry**: rollback plan (per §12.5) includes how operators will know the rollback succeeded (e.g., error rate returns to baseline, health check passes).
+1. **Error boundary defined**: audit every `catch` / error-handling block in changed files — each uses a production-observable logger (per §5.2a), not debug-only (`debugPrint`, `console.log`, `print`) as the sole error path.
+2. **Log sink documented**: Work Log `## Observability` records where errors are reported (e.g., "Sentry via `Logger.error()`", "stdout → CloudWatch", or "Crashlytics via `FirebaseCrashlytics.recordError()`"). If the project has no production logging infrastructure yet, document that as a Known Risk.
+3. **Rollback telemetry**: rollback plan (per §12.5) states how operators detect the rollback is needed AND that it succeeded (alert / dashboard / health check / error rate back to baseline).
 
 This is an advisory check — missing observability readiness produces a warning, not a hard fail. The warning MUST be recorded in the Work Log under `## Known Risk`.
 
@@ -126,11 +126,7 @@ Phase-specific: Evidence = specific commands, outputs, versions; Communication G
    - **Archive/Close**: Requirement canceled or strategy changed
 Entering "Merge now" is PROHIBITED if evidence is insufficient.
 
-**Production observability check (always applies for feature / architecture-change):**
-- Audit every `catch` / error-handling block in changed files: Logger MUST be production-observable (`Logger.error()`, crash reporter, structured stdout) — NOT debug-only (`debugPrint`, `console.log`, `print`).
-- Document the error sink in Work Log `## Observability` (e.g., `Sentry via Logger.error()` / `Crashlytics` / `stdout → CloudWatch`). If no production logging infrastructure exists, log this as Known Risk.
-- Rollback plan MUST answer: how operators detect the rollback is needed AND that it succeeded (alert / dashboard / health check).
-- Full body: `.agents/skills/production-readiness/SKILL.md`.
+**Production observability check**: §Observability Readiness Check above (feature / architecture-change; advisory); no separate pass.
 
 ## Entry Conditions (HARD)
 

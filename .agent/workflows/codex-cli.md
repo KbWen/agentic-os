@@ -40,7 +40,7 @@ AI MUST perform these steps **before** invoking `codex` (canonical order per `en
 1. **Record `Requested Executor: Codex CLI`** in the Work Log **first** — `/codex-cli` is an explicit user request, so unavailability MUST be surfaced (step 3), never silently swapped.
 2. **Classify** the task per `engineering_guardrails.md` §10.1, then **Create/Update Work Log** at `.agentcortex/context/work/<worklog-key>.md` with classification, goal, target files, and constraints.
 3. **Availability Check**: run `codex --version` (cache per session). If unavailable, surface the install/login step and STOP (see §6) rather than silently swapping executors; if the user then approves native fallback, record `Actual Executor: native (reason: codex-missing)`. On success, record `Actual Executor: Codex CLI`.
-4. **Baseline Capture** (before invoking `codex`): snapshot the worktree with `git status --porcelain` + `git diff` so post-flight rollback can distinguish Codex's edits from files already **dirty at baseline**. Prefer an isolated git worktree for write-capable runs.
+4. **Baseline Capture** (§8.2): `git status --porcelain` + `git diff` before invoking `codex`; paths already **dirty at baseline** are not Codex's. Prefer an isolated git worktree for write-capable runs.
 5. **Generate the Codex command** by injecting governance context:
 
 ### Interactive Mode (default — user can see and approve changes)
@@ -183,8 +183,7 @@ codex exec --oss -m <model> "..."     # non-interactive form
 | --- | --- |
 | Codex not installed | Output: `npm install -g @openai/codex` and stop (record `Actual Executor: native` only if the user approves fallback) |
 | API key missing | Output: run `codex login` or set `OPENAI_API_KEY` and stop |
-| Codex abnormal exit (timeout / nonzero / kill) | **STOP — do not retry.** Wait for termination, re-derive state vs the pre-flight baseline, record partial state, reconcile before any re-invocation |
-| Codex modified wrong files | Reverse only Codex-attributable hunks; **never whole-file-revert (`git checkout -- <file>`) a path dirty at baseline** — surgical revert or escalate; log + warn |
+| Codex abnormal exit / modified wrong files | Follow §3 Post-Flight steps 0–1 (STOP, do not retry, reconcile; surgical hunk revert only, never whole-file-revert a path dirty at baseline) |
 | Codex output unclear | AI reviews diff manually, applies standard review |
 | Task too complex for Codex | Reject and suggest direct AI implementation |
 

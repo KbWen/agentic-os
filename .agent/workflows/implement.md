@@ -33,6 +33,8 @@ description: Workflow for implement
 
 `quick-win` / `hotfix`: proceed directly.
 
+- Do not emit a standalone "awaiting confirmation" line after a passing phase check when the user already asked to implement.
+
 ## Work Log Compaction Check
 
 Before implementation, check the active Work Log size. If it exceeds compaction thresholds (see `.agent/config.yaml` §worklog), compact per `/handoff` §6 BEFORE proceeding.
@@ -180,19 +182,20 @@ Side-effects: <1-line or "none">
 
 After implementation, AI MUST run `.agent/rules/security_guardrails.md` Always-On checks (§1 A01–A03) + Secret Detection (§3) on all files touched in this implementation step.
 
+- If **CRITICAL/HIGH** findings: append to Post-Execution Report and flag: "🔒 Security issue found — MUST resolve before `/review`."
+- If **MEDIUM/LOW** findings: append to Post-Execution Report as informational.
+- This is a lightweight pre-screen. Full security scan runs during `/review`.
+
 ## Heading-Scoped Read Note
 
 For token budgeting and future automation, `/implement` entry reads only:
+- `Phase Verification & Checkpoint`
+- `Direct Execution Rule`
 - `Work Log Compaction Check`
 - `Pre-Execution Check`
 - `Design Approval Check`
 - `Skill Execution Overrides`
 - `Mid-Execution Guard`
+- `Scope Breach Detection`
 
-Read `Post-Execution Report` and `Security Quick-Scan` only when preparing the completion summary.
-
-- Do not emit a standalone "awaiting confirmation" line after a passing phase check when the user already asked to implement.
-
-- If **CRITICAL/HIGH** findings: append to Post-Execution Report and flag: "🔒 Security issue found — MUST resolve before `/review`."
-- If **MEDIUM/LOW** findings: append to Post-Execution Report as informational.
-- This is a lightweight pre-screen. Full security scan runs during `/review`.
+Read `Phase Summary Update`, `Post-Execution Report` and `Security Quick-Scan` only when preparing the completion summary.

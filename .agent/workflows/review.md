@@ -290,12 +290,17 @@ Reference: <https://code.claude.com/docs/en/ultrareview>.
 ## Heading-Scoped Read Note
 
 For token budgeting and future automation, `/review` entry reads only:
+- `Phase Verification`
+- `Work Log Compaction Check`
+- `Spec Drift Advisory`
 - `Skill-Aware Review (Pre-Check)`
+- `Adversarial Reviewer Freshness Invariant`
 - `Minimum Checks`
+- `Error Observability Compliance`
 - `Design Compliance Check`
 - `Burden of Proof Protocol`
 - `Security Scan`
 - `Red Team Scan`
 - `Self-Check Protocol`
 
-Read `Output Format`, `Domain Decisions Tag Validation`, and `Phase Summary Update` only when preparing the final review output.
+Read `Output Format`, `Domain Decisions Tag Validation`, `Backlog Finding Registration`, `Phase Summary Update` and (on NOT READY) `Reverse Transition` only when preparing the final review output.

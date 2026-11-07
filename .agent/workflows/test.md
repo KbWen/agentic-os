@@ -154,9 +154,10 @@ After tests are complete and evidence is persisted, append one line to `## Phase
 ## Heading-Scoped Read Note
 
 For token budgeting and future automation, `/test` entry reads only:
+- `Step 0: Phase Verification`
 - `Step 1: Auto-Classify Test Depth`
 - `Step 2: Generate Test Skeleton`
 - `Step 3: Skill-Aware Test Implementation`
 - `Step 4: Adversarial Test Cases`
 
-Read `Step 4b: Verification Before Completion` and `Step 5: Persist Evidence` only when preparing the test completion summary.
+Read `Step 4b: Verification Before Completion`, `Step 5: Persist Evidence` (Hard Gate), `Output Compression Rule` and `Phase Summary Update` only when preparing the test completion summary.
