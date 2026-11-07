@@ -286,7 +286,7 @@
         ]
       },
       "load_policy": "on-match",
-      "content_hash": "89110bff"
+      "content_hash": "29a900be"
     },
     {
       "id": "frontend-patterns",
