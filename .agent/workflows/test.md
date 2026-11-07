@@ -67,7 +67,7 @@ Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry 
 - [ ] Form submission disabled during request (no double-submit)
 
 **IF `systematic-debugging` is active (test failures encountered):**
-- PAUSE test writing; apply the skill's Four-Phase Process: MFR (exact failure message, inputs, stack trace) before any fix, falsifiable hypotheses tested ONE variable at a time, minimal fix, then re-run all tests to confirm no regression. Log each failed patch per `engineering_guardrails.md` §8.1; 2-Strike ESC: 2 failures → STOP, defer to user.
+- PAUSE test writing; apply the skill's Four-Phase Process: MFR (exact failure message, inputs, stack trace) before any fix, falsifiable hypotheses tested ONE variable at a time, minimal fix, then re-run all tests to confirm no regression. Log each failed patch in the Work Log as `Patch Attempt [N]: <result>`; 2-Strike ESC (§8.1): 2 failures → STOP, defer to user.
 - Resume test implementation only after root cause is resolved with evidence.
 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.

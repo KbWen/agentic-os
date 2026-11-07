@@ -25,7 +25,7 @@ class TestDebugWorkflowDelegation(unittest.TestCase):
         for invariant in (
             "PAUSE", "Four-Phase Process", "MFR", "before any fix",
             "falsifiable hypotheses", "ONE variable at a time", "minimal fix",
-            "failed patch", "§8.1", "2-Strike ESC", "STOP, defer to user",
+            "failed patch", "`Patch Attempt [N]: <result>`", "§8.1", "2-Strike ESC", "STOP, defer to user",
         ):
             self.assertIn(invariant, block)
         # The copied step list is gone; the skill owns the detailed method.
