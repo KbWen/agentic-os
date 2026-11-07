@@ -1,0 +1,76 @@
+{
+  "scoring_note": "Regex scores are screening/wiring checks only. Keep _oracle and arm labels outside agent inputs; independent blind semantic grading is required for adoption. No live-model result is supplied.",
+  "cases": [
+    {
+      "id": "lite-a",
+      "prompt": "Apply the current red-team-adversarial skill in Lite mode to this changed function only. Report each actionable fix-point finding with Location, Mechanism and Remedy. Do not audit or change other code. If none is actionable, say No actionable finding. payload is client-controlled and schema-valid; principal and constants are server-trusted. The caller translates ordinary I/O errors. billing.py is outside this patch.\n\nHelper contracts: lookup_owned_document enforces server-side ownership; read_preview enforces its byte bound.\ndef export_preview(principal, payload):\n    item = lookup_owned_document(principal.user_id, payload[\"document_id\"])\n    return read_preview(item, max_bytes=MAX_PREVIEW_BYTES)\n",
+      "assertions": [
+        {
+          "type": "regex_present",
+          "pattern": "No actionable finding"
+        },
+        {
+          "type": "regex_absent",
+          "pattern": "(?im)^Location:"
+        }
+      ],
+      "_oracle": {
+        "defects": [],
+        "reference_transcript": "No actionable finding"
+      },
+      "protects": ".agents/skills/red-team-adversarial/SKILL.md \u00a7Lite Red Team (hotfix)"
+    },
+    {
+      "id": "lite-b",
+      "prompt": "Apply the current red-team-adversarial skill in Lite mode to this changed function only. Report each actionable fix-point finding with Location, Mechanism and Remedy. Do not audit or change other code. If none is actionable, say No actionable finding. payload is client-controlled and schema-valid; principal and constants are server-trusted. The caller translates ordinary I/O errors. billing.py is outside this patch.\n\nHelper contract: bounded_read enforces its byte limit; the filename has not been normalized or checked for containment.\ndef export_preview(principal, payload):\n    path = EXPORT_ROOT / str(principal.user_id) / payload[\"filename\"]\n    return bounded_read(path, MAX_PREVIEW_BYTES)\n",
+      "assertions": [
+        {
+          "type": "regex_present",
+          "pattern": "(?is)Location:.*?export_preview.*?Mechanism:.*?(travers|path.escape).*?Remedy:.*?(resolv|contain|relative_to)"
+        },
+        {
+          "type": "regex_absent",
+          "pattern": "(?im)^Location:\\s*billing"
+        }
+      ],
+      "_oracle": {
+        "defects": [
+          "path_containment"
+        ],
+        "reference_transcript": "Location: export_preview\nMechanism: path traversal escapes the allowed user directory.\nRemedy: resolve the path and enforce containment beneath the principal-owned root."
+      },
+      "protects": ".agents/skills/red-team-adversarial/SKILL.md \u00a7Lite Red Team (hotfix)"
+    },
+    {
+      "id": "lite-c",
+      "prompt": "Apply the current red-team-adversarial skill in Lite mode to this changed function only. Report each actionable fix-point finding with Location, Mechanism and Remedy. Do not audit or change other code. If none is actionable, say No actionable finding. payload is client-controlled and schema-valid; principal and constants are server-trusted. The caller translates ordinary I/O errors. billing.py is outside this patch.\n\nLarge files are possible.\ndef export_preview(principal, payload):\n    if payload.get(\"role\") == \"admin\" or payload.get(\"owner\") == principal.user_id:\n        return (EXPORT_ROOT / payload[\"filename\"]).read_bytes()\n    raise PermissionError()\n",
+      "assertions": [
+        {
+          "type": "regex_present",
+          "pattern": "(?is)Location:.*?export_preview.*?Mechanism:.*?(authoriz|untrusted.role|client.controlled.role).*?Remedy:.*?(server|trusted|principal)"
+        },
+        {
+          "type": "regex_present",
+          "pattern": "(?is)Location:.*?export_preview.*?Mechanism:.*?(travers|path.escape).*?Remedy:.*?(resolv|contain|relative_to)"
+        },
+        {
+          "type": "regex_present",
+          "pattern": "(?is)Location:.*?export_preview.*?Mechanism:.*?(unbounded|memory|size).*?Remedy:.*?(limit|bound|stream)"
+        },
+        {
+          "type": "regex_absent",
+          "pattern": "(?im)^Location:\\s*billing"
+        }
+      ],
+      "_oracle": {
+        "defects": [
+          "trusted_authorization",
+          "path_containment",
+          "bounded_read"
+        ],
+        "reference_transcript": "Location: export_preview\nMechanism: authorization trusts a client-controlled role.\nRemedy: authorize using server-side ownership and the trusted principal.\n\nLocation: export_preview\nMechanism: path traversal escapes the allowed user directory.\nRemedy: resolve the path and enforce containment beneath the principal-owned root.\n\nLocation: export_preview\nMechanism: unbounded reads can exhaust memory.\nRemedy: enforce a byte limit with bounded streaming."
+      },
+      "protects": ".agents/skills/red-team-adversarial/SKILL.md \u00a7Lite Red Team (hotfix)"
+    }
+  ]
+}

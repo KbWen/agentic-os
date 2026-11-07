@@ -12,11 +12,11 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-07T18:00:33+08:00
+- **Last Updated**: 2026-11-07T22:29:40+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 221
+- **Update Sequence**: 222
 - **ADR Index**:
-  - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry)
+  - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
   - docs/adr/ADR-003-hash-chained-audit-log.md — ADR-003: Hash-Chained Tamper-Evident Audit Log (INDEX.jsonl), accepted 2026-04-25 (amended 2026-05-29: tail-truncation witness + migrate fail-closed)
   - docs/adr/ADR-004-override-layer-activation.md — ADR-004: Override Layer Activation (lazy per-fork/per-user governance override), accepted 2026-06-03 · applies_to: AGENTS.md, bootstrap.md, doc-governance.md, platform entries
@@ -30,9 +30,6 @@
 - **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
   - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
-  - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
-  - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
-  - docs/specs/downstream-fork-accommodation.md — Downstream Fork/Clone Accommodation (override layer activation + deploy skill-sidecar tiering + README fork stance + custom/* namespace), [Shipped 2026-06-03] (ADR-004 + ADR-005)
   - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
   - docs/specs/multi-agent-review-guidelines.md — Multi-Agent Review Guidelines and Contributor Adapters, [Shipped 2026-06-04] (backlog #56, issue #162)
   - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
@@ -58,6 +55,9 @@
   - docs/specs/brownfield-first-install-preservation.md — Brownfield First-Install Preservation (a first install backs a differing core file up to `.acx-local` before replacing it, names it, and stops nonzero on a failed backup or an existing `.acx-local`), [Shipped 2026-10-05, PR #461] (backlog #188, ADR-005 amendment; follow-ups #220, #221)
   - docs/specs/archive-name-collisions.md — Archive Name Collisions: the archive directory is the file type (D4 resolves an INDEX `log` in the archive root and reports did-not-run as WARN, no Python as SKIP; archived-Work-Log Phase-Summary scan reads the root only; same-day `<worklog-key>--N-<YYYYMMDD>.md`; INDEX duplicate-`log` guard with identical-retry no-op), [Shipped 2026-10-06, PR #464] (backlog #186; follow-ups #222, #223)
   - docs/specs/kb-plain-entry.md — Declared KB on the plain-task entry (present-only startup line in AGENTS.md + CLAUDE.md; consult the KB before planning/reviewing a change in a KB-routed domain; no /bootstrap needed; AC-5 amended by owner: one routing check + one related page on uncovered tasks), [Shipped 2026-10-20] (backlog #234)
+  - docs/specs/numeric-output-cap-evaluation.md — Numeric Output-Cap Evaluation (red-team Lite finding cap replaced by every distinct fix-point finding; global/template caps kept), [Shipped 2026-11-07] (backlog #225; owner-adopted C1)
+  - docs/specs/context-sensitive-instruction-evaluation.md — Context-Sensitive Instruction Evaluation (M4/M7/M9 measured, baselines retained; M3/M5 kept), [Shipped 2026-11-07] (backlog #226)
+  - docs/specs/bootstrap-read-scope-optimization.md — Bootstrap Read-Scope Optimization (evaluated; baseline retained, −0.5% reads), [Shipped 2026-11-07] (backlog #231)
   - docs/specs/test-evidence-freshness.md — Test Evidence Freshness (record_test_run.py: suite run without a shell, exit + code fingerprint in Test Gate Results; validate/ship FAIL on a failed run before a PASS receipt or code changed after the run once shipped; opt-in; stale/failed caught, forged not), [Shipped 2026-10-20] [Updated: 2026-10-20 — AC-5 tested-tier WARN when no run is recorded]
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-codex-candidates-closeout-2026-11-07
+- Feature shipped: **staged workflow candidates closed with measured dispositions (#225, #226, #231).** Codex's staging (3 frozen specs, eval packets, screening tests, delete-bias comparator fix) replayed onto main. A Haiku matched comparison (207 calls, USD 4.28, injected-section upper bound) and owner decisions in chat 2026-11-07: red-team Lite "1-2 findings max" replaced by reporting every distinct fix-point finding (true 7->9, false 3->1); ADR-001 Decision 3 amended (reuse loaded context, no re-read for caching); bootstrap read scopes, §9.2 follow-up, skill-count line and doc-lookup wording retained at baseline with reopen triggers. Report: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`.
+- Review: independent reviewer NOT READY (stale §9.2 eval reference failing a required test, ship-state written before ship, evidence wording) -> fixed; re-review PASS.
+- Tests: full CI-equivalent 1179 passed (2 failures fixed / mid-run race), rerun 263 passed; validate.sh = validate.ps1 fail=0. SSoT 221->222; Spec Index +3 with 3 folded; Ship History rotated at cap 10.
+
 ### Ship-claude-workflow-route-fixes-2026-11-07
 - Feature shipped: **workflow route fixes from the W0 dedup inventory.** Copied method text in implement/test/review/ship/bootstrap and the CLI workflows is trimmed where a canonical skill or section holds it, while every caller floor a quick-win run needs stays self-contained (ADR-005 preserves customized skills on upgrade): debugging floors carry `Patch Attempt [N]: <result>` and 2-Strike STOP inline; TDD and doc-lookup point to their skills. Correctness: database-design now allows the §12.3 forward-only strategy; the compaction guide matches the handoff §6 protected set; read notes list mandatory sections; bootstrap phase column gains `plan` for database-design/auth-security. 13 unmerged parent-feature commits and the rejected entry-path candidate are excluded. Net -46 lines of instruction text; a 2026-11-07 plain-entry comparison showed no attributable cost or quality effect (agents read no workflows on plain entry). Owner chose to merge in chat 2026-11-07.
 - Review: independent reviewer NOT READY (shipped-spec trace, undefined MFR/§8.1, unpinned caveat, private IDs in docstrings) → fixed; re-review PASS.
@@ -156,11 +161,10 @@
 - Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
 - Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
 
-### Ship-fix-standing-instruction-not-approval-2026-10-20
-- Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
-- Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
-
 ## Spec Index Archive
 
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20) [Updated: 2026-07-01 — AC-5 first-party SHA-pin] [Updated: 2026-09-07 — AC-5 scanner-digest/wrapper bump-drift instrument, PR #425]
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
+  - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
+  - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
+  - docs/specs/downstream-fork-accommodation.md — Downstream Fork/Clone Accommodation (override layer activation + deploy skill-sidecar tiering + README fork stance + custom/* namespace), [Shipped 2026-06-03] (ADR-004 + ADR-005)

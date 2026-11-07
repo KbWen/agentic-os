@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-04-23
-amended: 2026-07-16
+amended: 2026-11-07
 deciders: "@kbwen, AI Agent (Claude Opus 4.6)"
 classification: architecture-change
 applies_to:
@@ -35,9 +35,9 @@ These findings emerged from:
 2. Analysis of `context-budget.md` read policies
 3. Observation of Work Log compaction triggers in `.agent/config.yaml`
 
-### Evidence Sources (Verified)
+### Historical Evidence Sources
 
-Prompt caching claims were verified against official documentation:
+The following sources and figures were recorded for the original decision. They are historical context, not current cache guarantees; re-check the provider's current model/runtime documentation before quoting them. Decision 3 defines the current context-reuse policy.
 - [Anthropic Claude Prompt Caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching): Cache reads = **10%** of base input price; cache writes = **125%** of base; **exact prefix match** required.
 - [Google Gemini Context Caching](https://ai.google.dev/gemini-api/docs/caching): Implicit caching enabled by default on Gemini 2.5+; similar prefix-stability requirement.
 - OpenAI Prompt Caching: Auto-enabled for ≥1024 tokens; up to **90% discount** on cached tokens; 5-10 minute TTL.
@@ -142,45 +142,38 @@ and a rejected ADR leaves no ADR Index entry.
 
 ---
 
-## Decision 3: Dual-Mode Context Budget (Prompt Caching Awareness)
+## Decision 3: Context Reuse without Duplicate Reads
+
+Amended 2026-11-07 (owner decision in chat, 2026-11-07): clarify context reuse under existing Read-Once and phase-entry rules; replace the reread-for-caching premise.
 
 ### Problem
 
-`context-budget.md` instructs `tiny-fix` tasks to **skip** reading `engineering_guardrails.md` entirely (saving ~3,500 tokens). This was a correct optimization when LLMs processed every token from scratch. However, all three major LLM providers (Anthropic, Google, OpenAI) now offer prompt caching with up to **90% discount** on cached input tokens — but only when the prompt **prefix is exactly identical** across requests.
-
-The current policy creates two opposing scenarios:
-
-1. **Standalone tiny-fix Session** (new conversation, 1-2 turns): No prior cache exists. Reading an extra 3,500 tokens is pure waste — the cache will never be reused.
-2. **Mixed-task Session** (ongoing conversation, tiny-fix mid-stream): The guardrails are already in the cache from a prior `feature`/`hotfix` turn. Skipping the read **breaks the prefix**, causing a cache miss on the next turn — which costs far more than the 3,500 tokens saved.
+The previous guidance conflated retaining previously supplied context with reading the same file again. In an ongoing conversation, omitting a duplicate file read does not itself remove earlier messages. Appending another read does not guarantee a cache hit. Cache reuse depends on the provider, model, eligible boundaries, and the context supplied by the host.
 
 ### Decision
 
-**Adopt a dual-mode strategy based on session context.**
+**Apply the existing classification-based reading rules and Read-Once discipline; treat provider caching as an advisory optimization.**
 
-**Rules:**
-- **Fresh Session (no prior cache)**: `tiny-fix` and `quick-win` MAY skip `engineering_guardrails.md` as before. This is the default behavior.
-- **Active Session (prior turns loaded guardrails)**: If the AI detects that `engineering_guardrails.md` was loaded in a prior turn of the current session (evidenced by the Guardrails Loaded receipt in the Work Log or conversation history), it MUST continue including the guardrails in subsequent requests to maintain prefix stability.
-- **Guidance, not hard gate**: This is a SHOULD-level optimization recommendation, not a MUST-level gate. AI agents that cannot reliably detect session history may default to the current skip behavior without gate failure.
+- **Fresh context**: Load the documents required by the task classification and phase. Existing tiny-fix and quick-win exemptions remain unchanged.
+- **Ongoing context**: Reuse already loaded, applicable instructions. Do not read guardrails again solely to obtain a provider cache hit.
+- **Recovery and exceptions**: If required context is unavailable or may be stale, follow the existing recovery and Read-Once rules. Classification escalation and explicit phase-entry reading contracts still apply; this decision does not waive fresh shared-contracts reads.
+- **Provider caching**: Preserve stable request prefixes where the host supports it. Do not infer cache hits, retention, or savings from a prior-read receipt; report measured usage when available and otherwise leave it unknown. Cache optimization creates no new gate.
 
 ### Rationale
 
-This preserves the original token-saving intent for the common case (one-shot tiny-fix conversations) while preventing the more expensive cache-thrashing scenario in longer sessions. The dual-mode approach avoids the "always read everything" extreme, which would penalize the simple case.
+This separates agent-controlled file reads from host-controlled request construction. It avoids duplicate context while preserving required instructions, recovery, and evidence. Safety invariants, phase order, review, test, and handoff requirements are unchanged.
 
-### Key Fact (Verified)
+### Provider References
 
-| Provider | Cache Read Discount | Cache Write Surcharge | TTL | Auto-Enable Threshold |
-|---|---|---|---|---|
-| Anthropic Claude | 90% off (0.1×) | 25% extra (1.25×) | 5 min (refreshable) | Manual `cache_control` |
-| Google Gemini 2.5+ | ~75-90% off | Standard input rate | Configurable | Implicit (automatic) |
-| OpenAI GPT | Up to 90% off | None | 5-10 min | Auto at ≥1024 tokens |
+Provider cache eligibility, rates, and retention vary by model and runtime. Consult current official documentation before quoting them; this decision establishes no fixed discount or token-saving estimate. See the provider links in References.
 
 ### Affected Files
 
 | File | Change |
 |---|---|
-| `context-budget.md` | Add "Prompt Caching Awareness" section after §Anti-Patterns; update `tiny-fix` and `quick-win` tables with conditional note |
-| `docs/guides/token-optimization-quickstart.md` | Add "Provider Caching" section explaining the dual-mode rationale |
-| `docs/guides/token-optimization-quickstart_zh-TW.md` | Same, in Traditional Chinese |
+| `.agentcortex/docs/guides/context-budget.md` | Align tier notes and caching guidance with Read-Once |
+| `docs/guides/token-optimization-quickstart.md` | Explain context reuse without duplicate reads |
+| `docs/guides/token-optimization-quickstart_zh-TW.md` | Keep the corresponding explanation aligned |
 
 ### Amendment (2026-06-11): Safety invariants carved out of D3 jurisdiction
 
@@ -205,11 +198,11 @@ irreversible data loss — not wasted tokens. A 3-expert panel review concluded:
 
 - **Reduced Work Log bloat**: Evidence truncation prevents premature compaction, preserving debug context across multiple fix attempts.
 - **Faster prototyping**: Directory-based exemptions remove friction for legitimate non-production work without creating escape hatches for production code.
-- **Better cost efficiency**: Dual-mode caching awareness prevents cache thrashing in mixed-task sessions while preserving savings for simple tasks.
+- **Less duplicate context**: Reuse applicable loaded instructions without an extra read solely for caching; actual savings require runtime measurement.
 
 ### Negative
 
-- **Agent complexity**: AI agents need to be aware of directory-based scope rules (Decision 2) and session-level caching state (Decision 3). Both add conditional logic to the agent's decision process.
+- **Agent complexity**: AI agents still apply directory-based scope rules (Decision 2) and existing context recovery rules (Decision 3); a prior-read receipt is not a cache-hit guarantee.
 - **Documentation surface**: Three files need updates, plus two quickstart guide translations.
 
 ### Neutral

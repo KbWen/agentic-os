@@ -226,3 +226,18 @@ source_review: docs/reviews/2026-10-20-kb-plain-entry-sim.md
 ### [governance][2026-10-31][docs/sim-cost-backlog-compression]
 
 - [CONSTRAINT] Correction to the 2026-10-20 #234 entry: the `/bootstrap` entry measured about 5.5× the plain entry's cost, not 7×. `total_cost_usd` in a stream's result event is cumulative for a resumed session, so a scorer takes the last event per session and never sums them; the sum overstates exactly the runs that got a follow-up reply, which are the governed ones.
+
+### [governance][2026-11-07][claude/codex-candidates-closeout]
+source_spec: docs/specs/numeric-output-cap-evaluation.md, docs/specs/context-sensitive-instruction-evaluation.md, docs/specs/bootstrap-read-scope-optimization.md
+source_review: docs/reviews/2026-11-07-workflow-candidate-comparison.md
+- [CONSTRAINT] Report completeness and long-term traceability take precedence over a numeric response ceiling.
+- [DECISION] Start with the Lite finding-cap hypothesis; keep unrelated global-cap decisions explicit and unchanged until justified.
+- [TRADEOFF] Local scorer tests cannot establish that a model will report all findings; independent behavior evidence remains required.
+- [CONSTRAINT] Context can resolve ordinary task references; it cannot supply a reserved owner decision.
+- [DECISION] Start with clear-context follow-up behavior, then assess remaining hypotheses independently.
+- [TRADEOFF] Keeping an unproven rule is preferable to claiming a model-specific improvement without comparative evidence.
+- [CONSTRAINT] Complete product-lifecycle obligations and cross-model compliance constrain optimization.
+- [DECISION] Refine existing conditional boundaries before considering any new context subsystem.
+- [TRADEOFF] A local structural candidate may remain unshipped until its real effect is independently established.
+- [DECISION] Outcome (Haiku matched comparison, 207 calls, USD 4.28): red-team Lite "1-2 findings max" replaced by reporting every distinct fix-point finding (owner decision, chat 2026-11-07, on a strict gain below the original every-defect bar); #231 B, #226 M4/M7/M9 retained at baseline with reopen triggers; ADR-001 Decision 3 amended to reuse loaded context without re-reading for caching.
+- [CONSTRAINT] Wording evidence came from injecting the section into the prompt; on a plain-task entry agents read none of these files, so this is an upper bound on real effect.
