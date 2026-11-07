@@ -5,10 +5,6 @@ description: Drive changes with Red→Green→Refactor; ensure behavior is verif
 
 # Test-Driven Development
 
-## Overview
-
-TDD uses the **Red → Green → Refactor** micro-cycle. First, define expected behavior. Next, use a minimal implementation to pass the test. Finally, organize the code structure.
-
 ## When to Use
 
 - Adding or modifying core logic.

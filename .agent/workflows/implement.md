@@ -74,12 +74,7 @@ Before writing ANY UI rendering code, AI MUST verify:
 When a skill is loaded, it **changes how you implement** — not just what you say. Apply ALL matching overrides:
 
 **IF `test-driven-development` is active:**
-- STOP the normal "execute plan" flow. Switch to Red→Green→Refactor micro-cycles:
-  1. Red: Write a failing test for the NEXT planned behavior
-  2. Green: Write MINIMAL code to make the test pass
-  3. Refactor: Clean up while keeping tests green
-  4. Repeat until the plan step is complete
-- **Ironclad**: Never write production code without a failing test first. Never batch multiple behaviors into one cycle.
+- Switch normal execution of the current plan step to the canonical [TDD Workflow](../../.agents/skills/test-driven-development/SKILL.md): one planned behavior per cycle, failing test before production code, minimal passing code, all tests green after refactoring; repeat until the step is complete.
 
 **IF `api-design` is active:**
 - For EVERY endpoint created or modified, enforce during implementation:

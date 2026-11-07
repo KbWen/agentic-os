@@ -40,9 +40,7 @@ When generating test skeletons for `feature` or `architecture-change` tasks:
 Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry Skill Loading) for all skills listing `/test` in their phases. Read `Recommended Skills` from the active Work Log before selecting which skill guidance to apply in this phase. Then apply each skill's test-phase rules:
 
 **IF `test-driven-development` is active:**
-- Verify every piece of production code written during /implement has a corresponding test
-- If gaps found: write the missing tests NOW before proceeding
-- All tests MUST pass after completion — no "known failures" allowed
+- Verify every production piece written during `/implement` has a corresponding test; write missing tests NOW before proceeding. All tests MUST pass after completion — no known failures allowed.
 
 **IF `auth-security` is active — add these mandatory test cases:**
 - [ ] Unauthenticated request → 401
