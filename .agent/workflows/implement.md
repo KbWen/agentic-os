@@ -108,7 +108,7 @@ When a skill is loaded, it **changes how you implement** — not just what you s
 - Generic error messages ("Invalid email or password") — never reveal which field is wrong
 
 **IF `systematic-debugging` is active (bug encountered mid-implementation):**
-- PAUSE implementation; apply the skill's Four-Phase Process: MFR before any fix, falsifiable hypotheses tested ONE variable at a time, minimal fix + regression test. Log each failed patch in the Work Log as `Patch Attempt [N]: <result>`; 2-Strike ESC (§8.1): 2 failures → STOP, defer to user.
+- PAUSE implementation; apply the skill's Four-Phase Process: MFR (Minimal Reproducible Failure) before any fix, falsifiable hypotheses tested ONE variable at a time, minimal fix + regression test. Log each failed patch in the Work Log as `Patch Attempt [N]: <result>`; 2-Strike ESC (`engineering_guardrails.md` §8.1): 2 failures → STOP, defer to user.
 - Resume implementation only after root cause is confirmed with evidence.
 
 **Plan execution discipline (always applies during /implement):**

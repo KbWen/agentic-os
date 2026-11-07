@@ -1,4 +1,4 @@
-"""D10: bootstrap §3.6 Phases column must match registered skill metadata.
+"""Bootstrap §3.6 Phases column must match registered skill metadata.
 
 The column stays (the force ceiling in §3.6a reads it with zero metadata reads),
 so it must not drift from `.agent/skills/<name>` `phases:`.

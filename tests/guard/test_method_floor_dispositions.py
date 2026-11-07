@@ -1,4 +1,4 @@
-"""Guard W1 D03-D08 dispositions: workflow-owned phase floors stay self-contained.
+"""Workflow-owned phase floors stay self-contained.
 
 Upgrades force-update workflows but preserve customized (scaffold) skill bodies
 (ADR-005), so these caller floors must not be reduced to bare skill pointers.

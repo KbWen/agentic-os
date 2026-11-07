@@ -50,10 +50,6 @@ Restore standards-compatible native discovery for all 14 first-party Skills, pre
 - INDEPENDENT from the legacy draft `docs/specs/skill-research-integration.md`; that file concerns content sourcing and prior integrations, not runtime discovery.
 - REFINES backlog #79 by separating an immediately testable activation/discovery slice from the deferred paired effectiveness harness; backlog status changes remain a `/ship` concern.
 
-## Maintenance Verification Trace
-
-- 2026-11-07: Detailed TDD cycle guidance remains in the canonical Skill; phase contracts and compatibility floors remain self-contained in workflow callers. Caller activation is unchanged; the compact-index body hash is refreshed. Focused verification paths: `tests/guard/test_tdd_workflow_delegation.py`, `.agentcortex/tests/test_lifecycle_skill_activation.py`, and `.agentcortex/tools/generate_compact_index.py --check`. Existing ACs and spec status are unchanged.
-
 ## Domain Decisions
 
 - [DECISION] Repair the five missing frontmatters and the `/app-init` generation contract before changing Skill content, because current Codex discovery and the official validator independently expose the same 9/14 gap.

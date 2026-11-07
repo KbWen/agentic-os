@@ -22,6 +22,8 @@ class TestDocLookupWorkflowDelegation(unittest.TestCase):
             "### Trust Boundary", "### Failure Handling", "## Checklist",
         ):
             self.assertIn(heading, skill)
+        # implement.md no longer carries the training-data caveat inline; the skill must.
+        self.assertIn("// TODO: verify against official docs", skill)
         for path in (".agent/workflows/implement.md", ".agent/workflows/review.md"):
             text = self.read(path)
             self.assertIn(f"[doc-lookup](../../{SKILL})", text)

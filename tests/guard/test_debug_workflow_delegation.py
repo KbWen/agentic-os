@@ -1,4 +1,4 @@
-"""Guard the debugging method reference and workflow-owned phase floors (W1-C/D02)."""
+"""Guard the debugging method reference and workflow-owned phase floors."""
 
 from __future__ import annotations
 
