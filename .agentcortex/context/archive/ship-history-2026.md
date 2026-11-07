@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-standing-instruction-not-approval-2026-10-20
+- Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
+- Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
+
 ### Ship-feat-test-evidence-freshness-2026-10-20
 - Feature shipped: **a recorded test run is tied to the code it tested.** New `.agentcortex/tools/record_test_run.py`: `run` executes the suite without a shell and appends `- Test run: … | exit | tree | at` to Test Gate Results, where `tree` is `git write-tree` of a temporary index (the real index is never written) excluding `.agentcortex/context/`; `check` FAILs a current-branch log whose latest run failed before a test/ship PASS receipt, or whose code changed after that run (or was unstable) once a ship receipt exists, and WARNs otherwise. Opt-in by presence of a `Test run:` line. Wired through `run_python_check` in both validators, shipped in both `deploy.sh` whitelist sites; `/test` and `/ship` pre-merge run the suite through it. README and zh-TW say what it does not catch (a hand-typed line, a command that is not the real suite, a tree git cannot read).
 - Review: fresh reviewer NOT READY (racy-git index copy, unreachable ship claim, string timestamps, unstable/no-op gaps, Windows shims, detached HEAD) → fixed; two re-review rounds (Unicode separators, unfingerprintable tree, date-only) → fixed or disclosed.

@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
