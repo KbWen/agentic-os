@@ -10,6 +10,8 @@ The product objective is durable product correctness across versions, lower tota
 
 ## Independent dispositions
 
+Checkpoint SHAs below name the pre-replay staging commits; they are not on main. The changes reached main through the 2026-11-07 closeout.
+
 | Unit | Local disposition and checkpoint | Evidence and limitation | Reopen/adoption condition |
 |---|---|---|---|
 | A cache/read policy | Clarification candidate, `8e259c7` | Reuse applicable in-context rules; mandatory fresh phase/recovery reads retained. Earlier provider figures remain historical. | Independent cache/read and lifecycle check; no economic claim from source size. |

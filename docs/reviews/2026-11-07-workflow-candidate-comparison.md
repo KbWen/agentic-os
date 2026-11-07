@@ -13,9 +13,9 @@ Matched baseline-vs-candidate comparison for the staged candidates of #231, #225
 | Candidate | Baseline | Candidate | Verdict |
 |---|---|---|---|
 | C1 Lite red-team cap (#225) | 7 true / 3 false findings; on the 3-defect case, 2 found in 1/3 reps and 1 found in 2/3 | 9 true / 1 false; 2 of 3 found in every rep; no safety loss | **Adopted.** Neither arm found the third defect, so the frozen bar "every fixture defect found" was not met. The owner adopted on the strict improvement (chat, 2026-11-07); the spec records the amended bar. |
-| M4 §9.2 contextual follow-up (#226) | 12/15 decisions correct | 11/15 | Retain baseline: not all-correct, no improvement. |
+| M4 §9.2 contextual follow-up (#226) | 12/15 decisions correct, 2 safety flags | 11/15, 1 safety flag | Retain baseline: not all-correct, no improvement. |
 | M7 skill-count coaching (#226) | 6/9, 1 safety flag | 5/9, 3 safety flags | Retain baseline: worse on noisy grades. The spec requires a demonstrated benefit. |
-| M9 doc-lookup tool wording (#226) | 10/15; no invented tool | 10/15; no invented tool | Retain baseline: no headroom on the predeclared metric. |
+| M9 doc-lookup tool wording (#226) | 10/15; no invented tool; 3 safety flags, 3 false findings | 10/15; no invented tool; 0 safety flags, 0 false findings | Retain baseline: no headroom on the predeclared metric (invented tool calls). The cleaner secondary grades are noted, not scored. |
 | B bootstrap read scopes (#231) | 50,618 bootstrap.md chars read | 50,353 (−0.5%) | Retain baseline: both arms read the whole file in one Read call, far from the 20% bar. Obligation misses were the same or worse in the baseline. |
 | A context-reuse wording (ADR-001 D3) | n/a | n/a | Adopted by owner decision (chat, 2026-11-07). No live test, because guides are not read on plain entry. |
 

@@ -1,5 +1,5 @@
 ---
-status: shipped
+status: frozen
 frozen: 2026-11-06
 date: 2026-11-06
 classification: feature
@@ -17,7 +17,7 @@ Make existing conditional bootstrap instructions easier to retrieve without load
 Product-level judgment uses observed product behavior and prior-decision continuity, all-executor usage per comparable accepted deliverable, and avoidable owner intervention. Section-read counts below diagnose a mechanism; they do not establish lifecycle benefit. State any unobserved follow-up outcome as unknown.
 
 ## Relationship
-INDEPENDENT follow-up to ADR-001 Decision 3 (amended by A at 8e259c7). This refines delivery of existing bootstrap rules and does not replace the lifecycle, safety floor, skill policy or accepted ADRs. The original backlog #231 remains authoritative for disposition.
+INDEPENDENT follow-up to ADR-001 Decision 3 (Decision 3 amended 2026-11-07). This refines delivery of existing bootstrap rules and does not replace the lifecycle, safety floor, skill policy or accepted ADRs. The original backlog #231 remains authoritative for disposition.
 
 ## Candidate and target files
 The heading layout below is a testable hypothesis, not a finding that the current rules are defective. Record tool-call and available cost changes alongside read volume; a smaller file alone is not a benefit.
