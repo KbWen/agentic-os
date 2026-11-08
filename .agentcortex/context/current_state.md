@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-07T22:29:40+08:00
+- **Last Updated**: 2026-11-07T23:06:47+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 222
+- **Update Sequence**: 223
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.37-2026-11-07
+- Release contents: **v1.8.37** packages the workflow route fixes (#484: deduplicated workflow text with self-contained quick-win floors; database-design forward-only, compaction protected set, read notes, bootstrap phase column), the staged-candidate closeout (#485: red-team Lite reports every distinct finding; ADR-001 D3 context reuse; #226/#231 candidates retained at baseline) and the simulation-cost correction (#481).
+- Evidence: version-consistency test 2 passed; real 1.8.36 -> candidate upgrade 209 updated / 0 new / 0 removed, project files byte-identical, customized AGENTS.md kept with sidecar, downstream validator fail=0. SSoT 222->223; Ship History rotated at cap 10.
+
 ### Ship-claude-codex-candidates-closeout-2026-11-07
 - Feature shipped: **staged workflow candidates closed with measured dispositions (#225, #226, #231).** Codex's staging (3 frozen specs, eval packets, screening tests, delete-bias comparator fix) replayed onto main. A Haiku matched comparison (207 calls, USD 4.28, injected-section upper bound) and owner decisions in chat 2026-11-07: red-team Lite "1-2 findings max" replaced by reporting every distinct fix-point finding (true 7->9, false 3->1); ADR-001 Decision 3 amended (reuse loaded context, no re-read for caching); bootstrap read scopes, §9.2 follow-up, skill-count line and doc-lookup wording retained at baseline with reopen triggers. Report: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`.
 - Review: independent reviewer NOT READY (stale §9.2 eval reference failing a required test, ship-state written before ship, evidence wording) -> fixed; re-review PASS.
@@ -156,10 +160,6 @@
 ### Ship-fix-test-evidence-tier-warn-2026-10-20
 - Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
 - Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
-
-### Ship-chore-trufflehog-3.99.2-digest-2026-10-20
-- Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
-- Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 

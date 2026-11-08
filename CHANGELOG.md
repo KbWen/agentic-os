@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.8.37] - 2026-11-07
+
+**Workflows state each obligation once, in a place a quick task can read.** Copied method text in `/implement`, `/test`, `/review`, `/ship`, `/bootstrap` and the CLI-delegation workflows now points to the skill or section that owns it. The duties a quick-win run needs stay written in the workflow itself, because a customized skill is kept on upgrade and may be older. For example, the debugging floor carries the `Patch Attempt [N]: <result>` record and the stop-after-two-failures rule inline. Net −46 lines of instruction text.
+
+**Contradictions fixed.**
+- `database-design` no longer demands a `down` migration when your project's ADR picks forward-only (`engineering_guardrails` §12.3).
+- The compaction guide now protects the same Work Log sections as `/handoff` §6.
+- Phase read notes list every mandatory section.
+- The bootstrap skill table lists `plan` for `database-design` and `auth-security`.
+
+**A Lite red-team review reports every distinct finding** (#225). The "1-2 findings max" and "≤300 tokens" caps are replaced by "report every distinct actionable fix-point finding; group repeated instances of one root cause". In a matched Haiku comparison on review packets with 0, 1 and 3 planted defects, true findings rose from 7 to 9 and false findings fell from 3 to 1. Scope, severity and escalation rules are unchanged.
+
+**Reuse what is already loaded** (ADR-001 Decision 3). An agent no longer re-reads the guardrails just to keep a provider cache warm. Out-of-date provider discount figures are removed from the decision.
+
+**Measured, not claimed** (#226, #231). The same comparison kept four other staged wording changes at their current text, because none showed a benefit:
+- bootstrap read scopes: −0.5% characters read, since agents read the file whole;
+- the `engineering_guardrails` §9.2 follow-up rule;
+- the bootstrap skill-count line;
+- doc-lookup tool wording.
+
+Each spec records a reopen trigger. In separate live runs, an agent given a plain task, with no slash command, read none of the workflow or skill files. Editing those files does not change the cost of that entry path. Report: `docs/reviews/2026-11-07-workflow-candidate-comparison.md`. Earlier simulation cost figures that summed cumulative totals were also corrected (#232, #189).
+
+**Downstream delta:**
+- Core files updated on deploy:
+  - `.agent/workflows/{implement,test,review,ship,bootstrap,claude-cli,codex-cli}.md`
+  - `.agentcortex/docs/guides/token-governance.md` and `context-budget.md`
+  - `.agentcortex/metadata/trigger-compact-index.json`
+  - `.agentcortex/tools/run_delete_bias_diff.sh`, which now exits 2 on malformed input
+  - the version banners
+- Skills `database-design`, `test-driven-development` and `red-team-adversarial`: if you customized one, the new version arrives as `.acx-incoming`.
+- New eval data under `.agentcortex/eval/`. No new validator line and no gate change.
+
+**Checked downstream before release:** an upgrade from 1.8.36 updated 209 files, added none and removed none. A locally edited `AGENTS.md` was kept, and its new version arrived as `.acx-incoming`. The project's own files stayed byte-identical, and the downstream validator reported `fail=0`.
+
 ## [1.8.36] - 2026-10-29
 
 **Bring your own design without a knowledge base.** The new design onboarding guide explains how to use readable design-tool references, local exports, or a completed committed Markdown/ASCII wireframe with the existing design-first workflow. It distinguishes a source link from actual inspection, approval, and visual comparison.

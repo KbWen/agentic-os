@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-chore-trufflehog-3.99.2-digest-2026-10-20
+- Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
+- Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
+
 ### Ship-fix-standing-instruction-not-approval-2026-10-20
 - Feature shipped: **engineering_guardrails §8 says a standing instruction is not a gate answer.** "Keep going", "finish this wave" or merge permission cover execution inside decided scope; they do not answer decisions reserved for the owner (spec freeze/unfreeze, accepted-ADR or frozen-AC amendment, force push, owner-decision backlog rows) — ask explicitly, keep the work a draft, record where it was answered. The rule existed only in one platform's agent memory after a 2026-09-26 incident; the re-score panel flagged the parity gap.
 - Tests: directive ratchet + lifecycle 56 passed; compact index fresh; validate.sh `fail=0`. Local commit only. SSoT 211->212; Ship History rotated at cap 10.
