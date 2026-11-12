@@ -7,8 +7,8 @@ Global (applies to all projects using template).
 ## Reading Mode
 
 - **Full Mode** (default for `feature`, `architecture-change`, `hotfix`): Read core sections first, then load conditional sections per the Heading-Scoped Read rules below.
-- **Quick Mode** (for `quick-win`): Do NOT read this file. Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §1 Classification Tiers. If the task escalates beyond quick-win, switch to Full Mode.
-- **Skip Mode** (for `tiny-fix` ONLY): Do NOT read this file. `AGENTS.md` §Core Directives provides sufficient governance for tiny-fix tasks (scope discipline, evidence requirement, fast-path rules). If the task escalates beyond tiny-fix, switch to Quick or Full Mode and read this file at that point.
+- **Quick Mode** (for `quick-win`): Do NOT read this file (sole exemption: §13, per `bootstrap.md` §0). Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §1 Classification Tiers. If the task escalates beyond quick-win, switch to Full Mode.
+- **Lite Mode** (for `tiny-fix` ONLY): Do NOT read this file. `AGENTS.md` §Core Directives provides sufficient governance for tiny-fix tasks (scope discipline, evidence requirement, fast-path rules). If the task escalates beyond tiny-fix, switch to Quick or Full Mode and read this file at that point.
 
 ### Heading-Scoped Read (Full Mode Optimization)
 
@@ -101,7 +101,7 @@ Before emitting any verdict (phase pass/fail, classification, completion claim),
 
 - Whenever a Spec is approved or the task transitions to implementation, the Spec MUST be marked as **FROZEN** (e.g., via YAML frontmatter `status: frozen`).
 - **Shipped Status**: After `/ship` delivers a spec's feature, `/ship` sets `status: shipped` on the spec frontmatter. Shipped specs are **historical reference only** — they document past decisions. For current system design, read the corresponding Domain Doc L1 (`docs/architecture/<domain>.md`) instead, when present — `docs/architecture/` is created on demand by `/app-init` (capability-by-presence; absent on a fresh project until the first domain doc is written). Shipped specs MUST NOT be cited as authoritative current design.
-- AI agents MUST NOT modify, review, or suggest refactoring for any document marked as `FROZEN` or `Finalized` during normal tasks.
+- AI agents MUST NOT modify, review, or suggest refactoring for any document marked as `FROZEN` during normal tasks.
 - **Exception (AI-Initiated Unfreeze)**: If the AI discovers that a FROZEN spec must be changed (due to a bug or requirement change), the AI MUST:
   1. **STOP** and surface the issue explicitly: "⚠️ [Filename] is FROZEN but requires update: [Reason]. Approve to unfreeze and continue? (yes/no)"
   2. Only proceed after user responds **YES**.

@@ -12,7 +12,7 @@ AI MUST self-enforce this phase order. Users may trigger transitions via slash c
 
 - `INIT` --(external spec provided)--> `INIT` [runs `/spec-intake`; produces frozen spec + optional `_product-backlog.md`; loops back to INIT until spec is frozen]
 - `INIT` --(context loaded)--> `BOOTSTRAPPED` [if frozen external spec exists, bootstrap reads it directly — Bootstrap Lite path]
-- `BOOTSTRAPPED` --(task classified)--> `CLASSIFIED`  [Sets: Guardrails Mode (Full|Quick|Lite), Context Budget tier]
+- `BOOTSTRAPPED` --(task classified)--> `CLASSIFIED`  [Sets: Guardrails Mode (Full|Quick|Lite)]
 - `CLASSIFIED` --(research / brainstorm iteration)--> `CLASSIFIED`
 - `CLASSIFIED` --(spec artifact created in `docs/specs/`)--> `SPECIFIED`
 - `SPECIFIED` --(plan produced)--> `PLANNED`

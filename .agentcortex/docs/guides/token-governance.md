@@ -32,9 +32,8 @@ Lowering token usage must maintain the "Engineering Constitution":
 
 If a small task (docs-update / small-fix) exceeds the budget:
 
-1. Force use of `Mode: Fast Lane` for the next turn.
-2. Switch response format to a fixed template (Summary + Evidence + Next), prohibiting lengthy background restatement.
-3. Retain only essential references and AC alignment; do not repeat large sections of specification text.
+1. Switch response format to a fixed template (Summary + Evidence + Next), prohibiting lengthy background restatement.
+2. Retain only essential references and AC alignment; do not repeat large sections of specification text.
 
 ## 3. Anti-Degradation Rules
 
@@ -43,7 +42,6 @@ If a small task (docs-update / small-fix) exceeds the budget:
 
 ## 4. Relation to Process Documents
 
-- `/plan` should include `Mode: Normal` or `Mode: Fast Lane`.
 - `/handoff` should keep each block concise, avoiding full diffs.
 - `/ship` should provide only necessary evidence, avoiding repetitive narratives.
 

@@ -82,7 +82,7 @@ When reviewing PRs or changed files, prioritize actionable defects over style co
 5. If verdict=fail → print gate + missing items ONLY and STOP.
 6. **Direct phase execution on explicit user intent**: If the user explicitly requests `/plan`, `/implement`, `/review`, `/test`, or `/ship`, execute that phase in the SAME turn after gate pass — no second confirmation pause.
 7. **When an extra confirmation is still allowed**: Only if phase entry was inferred, or a separate high-impact choice appears inside the phase.
-8. **Plan artifact rule**: `/plan` outputs the gate block then plan content. Plan MUST include `docs/specs/<feature>.md`.
+8. **Plan artifact rule**: `/plan` outputs the gate block then plan content. A `feature`/`architecture-change` plan MUST include `docs/specs/<feature>.md`.
 9. **Sentinel Check**: Every response MUST end with `⚡ ACX`. Framework-wide runtime integrity marker — all models must include it. All phase output templates MUST include it as the final line. The sentinel is part of the template, not optional prose. The response body before the sentinel MUST be in the user's input language (see `## Chat Language Policy`).
 10. **Legacy Work Log Compatibility**: Pre-Runtime-v4 logs missing Drift/Evidence sections → append missing sections silently, record `"Migrated from legacy format"` in Drift Log. Do NOT fail gates.
 

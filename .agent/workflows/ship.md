@@ -216,7 +216,7 @@ Before proceeding with ship, check `docs/reviews/` for any review snapshots that
    - If Pending features remain, output: "Backlog: [N] features remaining. Next session can run `/spec-intake` §8a to continue."
    - Update `current_state.md` **Active Backlog** field to `docs/specs/_product-backlog.md` (if not already set). This is the only mechanism that persists backlog awareness across sessions via SSoT.
 5. **Raw Intake Cleanup**: If `docs/specs/_product-backlog.md` exists and ALL features from the current intake are `Shipped` or `Cancelled`, delete any remaining `docs/specs/_raw-intake*.md` files. These are temporary artifacts; the structured specs are now the SSoT. Log deletion in Work Log.
-6. Freeze Artifacts: Ensure all produced Specs/ADRs have YAML frontmatter `status: frozen`. If missing, add it before commit.
+6. Freeze Artifacts: Ensure all produced Specs have YAML frontmatter `status: frozen`. If missing, add it before commit.
    - **Skip non-freezable statuses**: Documents with `status: living` (e.g., `_product-backlog.md`) or `status: raw` (e.g., `_raw-intake.md`) MUST NOT be frozen. These are tracking/temporary artifacts, not spec deliverables.
    - **Spec Freshness**: If implementation DIFFERS from any referenced spec's AC, MUST update the spec to match actual behavior before freezing. Append `[Updated: <date>]` to the corresponding Spec Index entry in `current_state.md`.
    - **Shipped Frontmatter** (AC-27): After freezing, set `status: shipped` on all referenced specs that are being completed in this branch. This signals to future `/bootstrap` sessions to prefer Domain Doc L1 over these specs as design authority.

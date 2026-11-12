@@ -75,7 +75,7 @@ Plus:
 - Logic correctness
 - Compatibility risks
 - Violation of `.agent/rules/engineering_guardrails.md`
-- Scope enforcement: MUST skip any file with `status: frozen` or `Finalized` metadata. Review scope is limited to current task's changed files only.
+- Scope enforcement: MUST skip any file with `status: frozen`. Review scope is limited to current task's changed files only.
 - External dependency discipline: if dependency manifests changed or repo-external APIs/platform features were used, verify `## External References` cites official sources and that implementation matches them.
 - Known risk traceability: if `## Known Risk` is populated, confirm each listed mitigation is actually present in the code or evidence.
 - Work Log visibility: active Work Logs remain local-only (gitignored) and are NOT mirrored into the repo for review. Review evidence lives in the PR description and the Work Log itself; `/ship` enforces the full completion gate before any SSoT update.
@@ -100,7 +100,7 @@ If the project has no identifiable production logging strategy (no logger framew
 
 For any task that modified user-visible UI, the reviewer MUST:
 
-1. **Design Link Verification**: Confirm `## Design Reference` exists in the Work Log with a valid `Link:`. Missing link on a UI task → **Review verdict = Not Ready**. Route back to `/plan`.
+1. **Design Link Verification**: Confirm `## Design Reference` exists in the Work Log with a valid `Link:`. Missing link on a UI task → **Review verdict = Not Ready**.
 2. **1:1 Fidelity Audit** — compare implementation against DSoT (Stitch, Figma, Pencil, etc.):
    - Layout structure (component hierarchy, positioning, flow)
    - Spacing & sizing (margins, padding, dimensions)

@@ -7,14 +7,6 @@ cluster:
   threshold: 3
   # Maximum distinct label values in a backlog before validate.sh warns of vocabulary drift.
   max_distinct_labels: 15
-  # P0 ratio threshold — WARN when more than this % of pending items are P0.
-  p0_warn_pct: 20
-  # Maximum cluster-declined suppression markers in backlog Source Summary.
-  max_declined_markers: 5
-  # Cluster prompt suppression expiry: re-prompt if same-label count grew by this many items.
-  declined_growth_threshold: 3
-  # Cluster prompt suppression expiry: re-prompt after this many days regardless of count.
-  declined_ttl_days: 90
 
 worklog:
   # Compaction triggers — when a Work Log exceeds either threshold,
@@ -117,15 +109,11 @@ downstream_capabilities:
   # never clamps): a declared skill id MUST be custom-*; its load_policy MUST NOT exceed
   # the on-match ceiling; no gate / ship-edge / block_if_missed / trigger_priority /
   # concurrent-writer / blocking-tracker key may appear anywhere.
-  load_policy_ceiling: on-match
-  custom_prefix_required: true
 
   # knowledge_sources (ADR-009): present-only, advisory-ONLY external KB consumption
   # pointers. role is FIXED to advisory (a KB can never gate a phase); manifest_trusted
   # defaults false (a BYO manifest's sha is never trusted to skip a read unless the
   # adopter's own CI keeps it fresh). Enforced by validate_downstream_capabilities.py.
-  kb_role_fixed: advisory
-  kb_manifest_trusted_default: false
   # ACX_KB_PATH env var is referenced in bootstrap.md §1b directly; no config key needed.
 
 
@@ -159,10 +147,6 @@ document_lifecycle:
   # cutoff and are active-by-default; a fork's pre-upgrade post-cutoff logs may
   # WARN once (advisory, never FAIL; the WARN text names the legal forward-fix).
   decision_disposition_since: "2026-07-16"
-
-  # _raw-intake*.md files: MUST be deleted (not archived) by /ship when
-  # all features from the intake are Shipped or Cancelled.
-  raw_intake_cleanup: must_delete
 
 # Governance Exemption Scope
 # Directories considered production code where Design-First and Error Observability rules apply.

@@ -53,7 +53,7 @@ Each phase adds local scope after these 5 gates (see individual workflow files f
 
 Phase chat outputs MUST be compact deltas — the Work Log is the persistent record. Do NOT duplicate Work Log contents in chat; reuse prior evidence by reference (`Ref: Work Log §<section>`); no "awaiting confirmation" after gate pass on explicit phase request. Per-phase delta:
   - `/bootstrap` → Classification (+1-line why), Goal, Skills (comma list), Context Read Receipt (1 line), Next Step. Full Constraints, AC, Non-goals, Risks, and the Read Plan live in the Work Log file, NOT in the chat response.
-  - `/plan` → gate + plan (compact block: Target Files · Steps · Risk+Rollback · AC Coverage · Mode). No section headers when the block is < 15 lines.
+  - `/plan` → gate + plan (compact block: Target Files · Steps · Risk+Rollback · AC Coverage). No section headers when the block is < 15 lines.
   - `/implement` → files changed (list), tests run (1 line), checkpoint SHA. No code re-narration.
   - `/review` → burden-of-proof table + delta since implement. No re-printing the task description.
   - `/test` → commands + pass/fail + coverage delta. No re-printing the test skeleton.

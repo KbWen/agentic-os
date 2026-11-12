@@ -128,7 +128,6 @@ Risk+Rollback: <1-line risk> / <1-line rollback>
 AC Coverage: AC-1→step-N, AC-2→step-M, ...
 Non-goals: <comma list or "none">
 Confidence: <N>% — <rationale if <90%, else "high">
-Mode: Normal | Fast Lane
 ⚡ ACX
 ```
 
@@ -179,8 +178,6 @@ This block persists across sessions. On resume, /bootstrap reads it immediately.
 
 ## Token Budget Checkpoint
 
-- Plan MUST include `Mode: Normal` or `Mode: Fast Lane`.
-- If task is small but output balloons, MUST switch to `Fast Lane` using summarization next turn.
 - Detailed rules: `Ref: .agentcortex/docs/guides/token-governance.md`.
 
 ## Phase Summary Update
@@ -188,7 +185,7 @@ This block persists across sessions. On resume, /bootstrap reads it immediately.
 After plan is approved, append one line to `## Phase Summary` in the Work Log. **MUST include the `Confidence:` value** so `/ship`'s Confidence Trace Audit can read it from a persistent location (the chat-only compact block is ephemeral across sessions):
 
 ```
-- plan: [1-line summary — key decisions, target files count, mode Normal/Fast Lane] | Confidence: <N>% — <high | 1-line rationale>
+- plan: [1-line summary — key decisions, target files count] | Confidence: <N>% — <high | 1-line rationale>
 ```
 
 ## State Transition
