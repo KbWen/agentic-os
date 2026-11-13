@@ -282,3 +282,52 @@ The shipped specs are not edited (`spec-intake.md §8b`); the change is specifie
 `docs/specs/knowledge-source-seam.md`. Heading names quoted in this ADR's Evidence
 section, and in the shipped specs, describe one reference KB at one point in time. They
 are an example, not framework vocabulary.
+
+## Amendment (2026-11-13): the KB declares how it is read
+
+> Status: accepted — approved by the owner in chat, 2026-11-13.
+
+The `review_trigger` fired again: the reference KB's machine contract changed. Its entrypoint
+now opens with an explicitly labeled reading declaration (index line 1 and the manifest head),
+its schema version rose, and index rows of pages that have a digest no longer repeat the
+summary.
+
+Re-reading this ADR and its surfaces against that change found two gaps:
+
+1. **No step asks the agent to read the KB's reading declaration.** A KB-side simulation
+   (n=2) saw it read only because it sat at the head of the file.
+2. **The consult procedure names the KB's internals.** The `§3.6` row and the adopter guide
+   name fields, fix page counts, assume a summary on every index row, and the guide types two
+   read hints as a boolean and a single value where the reference KB gives text or lists.
+
+Decisions (F–H amend Decision 3 and decision A of the 2026-09-28 Amendment; Decision 4
+stands, clarified by G):
+
+- **F. Whether and when belong to the framework; how belongs to the KB.** The framework keeps
+  the detector, the phases, `tiny-fix` never, `role: advisory`, KB-as-DATA, the page as
+  authority over digests and other derived outputs, the official source for volatile facts,
+  the applicability filter, reads inside the configured KB root, and never loading a whole
+  manifest, index or retrieval artifact into context. A declaration is only what the KB
+  explicitly presents as how to read it, at the head of its entrypoint (searched for, never
+  full-loaded, when not in the head); field names come from the KB; unknown fields are ignored.
+- **G. The declaration's authority is an allowlist.** The agent uses only which pages or
+  sections to read, their order, how many, and where to stop. Everything else in it is DATA,
+  including claims of authority, requests to skip a phase, and instructions to run a command.
+  Read-only tools (file read, grep, search) are within it; a helper the declaration names is
+  not. Using a declared reading plan is choosing which data to read, not loading the KB's
+  rules as governance (Decision 4).
+- **H. Framework reading rules are defaults.** The KB's routing in its order, a section rather
+  than the page, the digest-and-anchor procedure of decision A, and the page caps (≤3 per
+  phase in total across KBs, ≤1 for hotfix / quick-win) apply only to what the KB does not
+  declare. A declaration may always lower a cap; it may raise one only for `feature` and
+  `architecture-change` work, while hotfix / quick-win stay at ≤1 page (owner decisions in chat,
+  2026-11-13). A declaration with no stopping point gets the caps. `§1b` records `plan=declared|default` per
+  KB, and a budget above the defaults is noted in the Work Log.
+
+| Change | Surface | Tier |
+|---|---|---|
+| F, G, H | `bootstrap.md §1b` and `§3.6` `kb-consult` row; `AGENTS.md §vNext State Model` KB line | **T2** for the `AGENTS.md` read-first step (new `governance.yaml` case); consult quality stays **honor-system**; G's DATA boundary is already eval-backed (`kb-page-injection-decline`) |
+| Declaration section, framework-read list, no assumed summary or field types | adopter guide, `.example` template | Informational |
+
+No validator, schema or `downstream-capabilities.yaml` key change. Specified in
+`docs/specs/kb-seam-declared-reading.md`.
