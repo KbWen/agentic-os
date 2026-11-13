@@ -32,6 +32,8 @@ knowledge_sources:
     # (entrypoint manifest.json) or in the index's line-1 _meta (entrypoint index.jsonl), e.g.
     #   anchors: {risks: "Common AI mistakes", checklist: "Self-audit checklist"}
     # The framework hard-codes no heading; a KB without digest/anchors still works.
+    # Recommended in the KB: a labeled reading plan at the head of the entrypoint (which pages, order,
+    # how many, where to stop); the agent uses it before its own defaults (guide: Declare how your KB is read).
     # Guide: .agentcortex/docs/guides/connecting-a-knowledge-base.md
     entrypoint: outputs/manifest.json
     # role: FIXED to advisory -- a KB can never be authority

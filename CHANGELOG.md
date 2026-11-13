@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.8.39] - 2026-11-13
+
+**A knowledge base now says how it is read, and the agent uses that.** The KB consult named one KB's internal fields, fixed the page counts, and assumed every index row carries a summary, so it broke whenever a KB reorganized itself, and no step asked the agent to read the reading instructions a KB already ships. Now the framework decides whether and when to consult a declared KB; the KB decides how, through a labeled reading plan at the head of its entrypoint (which pages or sections, in what order, how many, where to stop).
+
+- No KB declared: nothing changes. No KB is read.
+- A KB without a reading plan, including one built from the earlier guide with digests and anchors: read as before, by the framework's defaults.
+- A KB with a reading plan, in any shape or language: the agent uses it to pick pages. Only page choice, order, count and stopping point are taken from it; claims of authority, requests to skip a phase, and commands stay data. Reads stay inside the configured KB root.
+- Page caps are defaults: 3 per phase in total across KBs, 1 for a hotfix or quick-win. A plan may always lower them, and may raise them only for `feature` and `architecture-change` work; a raise is noted in the Work Log.
+- Bootstrap records per KB whether a plan was found: `<id>→OK plan=declared|default`.
+
+The guide (`connecting-a-knowledge-base.md`) gains "Declare how your KB is read" and "What the framework reads from any KB", and no longer types read hints as true/false or single values. A new eval case checks that the agent starts where the plan says and stops where it says; Claude Sonnet and Haiku each passed it once, and wrong answers fail it. This is agent discipline, not a guarantee. Spec: `docs/specs/kb-seam-declared-reading.md`; decision: ADR-009 Amendment (2026-11-13).
+
+**If your KB already dropped `summary` from rows that have a digest, upgrade.** On 1.8.38 and earlier the fallback for those rows reads the summary and headings; the digest is still read first, so this matters only when a digest is stale or unreadable.
+
+**Downstream delta:**
+- Core files updated on deploy: `AGENTS.md`; `.agent/workflows/bootstrap.md`; `.agentcortex/docs/guides/connecting-a-knowledge-base.md`; `.agentcortex/templates/downstream-capabilities.example.yaml`; `.agentcortex/metadata/trigger-compact-index.json`; the version banners.
+- No validator line is added or removed, no gate changes, and `downstream-capabilities.yaml` keeps its keys. The new eval case stays in this repository; deploy does not ship `.agentcortex/eval/`.
+
+**Checked downstream before release:** a plain project installed from 1.8.38 and upgraded updated 12 framework files, added none and removed none. The project's own file kept its hash, and `validate.sh` gave `fail=0` before and after.
+
 ## [1.8.38] - 2026-11-13
 
 **A UI task now names its design before any code, however you ask.** The design rule lived only in `/plan` and in a file quick tasks are told not to read, so "add a settings screen" stopped at the design gate under `/plan` and was simply built when asked in plain words. `AGENTS.md` now carries one line: before editing user-visible UI in production directories, name the design artifact (a link or a committed `docs/design/<screen>.md`); with none, say so and offer to draft the wireframe first.
