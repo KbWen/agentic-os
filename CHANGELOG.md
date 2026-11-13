@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.8.38] - 2026-11-13
+
+**A UI task now names its design before any code, however you ask.** The design rule lived only in `/plan` and in a file quick tasks are told not to read, so "add a settings screen" stopped at the design gate under `/plan` and was simply built when asked in plain words. `AGENTS.md` now carries one line: before editing user-visible UI in production directories, name the design artifact (a link or a committed `docs/design/<screen>.md`); with none, say so and offer to draft the wireframe first.
+
+- If you have a design file, nothing changes: the agent builds from it.
+- If you have none, expect one extra exchange per new screen. The agent drafts the wireframe itself once you say yes.
+- Text tweaks, backend work and files under `tools/`, `scripts/` or `tests/` are not stopped.
+
+Measured on Claude Sonnet in headless downstream sessions: 11 of 14 new-screen tasks with no design stopped first, against 1 of 3 without the line. It raises the rate; it does not guarantee it. A screen added inside an existing page was the weak case, Haiku ignored the line in its one run, and other platforms are not measured. The line governs process, not appearance: a wireframe the agent drafts for itself still produced a bare screen. Spec: `docs/specs/ui-design-on-any-entry.md`.
+
+**No test runner no longer means no way to ship.** With no runner, `/test` asked `feature`, `architecture-change` and `hotfix` for your sign-off and then still refused the receipt that `/ship` requires. Your recorded sign-off is now the acceptance, and the Work Log says the evidence is a manual trace. A red linter, or a red suite where one exists, still blocks.
+
+**Contradictions fixed.**
+- `/ship` no longer asks ADRs for `status: frozen`; ADRs are `accepted`.
+- `/spec-intake` names the post-ship status `shipped`.
+- The guardrails call the tiny-fix reading mode `Lite`, like every other file.
+- `AGENTS.md` rule 8 asks for a spec only from the tiers that need one.
+- `/handoff` §6 lets completed `## Evidence` move to the overflow archive; gate receipts never move.
+- `/review` no longer sends a Not Ready verdict to `/plan`, a route the validators reject.
+- `/test` cited two `AGENTS.md` sections that do not exist.
+
+**Removed, because nothing read it.**
+- `verify_agent_evidence.py` and its test. It was never deployed.
+- The state values `Context Budget tier`, `Finalized` and `Mode: Normal | Fast Lane`.
+- Nine keys in `.agent/config.yaml` (`raw_intake_cleanup`, four under `cluster`, four under `downstream_capabilities`). The validators hard-code those values; editing the keys never had an effect.
+- Eight citations, in deployed files, of paths that are never deployed.
+
+**Downstream delta:**
+- Core files updated on deploy: `AGENTS.md`; `.agent/config.yaml`; `.agent/rules/{engineering_guardrails,state_machine}.md`; `.agent/workflows/{ask-local,handoff,plan,review,shared-contracts,ship,spec-intake,test}.md`; four guides under `.agentcortex/docs/guides/`; `.agentcortex/metadata/trigger-compact-index.json`; the version banners.
+- If you edited `.agent/config.yaml`, deploy replaces it and keeps yours as `.agent/config.yaml.acx-local`. That is existing behaviour; compare the two after upgrading.
+- No validator line is added or removed, and no verdict changes.
+
+**Checked downstream before release:** three projects installed from 1.8.37 (plain, with a knowledge base, with a design reference and a custom skill) were upgraded. `validate.sh` gave the same result before and after in each (`fail=0`), nothing was removed, and the custom skill, its metadata and the design file kept their hashes.
+
 ## [1.8.37] - 2026-11-07
 
 **Workflows state each obligation once, in a place a quick task can read.** Copied method text in `/implement`, `/test`, `/review`, `/ship`, `/bootstrap` and the CLI-delegation workflows now points to the skill or section that owns it. The duties a quick-win run needs stay written in the workflow itself, because a customized skill is kept on upgrade and may be older. For example, the debugging floor carries the `Patch Attempt [N]: <result>` record and the stop-after-two-failures rule inline. Net −46 lines of instruction text.

@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-07T23:06:47+08:00
+- **Last Updated**: 2026-11-13T08:45:58+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 223
+- **Update Sequence**: 224
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -30,8 +30,6 @@
 - **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
   - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
-  - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
-  - docs/specs/multi-agent-review-guidelines.md — Multi-Agent Review Guidelines and Contributor Adapters, [Shipped 2026-06-04] (backlog #56, issue #162)
   - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
   - docs/specs/worklog-lock-auto-recovery.md — Work Log Lock Auto-Recovery, [Shipped 2026-06-08] (issue #188)
   - docs/specs/worklog-lock-blocking.md — Hard Work Log Lock (advisory → blocking), [Shipped 2026-06-10] (backlog #17, issue #147)
@@ -59,6 +57,8 @@
   - docs/specs/context-sensitive-instruction-evaluation.md — Context-Sensitive Instruction Evaluation (M4/M7/M9 measured, baselines retained; M3/M5 kept), [Shipped 2026-11-07] (backlog #226)
   - docs/specs/bootstrap-read-scope-optimization.md — Bootstrap Read-Scope Optimization (evaluated; baseline retained, −0.5% reads), [Shipped 2026-11-07] (backlog #231)
   - docs/specs/test-evidence-freshness.md — Test Evidence Freshness (record_test_run.py: suite run without a shell, exit + code fingerprint in Test Gate Results; validate/ship FAIL on a failed run before a PASS receipt or code changed after the run once shipped; opt-in; stale/failed caught, forged not), [Shipped 2026-10-20] [Updated: 2026-10-20 — AC-5 tested-tier WARN when no run is recorded]
+  - docs/specs/state-surface-cleanup.md — State-Surface Cleanup (unread state values, nine dead config keys and an unconsumed tool removed; lifecycle contradictions fixed; no-test-runner sign-off counts as acceptance), [Shipped 2026-11-13] (backlog #245, #179, #154, #110)
+  - docs/specs/ui-design-on-any-entry.md — UI Design on Any Entry (one AGENTS.md line: name the design artifact before editing production UI; measured, raises the rate without guaranteeing it), [Shipped 2026-11-13]
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -116,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-implicit-state-machine-optimization-c73de2-2026-11-13
+- Feature shipped: **v1.8.38: unread state surface removed, lifecycle contradictions fixed, and the design rule stated on any entry.** Deleted `verify_agent_evidence.py`, three state values and nine config keys nothing read, and eight citations of undeployed files; fixed seven document contradictions; the no-test-runner sign-off now counts as acceptance (#110); `AGENTS.md` gains one measured line so a plain UI task names its design artifact first (11 of 14 Sonnet runs stopped, 1 of 3 without it). Backlog #245, #179, #154, #110 closed; #246, #247 added.
+- Review: three independent read-only reviews, each NOT READY once and fixed (a ship.md clause naming a file downstream never has; a handoff sentence that let gate receipts move; five gaps around the no-runner change).
+- Tests: CI 18 pass / 0 fail on 3b2929d (Linux + Windows full suites, validators on three platforms); three real 1.8.37 -> branch upgrades with identical validator results. Full suite not completed locally. SSoT 223->224; Ship History rotated at cap 10.
+
 ### Ship-chore-release-v1.8.37-2026-11-07
 - Release contents: **v1.8.37** packages the workflow route fixes (#484: deduplicated workflow text with self-contained quick-win floors; database-design forward-only, compaction protected set, read notes, bootstrap phase column), the staged-candidate closeout (#485: red-team Lite reports every distinct finding; ADR-001 D3 context reuse; #226/#231 candidates retained at baseline) and the simulation-cost correction (#481).
 - Evidence: version-consistency test 2 passed; real 1.8.36 -> candidate upgrade 209 updated / 0 new / 0 removed, project files byte-identical, customized AGENTS.md kept with sidecar, downstream validator fail=0. SSoT 222->223; Ship History rotated at cap 10.
@@ -157,12 +162,10 @@
 - Feature shipped: **a brownfield deploy says governance is not active yet.** When the project already has its own AGENTS.md / CLAUDE.md / GEMINI.md, deploy keeps them and writes the framework's version as `.acx-incoming` (ADR-005, unchanged); agents then load none of the framework's rules and validate fails on three checks whose names do not say why. Deploy now prints "GOVERNANCE IS NOT ACTIVE YET" naming those files, and validate.sh / validate.ps1 print a NOTE above the summary for the same state. No adopter file is modified; no new validator check (ADR-006 ratchet unchanged). Owner chose this option in chat 2026-10-20.
 - Tests: 2 new slow-marked deploy tests (NOTE-removal mutant killed); full suite 1100 passed, 2 skipped, recorded through record_test_run.py; validate.sh `fail=0`. Local commit only. SSoT 214->215; Ship History rotated at cap 10.
 
-### Ship-fix-test-evidence-tier-warn-2026-10-20
-- Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
-- Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
-
 ## Spec Index Archive
 
+  - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
+  - docs/specs/multi-agent-review-guidelines.md — Multi-Agent Review Guidelines and Contributor Adapters, [Shipped 2026-06-04] (backlog #56, issue #162)
   - docs/specs/ci-security-scanning.md — CI Security Scanning (Semgrep + TruffleHog + dependency audit), [Shipped 2026-05-11] (backlog #20) [Updated: 2026-07-01 — AC-5 first-party SHA-pin] [Updated: 2026-09-07 — AC-5 scanner-digest/wrapper bump-drift instrument, PR #425]
   - docs/specs/lock-unification.md — Guarded Governance Writes implementation spec, [Shipped 2026-04-25] (ADR-002)
   - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)

@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-12
 date: 2026-11-12
 classification: feature
@@ -63,13 +63,13 @@ Recorded in the backlog instead: `production_paths` (new #246, needs an ADR-001 
 
 ### F. Citations of files that are not deployed (amended 2026-11-13, owner decision in chat; backlog #192)
 
-A scan of the deploy manifest against every deployed markdown file found paths that exist in this repo and are never deployed, so a downstream reader is pointed at nothing. Remove seven: three in `engineering_guardrails.md` §13, one in `shared-contracts.md` (lock section), one in `ask-local.md`, one in `doc-governance.md`, two in `connecting-a-knowledge-base.md` (one sentence). Named ADRs stay as names. Left for #192: `repo-gotchas.md`, `token-governance.md` §5.1 and `.github/copilot-instructions.md`.
+A scan of the deploy manifest against every deployed markdown file found paths that exist in this repo and are never deployed, so a downstream reader is pointed at nothing. Remove eight: three in `engineering_guardrails.md` §13, one in `shared-contracts.md` (lock section), one in `ask-local.md`, one in `doc-governance.md`, two in `connecting-a-knowledge-base.md` (one sentence). Named ADRs stay as names. Left for #192: `repo-gotchas.md`, `token-governance.md` §5.1 and `.github/copilot-instructions.md`.
 
 Three hypotheses from the first sweep were checked and need no change: no code enforces the classification escalation rules (honor-system, already tracked by #122); no check pairs a backlog `Shipped` row with a spec `status: shipped` (no reported harm); `test.md` asks for a re-review after a tests-red loop and `state_machine.md` does not repeat it (less detail, not a conflict). `CLAUDE.md`'s Startup list restates rules `AGENTS.md` already carries, so no rule is Claude-only.
 
 ### G. No-test-runner dead end (amended 2026-11-13, owner decision in chat; backlog #110)
 
-With no test runner, `test.md` asked `feature`, `architecture-change` and `hotfix` for the user's sign-off and then still refused a PASS receipt, while `ship.md` fails without one: no legal ship even after the user accepted the gap. Owner decision: the recorded sign-off is the acceptance. `test.md` now writes `Verdict: PASS` for those tiers with the acceptance recorded under `## Test Gate Results` and the Drift Log, as quick-win already does. §12.2 is unchanged: a red linter, or a red suite where one exists, still blocks.
+With no test runner, `test.md` asked `feature`, `architecture-change` and `hotfix` for the user's sign-off and then still refused a PASS receipt, while `ship.md` fails without one: no legal ship even after the user accepted the gap. Owner decision: the recorded sign-off is the acceptance. `test.md` now writes `Verdict: PASS` for those tiers with the acceptance recorded under `## Test Gate Results` and the Drift Log, as quick-win already does. `ship.md` and `hotfix.md` point at the same fallback, a failing suite is never "no runner", and the adversarial step still runs for the tiers that require it. §12.2 is unchanged: a red linter, or a red suite where one exists, still blocks.
 
 This is the one behaviour change in this spec. It relaxes a refusal on the user's explicit acceptance; it adds no rule, so `signal_tier` stays `none`.
 
@@ -85,7 +85,7 @@ This is the one behaviour change in this spec. It relaxes a refusal on the user'
 - AC-8: a real upgrade from v1.8.37 to this branch is run, and the report states whether the deleted tool is removed from, or left in, the downstream repo.
 - AC-9: `Skip Mode` has zero hits under `.agent/`; `AGENTS.md` rule 8 names the two classifications it applies to; the guardrails Quick Mode line names the §13 exemption; `tests/guard/test_classification_escalation.py` is unchanged and passes.
 - AC-10: the nine config keys named in E2 and E3 have zero hits in `.agent/config.yaml`, which still parses; `AGENTS.md Gate 3` and `Routing §2` have zero hits under `.agent/`; `review.md` no longer routes a Not Ready verdict to `/plan`; backlog #179 and #154 are in the archive.
-- AC-11: the seven citations named in F have zero hits in their files; the manifest scan lists only the three files left for #192 (plus `_product-backlog.md`, which downstream creates, and the SSoT's own review link).
+- AC-11: the eight citations named in F have zero hits in their files; the manifest scan lists only the three files left for #192 (plus `_product-backlog.md`, which downstream creates, and the SSoT's own review link).
 - AC-12: `test.md` has zero hits for `step 5 is terminal` and for `does NOT apply to`; the fallback writes a PASS receipt only after a recorded sign-off; backlog #110 is in the archive.
 
 ## Non-goals

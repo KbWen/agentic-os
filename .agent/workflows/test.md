@@ -73,7 +73,7 @@ Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
 
 **No test runner installed?**
-- **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below. The sign-off is the user accepting manual-trace evidence in place of an automated run; `engineering_guardrails.md §12.2` still forbids shipping on a red linter, or on a red suite where one exists.
+- **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below. The sign-off is the user accepting manual-trace evidence in place of an automated run; `engineering_guardrails.md §12.2` still forbids shipping on a red linter, or on a red suite where one exists — a failing suite is never "no runner".
 - **`quick-win`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience. Record in Work Log `## Drift Log`: `"No-test-runner fallback: quick-win — <reason> — <ISO-date>"`.
 - **`tiny-fix`**: `tiny-fix` has no Work Log — the Drift Log write required by the fallback procedure is not available. If no test runner is present, reclassify as `quick-win` and restart from bootstrap before proceeding (AGENTS.md §Classification Freeze: escalation requires rollback to `CLASSIFIED`).
 
@@ -85,7 +85,7 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
   5. Gate receipt:
      - **`quick-win`**: write `Verdict: PASS` (Gate 2 satisfied by manual-trace + Drift Log record per Step 4b exception).
      - **`feature` / `architecture-change` / `hotfix`** (sign-off recorded): write `Verdict: PASS`, and record `Manual trace only — no test runner; user accepted <ISO-date>` under `## Test Gate Results`. No recorded sign-off → no receipt; STOP.
-  6. Skip the "Run all tests" line below and proceed directly to **Step 4b**.
+  6. Skip the "Run all tests" line below; continue at **Step 4** where the tier requires it (adversarial cases as manual traces), then **Step 4b**.
 
 Run all tests (with Python, via `.agentcortex/tools/record_test_run.py run --worklog <log> -- <cmd>`). Capture pass/fail output as evidence.
 
