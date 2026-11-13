@@ -33,7 +33,7 @@ Consume the exit code per `.agent/config.yaml §worklog_lock.mode`:
 
 At `/ship` and `/handoff` completion, attempt `release` (steps live in those workflows; failure → WARN, never gate-fail — staleness self-heals). `tiny-fix` is exempt (no Work Log). **Python-unavailable fallback**: blocking enforcement requires the helper; without Python the lock degrades to the manual advisory checklist in `bootstrap.md §2a` — stated honestly, no fake MUST.
 
-Enforcement teeth (per the [enforcement] Global Lesson): the tool's exit codes are tested in `tests/guard/test_worklog_lock_blocking.py`, and `validate.sh`/`validate.ps1` WARN when a non-stale lock's owner/phase mismatches the Work Log header — the signature of a session that skipped this contract.
+Enforcement teeth (per the [enforcement] Global Lesson): the tool's exit codes are tested, and `validate.sh`/`validate.ps1` WARN when a non-stale lock's owner/phase mismatches the Work Log header — the signature of a session that skipped this contract.
 
 ## Verification Before Completion (5-Gate Sequence)
 

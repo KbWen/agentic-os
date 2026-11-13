@@ -117,6 +117,6 @@ CONSTRAINTS: [from Work Log / current plan step]
 - All rules in `engineering_guardrails.md` apply to local-model output.
 - The local model is a **Junior Tool** — output ALWAYS gets primary review before acceptance.
 - The AI primary is the governance layer; the local model is the execution layer.
-- Ref: `engineering_guardrails.md` §8.2, AGENTS.md §Untrusted Tool Output + §Secrets Prohibition, `docs/specs/local-model-delegation.md`.
+- Ref: `engineering_guardrails.md` §8.2, AGENTS.md §Untrusted Tool Output + §Secrets Prohibition.
 
 > Codex CLI users: `codex --oss -m <model>` drives a local Ollama model through the existing `/codex-cli` module instead — see `codex-cli.md §Local Model Variant (--oss)`. The classification cap above applies there too.

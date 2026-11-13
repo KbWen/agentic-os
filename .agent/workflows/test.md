@@ -73,7 +73,7 @@ Apply the Phase-Entry Skill-Loading Protocol (shared-contracts.md §Phase-Entry 
 Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, or project convention). Follow naming conventions from `.agentcortex/docs/TESTING_PROTOCOL.md` if it exists; otherwise use reasonable defaults.
 
 **No test runner installed?**
-- **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below to produce manual-trace evidence. **Note (`hotfix`)**: the sign-off authorizes the manual-trace *attempt* only — `engineering_guardrails.md §12.2` still governs the ship gate and has no exceptions for hotfix; Gate 2 of the 5-Gate Contract is NOT waived for hotfix even with sign-off.
+- **`feature` / `architecture-change` / `hotfix`**: fallback is NOT permitted without explicit user sign-off. Output: `"⚠️ No test runner available. This task tier requires automated tests. Confirm: proceed with manual-trace-only evidence? (yes/no — record in Work Log Drift Log if yes)"`. Gate receipt may only be written after the user confirms. Record the sign-off in `## Drift Log`: `"Manual-test fallback: user confirmed no test runner available on <ISO-date>"`. Then follow steps 1–6 of the fallback procedure below. The sign-off is the user accepting manual-trace evidence in place of an automated run; `engineering_guardrails.md §12.2` still forbids shipping on a red linter, or on a red suite where one exists.
 - **`quick-win`**: if the environment is provably read-only or network-isolated AND no test framework is present, use the fallback below. "Cannot be added" requires a concrete reason (read-only fs, sandboxed env) — not convenience. Record in Work Log `## Drift Log`: `"No-test-runner fallback: quick-win — <reason> — <ISO-date>"`.
 - **`tiny-fix`**: `tiny-fix` has no Work Log — the Drift Log write required by the fallback procedure is not available. If no test runner is present, reclassify as `quick-win` and restart from bootstrap before proceeding (AGENTS.md §Classification Freeze: escalation requires rollback to `CLASSIFIED`).
 
@@ -84,8 +84,8 @@ Write test code to the project's test directory (e.g., `tests/`, `__tests__/`, o
   4. Record in Work Log `## Known Risk`: `"No automated tests — manual trace only"`.
   5. Gate receipt:
      - **`quick-win`**: write `Verdict: PASS` (Gate 2 satisfied by manual-trace + Drift Log record per Step 4b exception).
-     - **`feature` / `architecture-change` / `hotfix`**: do NOT write a PASS test-gate receipt — Gate 2 is unsatisfied (see Step 4b). Record manual-trace output as partial evidence in `## Evidence` and the gap in `## Known Risk`. STOP and surface to the user: "⚠️ Test gate unsatisfied — no automated tests. Provide a test runner or explicitly accept the manual-trace gap before /ship."
-  6. **`quick-win` only**: skip the "Run all tests" line below and proceed directly to **Step 4b**. (`feature` / `architecture-change` / `hotfix`: step 5 is terminal — do not proceed further.)
+     - **`feature` / `architecture-change` / `hotfix`** (sign-off recorded): write `Verdict: PASS`, and record `Manual trace only — no test runner; user accepted <ISO-date>` under `## Test Gate Results`. No recorded sign-off → no receipt; STOP.
+  6. Skip the "Run all tests" line below and proceed directly to **Step 4b**.
 
 Run all tests (with Python, via `.agentcortex/tools/record_test_run.py run --worklog <log> -- <cmd>`). Capture pass/fail output as evidence.
 
@@ -106,14 +106,14 @@ IF `verification-before-completion` is active, before claiming tests are done:
 Apply the Verification-Before-Completion 5-Gate Contract (shared-contracts.md §Verification Before Completion (5-Gate Sequence)).
 Phase-specific criteria: Scope = confirm test coverage matches planned scope (no untested AC); Evidence = paste truncated test output (pass/fail counts, command used) per Gate 3; Communication = state "Test phase complete. [N] tests pass, [M] AC covered."
 
-**Gate 2 exception — `quick-win` confirmed manual-trace fallback only**: If the classification is `quick-win`, AND the no-test-runner fallback was invoked in Step 3 AND a Drift Log record was written, Gate 2 ("ALL tests must pass") is satisfied by the recorded Drift Log entry + manual-trace evidence. Proceed to Gate 3 without requiring automated test output. (`tiny-fix` with no test runner must escalate to `quick-win` before reaching this step — see the `tiny-fix` bullet under *No test runner installed?* above.) **This exception does NOT apply to `feature`, `architecture-change`, or `hotfix`** — for those tiers the sign-off authorizes the manual-trace attempt, but Gate 2 remains unsatisfied; use the manual-trace output as partial evidence and flag in Known Risk before ship.
+**Gate 2 exception — confirmed manual-trace fallback only**: If the no-test-runner fallback was invoked in Step 3 AND its Drift Log record was written (for `feature` / `architecture-change` / `hotfix` that record is the user's sign-off), Gate 2 ("ALL tests must pass") is satisfied by the recorded Drift Log entry + manual-trace evidence. Proceed to Gate 3 without requiring automated test output. (`tiny-fix` with no test runner must escalate to `quick-win` before reaching this step — see the `tiny-fix` bullet under *No test runner installed?* above.)
 
 ## Step 5: Persist Evidence (Hard Gate)
 
 No evidence = no completion. This is non-negotiable.
 
 - Work Log MUST record: `Test Files: [list of test file paths]`
-- Work Log MUST contain actual test output (pass/fail), not narrative claims
+- Work Log MUST contain actual test output (pass/fail), not narrative claims — under the fallback, the manual-trace record
 - If adversarial testing ran, record results under `## Red Team Findings`
 - State transition (classification-aware):
   - `feature` / `architecture-change`: next is `/handoff` (MANDATORY — do NOT route to `/ship` directly; the ship gate Entry Condition requires a completed handoff receipt).

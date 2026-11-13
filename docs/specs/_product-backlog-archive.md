@@ -3,7 +3,7 @@ status: archive
 title: Product Backlog — Completed Archive
 source: split out of _product-backlog.md (backlog item #8)
 created: 2026-06-02
-last_updated: 2026-11-12
+last_updated: 2026-11-13
 ---
 
 # Product Backlog — Completed Archive
@@ -167,6 +167,7 @@ living backlog still resolve here. Ship details: see Ship History in
 | 245 | `verify_agent_evidence.py` has no consumer; `record_test_run.py` covers its re-run idea. Wire it as an advisory CI step or delete it (DELETE-bias; #108 is a parser bug in it). [more](./_product-backlog-archive.md#245) | review-finding | tooling | P2 | - | quick-win | Shipped | #108 | Shipped 2026-11-12: tool and its test deleted (state-surface-cleanup). |
 | 154 | `raw_intake_cleanup: must_delete` has no consumers, and its check WARNs on every mid-flight intake, contradicting `spec-intake.md:61`. Either implement the documented guard in both validators, or delete the key and restate the check as any raw intake present at ship time. Do not leave both halves. [more](./_product-backlog-archive.md#154) | framework | governance | P3 | — | quick-win | Shipped | — | Shipped 2026-11-12: dead key deleted; the validator check stays, it matches `spec-intake.md` step 4 (state-surface-cleanup E2). |
 | 179 | `/handoff §6` contradicts itself at the cap: step 2 moves older details, step 4 forbids touching `## Evidence`. Scope step 4 to the current phase's evidence, or name verbatim move as allowed. [more](./_product-backlog-archive.md#179) | review-finding | governance | P3 | — | quick-win | Shipped | — | Shipped 2026-11-12: step 4 names verbatim move of completed-phase entries as allowed (state-surface-cleanup E1). |
+| 110 | No-test-runner dead-end (hotfix, and since 2026-11-12 confirmed for `feature`/`architecture-change`: `test.md` fallback step 5 is terminal even after user sign-off): `test.md` refuses a PASS without a runner, `ship.md` requires a test receipt, so there is no legal ship. Policy decision: reduced-assurance lane (explicit label + user sign-off) vs escalate to feature. [more](./_product-backlog-archive.md#110) | framework | governance | P2 | — | quick-win | Shipped | — | Shipped 2026-11-13: owner chose user-accepted manual trace for all three tiers; `test.md` writes PASS with the acceptance recorded (state-surface-cleanup §G). |
 
 ## Historical Notes
 
