@@ -33,7 +33,7 @@ Consume the exit code per `.agent/config.yaml §worklog_lock.mode`:
 
 At `/ship` and `/handoff` completion, attempt `release` (steps live in those workflows; failure → WARN, never gate-fail — staleness self-heals). `tiny-fix` is exempt (no Work Log). **Python-unavailable fallback**: blocking enforcement requires the helper; without Python the lock degrades to the manual advisory checklist in `bootstrap.md §2a` — stated honestly, no fake MUST.
 
-Enforcement teeth (per the [enforcement] Global Lesson): the tool's exit codes are tested in `tests/guard/test_worklog_lock_blocking.py`, and `validate.sh`/`validate.ps1` WARN when a non-stale lock's owner/phase mismatches the Work Log header — the signature of a session that skipped this contract.
+Enforcement teeth (per the [enforcement] Global Lesson): the tool's exit codes are tested, and `validate.sh`/`validate.ps1` WARN when a non-stale lock's owner/phase mismatches the Work Log header — the signature of a session that skipped this contract.
 
 ## Verification Before Completion (5-Gate Sequence)
 
@@ -53,7 +53,7 @@ Each phase adds local scope after these 5 gates (see individual workflow files f
 
 Phase chat outputs MUST be compact deltas — the Work Log is the persistent record. Do NOT duplicate Work Log contents in chat; reuse prior evidence by reference (`Ref: Work Log §<section>`); no "awaiting confirmation" after gate pass on explicit phase request. Per-phase delta:
   - `/bootstrap` → Classification (+1-line why), Goal, Skills (comma list), Context Read Receipt (1 line), Next Step. Full Constraints, AC, Non-goals, Risks, and the Read Plan live in the Work Log file, NOT in the chat response.
-  - `/plan` → gate + plan (compact block: Target Files · Steps · Risk+Rollback · AC Coverage · Mode). No section headers when the block is < 15 lines.
+  - `/plan` → gate + plan (compact block: Target Files · Steps · Risk+Rollback · AC Coverage). No section headers when the block is < 15 lines.
   - `/implement` → files changed (list), tests run (1 line), checkpoint SHA. No code re-narration.
   - `/review` → burden-of-proof table + delta since implement. No re-printing the task description.
   - `/test` → commands + pass/fail + coverage delta. No re-printing the test skeleton.

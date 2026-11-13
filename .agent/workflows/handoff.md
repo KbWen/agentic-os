@@ -148,7 +148,7 @@ Thresholds are defined in `.agent/config.yaml` §worklog. If either is hit (`max
 1. Keep `## Session Info`, latest `## Resume`, latest `## Known Risk`, and the latest N delta entries (see `keep_recent_entries` in config).
 2. Move older details to `.agentcortex/context/archive/work/<worklog-key>-<YYYYMMDD>.md` (append, never overwrite; create it and the `archive/work/` subdir if absent). This is **compaction overflow** of a still-active log — NOT final archival. A *completed* log is archived by `/ship §3` to the **root** of `archive/` (`<worklog-key>-<YYYYMMDD>.md`); the recovery breadcrumb in `bootstrap.md` resolves that root location, not this subdir.
 3. Add one line in current log: `Compacted: [date], archive: [path]`.
-4. Protected sections MUST remain in the active Work Log and MUST NOT be summarized, folded, or rewritten: `## Gate Evidence`, `## Skill Notes`, `## Conflict Resolution`, `## Evidence`, latest `## Resume`, `## Session Info`.
+4. Protected sections MUST remain in the active Work Log and MUST NOT be summarized, folded, or rewritten: `## Gate Evidence`, `## Skill Notes`, `## Conflict Resolution`, `## Evidence`, latest `## Resume`, `## Session Info`. Moving a completed phase's `## Evidence` entries verbatim under step 2, leaving a pointer line, is not a rewrite; `## Gate Evidence` receipts never move.
 
 ## 7. Token & Efficiency Reflection
 

@@ -36,7 +36,7 @@ Run `/implement`. Stay within the plan. No refactoring, no "while I'm here" impr
 
 ## 4. Review & Test
 
-Run `/review` then `/test`. Testing must include:
+Run `/review` then `/test`. Testing must include (with no test runner, as manual traces under the `/test` fallback):
 - **Reproduction test**: Prove the original bug is fixed
 - **Regression tests**: Prove nothing else broke
 - Lite Red Team scan applies (per classification matrix)

@@ -241,3 +241,13 @@ source_review: docs/reviews/2026-11-07-workflow-candidate-comparison.md
 - [TRADEOFF] A local structural candidate may remain unshipped until its real effect is independently established.
 - [DECISION] Outcome (Haiku matched comparison, 207 calls, USD 4.28): red-team Lite "1-2 findings max" replaced by reporting every distinct fix-point finding (owner decision, chat 2026-11-07, on a strict gain below the original every-defect bar); #231 B, #226 M4/M7/M9 retained at baseline with reopen triggers; ADR-001 Decision 3 amended to reuse loaded context without re-reading for caching.
 - [CONSTRAINT] Wording evidence came from injecting the section into the prompt; on a plain-task entry agents read none of these files, so this is an upper bound on real effect.
+
+### [governance][2026-11-13][claude/implicit-state-machine-optimization-c73de2]
+source_spec: docs/specs/state-surface-cleanup.md, docs/specs/ui-design-on-any-entry.md
+source_sha: 3b2929d
+- [DECISION] The eleven state names stay as descriptive prose. Making them the enforced model would add text for a path that plain-entry agents do not read (2026-11-07 plain-entry measurement).
+- [DECISION] A status value with no producer and no reader is deleted, not documented.
+- [TRADEOFF] Shipped rows are moved to the archive by hand in this repo; `ship.md` does not instruct it, so a row can sit in the active table until the next cleanup. Instructing it would push a repo-local file convention to every downstream install.
+- [DECISION] The per-tier phase table lives in the validators only; the deleted tool held the one other copy, and it had drifted.
+- [DECISION] The design rule is stated once on the always-loaded surface, worded as naming an artifact, because the 2026-11-07 comparison found output-shaped lines are followed on plain entry and process rules are not. This supersedes the 2026-11-07 "accept ungoverned plain-entry quick-wins" outcome for UI work only (owner decision in chat, 2026-11-12).
+- [TRADEOFF] An adopter with no design process gets one extra exchange per new screen; in return the same request no longer has two outcomes depending on phrasing.

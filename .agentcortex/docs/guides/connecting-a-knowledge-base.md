@@ -4,8 +4,7 @@
 > base — they read no KB and ingest zero KB-content tokens (the seam's bootstrap
 > guidance is a small fixed always-loaded cost, ~660 tokens measured 2026-09-28 as
 > chars/4 of its `§1b` clause and `§3.6` row — not literally zero).
-> Ref: ADR-009 (incl. its 2026-09-28 Amendment), `docs/specs/knowledge-source-seam.md`,
-> `docs/specs/kb-seam-anchor-neutrality.md`.
+> Ref: ADR-009 (incl. its 2026-09-28 Amendment).
 
 Agentic OS can OPTIONALLY consult an external **markdown** knowledge base (curated
 dev standards / playbooks / checklists) during `/plan`, `/implement` and `/review`, to enrich

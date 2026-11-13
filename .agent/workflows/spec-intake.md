@@ -374,7 +374,7 @@ Specs will change. How they change depends on when:
 |---|---|---|
 | **Before implementation** | `draft` | Edit directly. No ceremony needed. |
 | **During implementation** | `frozen` | Unfreeze per §4.2 (user approval required), edit, refreeze. Update Work Log: `"Spec amended: [reason]"`. |
-| **After shipping** | `frozen` (shipped) | Do NOT modify the old spec. Create a NEW spec with `File Relationship: EXTENDS <old-spec>`. The old spec stays as historical reference. |
+| **After shipping** | `shipped` | Do NOT modify the old spec. Create a NEW spec with `File Relationship: EXTENDS <old-spec>`. The old spec stays as historical reference. |
 
 **Why not modify shipped specs?** Shipped specs are reference documents. They answer "why was it built this way?". Modifying them after the fact destroys traceability. Instead:
 

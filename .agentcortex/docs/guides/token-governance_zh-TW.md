@@ -26,9 +26,8 @@
 ## 2. 超標處置（Cost Fallback）
 
 若小任務（docs-update / small-fix）超過預算：
-1. 下一輪強制使用 `Mode: Fast Lane`。
-2. 回覆格式改為固定模板（Summary + Evidence + Next），禁止冗長背景重述。
-3. 僅保留必要引用與 AC 對應，不重複貼大段規範原文。
+1. 回覆格式改為固定模板（Summary + Evidence + Next），禁止冗長背景重述。
+2. 僅保留必要引用與 AC 對應，不重複貼大段規範原文。
 
 ## 3. 防退化規則
 
@@ -37,7 +36,6 @@
 
 ## 4. 與流程文件的關聯
 
-- `/plan` 需包含 `Mode: Normal` 或 `Mode: Fast Lane`。
 - `/handoff` 保持每區塊精簡，避免貼完整 diff。
 - `/ship` 提供必要證據即可，避免重複敘述。
 

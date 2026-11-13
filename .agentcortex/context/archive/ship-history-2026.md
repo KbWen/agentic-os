@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-test-evidence-tier-warn-2026-10-20
+- Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
+- Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
+
 ### Ship-chore-trufflehog-3.99.2-digest-2026-10-20
 - Feature shipped: **TruffleHog scanner v3.97.1 → v3.99.2 with both pins moved together** — the action SHA (e76dff8a…, the v3.99.2 tag commit) and the scanner image digest (sha256:47a84bc1…, GHCR's manifest-list digest for 3.99.2; the same query returns the previous pin for 3.97.1). Supersedes dependabot PR #474, which moved only the action SHA and was turned red by the wrapper/digest agreement test — the instrument working as designed.
 - Tests: test_security_workflow.py 43 passed; validate.sh `fail=0`. Local commit only. SSoT 212->213; Ship History rotated at cap 10.
