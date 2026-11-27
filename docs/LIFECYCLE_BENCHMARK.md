@@ -104,7 +104,7 @@ Qualitative shape of each scenario (what drives cost). Token figures live in the
 
 | Optimization | How It Works | Savings Source |
 |:---|:---|:---|
-| **Conditional Loading** | tiny-fix reads only `AGENTS.md`; quick-win skips guardrails | Base governance: ~3,500–5,000 tokens saved |
+| **Conditional Loading** | tiny-fix reads only `AGENTS.md`; quick-win skips guardrails | Base governance: the full guardrails file is not loaded |
 | **Compact Index Probing** | Read skill metadata (40 tokens/skill) instead of full SKILL.md (200–2,200 tokens/skill) | Probe phase: ~60–85% cheaper |
 | **Heading-Scoped Workflow** | Parse `## Heading-Scoped Read Note` to read only needed sections | Repeated phases: ~20–30% of full file skipped |
 | **Continuation Model** | First skill load = full SKILL.md; subsequent = cached notes (~22% of full) | Execution detail: ~40–62% reduction for heavy scenarios |

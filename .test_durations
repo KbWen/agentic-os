@@ -35,7 +35,7 @@
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestConditionalLoadingRules::test_conditional_loading_explanation_present": 0.0004833000130020082,
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestConditionalLoadingRules::test_quick_win_skips_guardrails": 0.00038189993938431144,
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestConditionalLoadingRules::test_tiny_fix_skips_ssot": 0.0003989000106230378,
-    ".agentcortex/tests/test_lifecycle_skill_activation.py::TestConditionalLoadingRules::test_token_savings_documented": 0.00039140001172199845,
+    ".agentcortex/tests/test_lifecycle_skill_activation.py::TestConditionalLoadingRules::test_token_rationale_carries_no_copied_figure": 0.00039140001172199845,
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestLoadPolicyTokenImpact::test_advisory_triggers_never_use_always": 0.019100499979685992,
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestLoadPolicyTokenImpact::test_hard_triggers_never_use_on_failure": 0.01886969991028309,
     ".agentcortex/tests/test_lifecycle_skill_activation.py::TestLoadPolicyTokenImpact::test_high_cost_skills_use_deferred_loading": 0.019080900005064905,

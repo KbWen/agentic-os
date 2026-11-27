@@ -16,7 +16,7 @@
 5. If `.agentcortex/context/work/<worklog-key>.md` exists, read to resume. *(Skip for tiny-fix.)*
 6. If `.agentcortex/context/private/downstream-capabilities.yaml` declares `knowledge_sources:`, read that block; before planning or reviewing a change in a KB-routed domain, consult the declared KB per `AGENTS.md §vNext State Model`. A task outside the KB's routes needs no KB read. *(Skip for tiny-fix; absent file = nothing to read.)*
 
-Token budget rationale: conditional loading saves ~5,000 tokens for tiny-fix, ~3,500 tokens for quick-win. Full mechanics: `AGENTS.md §vNext State Model`.
+Conditional loading skips what a smaller classification does not need. Full mechanics: `AGENTS.md §vNext State Model`.
 
 ## Slash Commands
 

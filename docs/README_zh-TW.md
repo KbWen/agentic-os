@@ -113,7 +113,7 @@ agent 還是可以偷工減料。它做不到的,是在 hook 和 CI 開啟之後
 | **依階段自動掛上的 skill** | 工作流會依任務型態,把對的檢查清單放到 agent 面前 —— feature 上 TDD、login 程式碼上 auth-security —— 你不必手動接線。是引導,不是閘門。 |
 | **跨交接還活著的記憶** | 決策與證據存在單一真實狀態檔裡,所以它們會跨 session、跨 agent 留下來,而不是隨對話一起重置。 |
 | **跨平台** | 同一套治理檔通吃每個主流 AI coding agent —— 不管你跑哪一個,規則都一樣。 |
-| **天生省 token** | 治理依風險縮放:tiny-fix 跳過笨重的護欄(約省 5,000 token),修個 typo 不必付旗艦模型的價。 |
+| **天生省 token** | 治理依風險縮放:tiny-fix 跳過笨重的護欄,修個 typo 不必付旗艦模型的價。 |
 
 <details>
 <summary><strong>工作流依任務型態自動掛上的 14 個 skill</strong></summary>

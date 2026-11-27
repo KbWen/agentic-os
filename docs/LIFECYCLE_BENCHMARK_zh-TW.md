@@ -103,7 +103,7 @@
 
 | 優化手段 | 運作方式 | 節省來源 |
 |:---|:---|:---|
-| **條件式載入** | tiny-fix 只讀 `AGENTS.md`；quick-win 跳過 guardrails | 基礎治理：省 ~3,500–5,000 tokens |
+| **條件式載入** | tiny-fix 只讀 `AGENTS.md`；quick-win 跳過 guardrails | 基礎治理：不載入完整的 guardrails 檔 |
 | **Compact Index 探測** | 讀取技能元數據（約 40 tokens/技能）而非完整 SKILL.md（200–2,200 tokens/技能） | 探測階段：便宜 ~60–85% |
 | **Heading-Scoped 工作流** | 解析 `## Heading-Scoped Read Note` 只讀需要的章節 | 重複階段：跳過 ~20–30% 的文件 |
 | **Continuation 模型** | 首次載入技能 = 完整 SKILL.md；後續 = 快取筆記（約 22%） | 執行細節：重型場景省 ~40–62% |

@@ -100,7 +100,7 @@ Built for teams where multiple AI sessions work on the same codebase:
 
 Designed for cost-effective models (Gemini Flash, Haiku, etc.):
 
-- **Conditional Loading** — tiny-fix skips guardrails (~5,000 tokens saved)
+- **Conditional Loading** — tiny-fix skips guardrails
 - **Skill Cache Policy** — metadata-first loading, full SKILL.md only on cache miss
 - **Phase Summary** — compact 1-liner per phase for low-token resume
 - **Read-Once Discipline** — governance docs persist in context, never re-read

@@ -775,9 +775,10 @@ class TestConditionalLoadingRules(unittest.TestCase):
     def test_conditional_loading_explanation_present(self) -> None:
         self.assertIn("conditional loading", self.claude_md.lower())
 
-    def test_token_savings_documented(self) -> None:
-        self.assertIn("5,000 tokens", self.claude_md)
-        self.assertIn("3,500 tokens", self.claude_md)
+    def test_token_rationale_carries_no_copied_figure(self) -> None:
+        # Backlog #228: hand-carried token figures went stale within weeks;
+        # CLAUDE.md names the mechanism and copies no number.
+        self.assertNotRegex(self.claude_md, r"\d[\d,.]*\s*[Kk]?[- ]?tokens?\b")
 
 
 class TestAllSkillsCoveredInRegistry(unittest.TestCase):
