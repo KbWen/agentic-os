@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.8.40] - 2026-11-27
+
+**Rules read the same in any language, and the docs stop quoting token figures that had gone stale.**
+
+- `engineering_guardrails.md` applies to every project but three rules used Dart/Flutter idioms. §5.2 said Service/Provider errors "MUST `return null` or a sealed error type", which told a Python or Java project to avoid its idiomatic exceptions. It now says errors crossing that boundary use the module's declared error contract (an error value, a result type, or a documented exception; declare one if absent). An unhandled exception escaping the boundary is still a Gate FAIL. §1.2 (`fromRecord()/toRecord()`) and §5.2a (`debugPrint()`) state the same principles without naming a stack. The file is slightly shorter and carries one directive fewer (84 → 83).
+- Docs claimed the guardrails file was "14KB / ~3,500 tokens" (it is about 32KB) and the quickstart put a quick-win at about half its measured cost. The figures are removed rather than refreshed: `CLAUDE.md`, `context-budget.md`, both quickstarts, the lifecycle benchmark, both READMEs and the reference page. `CLAUDE.md`, which loads in every conversation, is one line shorter, and a test now fails if a token figure is copied back into it.
+- `record_test_run.py` now replaces the template's `none` under `## Test Gate Results` instead of leaving it beside the recorded run.
+
+**Downstream delta:**
+- Core files updated on deploy: `.agent/rules/engineering_guardrails.md`; `.agentcortex/docs/guides/context-budget.md`; `.agentcortex/docs/guides/token-optimization-quickstart.md` and its zh-TW twin; `.agentcortex/tools/record_test_run.py`; version banners. Scaffold: `CLAUDE.md` (a customized copy is kept and the new one arrives as a sidecar).
+- No validator line is added or removed and no gate changes.
+
+**Checked downstream before release:** a plain project installed from 1.8.39 and upgraded updated 210 framework files, added none and removed none. The project's own file kept its hash, the new §5.2 wording arrived, and `validate.sh` ended `fail=0`.
+
 ## [1.8.39] - 2026-11-13
 
 **A knowledge base now says how it is read, and the agent uses that.** The KB consult named one KB's internal fields, fixed the page counts, and assumed every index row carries a summary, so it broke whenever a KB reorganized itself, and no step asked the agent to read the reading instructions a KB already ships. Now the framework decides whether and when to consult a declared KB; the KB decides how, through a labeled reading plan at the head of its entrypoint (which pages or sections, in what order, how many, where to stop).

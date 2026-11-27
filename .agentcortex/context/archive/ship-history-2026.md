@@ -2,6 +2,11 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-release-v1.8.36-2026-10-29
+- Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
+- Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
+- Publication: PR #480 final archived-head CI must pass before authorized merge, tag and latest GitHub Release; those remote states are verified after this preparation record.
+
 ### Ship-codex-docs-design-onboarding-2026-10-28
 - Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
 - Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.

@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-27T22:40:15+08:00
+- **Last Updated**: 2026-11-27T23:24:15+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 228
+- **Update Sequence**: 229
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-chore-release-v1.8.40-2026-11-27
+- Release contents: **v1.8.40** packages #228 (stale token figures removed from CLAUDE.md and the docs; the CLAUDE.md pin now forbids them), #227 (stack-neutral §1.2/§5.2/§5.2a, directive count 84→83) and the `record_test_run.py` template-placeholder fix.
+- Evidence: version-consistency 2 passed; `.agentcortex/tests` 244 + `tests` incl. slow 920 passed, 2 skipped; plain 1.8.39 -> branch upgrade 210 updated / 0 new / 0 removed, project file unchanged, downstream validate fail=0. SSoT 228->229; Ship History rotated at cap 10.
+
 ### Ship-claude-record-test-run-placeholder-2026-11-27
 - Fix shipped: **`record_test_run.py` replaces the template's `none` under `## Test Gate Results`.** The body count included the template's `>` guidance line, so a template-built log kept `none` beside the recorded run. Found while shipping #227; the old fixture lacked the blockquote. New test builds the section from the shipped template.
 - Tests: test_record_test_run.py 31 passed; mutation-checked. Local commit, carried in the v1.8.40 release PR. SSoT 227->228; Ship History rotated at cap 10.
@@ -158,11 +162,6 @@
 - Feature shipped: **simulation costs corrected and the backlog compressed (#232, #189).** Costs that summed `total_cost_usd` across resumed-session events are recomputed from the last event per session: #239 pilot 53× -> 25×, `/bootstrap` entry 7× -> 5.5×, Round 3 $9.58 vs $2.08; each report states the correction. `_product-backlog.md` 96,962 -> 43,276 bytes: 74 rows shortened with `[more]` links to the originals, kept verbatim in the archive; the false "~200 tokens" figure removed from 4 sites. Owner chose both in chat 2026-10-31.
 - Review: fresh reviewer compared 74/74 rows: 0 inverted facts, 9 lost conditions plus 1 unsupported claim, all fixed; fixes checked by script, not re-reviewed.
 - Tests: row check FAILS none; not-slow 881 passed, 1 failed on gitignored `scratch/` files outside this change; validate.sh = validate.ps1 `fail=0`; lifecycle 354,881. Draft PR, merge awaits CI. SSoT 219->220; Ship History rotated at cap 10.
-
-### Ship-release-v1.8.36-2026-10-29
-- Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
-- Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
-- Publication: PR #480 final archived-head CI must pass before authorized merge, tag and latest GitHub Release; those remote states are verified after this preparation record.
 
 ## Spec Index Archive
 
