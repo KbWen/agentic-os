@@ -1,5 +1,5 @@
 ---
-status: frozen
+status: shipped
 frozen: 2026-11-27
 date: 2026-11-27
 classification: feature
@@ -34,6 +34,10 @@ Owner decision 2026-10-13 (chat): generalize. Keep the principles; drop the lang
 - The other examples in the same file (`Logger.error()`, `errorReporter.capture()`) are already stack-neutral; left as they are.
 - `review.md:89`, `ship.md:91-92` and `.agents/skills/production-readiness/SKILL.md` cite `debugPrint` as one example among several debug-only APIs. They stay consistent with the reworded §5.2a, and SKILL.md edits are bound by the token ceiling (backlog #199). Out of scope.
 - No change to which sections load in which mode, to §5.1 ("Service class or Provider"), or to any gate's enforcement.
+
+## Domain Decisions
+
+none — three existing rules reworded; no new domain decision (the Work Log's D-1 is local).
 
 ## Verification
 

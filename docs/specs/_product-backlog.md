@@ -24,7 +24,7 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 
 ## Feature Inventory
 
-> **Current queue** (2026-10-15 intake, execution order): #217 → #227 → #135 → #199 → #229 → #122 → #124. These are the first rows below; later rows keep their previous relative order. Completed rows live in the archive (#230).
+> **Current queue** (2026-10-15 intake, execution order): #217 → #135 → #199 → #229 → #122 → #124. These are the first rows below; later rows keep their previous relative order. Completed rows live in the archive (#230).
 
 > The **GH Issue** column links the GitHub tracker (`KbWen/agentic-os`). The
 > **Dependencies** column uses bare `#N` = backlog entry numbers (this file or the archive).
@@ -39,7 +39,6 @@ Governance file bloat review (2026-04-12) identified 10 findings across P0–P2:
 | # | Feature | Kind | Labels | Priority | Spec File | Tier | Status | GH Issue | Dependencies |
 |---|---|---|---|---|---|---|---|---|---|
 | 217 | KB `kb_version` reaches the Work Log and a bootstrap line with no format check (`bootstrap.md §1b`), so a multi-line or markdown value can forge a Work Log heading. Candidate: record the fingerprint only if it matches `^[0-9a-f]{12}$`, else bare `OK`. Lifecycle headroom under 100 tokens: fund by a trim. [more](./_product-backlog-archive.md#217) | review-finding | governance | P2 | - | quick-win | Pending | - | - |
-| 227 | Generalize stack-specific rules in `engineering_guardrails.md` (owner decision 2026-10-13): §1.2 `fromRecord()/toRecord()`, §5.2 `return null`/sealed error, §5.2a `debugPrint()`. Keep the principles: explicit conversion, no unlogged error across a service boundary, a production-observable sink. Directive ratchet at cap 84: lower-only. [more](./_product-backlog-archive.md#227) | review-finding | governance | P2 | - | feature | Pending | - | - |
 | 135 | Quick-win-lite Work Log template: the 17-section/13-field template is the same for a 5-line quick-win and an architecture change. Touches the validator's required-section sets and tests; savings unmeasured. Was parked behind #120/#121. [more](./_product-backlog-archive.md#135) | framework | governance | P2 | — | quick-win | Pending | — | — |
 | 199 | Skill-description contract (`app-init.md:200`) conflicts with the token ratchet: the analyzer charges the whole SKILL.md (~2.33 tokens per added char), so the other 12 skills cannot meet the contract. Owner decision 2026-09-20: charge probe cost against SKILL.md frontmatter only; do not raise the ceiling or fund by deletion. Changes a durable drift instrument: own spec, re-baseline every scenario, ADR if what the ratchet guards changes. Unblocks #198. [more](./_product-backlog-archive.md#199) | review-finding | governance | P2 | - | feature | Pending | - | - |
 | 229 | `/retro` has no rule for a full Global Lessons list with no LOW entry (13 HIGH + 7 MEDIUM, cap 20), so a new lesson cannot be promoted; the #220 lesson waits in its archived Work Log. Owner decision: archive the oldest MEDIUM, raise the cap, or merge overlaps. [more](./_product-backlog-archive.md#229) | review-finding | governance | P2 | - | quick-win | Pending | - | #220 |

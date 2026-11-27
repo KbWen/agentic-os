@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-27T20:53:47+08:00
+- **Last Updated**: 2026-11-27T22:21:42+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 226
+- **Update Sequence**: 227
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -29,8 +29,6 @@
   - docs/adr/ADR-011-phase-entry-directive-enforcement.md — ADR-011: Phase-Entry Surfaces Carry Only Enforcement-Backed Directives (end §13 grandfathering on the 4 phase-entry surfaces; NONE-tier resolves to delete-observability-only/merge/add-enforcement/keep-honest-unenforced; cap-at-today directive-count ratchet test = durable drift instrument; sentinel KEEP/KEEP), accepted 2026-07-19 · applies_to: AGENTS.md, engineering_guardrails.md, security_guardrails.md, shared-contracts.md, 2026-07-19-phase-entry-directive-enumeration.md
 - **Active Backlog**: `docs/specs/_product-backlog.md` (canonical — row counts live there, not here: a hand-carried figure went stale within three days and was caught only by external audit, 2026-08-13; Kind/Labels/Priority columns active 2026-05-06)
 - **Spec Index** (shipped specs at `docs/specs/`; drafts/research tracked in `_product-backlog.md`):
-  - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
-  - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
   - docs/specs/worklog-lock-auto-recovery.md — Work Log Lock Auto-Recovery, [Shipped 2026-06-08] (issue #188)
   - docs/specs/worklog-lock-blocking.md — Hard Work Log Lock (advisory → blocking), [Shipped 2026-06-10] (backlog #17, issue #147)
   - docs/specs/governance-eval-harness.md — Governance Behavioral Eval Harness + DELETE-bias Diff, [Shipped 2026-06-10] (backlog #45, issue #151)
@@ -60,6 +58,7 @@
   - docs/specs/state-surface-cleanup.md — State-Surface Cleanup (unread state values, nine dead config keys and an unconsumed tool removed; lifecycle contradictions fixed; no-test-runner sign-off counts as acceptance), [Shipped 2026-11-13] (backlog #245, #179, #154, #110)
   - docs/specs/ui-design-on-any-entry.md — UI Design on Any Entry (one AGENTS.md line: name the design artifact before editing production UI; measured, raises the rate without guaranteeing it), [Shipped 2026-11-13]
   - docs/specs/kb-seam-declared-reading.md — KB-Seam Declared Reading (a labeled reading plan at the head of the KB entrypoint picks pages/sections, order, count and stop; framework keeps whether/when and the safety floor; caps are defaults; `plan=declared|default` recorded; T2 eval case), [Shipped 2026-11-13] (ADR-009 amendment)
+  - docs/specs/guardrails-stack-neutral-wording.md — Guardrails Stack-Neutral Wording (§1.2 conversions, §5.2 declared error contract incl. documented exceptions, §5.2a sink named by property; Gate FAIL kept; directive count 84→83), [Shipped 2026-11-27] (backlog #227)
 - **Canonical Commands**:
   - `/spec-intake`: Import external specs (from other LLMs, documents, or natural language). Handles large product specs via decomposition. Runs before `/bootstrap`.
   - `/bootstrap`: Task initialization & classification freeze.
@@ -117,6 +116,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-generalize-stack-rules-227-2026-11-27
+- Feature shipped: **stack-neutral wording for three guardrail rules (#227).** `engineering_guardrails.md` applies to every project but used Dart/Flutter idioms: §1.2 `fromRecord()/toRecord()`, §5.2 "MUST `return null` or a sealed error type" (contradicting idiomatic exceptions in Python/Java), §5.2a `debugPrint()`. Each now states the principle: explicit conversions in one named place; errors crossing a Service/Provider boundary use the module's declared error contract (error value, result type, or documented exception; declare one if absent) with the Gate FAIL kept; the prohibited sole error path is named by property. Net trim 32497→32494 B; directive count 84→83, ratchet baseline lowered.
+- Review: independent reviewer (Sonnet subagent): AC-1..5 PASS, 0 blocking; adopted the no-declared-contract fix, rejected a §1.2 per-direction precision change (already barred by "Implicit magic behavior is PROHIBITED").
+- Tests: recorded run on final tree 245 passed, 2 skipped (11 guardrails-reading files); pre-fix tree .agentcortex/tests 244 + tests not-slow 715 passed; ratchet mutation-checked. Local commit only, stacked on #228. SSoT 226->227; Spec Index +1, 2 folded; Ship History rotated at cap 10.
+
 ### Ship-claude-backlog-lightweight-review-43fb40-2026-11-27
 - Feature shipped: **hand-carried token figures removed (#228).** Docs claimed the guardrails file was "14KB / ~3,500 tokens" (now ~32KB) and the quickstart cost table understated quick-win by half. Copied figures are deleted rather than refreshed in CLAUDE.md (one shorter line, loaded every conversation), context-budget, both quickstarts, LIFECYCLE_BENCHMARK en/zh-TW, both READMEs and reference.md. Deployed docs cite no analyzer path because `analyze_token_lifecycle.py` is source-only. The CLAUDE.md pin flipped from requiring the figures to forbidding any `N tokens` figure (mutation-checked).
 - Review: independent reviewer (Sonnet subagent): 0 blocking; 3 nits, 2 fixed (`.test_durations` key, narrow regex), 1 kept (`~27K` matches the benchmark's dated snapshot).
@@ -160,11 +164,6 @@
 - Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
 - Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.
 
-### Ship-chore-release-v1.8.35-2026-10-20
-- Feature shipped: **v1.8.35** packages PR #475 (README states what the validator checks; `record_test_run.py` test-evidence freshness with tiered WARN; declared KB on plain-task entry #234; `deploy_brain --ref`; deploy `--help` / unknown-flag rejection; brownfield "governance not active" notice; guardrails §8 standing instructions; LLM-output security row; document-governance L1 restructure; TruffleHog digest; #239 lifecycle pilot report) and PR #476 (#236: acx-* subagents inherit the session model).
-- The CHANGELOG names the new validator line, the stricter `deploy.sh` flag handling and the core files updated on deploy, from a real 1.8.34 → candidate upgrade (206 updated, 1 new, 0 removed, downstream `fail=0`).
-- Tests: release-version consistency 2 passed; docs/pin tests 26 passed; validate.sh `fail=0`. After merge: `v1.8.35` tag + `gh release create --latest` (repo-gotchas §12). SSoT 216->217; Ship History rotated at cap 10.
-
 ## Spec Index Archive
 
   - docs/specs/spec-drift-linter.md — Spec Drift Linter (advisory AC coverage vs git diff), [Shipped 2026-06-04] (backlog #50, issue #156)
@@ -174,3 +173,5 @@
   - docs/specs/audit-chain-tamper-evidence.md — Audit-Chain Tamper-Evidence Hardening (C1 truncation + C2 migrate), [Shipped 2026-05-29] (ADR-003 amendment, backlog #42)
   - docs/specs/handoff-trigger-policy.md — Handoff-Trigger Policy: turn-count → context-occupancy + phase-boundary (cross-platform, advisory), [Shipped 2026-05-31] (ADR-001 domain)
   - docs/specs/downstream-fork-accommodation.md — Downstream Fork/Clone Accommodation (override layer activation + deploy skill-sidecar tiering + README fork stance + custom/* namespace), [Shipped 2026-06-03] (ADR-004 + ADR-005)
+  - docs/specs/skill-runtime-modernization.md — Skill Runtime Modernization (14/14 discovery + resolver/deploy compatibility), [Shipped 2026-07-28]
+  - docs/specs/pre-commit-local-validation.md — Pre-commit Local Validation Hook, [Shipped 2026-06-08] (issue #192)
