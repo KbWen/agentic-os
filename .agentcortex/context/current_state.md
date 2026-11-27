@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-13T14:01:26+08:00
+- **Last Updated**: 2026-11-27T20:53:47+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 225
+- **Update Sequence**: 226
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -117,6 +117,11 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-backlog-lightweight-review-43fb40-2026-11-27
+- Feature shipped: **hand-carried token figures removed (#228).** Docs claimed the guardrails file was "14KB / ~3,500 tokens" (now ~32KB) and the quickstart cost table understated quick-win by half. Copied figures are deleted rather than refreshed in CLAUDE.md (one shorter line, loaded every conversation), context-budget, both quickstarts, LIFECYCLE_BENCHMARK en/zh-TW, both READMEs and reference.md. Deployed docs cite no analyzer path because `analyze_token_lifecycle.py` is source-only. The CLAUDE.md pin flipped from requiring the figures to forbidding any `N tokens` figure (mutation-checked).
+- Review: independent reviewer (Sonnet subagent): 0 blocking; 3 nits, 2 fixed (`.test_durations` key, narrow regex), 1 kept (`~27K` matches the benchmark's dated snapshot).
+- Tests: .agentcortex/tests 244 passed; tests not-slow 715 passed; slow subset 11 passed, 1 skipped; validate.sh fail=0. Local commit only. SSoT 225->226; Ship History rotated at cap 10.
+
 ### Ship-claude-knowledge-base-reading-protocol-e2c4f0-2026-11-13
 - Feature shipped: **v1.8.39: a knowledge base declares how it is read.** The `kb-consult` row, the `AGENTS.md` KB line and the adopter guide stop naming KB-internal fields, field types and page constants; a labeled reading plan at the head of the entrypoint picks pages/sections, order, count and stop (allowlist; everything else DATA); the framework keeps whether/when and the floor (advisory, page > digest, volatile facts, applicability, inside the KB root, no full-load); caps are defaults (≤3/phase total across KBs, ≤1 hotfix/quick-win), a plan may lower any and raise only for feature/architecture-change; `§1b` records `plan=declared|default`. ADR-009 amended (owner approved in chat).
 - Review: 3-seat design roundtable before implementation (17 of 20 findings adopted, 1 rejected, 2 resolved by the owner); independent diff review found 2 blocking (consult instruction lost for KBs without a plan; eval case did not discriminate) → fixed, 5 wrong-answer mutations now fail.
@@ -159,10 +164,6 @@
 - Feature shipped: **v1.8.35** packages PR #475 (README states what the validator checks; `record_test_run.py` test-evidence freshness with tiered WARN; declared KB on plain-task entry #234; `deploy_brain --ref`; deploy `--help` / unknown-flag rejection; brownfield "governance not active" notice; guardrails §8 standing instructions; LLM-output security row; document-governance L1 restructure; TruffleHog digest; #239 lifecycle pilot report) and PR #476 (#236: acx-* subagents inherit the session model).
 - The CHANGELOG names the new validator line, the stricter `deploy.sh` flag handling and the core files updated on deploy, from a real 1.8.34 → candidate upgrade (206 updated, 1 new, 0 removed, downstream `fail=0`).
 - Tests: release-version consistency 2 passed; docs/pin tests 26 passed; validate.sh `fail=0`. After merge: `v1.8.35` tag + `gh release create --latest` (repo-gotchas §12). SSoT 216->217; Ship History rotated at cap 10.
-
-### Ship-fix-acx-subagent-model-inherit-2026-10-20
-- Feature shipped: **acx-* subagents run on the session's model (#236).** The five shims pinned their model (acx-reviewer opus, the rest sonnet), overriding the user's choice; in the #239 lifecycle pilot the reviewer's Opus cost about $12 of the governed arm's $42. All five now declare `model: inherit`; the Claude platform guide (EN + zh-TW) says why. Claude-only surface, so no other platform changes. Owner chose "inherit" in chat 2026-10-20.
-- Tests: headless dispatch from a haiku session → the subagent ran on haiku only; a control with the old pin showed Opus. Agent/doc/skill tests 328 passed; deploy tiering 69 passed; validate.sh `fail=0`. Local commit only. SSoT 215->216; Ship History rotated at cap 10.
 
 ## Spec Index Archive
 

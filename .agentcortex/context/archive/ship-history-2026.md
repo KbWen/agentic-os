@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-fix-acx-subagent-model-inherit-2026-10-20
+- Feature shipped: **acx-* subagents run on the session's model (#236).** The five shims pinned their model (acx-reviewer opus, the rest sonnet), overriding the user's choice; in the #239 lifecycle pilot the reviewer's Opus cost about $12 of the governed arm's $42. All five now declare `model: inherit`; the Claude platform guide (EN + zh-TW) says why. Claude-only surface, so no other platform changes. Owner chose "inherit" in chat 2026-10-20.
+- Tests: headless dispatch from a haiku session → the subagent ran on haiku only; a control with the old pin showed Opus. Agent/doc/skill tests 328 passed; deploy tiering 69 passed; validate.sh `fail=0`. Local commit only. SSoT 215->216; Ship History rotated at cap 10.
+
 ### Ship-fix-test-evidence-tier-warn-2026-10-20
 - Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
 - Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
