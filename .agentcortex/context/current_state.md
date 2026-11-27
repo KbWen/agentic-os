@@ -12,9 +12,9 @@
   - Active Work Log Path: derive <worklog-key> from the raw branch name using filesystem-safe normalization before any gate checks.
   - Workflows & Policies: `.agent/workflows/*.md`, `.agent/rules/*.md`
 - **Project Name**: (set by /app-init)
-- **Last Updated**: 2026-11-27T22:21:42+08:00
+- **Last Updated**: 2026-11-27T22:40:15+08:00
 - **Last Verified**: 2026-10-29
-- **Update Sequence**: 227
+- **Update Sequence**: 228
 - **ADR Index**:
   - docs/adr/ADR-001-governance-friction-tuning.md — ADR-001: Governance Friction Tuning, accepted 2026-04-23 (amended 2026-07-16: `design_tool` capability-seam escape rejected — D2 reaffirmed, do NOT retry; amended 2026-11-07: Decision 3 reuses loaded context, no re-read for caching — owner decision in chat)
   - docs/adr/ADR-002-guarded-governance-writes.md — ADR-002: Guarded Governance Writes (lock unification + CI lint + lifecycle frontmatter), accepted 2026-04-25
@@ -116,6 +116,10 @@
 - [Category: ssot-serialization][Severity: HIGH][Trigger: second-unit-while-ship-pr-open][prev: 1f251152] /ship writes current_state.md (Ship History entry at top, rotation of the oldest entry out to archive/ship-history-YYYY.md at cap 10, Update Sequence bump), so ship is SERIALIZED ACROSS BRANCHES, not just across sessions. Confirmed 2026-09-20: a second unit was branched from main while the first unit's ship PR (#441) was still open, so its current_state.md was the pre-ship copy and the second ship rotated the SAME oldest entry out a second time -- which duplicates it in the archive and guarantees a merge conflict. It was caught pre-commit only because the rotation script happened to print the entry name; nothing asserted it. Discipline: before entering /ship, check whether a sibling unit's ship PR is still unmerged -- if it is, merge and rebase first, and do NOT stack on the unmerged base (see the [pr-workflow] lesson: this repo squash-merges, which orphans a stack). Assert the rotated entry's heading is absent from the archive before appending. The Work Log's bootstrap-time SSoT Sequence also goes stale across that rebase -- re-read it, do not trust the header.
 ## Ship History
 
+### Ship-claude-record-test-run-placeholder-2026-11-27
+- Fix shipped: **`record_test_run.py` replaces the template's `none` under `## Test Gate Results`.** The body count included the template's `>` guidance line, so a template-built log kept `none` beside the recorded run. Found while shipping #227; the old fixture lacked the blockquote. New test builds the section from the shipped template.
+- Tests: test_record_test_run.py 31 passed; mutation-checked. Local commit, carried in the v1.8.40 release PR. SSoT 227->228; Ship History rotated at cap 10.
+
 ### Ship-claude-generalize-stack-rules-227-2026-11-27
 - Feature shipped: **stack-neutral wording for three guardrail rules (#227).** `engineering_guardrails.md` applies to every project but used Dart/Flutter idioms: §1.2 `fromRecord()/toRecord()`, §5.2 "MUST `return null` or a sealed error type" (contradicting idiomatic exceptions in Python/Java), §5.2a `debugPrint()`. Each now states the principle: explicit conversions in one named place; errors crossing a Service/Provider boundary use the module's declared error contract (error value, result type, or documented exception; declare one if absent) with the Gate FAIL kept; the prohibited sole error path is named by property. Net trim 32497→32494 B; directive count 84→83, ratchet baseline lowered.
 - Review: independent reviewer (Sonnet subagent): AC-1..5 PASS, 0 blocking; adopted the no-declared-contract fix, rejected a §1.2 per-direction precision change (already barred by "Implicit magic behavior is PROHIBITED").
@@ -159,10 +163,6 @@
 - Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
 - Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
 - Publication: PR #480 final archived-head CI must pass before authorized merge, tag and latest GitHub Release; those remote states are verified after this preparation record.
-
-### Ship-codex-docs-design-onboarding-2026-10-28
-- Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
-- Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.
 
 ## Spec Index Archive
 

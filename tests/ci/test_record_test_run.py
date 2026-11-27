@@ -96,6 +96,23 @@ def test_ac1_run_returns_exit_code_and_appends_one_line(tmp_path: Path) -> None:
 
 
 @requires_git
+def test_ac1_template_placeholder_is_replaced_under_the_guidance_blockquote(tmp_path: Path) -> None:
+    # A log built from the shipped template carries a `>` blockquote above `none`.
+    repo, log = _repo(tmp_path)
+    template = (ROOT / ".agentcortex" / "templates" / "worklog.md").read_text(encoding="utf-8")
+    section = template.split("## Test Gate Results")[1].split("\n---")[0]
+    assert "\n> " in section and "\nnone" in section, "template shape changed; update this test"
+    text = log.read_text(encoding="utf-8")
+    log.write_text(text.replace("## Test Gate Results\nnone\n", "## Test Gate Results" + section.rstrip("\n") + "\n"),
+                   encoding="utf-8")
+    assert _run(repo, log, "print('fine')").returncode == 0
+    body = log.read_text(encoding="utf-8").split("## Test Gate Results")[1].split("\n---")[0]
+    assert "\nnone" not in body, "the template's 'none' placeholder is replaced"
+    assert "\n> " in body, "the guidance blockquote is kept"
+    assert len(_runs(log)) == 1
+
+
+@requires_git
 def test_ac1_command_runs_without_a_shell(tmp_path: Path) -> None:
     repo, log = _repo(tmp_path)
     result = _tool(repo, "run", "--worklog", str(log), "--root", str(repo), "--",

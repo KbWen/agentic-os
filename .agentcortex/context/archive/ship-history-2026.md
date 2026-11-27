@@ -2,6 +2,10 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-codex-docs-design-onboarding-2026-10-28
+- Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
+- Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.
+
 ### Ship-chore-release-v1.8.35-2026-10-20
 - Feature shipped: **v1.8.35** packages PR #475 (README states what the validator checks; `record_test_run.py` test-evidence freshness with tiered WARN; declared KB on plain-task entry #234; `deploy_brain --ref`; deploy `--help` / unknown-flag rejection; brownfield "governance not active" notice; guardrails §8 standing instructions; LLM-output security row; document-governance L1 restructure; TruffleHog digest; #239 lifecycle pilot report) and PR #476 (#236: acx-* subagents inherit the session model).
 - The CHANGELOG names the new validator line, the stricter `deploy.sh` flag handling and the core files updated on deploy, from a real 1.8.34 → candidate upgrade (206 updated, 1 new, 0 removed, downstream `fail=0`).

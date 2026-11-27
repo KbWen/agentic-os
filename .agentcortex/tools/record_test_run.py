@@ -120,11 +120,13 @@ def append_run(worklog: Path, line: str) -> None:
     end = start + 1
     while end < len(lines) and not (lines[end].startswith("## ") or lines[end].strip() == "---"):
         end += 1
-    body = [i for i in range(start + 1, end) if lines[i].strip()]
+    content = [i for i in range(start + 1, end) if lines[i].strip()]
+    # The template's `>` guidance blockquote is not content: a lone `none` under it is still the placeholder.
+    body = [i for i in content if not lines[i].lstrip().startswith(">")]
     if len(body) == 1 and lines[body[0]].strip() == "none":
         lines[body[0]] = line
     else:
-        at = (body[-1] + 1) if body else start + 1
+        at = (content[-1] + 1) if content else start + 1
         lines.insert(at, line)
     worklog.write_text(nl.join(lines), encoding="utf-8", newline="")
 
