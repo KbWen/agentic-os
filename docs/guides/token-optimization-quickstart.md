@@ -18,14 +18,16 @@
 
 Every task in Agentic OS follows a phase-based workflow. The more phases, the more tokens consumed:
 
-| Classification | Typical Token Cost | Phases |
-|:---|---:|:---|
-| `tiny-fix` | ~2,000–5,000 | Classify → Execute → Evidence |
-| `quick-win` | ~15,000–17,000 | Bootstrap → Plan → Implement → Ship |
-| `feature` | ~30,000–60,000 | Full 7-phase lifecycle |
-| `architecture-change` | ~50,000–65,000 | Full lifecycle + ADR + all skills |
+| Classification | Phases |
+|:---|:---|
+| `tiny-fix` | Classify → Execute → Evidence |
+| `quick-win` | Bootstrap → Plan → Implement → Ship |
+| `feature` | Full 7-phase lifecycle |
+| `architecture-change` | Full lifecycle + ADR + all skills |
 
-**Key insight**: The single biggest cost driver is **task misclassification**. A typo fix classified as `feature` wastes 30K+ tokens on unnecessary planning, review, and testing phases.
+For actual cost, read your host's usage report; copied token figures go stale.
+
+**Key insight**: The single biggest cost driver is **task misclassification**. A typo fix classified as `feature` wastes tokens on unnecessary planning, review, and testing phases.
 
 ### How to Classify Correctly
 
@@ -34,7 +36,7 @@ When you give your AI agent a task, be explicit:
 ```
 ❌ "Fix the date format bug"              → AI may classify as feature
 ✅ "Fix the date format bug (tiny-fix)"   → AI takes the fast path
-✅ "This is a quick-win: add pagination"  → AI skips guardrails, saves ~3,500 tokens
+✅ "This is a quick-win: add pagination"  → AI skips guardrails
 ```
 
 ---
@@ -142,7 +144,7 @@ If the AI is reading files outside these budgets, it's a **Token Leak** — flag
 
 ### Skip Guardrails for Small Tasks
 
-For `tiny-fix` and `quick-win`, the full `engineering_guardrails.md` (~14KB, ~3,500 tokens) is **already skipped** by design. The essential rules are embedded in `AGENTS.md §Core Directives`.
+For `tiny-fix` and `quick-win`, the full `engineering_guardrails.md` is **already skipped** by design. The essential rules are embedded in `AGENTS.md §Core Directives`.
 
 ---
 

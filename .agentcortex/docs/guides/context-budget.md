@@ -17,7 +17,7 @@ Define the **maximum read scope** per task classification to prevent agents from
 | MUST | Target file(s) | Full read |
 | SKIP | `current_state.md`, `engineering_guardrails.md`, Work Logs, Specs, ADRs, all guides | — |
 
-> **Why skip guardrails?** AGENTS.md §Core Directives already provides: scope discipline ("UNAUTHORIZED REFACTORING STRICTLY PROHIBITED"), evidence requirement, and tiny-fix fast-path rules (< 3 files, no semantic change). Reading the full 14KB guardrails file for a typo fix wastes ~3,500 tokens. If the task turns out to be larger than tiny-fix, the agent must escalate and load guardrails at that point.
+> **Why skip guardrails?** AGENTS.md §Core Directives already provides: scope discipline ("UNAUTHORIZED REFACTORING STRICTLY PROHIBITED"), evidence requirement, and tiny-fix fast-path rules (< 3 files, no semantic change). Reading the full guardrails file for a typo fix spends tokens on rules that do not apply. If the task turns out to be larger than tiny-fix, the agent must escalate and load guardrails at that point.
 > **Context Reuse Note**: Reuse applicable guardrails already loaded in this context. Do not read them again solely for caching. Existing Read-Once exceptions and phase-entry reading contracts still apply.
 
 **Max file reads: 1-2** (governance + target files)
@@ -33,7 +33,7 @@ Define the **maximum read scope** per task classification to prevent agents from
 | SHOULD | `.agentcortex/context/work/<worklog-key>.md` | `## Resume` block only (if exists) |
 | SKIP | `engineering_guardrails.md`, ADRs, all guides, archived logs, unrelated specs | — |
 
-> **Why skip guardrails?** Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §7 quick-win classification. The full 14KB guardrails file adds ~3,500 tokens with no additional value for contained, single-module changes.
+> **Why skip guardrails?** Essential quick-win rules (Confidence Gate, Bug Fix Protocol, Doc Integrity) are embedded in `bootstrap.md` §7 quick-win classification. The full guardrails file adds tokens with no additional value for contained, single-module changes.
 > **Context Reuse Note**: Reuse applicable guardrails already loaded in this context. Do not read them again solely for caching. Existing Read-Once exceptions and phase-entry reading contracts still apply.
 
 **Max file reads: 3-5**

@@ -52,7 +52,7 @@ Non-negotiable principles for agent-driven development.
 
 - Assumptions, preconditions, limitations MUST be explicitly stated.
 - Implicit magic behavior is PROHIBITED.
-- Persistence-layer ↔ domain-model conversions MUST use explicit named methods (e.g., `fromRecord()`, `toRecord()`). Implicit casting or field-by-field spread at call sites is PROHIBITED.
+- Storage↔domain conversions MUST be explicit and defined in one named place, not implicit casts or ad-hoc field copying at call sites.
 
 ### 1.3 Reproducibility by Default
 
@@ -158,7 +158,7 @@ Before emitting any verdict (phase pass/fail, classification, completion claim),
 
 ### 5.2 Error Surface Rules
 
-- Service/Provider layer errors MUST `return null` or a sealed error type. Unhandled exceptions that escape a Service or Provider boundary = **Gate FAIL**.
+- An error crossing a Service/Provider boundary MUST use the module's declared error contract (error value, result type, or documented exception; declare one if absent); an unhandled exception escaping it = **Gate FAIL**.
 - Every `catch` block MUST include at minimum a log statement. Silent `catch {}` with no logging = **Review Gate FAIL**.
 
 ### 5.2a Error Observability (Production-Safety Critical)
@@ -166,7 +166,7 @@ Before emitting any verdict (phase pass/fail, classification, completion claim),
 Error logging MUST use a **production-observable sink** — a logger that survives release builds and reaches operators in production.
 
 - ✅ Acceptable: framework logger (`Logger.error()`, `log.error()`), crash reporter (`errorReporter.capture()`), structured logging to stdout consumed by production infrastructure.
-- ❌ Prohibited as sole error path: `debugPrint()`, `print()`, `console.log()` in debug-only mode, or any API that is stripped / tree-shaken / no-op'd in release builds.
+- ❌ Prohibited as sole error path: any API that is stripped, tree-shaken or no-op'd in release builds, or whose output reaches no production collector.
 
 **Rationale**: If an error is caught but logged only via a debug-only API, the catch block is functionally silent in production. Users experience failures while the team remains blind. This is the #1 cause of "beta testing is completely blind" incidents.
 

@@ -18,14 +18,16 @@
 
 Agentic OS 的每個任務都遵循階段式工作流。階段越多，Token 消耗越高：
 
-| 分類 | 典型 Token 成本 | 階段 |
-|:---|---:|:---|
-| `tiny-fix` | ~2,000–5,000 | 分類 → 執行 → 證據 |
-| `quick-win` | ~15,000–17,000 | Bootstrap → Plan → Implement → Ship |
-| `feature` | ~30,000–60,000 | 完整 7 階段生命週期 |
-| `architecture-change` | ~50,000–65,000 | 完整生命週期 + ADR + 全部技能 |
+| 分類 | 階段 |
+|:---|:---|
+| `tiny-fix` | 分類 → 執行 → 證據 |
+| `quick-win` | Bootstrap → Plan → Implement → Ship |
+| `feature` | 完整 7 階段生命週期 |
+| `architecture-change` | 完整生命週期 + ADR + 全部技能 |
 
-**核心洞察**：最大的成本來源是**任務分類錯誤**。一個 Typo 修正被歸類為 `feature`，會浪費 3 萬以上 Token 在不必要的計畫、審查與測試階段。
+實際成本請看你的 host 提供的用量報告；抄寫下來的 token 數字很快就會過時。
+
+**核心洞察**：最大的成本來源是**任務分類錯誤**。一個 Typo 修正被歸類為 `feature`，會把 Token 浪費在不必要的計畫、審查與測試階段。
 
 ### 如何正確分類
 
@@ -34,7 +36,7 @@ Agentic OS 的每個任務都遵循階段式工作流。階段越多，Token 消
 ```
 ❌ "修正日期格式的 bug"                    → AI 可能歸類為 feature
 ✅ "修正日期格式的 bug（tiny-fix）"         → AI 走快速通道
-✅ "這是 quick-win：加上分頁功能"           → AI 跳過 guardrails，省下 ~3,500 tokens
+✅ "這是 quick-win：加上分頁功能"           → AI 跳過 guardrails
 ```
 
 ---
@@ -142,7 +144,7 @@ Agentic OS 已經強制執行這個規則（參見 `AGENTS.md §Response Brevity
 
 ### 小任務自動跳過 Guardrails
 
-對於 `tiny-fix` 和 `quick-win`，完整的 `engineering_guardrails.md`（~14KB，~3,500 tokens）**已經被設計為跳過**。核心規則已嵌入在 `AGENTS.md §Core Directives` 中。
+對於 `tiny-fix` 和 `quick-win`，完整的 `engineering_guardrails.md` **已經被設計為跳過**。核心規則已嵌入在 `AGENTS.md §Core Directives` 中。
 
 ---
 

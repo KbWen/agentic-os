@@ -135,7 +135,7 @@ The full set of paths, by classification:
 | **Skills that auto-attach by phase** | The workflow puts the right checklist in front of the agent by task type — TDD on a feature, an auth-security pass on login code — so you don't wire skills by hand. Guidance, not gates. |
 | **Memory that survives handoffs** | Decisions and evidence live in one source-of-truth state file, so they carry across sessions and agents instead of resetting with the chat. |
 | **Cross-platform** | One set of governance files works across every major AI coding agent — the same rules whichever one you run. |
-| **Token-efficient by design** | Governance scales to risk: a tiny-fix skips the heavy guardrails (~5,000 tokens), so you're not paying frontier-model rates to fix a typo. |
+| **Token-efficient by design** | Governance scales to risk: a tiny-fix skips the heavy guardrails, so you're not paying frontier-model rates to fix a typo. |
 
 <details>
 <summary><strong>The 14 skills the workflow auto-attaches by task type</strong></summary>

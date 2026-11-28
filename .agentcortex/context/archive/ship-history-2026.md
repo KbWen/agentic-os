@@ -2,6 +2,24 @@
 
 Archived from `current_state.md ## Ship History` to stay within the 10-entry cap. Entries are rotated out verbatim (per ship.md §205 — never edited), newest-archived first.
 
+### Ship-release-v1.8.36-2026-10-29
+- Release contents: **v1.8.36** packages tool-neutral design onboarding without a KB, copyable design-reference/custom-brand skill templates, relocation-safe README entrypoints and aligned version metadata. Python 3.9 validation stays enabled on supported Ubuntu 24.04 after the latest image moved to 26.04; no B/C feature or gate-policy change.
+- Evidence: independent A and CI-delta reviews PASS; full Ubuntu suite 1066 passed/35 skipped, Windows shards 1100 passed/2 skipped; actual 1.8.35 -> 1.8.36 Windows upgrade preserved 7 project files and delivered 3 artifacts, downstream fail=0. Final date-only delta checks passed; native source validator fail=0.
+- Publication: PR #480 final archived-head CI must pass before authorized merge, tag and latest GitHub Release; those remote states are verified after this preparation record.
+
+### Ship-codex-docs-design-onboarding-2026-10-28
+- Feature shipped: **Downstream design onboarding, no KB required.** A tool-neutral guide covers readable exports and committed wireframes, approval/coverage, custom-brand skill registration and personal activation. Two inert templates and README entry points ship through existing deploy globs; no new gate or connector.
+- Evidence: 110 focused regressions passed; post-sync minimum 62 passed; actual first/update deploy delivered 3 artifacts, checked 28 links and preserved 5 project-owned files. Fresh reviewer findings resolved; validate.ps1 fail=0. Implementation 603bd7c, local branch only.
+
+### Ship-chore-release-v1.8.35-2026-10-20
+- Feature shipped: **v1.8.35** packages PR #475 (README states what the validator checks; `record_test_run.py` test-evidence freshness with tiered WARN; declared KB on plain-task entry #234; `deploy_brain --ref`; deploy `--help` / unknown-flag rejection; brownfield "governance not active" notice; guardrails §8 standing instructions; LLM-output security row; document-governance L1 restructure; TruffleHog digest; #239 lifecycle pilot report) and PR #476 (#236: acx-* subagents inherit the session model).
+- The CHANGELOG names the new validator line, the stricter `deploy.sh` flag handling and the core files updated on deploy, from a real 1.8.34 → candidate upgrade (206 updated, 1 new, 0 removed, downstream `fail=0`).
+- Tests: release-version consistency 2 passed; docs/pin tests 26 passed; validate.sh `fail=0`. After merge: `v1.8.35` tag + `gh release create --latest` (repo-gotchas §12). SSoT 216->217; Ship History rotated at cap 10.
+
+### Ship-fix-acx-subagent-model-inherit-2026-10-20
+- Feature shipped: **acx-* subagents run on the session's model (#236).** The five shims pinned their model (acx-reviewer opus, the rest sonnet), overriding the user's choice; in the #239 lifecycle pilot the reviewer's Opus cost about $12 of the governed arm's $42. All five now declare `model: inherit`; the Claude platform guide (EN + zh-TW) says why. Claude-only surface, so no other platform changes. Owner chose "inherit" in chat 2026-10-20.
+- Tests: headless dispatch from a haiku session → the subagent ran on haiku only; a control with the old pin showed Opus. Agent/doc/skill tests 328 passed; deploy tiering 69 passed; validate.sh `fail=0`. Local commit only. SSoT 215->216; Ship History rotated at cap 10.
+
 ### Ship-fix-test-evidence-tier-warn-2026-10-20
 - Feature shipped: **`record_test_run.py check` reports a tested-tier log that never recorded a run.** A feature/architecture-change/hotfix log on the current branch with a test or ship PASS receipt and no `Test run:` line now gets a WARN naming the recorder; quick-win and tiny-fix stay silent, and every FAIL rule is unchanged. Spec AC-5 annotated (owner decision in chat 2026-10-20, wave 2).
 - Tests: test_record_test_run.py 30 passed; validate.sh `fail=0`. Local commit only. SSoT 213->214; Ship History rotated at cap 10.
